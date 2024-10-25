@@ -5,10 +5,10 @@ on:
     branches:
       - dev
     paths:
-      - 'src/WebApp/**'
-  
-  workflow_dispatch: 
-    
+      - "src/WebApp/**"
+
+  workflow_dispatch:
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}-webapp
@@ -28,7 +28,7 @@ jobs:
         run: |
           curl $URL -o $DESTINATION
         env:
-          URL: https://${{ secrets.CR_PAT }}@raw.githubusercontent.com/nphamvn/mycrocloud-deploy/main/dev/config/WebApp/.env
+          URL: https://${{ secrets.CR_PAT }}@raw.githubusercontent.com/mycrocloud/mycrocloud-deploy/main/dev/config/WebApp/.env
           DESTINATION: ${{env.WORK_DIR}}/.env.production
 
       - name: Login to GitHub Container Registry
@@ -58,7 +58,7 @@ jobs:
           #https://docs.docker.com/build/cache/backends/gha/#using-dockerbuild-push-action
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          
+
       - name: Cleanup
         run: rm -rf ~/.ssh
 
