@@ -1,0 +1,10 @@
+﻿<Solution>
+  <Project Path="WebApp.Admin\WebApp.Admin.csproj" Type="Classic C#" />
+  <Project Path="WebApp.Domain\WebApp.Domain.csproj" Type="Classic C#" />
+  <Project Path="WebApp.Infrastructure\WebApp.Infrastructure.csproj" Type="Classic C#" />
+  <Project Path="WebApp.Migrations\WebApp.Migrations.csproj" Type="Classic C#" />
+  <Project Path="WebApp.MigrationTest\WebApp.MigrationTest.csproj" Type="Classic C#" />
+  <Project Path="WebApp.MiniApiGateway\WebApp.MiniApiGateway.csproj" Type="Classic C#" />
+  <Project Path="WebApp.RestApi\WebApp.RestApi.csproj" Type="Classic C#" />
+  <Project Path="WebApp.UnitTest\WebApp.UnitTest.csproj" Type="Classic C#" />
+</Solution>
