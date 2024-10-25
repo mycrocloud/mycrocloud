@@ -165,9 +165,9 @@ public class IntegrationsController(
             config = new
             {
                 url = config["Config:Url"]!.TrimEnd('/') + $"/{appId}?token={webhookToken}",
-                content_type = "json"
-            },
-            secret = config["Config:Secret"]
+                content_type = "json",
+                secret = config["Config:Secret"]
+            }
         };
         var json = JsonSerializer.Serialize(webhookRequestBody);
 
