@@ -8,7 +8,9 @@ export default function Settings() {
   const [githubConnected, setGitHubConnected] = useState(false);
   const onClickConnectGitHub = async () => {
     if (!githubConnected) {
-      const authUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=repo`;
+      //repo and read:org scope
+      const scope = "repo%20read:org";
+      const authUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${scope}`;
       window.location.href = authUrl;
     } else {
       //todo: disconnect
