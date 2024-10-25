@@ -42,11 +42,11 @@ builder.Services.AddCors(options =>
 
 // 1. Add Authentication Services
 builder.Services.AddAuthentication()
-                .AddJwtBearer(options =>
-                {
-                    options.Authority = builder.Configuration["Authentication:Schemes:Auth0JwtBearer:Authority"];
-                    options.Audience = builder.Configuration["Authentication:Schemes:Auth0JwtBearer:Audience"];
-                });
+    .AddJwtBearer(options =>
+    {
+        options.Authority = builder.Configuration["Authentication:Schemes:Auth0JwtBearer:Authority"];
+        options.Audience = builder.Configuration["Authentication:Schemes:Auth0JwtBearer:Audience"];
+    });
 builder.Services.AddAuthorization();
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
@@ -58,6 +58,7 @@ builder.Services.AddScoped<IRouteRepository, RouteRepository>();
 builder.Services.AddScoped<IRouteService, RouteService>();
 builder.Services.AddScoped<ILogRepository, LogRepository>();
 builder.Services.AddSingleton<RabbitMqService>();
+builder.Services.AddHttpClient();
 
 var app = builder.Build();
 
@@ -85,20 +86,23 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/healthz");
 app.Map("ping", () => "pong");
-app.Map("me", async (AppDbContext appDbContext, ClaimsPrincipal user) => {
-    var userId = user.GetUserId();
-    var tokens = await appDbContext.UserTokens
-        .Where(t => t.UserId == userId)
-        .ToListAsync();
-        
-    return new {
-        userId,
-        connections = tokens.Select(t => new { t.Provider, t.Purpose, t.CreatedAt, t.UpdatedAt })
-    };
-})
+app.Map("me", async (AppDbContext appDbContext, ClaimsPrincipal user) =>
+    {
+        var userId = user.GetUserId();
+        var tokens = await appDbContext.UserTokens
+            .Where(t => t.UserId == userId)
+            .ToListAsync();
+
+        return new
+        {
+            userId,
+            connections = tokens.Select(t => new { t.Provider, t.Purpose, t.CreatedAt, t.UpdatedAt })
+        };
+    })
     .RequireAuthorization();
 
-app.MapGet("_assembly", ()  => {
+app.MapGet("_assembly", () =>
+{
     var assembly = Assembly.GetExecutingAssembly();
     return new
     {

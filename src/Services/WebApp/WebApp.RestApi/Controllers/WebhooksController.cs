@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,12 +15,14 @@ public class WebhooksController(AppDbContext appDbContext, RabbitMqService rabbi
     [HttpPost("github/postreceive/{appId:int}")]
     [AllowAnonymous]
     [TypeFilter<GitHubWebhookValidationFilter>]
-    public async Task<IActionResult> ReceiveGitHubEvent(int appId, Dictionary<string, object> payload)
+    public async Task<IActionResult> ReceiveGitHubEvent(int appId, string token)
     {
-        var repoId = 1; //todo: get repoId from the request
-        var fullName = "";
-        var app = await appDbContext.Apps.SingleOrDefaultAsync(a => a.Id == appId);
-        if (app is null)
+        var rawBodyString = HttpContext.Items["RawBodyString"] as string;
+        var payloadNode = JsonNode.Parse(rawBodyString!);
+        var repoFullName = (string)payloadNode!["repository"]!["full_name"]!;
+        
+        var app = await appDbContext.Apps.SingleOrDefaultAsync(a => a.Id == appId && a.GitHubWebhookToken == token);
+        if (app is null || repoFullName != app.GitHubRepoFullName)
         {
             return BadRequest();
         }
@@ -37,8 +40,8 @@ public class WebhooksController(AppDbContext appDbContext, RabbitMqService rabbi
         var message = new BuildMessage
         {
             Id = Guid.NewGuid().ToString(),
-            RepoFullName = fullName,
-            CloneUrl = $"https://{userToken.Token}@github.com/{fullName}.git"
+            RepoFullName = repoFullName,
+            CloneUrl = $"https://{userToken.Token}@github.com/{repoFullName}.git"
         };
 
         rabbitMqService.PublishMessage(JsonSerializer.Serialize(message));

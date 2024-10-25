@@ -27,5 +27,7 @@ public class App : BaseEntity
     
     public ICollection<Object> Objects { get; set; }
     
+    //todo: move to separate entity
     public string GitHubRepoFullName { get; set; }
+    public string GitHubWebhookToken { get; set; }
 }

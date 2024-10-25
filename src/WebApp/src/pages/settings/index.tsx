@@ -15,6 +15,13 @@ export default function Settings() {
     }
   };
 
+  const onReconnectGitHub = async () => {
+    //repo and read:org scope
+    const scope = "repo%20read:org";
+    const authUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${scope}`;
+    window.location.href = authUrl;
+  };
+
   useEffect(() => {
     (async () => {
       const accessToken = await getAccessTokenSilently();
@@ -42,6 +49,12 @@ export default function Settings() {
           className="rounded-sm border bg-gray-900 px-2 py-1.5 text-white"
         >
           {githubConnected ? "Disconnect" : "Connect"} GitHub
+        </button>
+        <button
+          onClick={onReconnectGitHub}
+          className="rounded-sm border bg-gray-900 px-2 py-1.5 text-white"
+        >
+          Reconnect GitHub
         </button>
       </section>
     </div>
