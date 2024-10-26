@@ -14,10 +14,15 @@ public class RouteResolverMiddleware(RequestDelegate next)
         AppDbContext appDbContext)
     {
         var app = (App)context.Items["_App"]!;
-        
+
         if (HttpMethods.IsGet(context.Request.Method))
         {
             var path = context.Request.Path.Value;
+
+            if (path == "/")
+            {
+                path = "/index.html";
+            }
 
             var obj = await appDbContext.Objects.SingleOrDefaultAsync(obj => obj.Type == ObjectType.BuildArtifact &&
                                                                              obj.AppId == app.Id &&
@@ -29,6 +34,7 @@ public class RouteResolverMiddleware(RequestDelegate next)
                 {
                     contentType = "application/octet-stream";
                 }
+
                 context.Response.ContentType = contentType;
                 await context.Response.Body.WriteAsync(obj.Content);
                 await context.Response.CompleteAsync();
