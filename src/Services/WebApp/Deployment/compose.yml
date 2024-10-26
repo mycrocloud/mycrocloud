@@ -16,7 +16,7 @@ services:
     environment:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
       - AUTH0_DOMAIN=
-      - AUTH0_CLIENT_ID=3
+      - AUTH0_CLIENT_ID=
       - AUTH0_SECRET=
       - AUTH0_AUDIENCE=
       - UPLOAD_URL=http://localhost:5100/apps/0/Objects
