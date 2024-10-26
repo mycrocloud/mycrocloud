@@ -26,7 +26,7 @@ func failOnError(err error, msg string) {
 const MaxConcurrentJobs = 3
 
 // ProcessJob simulates job processing asynchronously
-func ProcessJob(jsonString string, wg *sync.WaitGroup) {
+func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel) {
 	defer wg.Done()
 
 	var repo BuildMessage
@@ -75,6 +75,19 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup) {
 	// uploadCmd.Dir = dir
 	// err = uploadCmd.Run()
 	// failOnError(err, "Failed to upload build to S3")
+
+	// publish completion message
+	status := "done"
+	err = ch.Publish(
+		"",           // exchange
+		"job_status", // routing key
+		false,        // mandatory
+		false,        // immediate
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        []byte(`{"Id": "` + repo.Id + `", "Status": "` + status + `"}`),
+		})
+	failOnError(err, "Failed to publish a message")
 
 	log.Printf("Finished processing. Id: %s", repo.Id)
 }
@@ -131,7 +144,7 @@ func main() {
 
 			go func(job string) {
 				defer func() { <-jobLimit }() // Release the slot once the job is done
-				ProcessJob(job, wg)
+				ProcessJob(job, wg, ch)
 			}(job)
 		}
 	}()
