@@ -41,7 +41,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5.3.0
         with:
-          context: ${{env.WORK_DIR}}
+          context: ${{env.WORK_DIR}}/worker
           file: ${{env.WORK_DIR}}/worker/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
