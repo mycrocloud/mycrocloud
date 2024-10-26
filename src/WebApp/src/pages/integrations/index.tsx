@@ -2,6 +2,8 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { useContext, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AppContext } from "../apps";
+import { Modal } from "flowbite-react";
+import { toast } from "react-toastify";
 
 export interface GitHubRepo {
   name: string;
@@ -13,10 +15,10 @@ export interface GitHubRepo {
 
 export default function Integrations() {
   const { getAccessTokenSilently } = useAuth0();
-  const app = useContext(AppContext)!;
-  console.log(app);
+  const { app, setApp } = useContext(AppContext)!;
+  if (!app) throw new Error();
 
-  const [repoFullName, setRepoFullName] = useState<string | null>(null);
+  const [repoFullName, setRepoFullName] = useState(app.gitHubRepoFullName);
   const [githubRepos, setGitHubRepos] = useState<GitHubRepo[]>([]);
   const [githubConnectError, setGitHubConnectError] = useState<string | null>();
 
@@ -39,9 +41,8 @@ export default function Integrations() {
 
   const onConnectClick = async () => {
     const accessToken = await getAccessTokenSilently();
-    const connect = !app.gitHubRepoFullName;
     const res = await fetch(
-      `/api/integrations/app-github?appId=${app.id}&repoFullName=${repoFullName}&connect=${connect}`,
+      `/api/apps/${app.id}/integrations/github?repoFullName=${repoFullName}`,
       {
         method: "POST",
         headers: {
@@ -50,7 +51,27 @@ export default function Integrations() {
       },
     );
     if (res.ok) {
-      //todo: update app state
+      toast.success("Connected to GitHub");
+      setRepoFullName(repoFullName);
+      setApp((prev) => ({ ...prev!, gitHubRepoFullName: repoFullName }));
+    }
+  };
+
+  const [showDisconnectConfirmModal, setShowDisconnectConfirmModal] =
+    useState(false);
+  const onDisconnectClick = async () => {
+    const accessToken = await getAccessTokenSilently();
+    const res = await fetch(`/api/apps/${app.id}/integrations/github`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    if (res.ok) {
+      toast.success("Disconnected from GitHub");
+      setRepoFullName(undefined);
+      setShowDisconnectConfirmModal(false);
+      setApp((prev) => ({ ...prev!, gitHubRepoFullName: undefined }));
     }
   };
 
@@ -69,42 +90,73 @@ export default function Integrations() {
             </Link>
           </div>
         )}
-        <div className="mt-2 flex">
-          <select
-            value={repoFullName || ""}
-            onChange={(e) => {
-              setRepoFullName(e.target.value);
-            }}
-            className="border px-2 py-1.5"
-          >
-            <option>Select a repository</option>
-            {githubRepos.map((repo) => (
-              <option key={repo.fullName} value={repo.fullName}>
-                {repo.fullName}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={onConnectClick}
-            className="ms-2 bg-primary px-2 text-white disabled:bg-slate-500 disabled:text-slate-200"
-            disabled={!repoFullName}
-          >
-            {app.gitHubRepoFullName ? "Disconnect" : "Connect"}
-          </button>
-        </div>
-        <p className="mt-2 border p-2 text-sm text-slate-500">
-          You will be redirected to GitHub to authorize the integration. <br />
-          After authorization, we will store the access token securely and use
-          it to deploy your repositories. <br />
-          First, we will add a webhook to your repository to listen for changes.
-          <br />
-          Then, we will clone your repository to our servers and build your
-          project. <br />
-          The build output files will be uploaded to your app's files storage.
-          <br />
-          Finally, we will generate route for your app to serve the files.
-        </p>
+        {app!.gitHubRepoFullName ? (
+          <div className="flex items-center p-2">
+            <p>
+              Connected to{" "}
+              <span className="font-bold">{app.gitHubRepoFullName}</span>
+            </p>
+            <button
+              onClick={() => setShowDisconnectConfirmModal(true)}
+              className="ms-2 rounded border px-2 py-1.5"
+            >
+              Disconnect
+            </button>
+          </div>
+        ) : (
+          <div className="mt-2 flex">
+            <select
+              value={repoFullName || ""}
+              onChange={(e) => {
+                setRepoFullName(e.target.value);
+              }}
+              className="border px-2 py-1.5"
+            >
+              <option>Select a repository</option>
+              {githubRepos.map((repo) => (
+                <option key={repo.fullName} value={repo.fullName}>
+                  {repo.fullName}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={onConnectClick}
+              className="ms-2 bg-primary px-2 text-white disabled:bg-slate-500 disabled:text-slate-200"
+              disabled={!repoFullName}
+            >
+              Connect
+            </button>
+          </div>
+        )}
       </div>
+      <Modal
+        show={showDisconnectConfirmModal}
+        onClose={() => setShowDisconnectConfirmModal(false)}
+      >
+        <Modal.Header>Do you want to disconnect the integration?</Modal.Header>
+        <Modal.Body>
+          <div>
+            This will disconnect the project integration with GitHub. Are you
+            sure you want to proceed?
+          </div>
+        </Modal.Body>
+        <Modal.Footer className="justify-end">
+          <button
+            onClick={() => {
+              setShowDisconnectConfirmModal(false);
+            }}
+            className="rounded-sm border px-3 py-1.5"
+          >
+            Cancel
+          </button>
+          <button
+            className="bg-red-600 px-3 py-1.5 text-white"
+            onClick={onDisconnectClick}
+          >
+            Disconnect
+          </button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }

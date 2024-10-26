@@ -72,7 +72,8 @@ function RouteExplorer() {
   const params = useParams();
   const routeId = params["routeId"] ? parseInt(params["routeId"]) : undefined;
 
-  const app = useContext(AppContext)!;
+  const { app } = useContext(AppContext)!;
+  if (!app) throw new Error();
   const [explorerItems, setExplorerItems] = useState<IExplorerItem[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const filteredItems = useMemo(

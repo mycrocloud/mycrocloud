@@ -20,7 +20,8 @@ const schema = yup.object({
 export default function CreateUpdate() {
   const { getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
-  const app = useContext(AppContext)!;
+  const { app } = useContext(AppContext)!;
+  if (!app) throw new Error();
   const storageId = useParams()["storageId"];
   const isEditMode = storageId !== undefined;
 

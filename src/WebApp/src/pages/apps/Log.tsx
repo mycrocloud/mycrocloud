@@ -13,7 +13,9 @@ type Inputs = {
 };
 
 export default function AppLogs() {
-  const app = useContext(AppContext)!;
+  const { app } = useContext(AppContext)!;
+  if (!app) throw new Error();
+
   const { getAccessTokenSilently } = useAuth0();
   const [logs, setLogs] = useState<IRouteLog[]>([]);
   const { register, handleSubmit, setValue } = useForm<Inputs>();
@@ -136,7 +138,7 @@ export default function AppLogs() {
           />
         </div>
         <div className="flex justify-end space-x-1">
-          <button type="submit" className=" bg-primary px-2 py-0.5 text-white">
+          <button type="submit" className="bg-primary px-2 py-0.5 text-white">
             Filter
           </button>
         </div>

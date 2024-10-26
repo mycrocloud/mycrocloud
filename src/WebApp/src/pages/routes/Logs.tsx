@@ -5,7 +5,8 @@ import { Link, useParams } from "react-router-dom";
 import { IRouteLog } from ".";
 
 export default function RouteLogs() {
-  const app = useContext(AppContext)!;
+  const { app } = useContext(AppContext)!;
+  if (!app) throw new Error();
   const { getAccessTokenSilently } = useAuth0();
   const [logs, setLogs] = useState<IRouteLog[]>([]);
   const routeId = parseInt(useParams()["routeId"]!);

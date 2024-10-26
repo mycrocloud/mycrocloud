@@ -18,7 +18,8 @@ type CreateRenameFolderFormInputs = {
 };
 
 export default function List() {
-  const app = useContext(AppContext)!;
+  const { app } = useContext(AppContext)!;
+  if (!app) throw new Error();
   const { getAccessTokenSilently } = useAuth0();
 
   const [{ items, folderPathItems }, setPageData] = useState<PageData>({

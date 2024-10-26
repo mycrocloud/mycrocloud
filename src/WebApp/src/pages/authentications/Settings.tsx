@@ -13,7 +13,8 @@ type Inputs = {
   schemes: IScheme[];
 };
 export default function AuthenticationSettings() {
-  const app = useContext(AppContext)!;
+  const { app } = useContext(AppContext)!;
+  if (!app) throw new Error();
   const { getAccessTokenSilently } = useAuth0();
   const [schemes, setSchemes] = useState<IScheme[]>([]);
 

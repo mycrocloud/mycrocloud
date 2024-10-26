@@ -1,4 +1,9 @@
-import { createContext } from "react";
+import { createContext, Dispatch, SetStateAction } from "react";
 import { IApp } from ".";
 
-export const Context = createContext<IApp | undefined>(undefined);
+interface AppContext {
+  app: IApp | undefined;
+  setApp: Dispatch<SetStateAction<IApp | undefined>>;
+}
+
+export const Context = createContext<AppContext | undefined>(undefined);

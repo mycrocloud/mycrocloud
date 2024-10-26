@@ -8,7 +8,8 @@ import { toast } from "react-toastify";
 export default function List() {
   const { getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
-  const app = useContext(AppContext)!;
+  const { app } = useContext(AppContext)!;
+  if (!app) throw new Error();
   const [keys, setKeys] = useState<IApiKey[]>([]);
   const [showingKeys, setShowingKeys] = useState<number[]>([]);
 

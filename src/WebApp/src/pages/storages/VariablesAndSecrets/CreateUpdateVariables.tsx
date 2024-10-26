@@ -24,7 +24,8 @@ const schema = yup.object({
 export default function AddUpdateVariables() {
   const { getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
-  const app = useContext(AppContext)!;
+  const { app } = useContext(AppContext)!;
+  if (!app) throw new Error();
   const variableId = useParams()["variableId"];
   const isEditMode = variableId !== undefined;
 

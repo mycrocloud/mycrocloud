@@ -45,7 +45,8 @@ const schema = yup.object({
 export default function CreateUpdateScheme() {
   const schemeId = useParams()["schemeId"];
   const editMode = schemeId !== undefined;
-  const app = useContext(AppContext)!;
+  const { app } = useContext(AppContext)!;
+  if (!app) throw new Error();
   const { getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
 

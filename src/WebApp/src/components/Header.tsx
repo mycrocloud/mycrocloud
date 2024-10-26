@@ -52,7 +52,7 @@ function Header() {
               <span className="block truncate font-medium">{user?.email}</span>
             </Dropdown.Header>
             <Dropdown.Item onClick={() => navigate("/settings")}>
-              Settings
+              Account Settings
             </Dropdown.Item>
             <Dropdown.Divider />
             <Dropdown.Item onClick={() => logout()}>Log out</Dropdown.Item>

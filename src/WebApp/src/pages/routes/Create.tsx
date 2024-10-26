@@ -10,7 +10,8 @@ import { useNavigate, useParams } from "react-router-dom";
 
 export default function RouteCreate() {
   const navigate = useNavigate();
-  const app = useContext(AppContext)!;
+  const { app } = useContext(AppContext)!;
+  if (!app) throw new Error();
   const { dispatch } = useRoutesContext();
 
   const folderId = useParams()["folderId"];

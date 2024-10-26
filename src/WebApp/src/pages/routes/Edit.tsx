@@ -9,7 +9,8 @@ import { RouteCreateUpdateInputs } from "./CreateUpdateFormInputs";
 import { useRoutesContext } from "./Context";
 
 export default function RouteEdit() {
-  const app = useContext(AppContext)!;
+  const { app } = useContext(AppContext)!;
+  if (!app) throw new Error();
   const {
     state: { routes },
     dispatch,

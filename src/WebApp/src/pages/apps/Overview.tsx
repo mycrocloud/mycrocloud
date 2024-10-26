@@ -13,7 +13,8 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import Ajv, { JSONSchemaType } from "ajv";
 
 export default function AppOverview() {
-  const app = useContext(AppContext)!;
+  const { app } = useContext(AppContext)!;
+  if (!app) throw new Error();
   const domain = getAppDomain(app.id);
 
   return (
@@ -135,7 +136,8 @@ const corsSettingsSchema: JSONSchemaType<CorsSettings> = {
 };
 
 function CorsSettingsSection() {
-  const app = useContext(AppContext)!;
+  const { app } = useContext(AppContext)!;
+  if (!app) throw new Error();
   const { getAccessTokenSilently } = useAuth0();
 
   const editorElRef = useRef(null);
@@ -232,7 +234,8 @@ type RenameFormInput = {
   name: string;
 };
 function RenameSection() {
-  const app = useContext(AppContext)!;
+  const { app } = useContext(AppContext)!;
+  if (!app) throw new Error();
   const { getAccessTokenSilently } = useAuth0();
   const schema = yup.object({
     name: yup.string().required(),
@@ -294,7 +297,8 @@ function RenameSection() {
 }
 
 function DeleteSection() {
-  const app = useContext(AppContext)!;
+  const { app } = useContext(AppContext)!;
+  if (!app) throw new Error();
   const { getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
   const handleDeleteClick = async () => {
@@ -327,7 +331,8 @@ function DeleteSection() {
 }
 
 function ChangeStateSection() {
-  const app = useContext(AppContext)!;
+  const { app } = useContext(AppContext)!;
+  if (!app) throw new Error();
   const { getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
   const handleChangeStatusClick = async () => {

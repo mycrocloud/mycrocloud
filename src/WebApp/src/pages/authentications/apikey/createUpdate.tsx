@@ -23,7 +23,8 @@ const schema: ObjectSchema<Inputs> = yup.object({
 export default function CreateUpdate() {
   const { getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
-  const app = useContext(AppContext)!;
+  const { app } = useContext(AppContext)!;
+  if (!app) throw new Error();
 
   const editKeyId = useParams()["keyId"]
     ? parseInt(useParams()["keyId"]!.toString())

@@ -48,7 +48,7 @@ export default function AppLayout() {
     return <h1>Loading...</h1>;
   }
   return (
-    <AppContext.Provider value={app}>
+    <AppContext.Provider value={{ app, setApp }}>
       <div className="">
         <Breadcrumb className="p-1">
           <Breadcrumb.Item>
@@ -143,7 +143,7 @@ export default function AppLayout() {
               to="integrations"
               className={`text-xs ${isMatchIntegrations ? "text-primary" : ""}`}
             >
-              Intergrations
+              Integrations
             </Link>
             <Link
               to="logs"

@@ -6,7 +6,8 @@ import { AppContext } from "../../apps";
 import { toast } from "react-toastify";
 
 export default function AppVariables() {
-  const app = useContext(AppContext)!;
+  const { app } = useContext(AppContext)!;
+  if (!app) throw new Error();
   const [variables, setVariables] = useState<IVariable[]>([]);
   const { getAccessTokenSilently } = useAuth0();
 

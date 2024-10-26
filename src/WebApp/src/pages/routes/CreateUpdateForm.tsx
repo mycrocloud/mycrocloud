@@ -40,7 +40,8 @@ export default function RouteCreateUpdate({
   onSubmit: (data: RouteCreateUpdateInputs) => void;
 }) {
   //route = route || sampleRoute;
-  const app = useContext(AppContext)!;
+  const { app } = useContext(AppContext)!;
+  if (!app) throw new Error();
   const appDomain = apiGatewayDomain.replace("__app_id__", app.id.toString());
 
   const forms = useForm<RouteCreateUpdateInputs>({
@@ -604,7 +605,8 @@ interface IFile {
 }
 
 function StaticFile({ file }: { file?: IFile }) {
-  const app = useContext(AppContext)!;
+  const { app } = useContext(AppContext)!;
+  if (!app) throw new Error();
   const { getAccessTokenSilently } = useAuth0();
   const {
     control,

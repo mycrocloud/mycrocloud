@@ -13,11 +13,6 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, ""),
         },
-        "/formapi": {
-          target: env.VITE_BASE_FORM_API_URL,
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/formapi/, ""),
-        },
       },
     },
     define: {

@@ -9,7 +9,8 @@ import { toast } from "react-toastify";
 
 export default function Logon() {
   const { getAccessTokenSilently } = useAuth0();
-  const app = useContext(AppContext)!;
+  const { app } = useContext(AppContext)!;
+  if (!app) throw new Error();
   const storageId = useParams()["storageId"]!;
   const [storage, setStorage] = useState<ITextStorage>();
 
