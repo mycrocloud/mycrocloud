@@ -192,6 +192,22 @@ public class AppsController(
         return NoContent();
     }
 
+    [HttpGet("{id:int}/builds")]
+    public async Task<IActionResult> GetBuilds(int id)
+    {
+        var jobs = await appDbContext.AppBuildJobs
+        .Where(j => j.AppId == id)
+        .OrderByDescending(j => j.CreatedAt)
+        .ToListAsync();
+        return Ok(jobs.Select(job => new
+        {
+            job.Id,
+            job.Status,
+            job.CreatedAt,
+            job.UpdatedAt,
+        }));
+    }
+
     private async Task<GitHubRepo> GetGitHubRepo(string repoFullName, UserToken userToken)
     {
         var client = httpClientFactory.CreateClient();

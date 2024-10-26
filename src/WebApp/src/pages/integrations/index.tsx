@@ -13,6 +13,13 @@ export interface GitHubRepo {
   updatedAt: string;
 }
 
+interface IBuildJob {
+  id: string;
+  status: string;
+  createdAt: string;
+  finishedAt: string;
+}
+
 export default function Integrations() {
   const { getAccessTokenSilently } = useAuth0();
   const { app, setApp } = useContext(AppContext)!;
@@ -54,6 +61,7 @@ export default function Integrations() {
       toast.success("Connected to GitHub");
       setRepoFullName(repoFullName);
       setApp((prev) => ({ ...prev!, gitHubRepoFullName: repoFullName }));
+      fetchBuilds();
     }
   };
 
@@ -73,6 +81,30 @@ export default function Integrations() {
       setShowDisconnectConfirmModal(false);
       setApp((prev) => ({ ...prev!, gitHubRepoFullName: undefined }));
     }
+  };
+
+  const [builds, setBuilds] = useState<IBuildJob[]>([]);
+
+  const fetchBuilds = async () => {
+    const accessToken = await getAccessTokenSilently();
+    const res = await fetch(`/api/apps/${app.id}/builds`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    if (res.ok) {
+      const builds = (await res.json()) as IBuildJob[];
+      setBuilds(builds);
+    }
+  };
+
+  useEffect(() => {
+    fetchBuilds();
+  }, []);
+
+  const [jobId, setJobId] = useState<string>();
+  const showBuildLogs = async (buildId: string) => {
+    setJobId(buildId);
   };
 
   return (
@@ -157,6 +189,49 @@ export default function Integrations() {
           </button>
         </Modal.Footer>
       </Modal>
+
+      <section>
+        <h2 className="mt-4 font-semibold">Builds</h2>
+        <div className="flex">
+          <div className="w">
+            <table className="mt-2 w-full table-auto">
+              <thead>
+                <tr className="border">
+                  <th>Id</th>
+                  <th>Status</th>
+                  <th>Started At</th>
+                </tr>
+              </thead>
+              <tbody>
+                {builds.map((build) => (
+                  <tr
+                    key={build.id}
+                    className={
+                      "cursor-pointer border hover:bg-slate-100" +
+                      (jobId === build.id ? " bg-slate-200" : "")
+                    }
+                    onClick={() => showBuildLogs(build.id)}
+                  >
+                    <td>{build.id}</td>
+                    <td>{build.status}</td>
+                    <td>{build.createdAt}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="p-2">
+            {jobId && (
+              <div>
+                <h3>Build logs for job id: {jobId}</h3>
+                <pre>
+                  Coming soon! This will show the build logs for the selected
+                </pre>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
