@@ -82,35 +82,51 @@ public class AppBuildJobStatusConsumer : BackgroundService
             return;
         }
 
-        var objects = appDbContext.Objects
-            .Where(obj => obj.Key.StartsWith(job.Id))
-            .AsNoTracking()
-            .ToList();
-
         var app = await appDbContext.Apps.FindAsync(job.AppId);
         if (app == null)
         {
             _logger.LogWarning("App with id {AppId} not found", job.AppId);
             return;
         }
-        foreach (var obj in objects)
+        using var trans = await appDbContext.Database.BeginTransactionAsync();
+        try
         {
-            obj.AppId = app.Id;
-            obj.Key = obj.Key[(job.Id + "/dist").Length..];
-            obj.Type = ObjectType.BuildArtifact;
+            // Update the job status
+            job.Status = message.Status;
+            job.UpdatedAt = DateTime.UtcNow;
+            await appDbContext.SaveChangesAsync();
+
+            // Remove existing build artifacts
+            var currentObjects = await appDbContext.Objects
+                .Where(obj => obj.AppId == app.Id && obj.Type == ObjectType.BuildArtifact)
+                .ToListAsync();
+
+            appDbContext.Objects.RemoveRange(currentObjects);
+            await appDbContext.SaveChangesAsync();
+
+            // Insert new build artifacts
+            var objects = appDbContext.Objects
+               .Where(obj => obj.Key.StartsWith(job.Id))
+               .AsNoTracking()
+               .ToList();
+
+            foreach (var obj in objects)
+            {
+                obj.AppId = app.Id;
+                obj.Key = obj.Key[(job.Id + "/dist").Length..];
+                obj.Type = ObjectType.BuildArtifact;
+            }
+
+            await appDbContext.Objects.AddRangeAsync(objects);
+            await appDbContext.SaveChangesAsync();
+
+            await trans.CommitAsync();
         }
-
-        var currentObjects = await appDbContext.Objects
-            .Where(obj => obj.AppId == app.Id && obj.Type == ObjectType.BuildArtifact)
-            .ToListAsync();
-        
-        appDbContext.Objects.RemoveRange(currentObjects);
-
-        await appDbContext.Objects.AddRangeAsync(objects);
-
-        job.Status = message.Status;
-        job.UpdatedAt = DateTime.UtcNow;
-        await appDbContext.SaveChangesAsync();
+        catch (System.Exception)
+        {
+            await trans.RollbackAsync();
+            throw;
+        }
     }
 }
 
