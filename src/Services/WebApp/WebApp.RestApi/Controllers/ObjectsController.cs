@@ -16,7 +16,7 @@ public class ObjectsController(AppDbContext appDbContext) : BaseController
                 .Include(app => app.Objects)
                 .SingleAsync(app => app.Id == appId)
             ;
-        
+
         var objects = app.Objects
                 .Where(obj => prefix is null || obj.Key.StartsWith(prefix))
                 .Select(obj => new
@@ -52,5 +52,40 @@ public class ObjectsController(AppDbContext appDbContext) : BaseController
         }
 
         return File(obj.Content, "application/octet-stream");
+    }
+
+    [HttpPut("{*key}")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> PutObject(int appId, string key, [FromForm]IFormFile file)
+    {
+        await using var stream = file.OpenReadStream();
+        await using var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream);
+        var content = memoryStream.ToArray();
+        
+        var app = await appDbContext.Apps
+                .Include(app => app.Objects)
+                .SingleAsync(app => app.Id == appId)
+            ;
+
+        var obj = app.Objects.SingleOrDefault(obj => obj.Key == key);
+
+        if (obj is null)
+        {
+            obj = new Domain.Entities.Object
+            {
+                Key = key,
+                Content = content
+            };
+            app.Objects.Add(obj);
+        }
+        else
+        {
+            obj.Content = content;
+        }
+
+        await appDbContext.SaveChangesAsync();
+
+        return Ok();
     }
 }

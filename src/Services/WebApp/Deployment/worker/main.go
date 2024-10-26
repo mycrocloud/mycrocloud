@@ -1,10 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
+	"io"
 	"log"
+	"mime/multipart"
+	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/streadway/amqp"
@@ -69,12 +76,8 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.
 	err = buildCmd.Run()
 	failOnError(err, "Failed to run npm run build")
 
-	// upload the build to S3
-	// log.Printf("Uploading build to S3")
-	// uploadCmd := exec.Command("aws", "s3", "cp", "--recursive", "build", "s3://my-bucket")
-	// uploadCmd.Dir = dir
-	// err = uploadCmd.Run()
-	// failOnError(err, "Failed to upload build to S3")
+	distDir := dir + "/dist"
+	RecursiveUpload(distDir)
 
 	// publish completion message
 	statusMessage := struct {
@@ -99,6 +102,95 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.
 	failOnError(err, "Failed to publish a message")
 
 	log.Printf("Finished processing. Id: %s", repo.Id)
+}
+
+func RecursiveUpload(dir string) {
+	files, err := os.ReadDir(dir)
+	failOnError(err, "Failed to read directory")
+	access_token := GetAccessToken()
+
+	for _, file := range files {
+		if file.IsDir() {
+			RecursiveUpload(dir + "/" + file.Name())
+		} else {
+			key := dir + "/" + file.Name()
+			log.Printf("Uploading %s", key)
+			url := os.Getenv("UPLOAD_URL") + "/" + key
+			fieldName := file.Name()
+			err = UploadFile(url, key, fieldName, access_token)
+			failOnError(err, "Failed to upload file")
+		}
+	}
+}
+
+// UploadFile uploads a file to the specified URL with the given field name
+func UploadFile(url string, fp string, fieldName string, access_token string) error {
+	method := "PUT"
+
+	payload := &bytes.Buffer{}
+	writer := multipart.NewWriter(payload)
+	file, errFile1 := os.Open(fp)
+	failOnError(errFile1, "Failed to open file")
+
+	defer file.Close()
+	part1,
+		errFile1 := writer.CreateFormFile("file", filepath.Base(fp))
+	failOnError(errFile1, "Failed to create form file")
+	_, errFile1 = io.Copy(part1, file)
+	failOnError(errFile1, "Failed to copy file content")
+	err := writer.Close()
+	failOnError(err, "Failed to close writer")
+
+	client := &http.Client{}
+	req, err := http.NewRequest(method, url, payload)
+
+	failOnError(err, "Failed to create request")
+	req.Header.Add("Authorization", "Bearer "+access_token)
+
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	res, err := client.Do(req)
+	failOnError(err, "Failed to send request")
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	failOnError(err, "Failed to read response body")
+	fmt.Println(string(body))
+	return nil
+}
+
+func GetAccessToken() string {
+	url := os.Getenv("AUTH0_DOMAIN") + "/oauth/token"
+	data := struct {
+		ClientId     string `json:"client_id"`
+		ClientSecret string `json:"client_secret"`
+		Audience     string `json:"audience"`
+		GrantType    string `json:"grant_type"`
+	}{
+		ClientId:     os.Getenv("AUTH0_CLIENT_ID"),
+		ClientSecret: os.Getenv("AUTH0_SECRET"),
+		Audience:     os.Getenv("AUTH0_AUDIENCE"),
+		GrantType:    "client_credentials",
+	}
+	jsonString, err := json.Marshal(data)
+	failOnError(err, "Failed to marshal data")
+	payload := strings.NewReader(string(jsonString))
+	req, _ := http.NewRequest("POST", url, payload)
+	req.Header.Add("content-type", "application/json")
+
+	res, err := http.DefaultClient.Do(req)
+	failOnError(err, "Failed to send request")
+
+	defer res.Body.Close()
+	body, err := io.ReadAll(res.Body)
+	failOnError(err, "Failed to read response body")
+
+	var response struct {
+		AccessToken string `json:"access_token"`
+		TokenType   string `json:"token_type"`
+	}
+	err = json.Unmarshal(body, &response)
+	failOnError(err, "Failed to unmarshal response")
+	return response.AccessToken
 }
 
 func main() {

@@ -1,7 +1,9 @@
 using System.Text;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using WebApp.Domain.Entities;
 using WebApp.Infrastructure;
 
 namespace WebApp.RestApi.Services;
@@ -59,7 +61,7 @@ public class AppBuildJobStatusConsumer : BackgroundService
 
             await ProcessMessage(JsonSerializer.Deserialize<AppBuildJobStatusMessage>(message)!);
         };
-        
+
         _channel.BasicConsume(queue: "job_status", // Name of the queue
             autoAck: true, // Auto-acknowledge the message
             consumer: consumer); // The consumer to use
@@ -70,7 +72,7 @@ public class AppBuildJobStatusConsumer : BackgroundService
     private async Task ProcessMessage(AppBuildJobStatusMessage message)
     {
         _logger.LogInformation("Received message. Id: {Id}, Status: {Status}", message.Id, message.Status);
-        
+
         using var scope = _serviceProvider.CreateScope();
         var appDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var job = await appDbContext.AppBuildJobs.FindAsync(message.Id);
@@ -79,7 +81,34 @@ public class AppBuildJobStatusConsumer : BackgroundService
             _logger.LogWarning("Job with id {Id} not found", message.Id);
             return;
         }
-        
+
+        var objects = appDbContext.Objects
+            .Where(obj => obj.Key.StartsWith(job.Id))
+            .AsNoTracking()
+            .ToList();
+
+        var app = await appDbContext.Apps.FindAsync(job.AppId);
+        if (app == null)
+        {
+            _logger.LogWarning("App with id {AppId} not found", job.AppId);
+            return;
+        }
+
+        foreach (var obj in objects)
+        {
+            obj.AppId = app.Id;
+        }
+
+        await appDbContext.Objects.AddRangeAsync(objects);
+
+        foreach (var obj in objects)
+        {
+            var route = await appDbContext.Routes.FirstOrDefaultAsync(r => r.AppId == app.Id && r.Path == obj.Key);
+            
+            
+            
+        }
+
         job.Status = message.Status;
         job.UpdatedAt = DateTime.UtcNow;
         await appDbContext.SaveChangesAsync();
