@@ -97,17 +97,17 @@ public class AppBuildJobStatusConsumer : BackgroundService
         foreach (var obj in objects)
         {
             obj.AppId = app.Id;
+            obj.Key = obj.Key[job.Id.Length..];
+            obj.Type = ObjectType.BuildArtifact;
         }
+
+        var currentObjects = await appDbContext.Objects
+            .Where(obj => obj.AppId == app.Id && obj.Type == ObjectType.BuildArtifact)
+            .ToListAsync();
+        
+        appDbContext.Objects.RemoveRange(currentObjects);
 
         await appDbContext.Objects.AddRangeAsync(objects);
-
-        foreach (var obj in objects)
-        {
-            var route = await appDbContext.Routes.FirstOrDefaultAsync(r => r.AppId == app.Id && r.Path == obj.Key);
-            
-            
-            
-        }
 
         job.Status = message.Status;
         job.UpdatedAt = DateTime.UtcNow;

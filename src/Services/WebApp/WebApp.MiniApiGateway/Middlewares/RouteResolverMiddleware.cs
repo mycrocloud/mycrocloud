@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Routing.Template;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using WebApp.Domain.Entities;
 using WebApp.Domain.Enums;
@@ -13,6 +14,28 @@ public class RouteResolverMiddleware(RequestDelegate next)
         AppDbContext appDbContext)
     {
         var app = (App)context.Items["_App"]!;
+        
+        if (HttpMethods.IsGet(context.Request.Method))
+        {
+            var path = context.Request.Path.Value;
+
+            var obj = await appDbContext.Objects.SingleOrDefaultAsync(obj => obj.Type == ObjectType.BuildArtifact &&
+                                                                             obj.AppId == app.Id &&
+                                                                             obj.Key == path);
+            if (obj is not null)
+            {
+                var provider = new FileExtensionContentTypeProvider();
+                if (!provider.TryGetContentType(obj.Key, out var contentType))
+                {
+                    contentType = "application/octet-stream";
+                }
+                context.Response.ContentType = contentType;
+                await context.Response.Body.WriteAsync(obj.Content);
+                await context.Response.CompleteAsync();
+                return;
+            }
+        }
+
         var routes = await appDbContext.Routes.Where(r => r.App == app && r.Enabled).ToListAsync();
         var matchedRoutes = new List<Route>();
         foreach (var r in routes)
