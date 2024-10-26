@@ -93,11 +93,10 @@ public class AppBuildJobStatusConsumer : BackgroundService
             _logger.LogWarning("App with id {AppId} not found", job.AppId);
             return;
         }
-
         foreach (var obj in objects)
         {
             obj.AppId = app.Id;
-            obj.Key = obj.Key[job.Id.Length..];
+            obj.Key = obj.Key[(job.Id + "/dist").Length..];
             obj.Type = ObjectType.BuildArtifact;
         }
 
