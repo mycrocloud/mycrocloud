@@ -59,6 +59,7 @@ builder.Services.AddScoped<IRouteService, RouteService>();
 builder.Services.AddScoped<ILogRepository, LogRepository>();
 builder.Services.AddSingleton<RabbitMqService>();
 builder.Services.AddHttpClient();
+builder.Services.AddHostedService<AppBuildJobStatusConsumer>();
 
 var app = builder.Build();
 

@@ -20,7 +20,7 @@ public class WebhooksController(AppDbContext appDbContext, RabbitMqService rabbi
         var rawBodyString = HttpContext.Items["RawBodyString"] as string;
         var payloadNode = JsonNode.Parse(rawBodyString!);
         var repoFullName = (string)payloadNode!["repository"]!["full_name"]!;
-        
+
         var app = await appDbContext.Apps.SingleOrDefaultAsync(a => a.Id == appId && a.GitHubWebhookToken == token);
         if (app is null || repoFullName != app.GitHubRepoFullName)
         {
@@ -37,14 +37,27 @@ public class WebhooksController(AppDbContext appDbContext, RabbitMqService rabbi
             return BadRequest();
         }
 
-        var message = new BuildMessage
+        var job = new AppBuildJob
         {
             Id = Guid.NewGuid().ToString(),
+            App = app,
+            Status = "pending",
+            CreatedAt = DateTime.UtcNow
+        };
+        
+        appDbContext.AppBuildJobs.Add(job);
+        
+        var message = new BuildMessage
+        {
+            Id = job.Id,
             RepoFullName = repoFullName,
             CloneUrl = $"https://{userToken.Token}@github.com/{repoFullName}.git"
         };
 
         rabbitMqService.PublishMessage(JsonSerializer.Serialize(message));
+        
+        await appDbContext.SaveChangesAsync();
+        
         return Ok();
     }
 
