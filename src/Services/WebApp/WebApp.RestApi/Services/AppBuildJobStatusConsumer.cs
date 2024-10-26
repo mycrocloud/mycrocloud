@@ -101,9 +101,8 @@ public class AppBuildJobStatusConsumer : BackgroundService
             _logger.LogInformation("Removing existing build artifacts. AppId: {AppId}", app.Id);
             var currentObjects = await appDbContext.Objects
                 .Where(obj => obj.AppId == app.Id && obj.Type == ObjectType.BuildArtifact)
-                .ToListAsync();
+                .ExecuteDeleteAsync();
 
-            appDbContext.Objects.RemoveRange(currentObjects);
             await appDbContext.SaveChangesAsync();
 
             // Insert new build artifacts
