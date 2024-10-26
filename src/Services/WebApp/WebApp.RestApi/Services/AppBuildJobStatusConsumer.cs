@@ -92,11 +92,13 @@ public class AppBuildJobStatusConsumer : BackgroundService
         try
         {
             // Update the job status
+            _logger.LogInformation("Updating job status. Id: {Id}, Status: {Status}", message.Id, message.Status);
             job.Status = message.Status;
             job.UpdatedAt = DateTime.UtcNow;
             await appDbContext.SaveChangesAsync();
 
             // Remove existing build artifacts
+            _logger.LogInformation("Removing existing build artifacts. AppId: {AppId}", app.Id);
             var currentObjects = await appDbContext.Objects
                 .Where(obj => obj.AppId == app.Id && obj.Type == ObjectType.BuildArtifact)
                 .ToListAsync();
@@ -105,8 +107,9 @@ public class AppBuildJobStatusConsumer : BackgroundService
             await appDbContext.SaveChangesAsync();
 
             // Insert new build artifacts
+            _logger.LogInformation("Inserting new build artifacts. AppId: {AppId}", app.Id);
             var objects = appDbContext.Objects
-               .Where(obj => obj.Key.StartsWith(job.Id))
+               .Where(obj => obj.AppId == 0 && obj.Key.StartsWith(job.Id))
                .AsNoTracking()
                .ToList();
 
