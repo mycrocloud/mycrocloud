@@ -26,7 +26,7 @@ func failOnError(err error, msg string) {
 const MaxConcurrentJobs = 3
 
 // ProcessJob simulates job processing asynchronously
-func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel) {
+func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.Queue) {
 	defer wg.Done()
 
 	var repo BuildMessage
@@ -77,15 +77,24 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel) {
 	// failOnError(err, "Failed to upload build to S3")
 
 	// publish completion message
-	status := "done"
+	statusMessage := struct {
+		Id     string `json:"Id"`
+		Status string `json:"Status"`
+	}{
+		Id:     repo.Id,
+		Status: "done",
+	}
+
+	body, err := json.Marshal(statusMessage)
+	failOnError(err, "Failed to marshal status message")
 	err = ch.Publish(
-		"",           // exchange
-		"job_status", // routing key
-		false,        // mandatory
-		false,        // immediate
+		"",     // exchange
+		q.Name, // routing key
+		false,  // mandatory
+		false,  // immediate
 		amqp.Publishing{
 			ContentType: "application/json",
-			Body:        []byte(`{"Id": "` + repo.Id + `", "Status": "` + status + `"}`),
+			Body:        body,
 		})
 	failOnError(err, "Failed to publish a message")
 
@@ -113,6 +122,16 @@ func main() {
 		false,       // exclusive
 		false,       // no-wait
 		nil,         // arguments
+	)
+	failOnError(err, "Failed to declare a queue")
+
+	q2, err := ch.QueueDeclare(
+		"job_status", // name
+		true,         // durable
+		false,        // delete when unused
+		false,        // exclusive
+		false,        // no-wait
+		nil,          // arguments
 	)
 	failOnError(err, "Failed to declare a queue")
 
@@ -144,7 +163,7 @@ func main() {
 
 			go func(job string) {
 				defer func() { <-jobLimit }() // Release the slot once the job is done
-				ProcessJob(job, wg, ch)
+				ProcessJob(job, wg, ch, q2)
 			}(job)
 		}
 	}()
