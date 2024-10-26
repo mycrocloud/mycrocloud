@@ -4,18 +4,17 @@ on:
   push:
     branches:
       - dev
-    paths: 
-      - 'src/Services/WebApp/WebApp.Domain/**'
-      - 'src/Services/WebApp/WebApp.Infrastructure/**'
-      - 'src/Services/WebApp/WebApp.RestApi/**'
-      
-  workflow_dispatch: 
-    
+    paths:
+      - "src/Services/WebApp/WebApp.Domain/**"
+      - "src/Services/WebApp/WebApp.Infrastructure/**"
+      - "src/Services/WebApp/WebApp.RestApi/**"
+
+  workflow_dispatch:
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}-api
   WORK_DIR: src/Services/WebApp
-  DEPLOY_DOMAIN: https://api.mycrocloud.online
 
 jobs:
   build-and-push-image:
@@ -79,28 +78,3 @@ jobs:
           ssh-username: ${{ vars.SSH_USERNAME }}
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
           service: api
-
-      # - name: Setup Test
-      #   run: |
-      #     access_token=$(curl --request POST \
-      #       --url ${{ vars.AUTH0_DOMAIN }}/oauth/token \
-      #       --header 'content-type: application/json' \
-      #       --data '{"client_id":"${{ vars.M2M_APP_CLIENT_ID }}","client_secret":"${{ secrets.M2M_APP_CLIENT_SECRET }}","audience":"${{ vars.API_IDENTIFIER }}","grant_type":"client_credentials"}' |
-      #       jq -r .access_token)
-      #     echo access_token=$access_token
-      #     commit_hash=$(curl -X GET '${{ env.DEPLOY_DOMAIN }}/_assembly' -H "Authorization: Bearer $access_token" | jq -r .informationalVersion | cut -d'+' -f2)
-      #     echo commit_hash=$commit_hash
-      #     echo "COMMIT_HASH=$commit_hash" >> $GITHUB_ENV
-          
-      # - name: Assert
-      #   run: |
-      #     echo COMMIT_HASH=$COMMIT_HASH
-      #     echo sha=${{ github.sha }}
-      #     if [ $COMMIT_HASH == ${{ github.sha }} ]
-      #     then
-      #     echo passed
-      #     exit 0
-      #     else
-      #     echo failed
-      #     exit 1
-      #     fi
