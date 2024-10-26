@@ -70,11 +70,11 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup) {
 	failOnError(err, "Failed to run npm run build")
 
 	// upload the build to S3
-	log.Printf("Uploading build to S3")
-	uploadCmd := exec.Command("aws", "s3", "cp", "--recursive", "build", "s3://my-bucket")
-	uploadCmd.Dir = dir
-	err = uploadCmd.Run()
-	failOnError(err, "Failed to upload build to S3")
+	// log.Printf("Uploading build to S3")
+	// uploadCmd := exec.Command("aws", "s3", "cp", "--recursive", "build", "s3://my-bucket")
+	// uploadCmd.Dir = dir
+	// err = uploadCmd.Run()
+	// failOnError(err, "Failed to upload build to S3")
 
 	log.Printf("Finished processing. Id: %s", repo.Id)
 }
