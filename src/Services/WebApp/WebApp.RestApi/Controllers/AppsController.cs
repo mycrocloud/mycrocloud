@@ -158,25 +158,6 @@ public class AppsController(
         app.GitHubWebhookToken = webhookToken;
         await appDbContext.SaveChangesAsync();
 
-        var job = new AppBuildJob
-        {
-            Id = Guid.NewGuid().ToString(),
-            App = app,
-            Status = "pending",
-            CreatedAt = DateTime.UtcNow
-        };
-
-        appDbContext.AppBuildJobs.Add(job);
-        var message = new AppBuildMessage
-        {
-            Id = job.Id,
-            RepoFullName = repoFullName,
-            CloneUrl = $"https://{userToken.Token}@github.com/{repoFullName}.git"
-        };
-
-        rabbitMqService.PublishMessage(JsonSerializer.Serialize(message));
-        await appDbContext.SaveChangesAsync();
-
         return NoContent();
     }
 

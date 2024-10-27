@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using Dapper;
 using Microsoft.EntityFrameworkCore;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -104,14 +105,14 @@ public class AppBuildJobStatusConsumer : BackgroundService
                 .Where(obj => obj.AppId == app.Id && obj.Type == ObjectType.BuildArtifact)
                 .ExecuteDeleteAsync();
 
-            //await appDbContext.SaveChangesAsync();
+            await appDbContext.SaveChangesAsync();
             _logger.LogInformation("Deleted {Count} build artifacts", deleteObjectCount);
 
             // Insert new build artifacts
             _logger.LogInformation("Inserting new build artifacts. AppId: {AppId}", app.Id);
             var objects = appDbContext.Objects
                .Where(obj => obj.AppId == 0 && obj.Key.StartsWith(job.Id))
-               .AsNoTracking()
+               //.AsNoTracking()
                .ToList();
             var newObjects = new List<Domain.Entities.Object>();
             foreach (var obj in objects)
