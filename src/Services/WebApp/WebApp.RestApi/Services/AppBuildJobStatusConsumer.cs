@@ -111,19 +111,22 @@ public class AppBuildJobStatusConsumer : BackgroundService
             _logger.LogInformation("Inserting new build artifacts. AppId: {AppId}", app.Id);
             var objects = appDbContext.Objects
                .Where(obj => obj.AppId == 0 && obj.Key.StartsWith(job.Id))
-               //.AsNoTracking()
+               .AsNoTracking()
                .ToList();
-
+            var newObjects = new List<Domain.Entities.Object>();
             foreach (var obj in objects)
             {
-                obj.AppId = app.Id;
-                obj.Key = obj.Key[(job.Id + "/dist").Length..];
-                obj.Type = ObjectType.BuildArtifact;
-                
-                appDbContext.Entry(obj).State = EntityState.Added;
+                newObjects.Add(new Domain.Entities.Object
+                {
+                    AppId = app.Id,
+                    Key = obj.Key[(job.Id + "/dist").Length..],
+                    Content = obj.Content,
+                    Type = ObjectType.BuildArtifact,
+                    CreatedAt = DateTime.UtcNow,
+                });
             }
 
-            await appDbContext.Objects.AddRangeAsync(objects);
+            await appDbContext.Objects.AddRangeAsync(newObjects);
             await appDbContext.SaveChangesAsync();
 
             await trans.CommitAsync();
