@@ -21,6 +21,8 @@ type BuildMessage struct {
 	Id           string `json:"Id"`
 	RepoFullName string `json:"RepoFullName"`
 	CloneUrl     string `json:"CloneUrl"`
+	Directory    string `json:"Directory"`
+	OutDir       string `json:"OutDir"`
 }
 
 func failOnError(err error, msg string) {
@@ -55,37 +57,33 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.
 	err = cloneCmd.Run()
 	failOnError(err, "Failed to clone repository")
 
-	//print node version
-	log.Printf("Printing node version")
-	printNodeVersionCmd := exec.Command("node", "--version")
-	printNodeVersionCmd.Dir = dir
-	err = printNodeVersionCmd.Run()
-	failOnError(err, "Failed to print node version")
-
 	// run npm install
 	log.Printf("Running npm install")
 	installCmd := exec.Command("npm", "install")
-	installCmd.Dir = dir
+	installCmd.Dir = dir + "/" + repo.Directory
 	err = installCmd.Run()
 	failOnError(err, "Failed to run npm install")
 
 	// run npm run build
 	log.Printf("Running npm run build")
-	buildCmd := exec.Command("npm", "run", "build")
-	buildCmd.Dir = dir
+	buildCmdStr := "npm run build"
+	buildCmd := exec.Command("sh", "-c", buildCmdStr)
+	buildCmd.Dir = dir + "/" + repo.Directory
 	err = buildCmd.Run()
 	failOnError(err, "Failed to run npm run build")
 
-	distDir := dir + "/dist"
+	distDir := dir + "/" + repo.OutDir
 	RecursiveUpload(distDir)
 
 	// publish completion message
 	statusMessage := struct {
 		Id     string `json:"Id"`
 		Status string `json:"Status"`
+		Prefix string `json:"Prefix"`
 	}{
 		Id:     repo.Id,
 		Status: "done",
+		Prefix: distDir,
 	}
 
 	body, err := json.Marshal(statusMessage)
@@ -254,7 +252,16 @@ func main() {
 			wg.Add(1)
 
 			go func(job string) {
-				defer func() { <-jobLimit }() // Release the slot once the job is done
+				defer func() {
+					<-jobLimit // Release the slot once the job is done
+					wg.Done()  // Mark the job as done for WaitGroup
+					if r := recover(); r != nil {
+						// Handle the error (log or notify)
+						fmt.Printf("Recovered from panic in ProcessJob: %v\n", r)
+					}
+				}()
+
+				// Call your job processing function
 				ProcessJob(job, wg, ch, q2)
 			}(job)
 		}

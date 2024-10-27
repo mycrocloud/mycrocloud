@@ -177,9 +177,9 @@ public class AppsController(
     public async Task<IActionResult> GetBuilds(int id)
     {
         var jobs = await appDbContext.AppBuildJobs
-        .Where(j => j.AppId == id)
-        .OrderByDescending(j => j.CreatedAt)
-        .ToListAsync();
+            .Where(j => j.AppId == id)
+            .OrderByDescending(j => j.CreatedAt)
+            .ToListAsync();
         return Ok(jobs.Select(job => new
         {
             job.Id,
@@ -187,6 +187,60 @@ public class AppsController(
             job.CreatedAt,
             job.UpdatedAt,
         }));
+    }
+
+    [HttpPost("{id:int}/builds/config")]
+    public async Task<IActionResult> PostConfigBuild(int id, BuildConfigRequest buildConfigRequest)
+    {
+        var app = await appDbContext.Apps
+            .Include(a => a.Integration)
+            .SingleAsync(a => a.Id == id);
+
+        if (app.Integration is null)
+        {
+            app.Integration = new AppIntegration
+            {
+                Branch = buildConfigRequest.Branch,
+                Directory = buildConfigRequest.Directory,
+                BuildCommand = buildConfigRequest.BuildCommand,
+                OutDir = buildConfigRequest.OutDir,
+                CreatedAt = DateTime.UtcNow
+            };
+        }
+        else
+        {
+            app.Integration.Branch = buildConfigRequest.Branch;
+            app.Integration.Directory = buildConfigRequest.Directory;
+            app.Integration.BuildCommand = buildConfigRequest.BuildCommand;
+            app.Integration.OutDir = buildConfigRequest.OutDir;
+            app.Integration.UpdatedAt = DateTime.UtcNow;
+        }
+
+        await appDbContext.SaveChangesAsync();
+        return NoContent();
+    }
+    
+    [HttpGet("{id:int}/builds/config")]
+    public async Task<IActionResult> GetConfigBuild(int id)
+    {
+        var app = await appDbContext.Apps
+            .Include(a => a.Integration)
+            .SingleAsync(a => a.Id == id);
+
+        if (app.Integration is null)
+        {
+            return NotFound();
+        }
+        
+        return Ok(new
+        {
+            app.Integration.Branch,
+            app.Integration.Directory,
+            app.Integration.BuildCommand,
+            app.Integration.OutDir,
+            app.Integration.CreatedAt,
+            app.Integration.UpdatedAt
+        });
     }
 
     private async Task<GitHubRepo> GetGitHubRepo(string repoFullName, UserToken userToken)
@@ -237,5 +291,13 @@ public class AppsController(
         request.Content = content;
         var response = await client.SendAsync(request);
         response.EnsureSuccessStatusCode();
+    }
+
+    public class BuildConfigRequest
+    {
+        public string Branch { get; set; }
+        public string Directory { get; set; }
+        public string BuildCommand { get; set; }
+        public string OutDir { get; set; }
     }
 }

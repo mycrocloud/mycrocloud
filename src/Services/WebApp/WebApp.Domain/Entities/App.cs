@@ -30,4 +30,17 @@ public class App : BaseEntity
     //todo: move to separate entity
     public string GitHubRepoFullName { get; set; }
     public string GitHubWebhookToken { get; set; }
+    
+    public AppIntegration Integration { get; set; }
+}
+
+public class AppIntegration: BaseEntity
+{
+    public int Id { get; set; }
+    public int AppId { get; set; }
+    public App App { get; set; }
+    public string Branch { get; set; }
+    public string Directory { get; set; }
+    public string BuildCommand { get; set; }
+    public string OutDir { get; set; }
 }

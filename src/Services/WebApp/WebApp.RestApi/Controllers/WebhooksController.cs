@@ -11,7 +11,7 @@ using WebApp.RestApi.Services;
 
 namespace WebApp.RestApi.Controllers;
 
-public partial class WebhooksController(AppDbContext appDbContext, RabbitMqService rabbitMqService) : BaseController
+public class WebhooksController(AppDbContext appDbContext, RabbitMqService rabbitMqService) : BaseController
 {
     [HttpPost("github/postreceive/{appId:int}")]
     [AllowAnonymous]
@@ -22,7 +22,10 @@ public partial class WebhooksController(AppDbContext appDbContext, RabbitMqServi
         var payloadNode = JsonNode.Parse(rawBodyString!);
         var repoFullName = (string)payloadNode!["repository"]!["full_name"]!;
 
-        var app = await appDbContext.Apps.SingleOrDefaultAsync(a => a.Id == appId && a.GitHubWebhookToken == token);
+        var app = await appDbContext.Apps
+            .Include(a => a.Integration)
+            .SingleOrDefaultAsync(a => a.Id == appId && a.GitHubWebhookToken == token);
+
         if (app is null || repoFullName != app.GitHubRepoFullName)
         {
             return BadRequest();
@@ -45,20 +48,22 @@ public partial class WebhooksController(AppDbContext appDbContext, RabbitMqServi
             Status = "pending",
             CreatedAt = DateTime.UtcNow
         };
-        
+
         appDbContext.AppBuildJobs.Add(job);
-        
+
         var message = new AppBuildMessage
         {
             Id = job.Id,
             RepoFullName = repoFullName,
-            CloneUrl = $"https://{userToken.Token}@github.com/{repoFullName}.git"
+            CloneUrl = $"https://{userToken.Token}@github.com/{repoFullName}.git",
+            Directory = app.Integration?.Directory ?? ".",
+            OutDir = app.Integration?.OutDir ?? "dist"
         };
 
         rabbitMqService.PublishMessage(JsonSerializer.Serialize(message));
-        
+
         await appDbContext.SaveChangesAsync();
-        
+
         return Ok();
     }
 }

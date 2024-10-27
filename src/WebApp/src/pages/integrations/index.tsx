@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import { AppContext } from "../apps";
 import { Modal } from "flowbite-react";
 import { toast } from "react-toastify";
+import { useForm } from "react-hook-form";
+import { ChevronRightIcon } from "@heroicons/react/24/solid";
 
 export interface GitHubRepo {
   name: string;
@@ -19,6 +21,13 @@ interface IBuildJob {
   createdAt: string;
   finishedAt: string;
 }
+
+type BuildConfig = {
+  branch: string;
+  directory: string;
+  buildCommand: string;
+  outDir: string;
+};
 
 export default function Integrations() {
   const { getAccessTokenSilently } = useAuth0();
@@ -129,6 +138,54 @@ export default function Integrations() {
     }
   }
 
+  const [showBuildConfig, setShowBuildConfig] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+  } = useForm<BuildConfig>({
+    defaultValues: {
+      branch: "default",
+      directory: ".",
+      buildCommand: "npm run build",
+      outDir: "dist",
+    },
+  });
+
+  useEffect(() => {
+    (async () => {
+      const accessToken = await getAccessTokenSilently();
+      const res = await fetch(`/api/apps/${app.id}/builds/config`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (res.ok) {
+        const config = await res.json();
+        setValue("branch", config.branch);
+        setValue("directory", config.directory);
+        setValue("buildCommand", config.buildCommand);
+        setValue("outDir", config.outDir);
+      }
+    })();
+  }, []);
+
+  const onSubmitConfig = async (data: BuildConfig) => {
+    const accessToken = await getAccessTokenSilently();
+    const res = await fetch(`/api/apps/${app.id}/builds/config`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) {
+      toast.success("Build configuration saved");
+    }
+  };
   return (
     <div className="p-2">
       <h1 className="font-bold">Integrations</h1>
@@ -145,17 +202,113 @@ export default function Integrations() {
           </div>
         )}
         {app!.gitHubRepoFullName ? (
-          <div className="flex items-center p-2">
-            <p>
-              Connected to{" "}
-              <span className="font-bold">{app.gitHubRepoFullName}</span>
-            </p>
-            <button
-              onClick={() => setShowDisconnectConfirmModal(true)}
-              className="ms-2 rounded border px-2 py-1.5"
+          <div>
+            <div className="flex items-center p-2">
+              <p>
+                Connected to{" "}
+                <span className="font-bold">{app.gitHubRepoFullName}</span>
+              </p>
+              <button
+                onClick={() => setShowDisconnectConfirmModal(true)}
+                className="ms-2 rounded border px-2 py-1.5"
+              >
+                Disconnect
+              </button>
+            </div>
+            <h2
+              className="mt-4 flex cursor-pointer items-center font-semibold"
+              onClick={() => {
+                setShowBuildConfig((prev) => !prev);
+              }}
             >
-              Disconnect
-            </button>
+              <ChevronRightIcon className="h-4 w-4" />
+              Configuration
+            </h2>
+            {showBuildConfig && (
+              <form className="ps-2" onSubmit={handleSubmit(onSubmitConfig)}>
+                <div>
+                  <label className="block">Branch</label>
+                  <input
+                    {...register("branch", { required: "Branch is required" })}
+                    type="text"
+                    placeholder="Branch"
+                    className="border px-2 py-1.5"
+                    readOnly
+                  />
+                  {errors.branch && (
+                    <span className="text-red-500">
+                      {errors.branch.message}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-2">
+                  <label className="block">Build Directory</label>
+                  <p className="text-sm text-slate-600">
+                    Path relative to the root of the repository where the build
+                    is to be run.
+                  </p>
+                  <input
+                    {...register("directory", {
+                      required: "Directory is required",
+                    })}
+                    type="text"
+                    placeholder="/"
+                    className="mt-1 border px-2 py-1.5"
+                  />
+                  {errors.directory && (
+                    <span className="text-red-500">
+                      {errors.directory.message}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-2">
+                  <label className="block">Output Directory</label>
+                  <p className="text-sm text-slate-600">
+                    Path relative to the root of the repository where the build
+                    output is located. <br />
+                    Default is{" "}
+                    <i>
+                      <b>dist</b>
+                    </i>{" "}
+                    for Vite projects and{" "}
+                    <i>
+                      <b>build</b>
+                    </i>{" "}
+                    for Create React App projects.
+                  </p>
+                  <input
+                    {...register("outDir")}
+                    type="text"
+                    className="mt-1 border px-2 py-1.5"
+                  />
+                  {errors.branch && (
+                    <span className="text-red-500">
+                      {errors.branch.message}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-4">
+                  <label className="block">Build Command</label>
+                  <input
+                    {...register("buildCommand")}
+                    type="text"
+                    className="border px-2 py-1.5"
+                    readOnly
+                  />
+                  {errors.branch && (
+                    <span className="text-red-500">
+                      {errors.branch.message}
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="submit"
+                  className="mt-2 bg-primary px-2 py-1 text-white"
+                >
+                  Save
+                </button>
+              </form>
+            )}
           </div>
         ) : (
           <div className="mt-2 flex">
