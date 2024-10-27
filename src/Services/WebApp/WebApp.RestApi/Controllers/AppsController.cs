@@ -10,6 +10,7 @@ using WebApp.Infrastructure;
 using WebApp.RestApi.Extensions;
 using WebApp.RestApi.Filters;
 using WebApp.RestApi.Models;
+using WebApp.RestApi.Services;
 
 namespace WebApp.RestApi.Controllers;
 
@@ -20,7 +21,8 @@ public class AppsController(
     AppDbContext appDbContext,
     IConfiguration configuration,
     IHttpClientFactory httpClientFactory,
-    IHostEnvironment environment
+    IHostEnvironment environment,
+    RabbitMqService rabbitMqService
 ) : BaseController
 {
     [HttpGet]
@@ -155,6 +157,26 @@ public class AppsController(
         app.GitHubRepoFullName = repo.FullName;
         app.GitHubWebhookToken = webhookToken;
         await appDbContext.SaveChangesAsync();
+
+        var job = new AppBuildJob
+        {
+            Id = Guid.NewGuid().ToString(),
+            App = app,
+            Status = "pending",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        appDbContext.AppBuildJobs.Add(job);
+        var message = new AppBuildMessage
+        {
+            Id = job.Id,
+            RepoFullName = repoFullName,
+            CloneUrl = $"https://{userToken.Token}@github.com/{repoFullName}.git"
+        };
+
+        rabbitMqService.PublishMessage(JsonSerializer.Serialize(message));
+        await appDbContext.SaveChangesAsync();
+
         return NoContent();
     }
 
@@ -168,6 +190,22 @@ public class AppsController(
 
         await appDbContext.SaveChangesAsync();
         return NoContent();
+    }
+
+    [HttpGet("{id:int}/builds")]
+    public async Task<IActionResult> GetBuilds(int id)
+    {
+        var jobs = await appDbContext.AppBuildJobs
+        .Where(j => j.AppId == id)
+        .OrderByDescending(j => j.CreatedAt)
+        .ToListAsync();
+        return Ok(jobs.Select(job => new
+        {
+            job.Id,
+            job.Status,
+            job.CreatedAt,
+            job.UpdatedAt,
+        }));
     }
 
     private async Task<GitHubRepo> GetGitHubRepo(string repoFullName, UserToken userToken)
@@ -189,13 +227,13 @@ public class AppsController(
         string webhookToken)
     {
         var config = configuration.GetSection("AppIntegrations:GitHubWebhook");
-        
+
         //for testing webhook locally
         //ref: https://docs.github.com/en/webhooks/testing-and-troubleshooting-webhooks/testing-webhooks
         var url = !environment.IsDevelopment()
             ? config["Config:Url"]!.TrimEnd('/') + $"/{appId}?token={webhookToken}"
             : config["Config:Url"]!;
-        
+
         var webhookRequestBody = new
         {
             events = config.GetSection("Events").Get<string[]>(),

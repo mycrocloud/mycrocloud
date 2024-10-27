@@ -6,11 +6,12 @@ using Microsoft.EntityFrameworkCore;
 using WebApp.Domain.Entities;
 using WebApp.Infrastructure;
 using WebApp.RestApi.Filters;
+using WebApp.RestApi.Models;
 using WebApp.RestApi.Services;
 
 namespace WebApp.RestApi.Controllers;
 
-public class WebhooksController(AppDbContext appDbContext, RabbitMqService rabbitMqService) : BaseController
+public partial class WebhooksController(AppDbContext appDbContext, RabbitMqService rabbitMqService) : BaseController
 {
     [HttpPost("github/postreceive/{appId:int}")]
     [AllowAnonymous]
@@ -47,7 +48,7 @@ public class WebhooksController(AppDbContext appDbContext, RabbitMqService rabbi
         
         appDbContext.AppBuildJobs.Add(job);
         
-        var message = new BuildMessage
+        var message = new AppBuildMessage
         {
             Id = job.Id,
             RepoFullName = repoFullName,
@@ -59,12 +60,5 @@ public class WebhooksController(AppDbContext appDbContext, RabbitMqService rabbi
         await appDbContext.SaveChangesAsync();
         
         return Ok();
-    }
-
-    private class BuildMessage
-    {
-        public string Id { get; set; }
-        public string RepoFullName { get; set; }
-        public string CloneUrl { get; set; }
     }
 }
