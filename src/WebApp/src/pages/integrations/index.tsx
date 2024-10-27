@@ -1,5 +1,5 @@
 import { useAuth0 } from "@auth0/auth0-react";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { AppContext } from "../apps";
 import { Modal } from "flowbite-react";
@@ -98,14 +98,36 @@ export default function Integrations() {
     }
   };
 
+  const interval = useRef<number>();
   useEffect(() => {
     fetchBuilds();
+
+    //todo: use websockets instead of polling
+    interval.current = window.setInterval(() => {
+      fetchBuilds();
+    }, 2000);
+
+    return () => {
+      clearInterval(interval.current);
+    };
   }, []);
 
   const [jobId, setJobId] = useState<string>();
   const showBuildLogs = async (buildId: string) => {
     setJobId(buildId);
   };
+
+  function statusClass(status: string) {
+    if (status === "pending") {
+      return "text-yellow-500";
+    } else if (status === "success" || status === "done") {
+      return "text-sky-500";
+    } else if (status === "failed") {
+      return "text-red-500";
+    } else {
+      return "text-gray-300";
+    }
+  }
 
   return (
     <div className="p-2">
@@ -193,7 +215,7 @@ export default function Integrations() {
       <section>
         <h2 className="mt-4 font-semibold">Builds</h2>
         <div className="flex">
-          <div className="w">
+          <div className="basis-4/6">
             <table className="mt-2 w-full table-auto">
               <thead>
                 <tr className="border">
@@ -213,7 +235,9 @@ export default function Integrations() {
                     onClick={() => showBuildLogs(build.id)}
                   >
                     <td>{build.id}</td>
-                    <td>{build.status}</td>
+                    <td className={statusClass(build.status)}>
+                      {build.status}
+                    </td>
                     <td>{build.createdAt}</td>
                   </tr>
                 ))}
