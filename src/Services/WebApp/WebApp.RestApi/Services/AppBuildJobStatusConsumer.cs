@@ -94,7 +94,7 @@ public class AppBuildJobStatusConsumer : BackgroundService
         try
         {
             // Update the job status
-            _logger.LogInformation("Updating job status. Id: {Id}, Status: {Status}", message.Id, message.Status);
+            _logger.LogInformation("Updating job status. Id: {Id}, Status: {Status}, Prefix: {Prefix}", message.Id, message.Status, message.Prefix);
             job.Status = message.Status;
             job.UpdatedAt = DateTime.UtcNow;
             await appDbContext.SaveChangesAsync();
@@ -120,7 +120,7 @@ public class AppBuildJobStatusConsumer : BackgroundService
                 newObjects.Add(new Domain.Entities.Object
                 {
                     AppId = app.Id,
-                    Key = obj.Key[(job.Id + "/dist").Length..],
+                    Key = obj.Key[message.Prefix.Length..],
                     Content = obj.Content,
                     Type = ObjectType.BuildArtifact,
                     CreatedAt = DateTime.UtcNow,
@@ -145,4 +145,6 @@ public class AppBuildJobStatusMessage
     public string Id { get; set; }
 
     public string Status { get; set; }
+
+    public string Prefix { get; set; }
 }
