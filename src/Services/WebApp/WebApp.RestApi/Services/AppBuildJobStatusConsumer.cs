@@ -88,7 +88,8 @@ public class AppBuildJobStatusConsumer : BackgroundService
             _logger.LogWarning("App with id {AppId} not found", job.AppId);
             return;
         }
-        using var trans = await appDbContext.Database.BeginTransactionAsync();
+
+        await using var trans = await appDbContext.Database.BeginTransactionAsync();
         try
         {
             // Update the job status
@@ -99,17 +100,18 @@ public class AppBuildJobStatusConsumer : BackgroundService
 
             // Remove existing build artifacts
             _logger.LogInformation("Removing existing build artifacts. AppId: {AppId}", app.Id);
-            var currentObjects = await appDbContext.Objects
+            var deleteObjectCount = await appDbContext.Objects
                 .Where(obj => obj.AppId == app.Id && obj.Type == ObjectType.BuildArtifact)
                 .ExecuteDeleteAsync();
 
-            await appDbContext.SaveChangesAsync();
+            //await appDbContext.SaveChangesAsync();
+            _logger.LogInformation("Deleted {Count} build artifacts", deleteObjectCount);
 
             // Insert new build artifacts
             _logger.LogInformation("Inserting new build artifacts. AppId: {AppId}", app.Id);
             var objects = appDbContext.Objects
                .Where(obj => obj.AppId == 0 && obj.Key.StartsWith(job.Id))
-               .AsNoTracking()
+               //.AsNoTracking()
                .ToList();
 
             foreach (var obj in objects)
@@ -117,6 +119,8 @@ public class AppBuildJobStatusConsumer : BackgroundService
                 obj.AppId = app.Id;
                 obj.Key = obj.Key[(job.Id + "/dist").Length..];
                 obj.Type = ObjectType.BuildArtifact;
+                
+                appDbContext.Entry(obj).State = EntityState.Added;
             }
 
             await appDbContext.Objects.AddRangeAsync(objects);
@@ -124,7 +128,7 @@ public class AppBuildJobStatusConsumer : BackgroundService
 
             await trans.CommitAsync();
         }
-        catch (System.Exception)
+        catch (Exception)
         {
             await trans.RollbackAsync();
             throw;
