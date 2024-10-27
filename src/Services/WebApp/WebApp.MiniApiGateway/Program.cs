@@ -56,6 +56,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseAppResolverMiddleware();
 
+app.UseStaticFilesMiddleware2();
+
 app.UseCorsMiddleware();
 
 app.UseRouteResolverMiddleware();
