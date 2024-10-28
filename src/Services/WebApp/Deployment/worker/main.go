@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,11 +10,14 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
-	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
 
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/client"
 	"github.com/streadway/amqp"
 )
 
@@ -43,37 +47,54 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.
 	failOnError(err, "Failed to unmarshal JSON")
 	log.Printf("Processing... Id: %s, RepoFullName: %s", repo.Id, repo.RepoFullName)
 
-	// clone the repo
-	log.Printf("Cloning repo %s", repo.RepoFullName)
-	// create a directory with name as repo.Id
-	dir := repo.Id
-	err = os.RemoveAll(dir)
-	failOnError(err, "Failed to remove directory")
-	err = os.Mkdir(dir, 0755)
-	failOnError(err, "Failed to create directory")
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	failOnError(err, "Failed to create docker client")
 
-	// clone the repo to the directory
-	cloneCmd := exec.Command("git", "clone", repo.CloneUrl, dir)
-	err = cloneCmd.Run()
-	failOnError(err, "Failed to clone repository")
+	// Create a container
+	log.Printf("Creating container")
+	builderImage := os.Getenv("BUILDER_IMAGE")
+	hostOutDir := os.Getenv("HOST_OUT_DIR")
+	resp, err := cli.ContainerCreate(ctx, &container.Config{
+		Image: builderImage,
+		Tty:   false,
+		Env: []string{"REPO_URL=" + repo.CloneUrl,
+			"WORK_DIR=" + repo.Directory,
+			"OUT_DIR=" + repo.OutDir,
+		},
+	}, &container.HostConfig{
+		Mounts: []mount.Mount{
+			{
+				Type:   mount.TypeBind,
+				Source: hostOutDir + "/" + repo.Id,
+				Target: "/output",
+			},
+		},
+		AutoRemove: true,
+	}, nil, nil, "")
+	failOnError(err, "Failed to create container")
 
-	// run npm install
-	log.Printf("Running npm install")
-	installCmd := exec.Command("npm", "install")
-	installCmd.Dir = dir + "/" + repo.Directory
-	err = installCmd.Run()
-	failOnError(err, "Failed to run npm install")
+	// Start the container
+	log.Printf("Starting container")
+	err = cli.ContainerStart(ctx, resp.ID, container.StartOptions{})
+	failOnError(err, "Failed to start container")
 
-	// run npm run build
-	log.Printf("Running npm run build")
-	buildCmdStr := "npm run build"
-	buildCmd := exec.Command("sh", "-c", buildCmdStr)
-	buildCmd.Dir = dir + "/" + repo.Directory
-	err = buildCmd.Run()
-	failOnError(err, "Failed to run npm run build")
+	// Wait for the container to finish
+	statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
+	select {
+	case err := <-errCh:
+		failOnError(err, "Failed to wait for container")
+	case status := <-statusCh:
+		log.Printf("Container finished with status %d", status.StatusCode)
+	}
 
-	distDir := dir + "/" + repo.OutDir
-	RecursiveUpload(distDir)
+	distDir := path.Join("/output", repo.Id)
+	log.Printf("Dist dir: %s", distDir)
+	shouldUploadArtifacts := os.Getenv("UPLOAD_ARTIFACTS") != "false"
+
+	if shouldUploadArtifacts {
+		RecursiveUpload(distDir)
+	}
 
 	// publish completion message
 	statusMessage := struct {
@@ -112,10 +133,9 @@ func RecursiveUpload(dir string) {
 			RecursiveUpload(dir + "/" + file.Name())
 		} else {
 			key := dir + "/" + file.Name()
-			log.Printf("Uploading %s", key)
 			url := os.Getenv("UPLOAD_URL") + "/" + key
-			fieldName := file.Name()
-			err = UploadFile(url, key, fieldName, access_token)
+			fileName := file.Name()
+			err = UploadFile(url, key, fileName, access_token)
 			failOnError(err, "Failed to upload file")
 		}
 	}
