@@ -1,0 +1,22 @@
+#!/bin/sh
+
+REPO_URL=${REPO_URL:-"https://default-repo-url.git"}
+WORK_DIR=${WORK_DIR:-"."}
+OUT_DIR=${OUT_DIR:-"dist"}
+
+if [ -z "$REPO_URL" ]; then
+  echo "Error: REPO_URL is not set."
+  exit 1
+fi
+
+git clone "$REPO_URL" .
+
+cd "$WORK_DIR" || exit
+
+npm install
+
+npm run build
+
+mkdir -p /output
+
+mv "$OUT_DIR"/* /output/
