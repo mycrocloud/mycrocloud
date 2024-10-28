@@ -142,6 +142,7 @@ func RecursiveUpload(dir string) {
 			key := dir + "/" + file.Name()
 			url := os.Getenv("UPLOAD_URL") + "/" + key
 			fileName := file.Name()
+			log.Printf("Uploading file: %s", key)
 			err = UploadFile(url, key, fileName, access_token)
 			failOnError(err, "Failed to upload file")
 		}
