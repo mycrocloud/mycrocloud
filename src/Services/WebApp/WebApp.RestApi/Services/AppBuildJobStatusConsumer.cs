@@ -111,8 +111,7 @@ public class AppBuildJobStatusConsumer : BackgroundService
             // Insert new build artifacts
             _logger.LogInformation("Inserting new build artifacts. AppId: {AppId}", app.Id);
             var objects = appDbContext.Objects
-               .Where(obj => obj.AppId == 0 && obj.Key.StartsWith(job.Id))
-               //.AsNoTracking()
+               .Where(obj => obj.AppId == 0 && obj.Key.StartsWith(message.Prefix))
                .ToList();
             var newObjects = new List<Domain.Entities.Object>();
             foreach (var obj in objects)
