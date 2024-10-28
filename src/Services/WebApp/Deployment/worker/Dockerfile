@@ -1,4 +1,4 @@
-FROM golang AS builder
+FROM golang:1.23.2-alpine
 
 WORKDIR /app
 
@@ -6,16 +6,8 @@ COPY go.mod go.sum ./
 
 RUN go mod download
 
-COPY . .
+COPY *.go ./
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o worker .
+RUN CGO_ENABLED=0 GOOS=linux go build -o /worker
 
-FROM node:20-alpine
-
-WORKDIR /root/
-
-COPY --from=builder /app/worker .
-
-RUN apk update && apk add git
-
-CMD ["./worker"]
+CMD ["/worker"]

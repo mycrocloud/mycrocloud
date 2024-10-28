@@ -55,6 +55,13 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.
 	log.Printf("Creating container")
 	builderImage := os.Getenv("BUILDER_IMAGE")
 	hostOutDir := os.Getenv("HOST_OUT_DIR")
+	distDir := path.Join("/output", repo.Id)
+
+	log.Printf("Creating output directory: %s", distDir)
+	if err := os.MkdirAll(distDir, 0755); err != nil {
+		log.Fatalf("Failed to create output directory: %v", err)
+	}
+
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: builderImage,
 		Tty:   false,
@@ -88,7 +95,7 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.
 		log.Printf("Container finished with status %d", status.StatusCode)
 	}
 
-	distDir := path.Join("/output", repo.Id)
+	//distDir := path.Join("/output", repo.Id)
 	log.Printf("Dist dir: %s", distDir)
 	shouldUploadArtifacts := os.Getenv("UPLOAD_ARTIFACTS") != "false"
 
