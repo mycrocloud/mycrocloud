@@ -252,16 +252,7 @@ func main() {
 			wg.Add(1)
 
 			go func(job string) {
-				defer func() {
-					<-jobLimit // Release the slot once the job is done
-					wg.Done()  // Mark the job as done for WaitGroup
-					if r := recover(); r != nil {
-						// Handle the error (log or notify)
-						fmt.Printf("Recovered from panic in ProcessJob: %v\n", r)
-					}
-				}()
-
-				// Call your job processing function
+				defer func() { <-jobLimit }() // Release the slot once the job is done
 				ProcessJob(job, wg, ch, q2)
 			}(job)
 		}
