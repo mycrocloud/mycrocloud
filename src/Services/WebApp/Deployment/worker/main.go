@@ -111,7 +111,7 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.
 	}{
 		Id:     repo.Id,
 		Status: "done",
-		Prefix: distDir,
+		Prefix: "output/" + repo.Id,
 	}
 
 	body, err := json.Marshal(statusMessage)
