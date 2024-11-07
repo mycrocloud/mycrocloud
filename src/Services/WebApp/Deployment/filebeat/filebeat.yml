@@ -1,0 +1,35 @@
+filebeat.inputs:
+- type: container
+  paths: 
+    - '/var/log/containers/*.log'
+  # - type: container
+  #   enabled: true
+  #   containers:
+  #     ids:
+  #       - "*"
+  #   processors:
+  #     # Add Docker metadata (including container labels)
+  #     - add_docker_metadata:
+  #         host: "unix:///var/run/docker.sock"
+
+  #     # Filter logs from containers with the image 'builder-image'
+  #     - drop_event:
+  #         when:
+  #           not:
+  #             equals:
+  #               container.image: "mycrocloud-builder"
+
+  #     # Include fields for logs: Timestamp, Level, Message, and JobId
+  #     - add_fields:
+  #         fields:
+  #           Timestamp: "%{[event.timestamp]}"
+  #           Level: "%{[log.level]}"
+  #           Message: "%{[message]}"
+
+  #     # Drop unnecessary fields
+  #     - drop_fields:
+  #         fields: ["host", "container.labels.unwanted_label"]
+
+output.elasticsearch:
+  hosts: ["${ELASTICSEARCH_HOST}"]
+  index: "build-logs"

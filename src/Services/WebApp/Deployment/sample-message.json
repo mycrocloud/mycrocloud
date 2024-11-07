@@ -1,0 +1,7 @@
+{
+    "Id": "1",
+    "RepoFullName": "mycrocloud/mycrocloud-integration-test",
+    "CloneUrl": "https://github.com/mycrocloud/mycrocloud-integration-test",
+    "Directory": ".",
+    "OutDir": "dist"
+}

@@ -15,14 +15,25 @@ services:
       - rabbitmq
     environment:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
-      - UPLOAD_ARTIFACTS=true
+      - UPLOAD_ARTIFACTS=false
       - AUTH0_DOMAIN=
       - AUTH0_CLIENT_ID=
       - AUTH0_SECRET=
       - AUTH0_AUDIENCE=
       - UPLOAD_URL=http://localhost:5100/apps/0/Objects
-      - HOST_OUT_DIR=
+      - HOST_OUT_DIR=/srv/build-outputs
       - BUILDER_IMAGE=mycrocloud-builder
+      - BONSAI_HOST=
+      - BONSAI_ACCESS_KEY=
+      - BONSAI_ACCESS_SECRET=
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /output:/output
+      - /srv/build-outputs:/output
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.15.3
+    environment:
+      - "ELASTICSEARCH_HOST="
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml"
