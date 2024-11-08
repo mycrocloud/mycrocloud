@@ -30,6 +30,15 @@ filebeat.inputs:
   #     - drop_fields:
   #         fields: ["host", "container.labels.unwanted_label"]
 
-output.elasticsearch:
-  hosts: ["${ELASTICSEARCH_HOST}"]
-  index: "build-logs"
+output.console:
+  pretty: true
+
+# output.elasticsearch:
+#   hosts: ["https://mycrocloud-7633273944.us-east-1.bonsaisearch.net:443"]
+#   username: "hnf46i7rwy"
+#   password: "ayv69lvkpa"
+#   index: "container-logs"
+#   setup.template.name: "container-logs"
+#   setup.template.pattern: "container-logs-*"
+
+# logging.level: info

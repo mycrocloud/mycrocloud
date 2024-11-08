@@ -23,9 +23,10 @@ services:
       - UPLOAD_URL=http://localhost:5100/apps/0/Objects
       - HOST_OUT_DIR=/srv/build-outputs
       - BUILDER_IMAGE=mycrocloud-builder
-      - BONSAI_HOST=
-      - BONSAI_ACCESS_KEY=
-      - BONSAI_ACCESS_SECRET=
+      - ES_BUILD_LOGS_INDEX=dev-build-logs
+      - ES_HOST=
+      - ES_USERNAME=
+      - ES_PASSWORD=
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /srv/build-outputs:/output
@@ -34,6 +35,8 @@ services:
     image: docker.elastic.co/beats/filebeat:8.15.3
     environment:
       - "ELASTICSEARCH_HOST="
+    command: filebeat -e -strict.perms=false
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
-      - "./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml"
+      - C:\Users\nampv\personal\repos\mycrocloud\src\Services\WebApp\Deployment\filebeat\filebeat.yml:/usr/share/filebeat/filebeat.yml
+      - "/var/lib/docker/containers:/var/log/containers:ro"

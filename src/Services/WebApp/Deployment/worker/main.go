@@ -39,7 +39,8 @@ func failOnError(err error, msg string) {
 
 // MaxConcurrentJobs is the limit for concurrent jobs being processed
 const MaxConcurrentJobs = 3
-const LogIndex = "build-logs"
+
+var LogIndex = os.Getenv("ES_BUILD_LOGS_INDEX")
 
 func logJob(esClient *elasticsearch.Client, level string, msg string, jobID string) {
 	doc := struct {
@@ -296,18 +297,19 @@ func main() {
 	)
 	failOnError(err, "Failed to register a consumer")
 
-	bonsaiUrl := os.Getenv("BONSAI_HOST")
-	accessKey := os.Getenv("BONSAI_ACCESS_KEY")
-	accessSecret := os.Getenv("BONSAI_ACCESS_SECRET")
+	host := os.Getenv("ES_HOST")
+	username := os.Getenv("ES_USERNAME")
+	password := os.Getenv("ES_PASSWORD")
 
 	// Configure the Elasticsearch client
 	cfg := elasticsearch.Config{
-		Addresses: []string{bonsaiUrl},
-		Username:  accessKey,
-		Password:  accessSecret,
+		Addresses: []string{host},
+		Username:  username,
+		Password:  password,
 	}
 
 	esClient, err := elasticsearch.NewClient(cfg)
+	failOnError(err, "Failed to create elasticsearch client")
 
 	esClient.Indices.Create(LogIndex)
 

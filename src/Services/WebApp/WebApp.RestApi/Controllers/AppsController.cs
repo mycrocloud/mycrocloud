@@ -173,76 +173,6 @@ public class AppsController(
         return NoContent();
     }
 
-    [HttpGet("{id:int}/builds")]
-    public async Task<IActionResult> GetBuilds(int id)
-    {
-        var jobs = await appDbContext.AppBuildJobs
-            .Where(j => j.AppId == id)
-            .OrderByDescending(j => j.CreatedAt)
-            .ToListAsync();
-        return Ok(jobs.Select(job => new
-        {
-            job.Id,
-            job.Status,
-            job.CreatedAt,
-            job.UpdatedAt,
-        }));
-    }
-
-    [HttpPost("{id:int}/builds/config")]
-    public async Task<IActionResult> PostConfigBuild(int id, BuildConfigRequest buildConfigRequest)
-    {
-        var app = await appDbContext.Apps
-            .Include(a => a.Integration)
-            .SingleAsync(a => a.Id == id);
-
-        if (app.Integration is null)
-        {
-            app.Integration = new AppIntegration
-            {
-                Branch = buildConfigRequest.Branch,
-                Directory = buildConfigRequest.Directory,
-                BuildCommand = buildConfigRequest.BuildCommand,
-                OutDir = buildConfigRequest.OutDir,
-                CreatedAt = DateTime.UtcNow
-            };
-        }
-        else
-        {
-            app.Integration.Branch = buildConfigRequest.Branch;
-            app.Integration.Directory = buildConfigRequest.Directory;
-            app.Integration.BuildCommand = buildConfigRequest.BuildCommand;
-            app.Integration.OutDir = buildConfigRequest.OutDir;
-            app.Integration.UpdatedAt = DateTime.UtcNow;
-        }
-
-        await appDbContext.SaveChangesAsync();
-        return NoContent();
-    }
-    
-    [HttpGet("{id:int}/builds/config")]
-    public async Task<IActionResult> GetConfigBuild(int id)
-    {
-        var app = await appDbContext.Apps
-            .Include(a => a.Integration)
-            .SingleAsync(a => a.Id == id);
-
-        if (app.Integration is null)
-        {
-            return NotFound();
-        }
-        
-        return Ok(new
-        {
-            app.Integration.Branch,
-            app.Integration.Directory,
-            app.Integration.BuildCommand,
-            app.Integration.OutDir,
-            app.Integration.CreatedAt,
-            app.Integration.UpdatedAt
-        });
-    }
-
     private async Task<GitHubRepo> GetGitHubRepo(string repoFullName, UserToken userToken)
     {
         var client = httpClientFactory.CreateClient();
@@ -258,7 +188,7 @@ public class AppsController(
         return repo;
     }
 
-    private async Task CreateWebhook(int appId, string repoFullName, string userTokenToken,
+    private async Task CreateWebhook(int appId, string repoFullName, string accessToken,
         string webhookToken)
     {
         var config = configuration.GetSection("AppIntegrations:GitHubWebhook");
@@ -285,19 +215,11 @@ public class AppsController(
         var request = new HttpRequestMessage(HttpMethod.Post, $"https://api.github.com/repos/{repoFullName}/hooks");
         request.Headers.UserAgent.Add(new ProductInfoHeaderValue("WebApp", "1.0"));
         request.Headers.Add("Accept", "application/vnd.github+json");
-        request.Headers.Add("Authorization", $"Bearer {userTokenToken}");
+        request.Headers.Add("Authorization", $"Bearer {accessToken}");
         request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
         var content = new StringContent(json, null, "application/json");
         request.Content = content;
         var response = await client.SendAsync(request);
         response.EnsureSuccessStatusCode();
-    }
-
-    public class BuildConfigRequest
-    {
-        public string Branch { get; set; }
-        public string Directory { get; set; }
-        public string BuildCommand { get; set; }
-        public string OutDir { get; set; }
     }
 }

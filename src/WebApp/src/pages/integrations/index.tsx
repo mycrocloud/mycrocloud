@@ -29,6 +29,12 @@ type BuildConfig = {
   outDir: string;
 };
 
+interface ILogEntry {
+  message: string;
+  timestamp: string;
+  level: string;
+}
+
 export default function Integrations() {
   const { getAccessTokenSilently } = useAuth0();
   const { app, setApp } = useContext(AppContext)!;
@@ -92,7 +98,7 @@ export default function Integrations() {
     }
   };
 
-  const [builds, setBuilds] = useState<IBuildJob[]>([]);
+  const [jobs, setJobs] = useState<IBuildJob[]>([]);
 
   const fetchBuilds = async () => {
     const accessToken = await getAccessTokenSilently();
@@ -103,7 +109,7 @@ export default function Integrations() {
     });
     if (res.ok) {
       const builds = (await res.json()) as IBuildJob[];
-      setBuilds(builds);
+      setJobs(builds);
     }
   };
 
@@ -113,7 +119,7 @@ export default function Integrations() {
 
     //todo: use websockets instead of polling
     interval.current = window.setInterval(() => {
-      fetchBuilds();
+      //fetchBuilds();
     }, 2000);
 
     return () => {
@@ -122,9 +128,23 @@ export default function Integrations() {
   }, []);
 
   const [jobId, setJobId] = useState<string>();
-  const showBuildLogs = async (buildId: string) => {
-    setJobId(buildId);
-  };
+  const [logs, setLogs] = useState<ILogEntry[]>([]);
+  useEffect(() => {
+    if (!jobId) return;
+
+    (async () => {
+      const accessToken = await getAccessTokenSilently();
+      const res = await fetch(`/api/apps/${app.id}/builds/${jobId}/logs`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      if (res.ok) {
+        const logs = (await res.json()) as ILogEntry[];
+        setLogs(logs);
+      }
+    })();
+  }, [jobId]);
 
   function statusClass(status: string) {
     if (status === "pending") {
@@ -186,6 +206,7 @@ export default function Integrations() {
       toast.success("Build configuration saved");
     }
   };
+
   return (
     <div className="p-2">
       <h1 className="font-bold">Integrations</h1>
@@ -366,7 +387,12 @@ export default function Integrations() {
       </Modal>
 
       <section>
-        <h2 className="mt-4 font-semibold">Builds</h2>
+        <div className="mt-4 flex items-center">
+          <h2 className="font-semibold">Builds</h2>
+          <button className="ms-2 text-sm" onClick={() => fetchBuilds()}>
+            Refresh
+          </button>
+        </div>
         <div className="flex">
           <div className="basis-4/6">
             <table className="mt-2 w-full table-auto">
@@ -378,14 +404,14 @@ export default function Integrations() {
                 </tr>
               </thead>
               <tbody>
-                {builds.map((build) => (
+                {jobs.map((build) => (
                   <tr
                     key={build.id}
                     className={
                       "cursor-pointer border hover:bg-slate-100" +
                       (jobId === build.id ? " bg-slate-200" : "")
                     }
-                    onClick={() => showBuildLogs(build.id)}
+                    onClick={() => setJobId(build.id)}
                   >
                     <td>{build.id}</td>
                     <td className={statusClass(build.status)}>
@@ -401,9 +427,12 @@ export default function Integrations() {
             {jobId && (
               <div>
                 <h3>Build logs for job id: {jobId}</h3>
-                <pre>
-                  Coming soon! This will show the build logs for the selected
-                </pre>
+                {logs.map((log, i) => (
+                  <div key={i} className="mt-2">
+                    <p className="text-slate-500">{log.timestamp}</p>
+                    <p className="text-slate-600">{log.message}</p>
+                  </div>
+                ))}
               </div>
             )}
           </div>

@@ -1,7 +1,7 @@
 {
     "Id": "1",
-    "RepoFullName": "mycrocloud/mycrocloud-integration-test",
-    "CloneUrl": "https://github.com/mycrocloud/mycrocloud-integration-test",
+    "RepoFullName": "mycrocloud/sample-react-app",
+    "CloneUrl": "https://github.com/mycrocloud/sample-react-app",
     "Directory": ".",
     "OutDir": "dist"
 }

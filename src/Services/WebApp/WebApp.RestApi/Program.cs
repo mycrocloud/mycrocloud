@@ -6,6 +6,7 @@ using WebApp.Domain.Repositories;
 using WebApp.RestApi.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Reflection;
+using Nest;
 using WebApp.Infrastructure;
 using WebApp.Infrastructure.Repositories;
 using WebApp.RestApi.Filters;
@@ -60,6 +61,15 @@ builder.Services.AddScoped<ILogRepository, LogRepository>();
 builder.Services.AddSingleton<RabbitMqService>();
 builder.Services.AddHttpClient();
 builder.Services.AddHostedService<AppBuildJobStatusConsumer>();
+builder.Services.AddKeyedSingleton<ElasticClient>("AppBuildLogs", (_, _) =>
+{
+    var settings = new ConnectionSettings(new Uri(builder.Configuration["Elasticsearch:Host"]!))
+        .BasicAuthentication(builder.Configuration["Elasticsearch:Username"]!,
+            builder.Configuration["Elasticsearch:Password"]!)
+        .DefaultIndex(builder.Configuration["Elasticsearch:BuildLogsIndex"]!);
+
+    return new ElasticClient(settings);
+});
 
 var app = builder.Build();
 
