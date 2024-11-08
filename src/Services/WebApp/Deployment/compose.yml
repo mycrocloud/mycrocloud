@@ -1,18 +1,26 @@
 services:
   rabbitmq:
-    image: rabbitmq:management 
+    image: rabbitmq:management
     ports:
       - "5672:5672"
       - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: "rabbitmq-diagnostics -q ping"
+      interval: 5s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
 
   worker:
-    build: 
+    build:
       context: ./worker
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
+
     environment:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
       - UPLOAD_ARTIFACTS=true
@@ -21,8 +29,8 @@ services:
       - AUTH0_SECRET=
       - AUTH0_AUDIENCE=
       - UPLOAD_URL=http://localhost:5100/apps/0/Objects
-      - HOST_OUT_DIR=
+      - HOST_OUT_DIR=/srv/build-outputs
       - BUILDER_IMAGE=mycrocloud-builder
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /output:/output
+      - /srv/build-outputs:/output
