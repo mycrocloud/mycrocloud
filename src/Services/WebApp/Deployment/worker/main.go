@@ -24,11 +24,13 @@ import (
 )
 
 type BuildMessage struct {
-	Id           string `json:"Id"`
-	RepoFullName string `json:"RepoFullName"`
-	CloneUrl     string `json:"CloneUrl"`
-	Directory    string `json:"Directory"`
-	OutDir       string `json:"OutDir"`
+	Id             string `json:"Id"`
+	RepoFullName   string `json:"RepoFullName"`
+	CloneUrl       string `json:"CloneUrl"`
+	Directory      string `json:"Directory"`
+	OutDir         string `json:"OutDir"`
+	InstallCommand string `json:"InstallCommand"`
+	BuildCommand   string `json:"BuildCommand"`
 }
 
 func failOnError(err error, msg string) {
@@ -94,6 +96,8 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.
 		Env: []string{"REPO_URL=" + buildMsg.CloneUrl,
 			"WORK_DIR=" + buildMsg.Directory,
 			"OUT_DIR=" + buildMsg.OutDir,
+			"INSTALL_CMD=" + buildMsg.InstallCommand,
+			"BUILD_CMD=" + buildMsg.BuildCommand,
 		},
 		Labels: map[string]string{"job_id": buildMsg.Id},
 	}, &container.HostConfig{
