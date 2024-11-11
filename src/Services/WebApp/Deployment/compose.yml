@@ -1,6 +1,6 @@
 services:
   rabbitmq:
-    image: rabbitmq:management 
+    image: rabbitmq:management
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -9,7 +9,7 @@ services:
       RABBITMQ_DEFAULT_PASS: guest
 
   worker:
-    build: 
+    build:
       context: ./worker
     depends_on:
       - rabbitmq
@@ -31,12 +31,10 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /srv/build-outputs:/output
 
-  filebeat:
-    image: docker.elastic.co/beats/filebeat:8.15.3
-    environment:
-      - "ELASTICSEARCH_HOST="
-    command: filebeat -e -strict.perms=false
+  fluentd:
+    build: ./fluentd
+    image: fluent/fluentd:v1.17.1-1.1
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
-      - C:\Users\nampv\personal\repos\mycrocloud\src\Services\WebApp\Deployment\filebeat\filebeat.yml:/usr/share/filebeat/filebeat.yml
-      - "/var/lib/docker/containers:/var/log/containers:ro"
+      - .\fluentd\conf:/fluentd/etc:ro
+    ports:
+      - "24224:24224"

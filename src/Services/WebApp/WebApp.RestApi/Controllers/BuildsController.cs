@@ -1,3 +1,4 @@
+using Elastic.Clients.Elasticsearch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Nest;
@@ -12,7 +13,12 @@ namespace WebApp.RestApi.Controllers;
 [TypeFilter<AppOwnerActionFilter>(Arguments = ["appId"])]
 public class BuildsController(
     AppDbContext appDbContext,
-    [FromKeyedServices("AppBuildLogs")] ElasticClient elasticClient) : BaseController
+    IConfiguration configuration,
+    [FromKeyedServices("AppBuildLogs_ES7")]
+    ElasticClient elasticClient,
+    [FromKeyedServices("AppBuildLogs_ES8")]
+    ElasticsearchClient elasticsearchClient)
+    : BaseController
 {
     [HttpGet]
     public async Task<IActionResult> GetBuilds(int appId)
@@ -90,20 +96,41 @@ public class BuildsController(
         var job = await appDbContext.AppBuildJobs
             .SingleAsync(j => j.AppId == appId && j.Id == jobId);
 
-        var response = await elasticClient.SearchAsync<BuildLogDoc>(s =>
-            s.Query(q => q
-                .Match(m => m
-                    .Field("job_id")
-                    .Query(job.Id)
-                )
-            )
-        );
-        
-        return Ok(response.Documents.Select(d => new
+        if (configuration["Elasticsearch:Version"] == "v8")
         {
-            d.Timestamp,
-            d.Message,
-            d.Level
-        }));
+            var response = await elasticsearchClient.SearchAsync<BuildLogDoc>(s =>
+                s.Query(q => q
+                    .Match(m => m
+                        .Field("job_id")
+                        .Query(job.Id)
+                    )
+                )
+            );
+            
+            return Ok(response.Documents.Select(d => new
+            {
+                d.Timestamp,
+                d.Message,
+                d.Level
+            }));
+        }
+        else
+        {
+            var response = await elasticClient.SearchAsync<BuildLogDoc>(s =>
+                s.Query(q => q
+                    .Match(m => m
+                        .Field("job_id")
+                        .Query(job.Id)
+                    )
+                )
+            );
+
+            return Ok(response.Documents.Select(d => new
+            {
+                d.Timestamp,
+                d.Message,
+                d.Level
+            }));
+        }
     }
 }

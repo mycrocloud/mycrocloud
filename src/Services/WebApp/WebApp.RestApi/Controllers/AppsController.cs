@@ -195,9 +195,7 @@ public class AppsController(
 
         //for testing webhook locally
         //ref: https://docs.github.com/en/webhooks/testing-and-troubleshooting-webhooks/testing-webhooks
-        var url = !environment.IsDevelopment()
-            ? config["Config:Url"]!.TrimEnd('/') + $"/{appId}?token={webhookToken}"
-            : config["Config:Url"]!;
+        var url = string.Format(config["Config:Url"]!, appId, webhookToken);
 
         var webhookRequestBody = new
         {

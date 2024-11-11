@@ -6,6 +6,8 @@ using WebApp.Domain.Repositories;
 using WebApp.RestApi.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Reflection;
+using Elastic.Clients.Elasticsearch;
+using Elastic.Transport;
 using Nest;
 using WebApp.Infrastructure;
 using WebApp.Infrastructure.Repositories;
@@ -61,7 +63,7 @@ builder.Services.AddScoped<ILogRepository, LogRepository>();
 builder.Services.AddSingleton<RabbitMqService>();
 builder.Services.AddHttpClient();
 builder.Services.AddHostedService<AppBuildJobStatusConsumer>();
-builder.Services.AddKeyedSingleton<ElasticClient>("AppBuildLogs", (_, _) =>
+builder.Services.AddKeyedSingleton<ElasticClient>("AppBuildLogs_ES7", (_, _) =>
 {
     var settings = new ConnectionSettings(new Uri(builder.Configuration["Elasticsearch:Host"]!))
         .BasicAuthentication(builder.Configuration["Elasticsearch:Username"]!,
@@ -69,6 +71,16 @@ builder.Services.AddKeyedSingleton<ElasticClient>("AppBuildLogs", (_, _) =>
         .DefaultIndex(builder.Configuration["Elasticsearch:BuildLogsIndex"]!);
 
     return new ElasticClient(settings);
+});
+
+builder.Services.AddKeyedSingleton<ElasticsearchClient>("AppBuildLogs_ES8", (_, _) =>
+{
+    var settings = new ElasticsearchClientSettings(new Uri(builder.Configuration["Elasticsearch:Host"]!))
+        .Authentication(new BasicAuthentication(builder.Configuration["Elasticsearch:Username"]!,
+            builder.Configuration["Elasticsearch:Password"]!))
+        .DefaultIndex(builder.Configuration["Elasticsearch:BuildLogsIndex"]!);
+
+    return new ElasticsearchClient(settings);
 });
 
 var app = builder.Build();

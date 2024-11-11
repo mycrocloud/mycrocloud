@@ -389,18 +389,21 @@ export default function Integrations() {
       <section>
         <div className="mt-4 flex items-center">
           <h2 className="font-semibold">Builds</h2>
-          <button className="ms-2 text-sm" onClick={() => fetchBuilds()}>
+          <button
+            className="ms-2 text-sm text-sky-500 hover:underline"
+            onClick={() => fetchBuilds()}
+          >
             Refresh
           </button>
         </div>
         <div className="flex">
-          <div className="basis-4/6">
-            <table className="mt-2 w-full table-auto">
+          <div className="">
+            <table className="mt-2 table-fixed">
               <thead>
                 <tr className="border">
-                  <th>Id</th>
-                  <th>Status</th>
-                  <th>Started At</th>
+                  <th className="w-80 p-2 text-start">Id</th>
+                  <th className="w-20 text-start">Status</th>
+                  <th className="w-60 text-start">Started At</th>
                 </tr>
               </thead>
               <tbody>
@@ -413,7 +416,7 @@ export default function Integrations() {
                     }
                     onClick={() => setJobId(build.id)}
                   >
-                    <td>{build.id}</td>
+                    <td className="p-2">{build.id}</td>
                     <td className={statusClass(build.status)}>
                       {build.status}
                     </td>
@@ -423,18 +426,29 @@ export default function Integrations() {
               </tbody>
             </table>
           </div>
-          <div className="p-2">
-            {jobId && (
-              <div>
-                <h3>Build logs for job id: {jobId}</h3>
-                {logs.map((log, i) => (
-                  <div key={i} className="mt-2">
-                    <p className="text-slate-500">{log.timestamp}</p>
-                    <p className="text-slate-600">{log.message}</p>
+          <div className="flex-1 p-2">
+            {jobId &&
+              (logs.length > 0 ? (
+                <>
+                  <div className="mt-2 max-h-[400px] overflow-auto bg-black p-4 text-white">
+                    {logs.map((log, i) => (
+                      <div key={i} className="log-item mb-2">
+                        <span className="mr-2 text-xs text-gray-500">
+                          {log.timestamp}
+                        </span>
+                        <span className="font-mono text-sm text-white">
+                          {log.message}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
+                </>
+              ) : (
+                <p>
+                  No logs are available. The build may have been executed before
+                  the system started logging for this feature.
+                </p>
+              ))}
           </div>
         </div>
       </section>
