@@ -109,6 +109,13 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.
 			},
 		},
 		AutoRemove: true,
+		LogConfig: container.LogConfig{
+			Type: "fluentd",
+			Config: map[string]string{
+				"fluentd-address": "localhost:24224",
+				"tag":             "mycrocloud.builder",
+			},
+		},
 	}, nil, nil, "")
 	failOnError(err, "Failed to create container")
 
