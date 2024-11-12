@@ -57,7 +57,9 @@ public class WebhooksController(AppDbContext appDbContext, RabbitMqService rabbi
             RepoFullName = repoFullName,
             CloneUrl = $"https://{userToken.Token}@github.com/{repoFullName}.git",
             Directory = app.Integration?.Directory ?? ".",
-            OutDir = app.Integration?.OutDir ?? "dist"
+            OutDir = app.Integration?.OutDir ?? "dist",
+            InstallCommand = app.Integration?.InstallCommand ?? "npm install",
+            BuildCommand = app.Integration?.BuildCommand ?? "npm run build"
         };
 
         rabbitMqService.PublishMessage(JsonSerializer.Serialize(message));

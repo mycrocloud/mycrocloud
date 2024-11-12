@@ -1,0 +1,9 @@
+{
+    "Id": "1",
+    "RepoFullName": "mycrocloud/sample-react-app",
+    "CloneUrl": "https://github.com/mycrocloud/sample-react-app",
+    "Directory": ".",
+    "OutDir": "dist",
+    "InstallCommand": "npm install",
+    "BuildCommand": "npm run build"
+}

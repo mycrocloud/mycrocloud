@@ -43,4 +43,5 @@ public class AppIntegration: BaseEntity
     public string Directory { get; set; }
     public string BuildCommand { get; set; }
     public string OutDir { get; set; }
+    public string InstallCommand { get; set; }
 }

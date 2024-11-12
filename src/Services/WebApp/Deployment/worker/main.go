@@ -14,19 +14,23 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
+	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/streadway/amqp"
 )
 
 type BuildMessage struct {
-	Id           string `json:"Id"`
-	RepoFullName string `json:"RepoFullName"`
-	CloneUrl     string `json:"CloneUrl"`
-	Directory    string `json:"Directory"`
-	OutDir       string `json:"OutDir"`
+	Id             string `json:"Id"`
+	RepoFullName   string `json:"RepoFullName"`
+	CloneUrl       string `json:"CloneUrl"`
+	Directory      string `json:"Directory"`
+	OutDir         string `json:"OutDir"`
+	InstallCommand string `json:"InstallCommand"`
+	BuildCommand   string `json:"BuildCommand"`
 }
 
 func failOnError(err error, msg string) {
@@ -38,14 +42,38 @@ func failOnError(err error, msg string) {
 // MaxConcurrentJobs is the limit for concurrent jobs being processed
 const MaxConcurrentJobs = 3
 
+var LogIndex = os.Getenv("ES_BUILD_LOGS_INDEX")
+
+func logJob(esClient *elasticsearch.Client, level string, msg string, jobID string) {
+	doc := struct {
+		Timestamp time.Time `json:"@timestamp"`
+		Level     string    `json:"level"`
+		Message   string    `json:"message"`
+		JobID     string    `json:"job_id"`
+		Source    string    `json:"source"`
+	}{
+		Timestamp: time.Now(),
+		Level:     level,
+		Message:   msg,
+		JobID:     jobID,
+		Source:    "worker",
+	}
+	data, _ := json.Marshal(doc)
+	esClient.Index(LogIndex, bytes.NewReader(data))
+}
+
 // ProcessJob simulates job processing asynchronously
-func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.Queue) {
+func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.Queue, esClient *elasticsearch.Client) {
 	defer wg.Done()
 
-	var repo BuildMessage
-	err := json.Unmarshal([]byte(jsonString), &repo)
+	var buildMsg BuildMessage
+	err := json.Unmarshal([]byte(jsonString), &buildMsg)
 	failOnError(err, "Failed to unmarshal JSON")
-	log.Printf("Processing... Id: %s, RepoFullName: %s", repo.Id, repo.RepoFullName)
+
+	// Publish log entry
+	failOnError(err, "Failed to marshal log entry")
+	log.Printf("Processing... Id: %s, RepoFullName: %s", buildMsg.Id, buildMsg.RepoFullName)
+	logJob(esClient, "INFO", "Processing job", buildMsg.Id)
 
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -55,7 +83,7 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.
 	log.Printf("Creating container")
 	builderImage := os.Getenv("BUILDER_IMAGE")
 	hostOutDir := os.Getenv("HOST_OUT_DIR")
-	distDir := path.Join("/output", repo.Id)
+	distDir := path.Join("/output", buildMsg.Id)
 
 	log.Printf("Creating output directory: %s", distDir)
 	if err := os.MkdirAll(distDir, 0755); err != nil {
@@ -65,19 +93,29 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: builderImage,
 		Tty:   false,
-		Env: []string{"REPO_URL=" + repo.CloneUrl,
-			"WORK_DIR=" + repo.Directory,
-			"OUT_DIR=" + repo.OutDir,
+		Env: []string{"REPO_URL=" + buildMsg.CloneUrl,
+			"WORK_DIR=" + buildMsg.Directory,
+			"OUT_DIR=" + buildMsg.OutDir,
+			"INSTALL_CMD=" + buildMsg.InstallCommand,
+			"BUILD_CMD=" + buildMsg.BuildCommand,
 		},
+		Labels: map[string]string{"job_id": buildMsg.Id},
 	}, &container.HostConfig{
 		Mounts: []mount.Mount{
 			{
 				Type:   mount.TypeBind,
-				Source: hostOutDir + "/" + repo.Id,
+				Source: hostOutDir + "/" + buildMsg.Id,
 				Target: "/output",
 			},
 		},
 		AutoRemove: true,
+		LogConfig: container.LogConfig{
+			Type: "fluentd",
+			Config: map[string]string{
+				"fluentd-address": "localhost:24224",
+				"tag":             "mycrocloud.builder",
+			},
+		},
 	}, nil, nil, "")
 	failOnError(err, "Failed to create container")
 
@@ -109,9 +147,9 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.
 		Status string `json:"Status"`
 		Prefix string `json:"Prefix"`
 	}{
-		Id:     repo.Id,
+		Id:     buildMsg.Id,
 		Status: "done",
-		Prefix: "output/" + repo.Id,
+		Prefix: "output/" + buildMsg.Id,
 	}
 
 	body, err := json.Marshal(statusMessage)
@@ -127,7 +165,8 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.
 		})
 	failOnError(err, "Failed to publish a message")
 
-	log.Printf("Finished processing. Id: %s", repo.Id)
+	log.Printf("Finished processing. Id: %s", buildMsg.Id)
+	logJob(esClient, "INFO", "Finished processing.", buildMsg.Id)
 }
 
 func RecursiveUpload(dir string) {
@@ -269,6 +308,22 @@ func main() {
 	)
 	failOnError(err, "Failed to register a consumer")
 
+	host := os.Getenv("ES_HOST")
+	username := os.Getenv("ES_USERNAME")
+	password := os.Getenv("ES_PASSWORD")
+
+	// Configure the Elasticsearch client
+	cfg := elasticsearch.Config{
+		Addresses: []string{host},
+		Username:  username,
+		Password:  password,
+	}
+
+	esClient, err := elasticsearch.NewClient(cfg)
+	failOnError(err, "Failed to create elasticsearch client")
+
+	esClient.Indices.Create(LogIndex)
+
 	forever := make(chan bool)
 
 	go func() {
@@ -281,7 +336,7 @@ func main() {
 
 			go func(job string) {
 				defer func() { <-jobLimit }() // Release the slot once the job is done
-				ProcessJob(job, wg, ch, q2)
+				ProcessJob(job, wg, ch, q2, esClient)
 			}(job)
 		}
 	}()

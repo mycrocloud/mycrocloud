@@ -23,7 +23,7 @@ services:
 
     environment:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
-      - UPLOAD_ARTIFACTS=true
+      - UPLOAD_ARTIFACTS=false
       - AUTH0_DOMAIN=
       - AUTH0_CLIENT_ID=
       - AUTH0_SECRET=
@@ -31,6 +31,18 @@ services:
       - UPLOAD_URL=http://localhost:5100/apps/0/Objects
       - HOST_OUT_DIR=/srv/build-outputs
       - BUILDER_IMAGE=mycrocloud-builder
+      - ES_BUILD_LOGS_INDEX=dev-build-logs
+      - ES_HOST=
+      - ES_USERNAME=
+      - ES_PASSWORD=
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /srv/build-outputs:/output
+
+  fluentd:
+    build: ./fluentd
+    image: fluent/fluentd:v1.17.1-1.1
+    volumes:
+      - .\fluentd\conf:/fluentd/etc:ro
+    ports:
+      - "24224:24224"
