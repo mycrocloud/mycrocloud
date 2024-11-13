@@ -1,0 +1,47 @@
+name: Publish fluentd image
+
+on:
+  push:
+    branches:
+      - dev
+
+    paths:
+      - "src/Services/WebApp/Deployment/fluentd/**"
+
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}-deployment-fluentd
+  WORK_DIR: src/Services/WebApp/Deployment
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    outputs:
+      tags: ${{ steps.meta.outputs.tags }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3.3.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.CR_PAT }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        uses: docker/metadata-action@v5.5.1
+        id: meta
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6.9.0
+        with:
+          context: ${{env.WORK_DIR}}/fluentd
+          file: ${{env.WORK_DIR}}/fluentd/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
