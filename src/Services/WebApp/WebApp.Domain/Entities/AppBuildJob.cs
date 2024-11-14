@@ -7,6 +7,7 @@ public class AppBuildJob
     public App App { get; set; }
     public string Status { get; set; }
 
+    public string ContainerId { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 }

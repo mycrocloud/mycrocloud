@@ -6,6 +6,9 @@ toolchain go1.23.0
 
 require (
 	github.com/docker/docker v27.3.1+incompatible
+	github.com/elastic/go-elasticsearch/v7 v7.10.0
+	github.com/elastic/go-elasticsearch/v8 v8.15.0
+	github.com/joho/godotenv v1.5.1
 	github.com/streadway/amqp v1.1.0
 )
 
@@ -16,7 +19,6 @@ require (
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/elastic/elastic-transport-go/v8 v8.6.0 // indirect
-	github.com/elastic/go-elasticsearch/v8 v8.15.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect

@@ -19,19 +19,11 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
-	"github.com/elastic/go-elasticsearch/v8"
+	elasticsearch7 "github.com/elastic/go-elasticsearch/v7"
+	elasticsearch8 "github.com/elastic/go-elasticsearch/v8"
+	"github.com/joho/godotenv"
 	"github.com/streadway/amqp"
 )
-
-type BuildMessage struct {
-	Id             string `json:"Id"`
-	RepoFullName   string `json:"RepoFullName"`
-	CloneUrl       string `json:"CloneUrl"`
-	Directory      string `json:"Directory"`
-	OutDir         string `json:"OutDir"`
-	InstallCommand string `json:"InstallCommand"`
-	BuildCommand   string `json:"BuildCommand"`
-}
 
 func failOnError(err error, msg string) {
 	if err != nil {
@@ -44,7 +36,7 @@ const MaxConcurrentJobs = 3
 
 var LogIndex = os.Getenv("ES_BUILD_LOGS_INDEX")
 
-func logJob(esClient *elasticsearch.Client, level string, msg string, jobID string) {
+func logJob(es7 *elasticsearch7.Client, es8 *elasticsearch8.Client, level string, msg string, jobID string) {
 	doc := struct {
 		Timestamp time.Time `json:"@timestamp"`
 		Level     string    `json:"level"`
@@ -56,24 +48,26 @@ func logJob(esClient *elasticsearch.Client, level string, msg string, jobID stri
 		Level:     level,
 		Message:   msg,
 		JobID:     jobID,
-		Source:    "worker",
 	}
-	data, _ := json.Marshal(doc)
-	esClient.Index(LogIndex, bytes.NewReader(data))
+	data, err := json.Marshal(doc)
+	failOnError(err, "Failed to marshal log data")
+	if _, err := es7.Index(LogIndex, bytes.NewReader(data)); err != nil {
+		log.Printf("Failed to index document in Elasticsearch 7: %v", err)
+	}
+	if _, err := es8.Index(LogIndex, bytes.NewReader(data)); err != nil {
+		log.Printf("Failed to index document in Elasticsearch 8: %v", err)
+	}
 }
 
 // ProcessJob simulates job processing asynchronously
-func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.Queue, esClient *elasticsearch.Client) {
+func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.Queue, es7 *elasticsearch7.Client, es8 *elasticsearch8.Client) {
 	defer wg.Done()
 
 	var buildMsg BuildMessage
 	err := json.Unmarshal([]byte(jsonString), &buildMsg)
 	failOnError(err, "Failed to unmarshal JSON")
-
-	// Publish log entry
-	failOnError(err, "Failed to marshal log entry")
-	log.Printf("Processing... Id: %s, RepoFullName: %s", buildMsg.Id, buildMsg.RepoFullName)
-	logJob(esClient, "INFO", "Processing job", buildMsg.Id)
+	log.Printf("Processing... Id: %s, RepoFullName: %s", buildMsg.JobId, buildMsg.RepoFullName)
+	logJob(es7, es8, "info", "Processing", buildMsg.JobId)
 
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -83,7 +77,7 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.
 	log.Printf("Creating container")
 	builderImage := os.Getenv("BUILDER_IMAGE")
 	hostOutDir := os.Getenv("HOST_OUT_DIR")
-	distDir := path.Join("/output", buildMsg.Id)
+	distDir := path.Join("/output", buildMsg.JobId)
 
 	log.Printf("Creating output directory: %s", distDir)
 	if err := os.MkdirAll(distDir, 0755); err != nil {
@@ -99,12 +93,12 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.
 			"INSTALL_CMD=" + buildMsg.InstallCommand,
 			"BUILD_CMD=" + buildMsg.BuildCommand,
 		},
-		Labels: map[string]string{"job_id": buildMsg.Id},
+		Labels: map[string]string{"job_id": buildMsg.JobId},
 	}, &container.HostConfig{
 		Mounts: []mount.Mount{
 			{
 				Type:   mount.TypeBind,
-				Source: hostOutDir + "/" + buildMsg.Id,
+				Source: hostOutDir + "/" + buildMsg.JobId,
 				Target: "/output",
 			},
 		},
@@ -124,11 +118,22 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.
 	err = cli.ContainerStart(ctx, resp.ID, container.StartOptions{})
 	failOnError(err, "Failed to start container")
 
+	publishJobStatusChangedEventMessage(ch, q, JobStatusChangedEventMessage{
+		JobId:       buildMsg.JobId,
+		Status:      Started,
+		ContainerId: resp.ID,
+	})
+
 	// Wait for the container to finish
 	statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
 	select {
 	case err := <-errCh:
 		failOnError(err, "Failed to wait for container")
+		publishJobStatusChangedEventMessage(ch, q, JobStatusChangedEventMessage{
+			JobId:  buildMsg.JobId,
+			Status: Failed,
+		})
+
 	case status := <-statusCh:
 		log.Printf("Container finished with status %d", status.StatusCode)
 	}
@@ -142,31 +147,14 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.
 	}
 
 	// publish completion message
-	statusMessage := struct {
-		Id     string `json:"Id"`
-		Status string `json:"Status"`
-		Prefix string `json:"Prefix"`
-	}{
-		Id:     buildMsg.Id,
-		Status: "done",
-		Prefix: "output/" + buildMsg.Id,
-	}
+	publishJobStatusChangedEventMessage(ch, q, JobStatusChangedEventMessage{
+		JobId:              buildMsg.JobId,
+		Status:             Done,
+		ArtifactsKeyPrefix: "output/" + buildMsg.JobId,
+	})
 
-	body, err := json.Marshal(statusMessage)
-	failOnError(err, "Failed to marshal status message")
-	err = ch.Publish(
-		"",     // exchange
-		q.Name, // routing key
-		false,  // mandatory
-		false,  // immediate
-		amqp.Publishing{
-			ContentType: "application/json",
-			Body:        body,
-		})
-	failOnError(err, "Failed to publish a message")
-
-	log.Printf("Finished processing. Id: %s", buildMsg.Id)
-	logJob(esClient, "INFO", "Finished processing.", buildMsg.Id)
+	log.Printf("Finished processing. Id: %s", buildMsg.JobId)
+	logJob(es7, es8, "info", "Finished processing", buildMsg.JobId)
 }
 
 func RecursiveUpload(dir string) {
@@ -259,6 +247,8 @@ func GetAccessToken() string {
 }
 
 func main() {
+	err := godotenv.Load()
+	failOnError(err, "Failed to load .env file")
 	rabbitMQURL := os.Getenv("RABBITMQ_URL")
 	// Connect to RabbitMQ server
 	log.Printf("Connecting to RabbitMQ server at %s", rabbitMQURL)
@@ -313,16 +303,20 @@ func main() {
 	password := os.Getenv("ES_PASSWORD")
 
 	// Configure the Elasticsearch client
-	cfg := elasticsearch.Config{
+	es7, err := elasticsearch7.NewClient(elasticsearch7.Config{
 		Addresses: []string{host},
 		Username:  username,
 		Password:  password,
-	}
-
-	esClient, err := elasticsearch.NewClient(cfg)
+	})
+	es8, err := elasticsearch8.NewClient(elasticsearch8.Config{
+		Addresses: []string{host},
+		Username:  username,
+		Password:  password,
+	})
 	failOnError(err, "Failed to create elasticsearch client")
 
-	esClient.Indices.Create(LogIndex)
+	es7.Indices.Create(LogIndex)
+	es8.Indices.Create(LogIndex)
 
 	forever := make(chan bool)
 
@@ -336,7 +330,7 @@ func main() {
 
 			go func(job string) {
 				defer func() { <-jobLimit }() // Release the slot once the job is done
-				ProcessJob(job, wg, ch, q2, esClient)
+				ProcessJob(job, wg, ch, q2, es7, es8)
 			}(job)
 		}
 	}()

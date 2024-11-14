@@ -53,7 +53,7 @@ public class WebhooksController(AppDbContext appDbContext, RabbitMqService rabbi
 
         var message = new AppBuildMessage
         {
-            Id = job.Id,
+            JobId = job.Id,
             RepoFullName = repoFullName,
             CloneUrl = $"https://{userToken.Token}@github.com/{repoFullName}.git",
             Directory = app.Integration?.Directory ?? ".",
