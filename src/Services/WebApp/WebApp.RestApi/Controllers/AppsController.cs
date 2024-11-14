@@ -20,9 +20,7 @@ public class AppsController(
     IAppRepository appRepository,
     AppDbContext appDbContext,
     IConfiguration configuration,
-    IHttpClientFactory httpClientFactory,
-    IHostEnvironment environment,
-    RabbitMqService rabbitMqService
+    IHttpClientFactory httpClientFactory
 ) : BaseController
 {
     [HttpGet]
