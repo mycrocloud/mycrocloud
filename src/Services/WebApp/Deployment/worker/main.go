@@ -247,8 +247,10 @@ func GetAccessToken() string {
 }
 
 func main() {
-	err := godotenv.Load()
-	failOnError(err, "Failed to load .env file")
+	if err := godotenv.Load(); err != nil && !os.IsNotExist(err) {
+		failOnError(err, "Failed to load .env file")
+	}
+
 	rabbitMQURL := os.Getenv("RABBITMQ_URL")
 	// Connect to RabbitMQ server
 	log.Printf("Connecting to RabbitMQ server at %s", rabbitMQURL)
