@@ -35,6 +35,7 @@ func failOnError(err error, msg string) {
 const MaxConcurrentJobs = 3
 
 var LogIndex = os.Getenv("ES_BUILD_LOGS_INDEX")
+var ES_VERSION = os.Getenv("ES_VERSION")
 
 func logJob(es7 *elasticsearch7.Client, es8 *elasticsearch8.Client, level string, msg string, jobID string) {
 	doc := struct {
@@ -51,11 +52,17 @@ func logJob(es7 *elasticsearch7.Client, es8 *elasticsearch8.Client, level string
 	}
 	data, err := json.Marshal(doc)
 	failOnError(err, "Failed to marshal log data")
-	if _, err := es7.Index(LogIndex, bytes.NewReader(data)); err != nil {
-		log.Printf("Failed to index document in Elasticsearch 7: %v", err)
-	}
-	if _, err := es8.Index(LogIndex, bytes.NewReader(data)); err != nil {
-		log.Printf("Failed to index document in Elasticsearch 8: %v", err)
+
+	if ES_VERSION == "7" {
+		if _, err := es7.Index(LogIndex, bytes.NewReader(data)); err != nil {
+			log.Printf("Failed to index document in Elasticsearch 7: %v", err)
+		}
+	} else if ES_VERSION == "8" {
+		if _, err := es8.Index(LogIndex, bytes.NewReader(data)); err != nil {
+			log.Printf("Failed to index document in Elasticsearch 8: %v", err)
+		}
+	} else {
+		log.Printf("Invalid Elasticsearch version: %s", ES_VERSION)
 	}
 }
 
@@ -310,6 +317,7 @@ func main() {
 		Username:  username,
 		Password:  password,
 	})
+	failOnError(err, "Failed to create elasticsearch client")
 	es8, err := elasticsearch8.NewClient(elasticsearch8.Config{
 		Addresses: []string{host},
 		Username:  username,
@@ -317,8 +325,13 @@ func main() {
 	})
 	failOnError(err, "Failed to create elasticsearch client")
 
-	es7.Indices.Create(LogIndex)
-	es8.Indices.Create(LogIndex)
+	if ES_VERSION == "7" {
+		_, err := es7.Indices.Create(LogIndex)
+		failOnError(err, "Failed to create index")
+	} else if ES_VERSION == "8" {
+		es8.Indices.Create(LogIndex)
+		failOnError(err, "Failed to create index")
+	}
 
 	forever := make(chan bool)
 
