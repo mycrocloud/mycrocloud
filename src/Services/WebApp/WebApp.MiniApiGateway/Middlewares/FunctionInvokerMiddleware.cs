@@ -4,19 +4,48 @@ using Jint;
 using Jint.Native;
 using WebApp.Domain.Entities;
 using WebApp.Domain.Repositories;
+using WebApp.FunctionShared;
+using WebApp.FunctionShared.PlugIns;
 using WebApp.Infrastructure;
-using WebApp.MiniApiGateway.PlugIns;
 
 namespace WebApp.MiniApiGateway.Middlewares;
 
 public class FunctionInvokerMiddleware(RequestDelegate next)
 {
     public async Task InvokeAsync(HttpContext context, AppDbContext dbContext, Scripts scripts,
-        IAppRepository appRepository)
+        IAppRepository appRepository, InProcessFunctionExecutionManager inProcessFunctionExecutionManager)
     {
         var app = (App)context.Items["_App"]!;
         var route = (Route)context.Items["_Route"]!;
 
+        FunctionExecutionResult result;
+        switch (route.FunctionExecutionEnvironment)
+        {
+            case FunctionExecutionEnvironment.InProcess:
+                result = await InProcess(context, scripts, appRepository, inProcessFunctionExecutionManager, app,
+                    route);
+                break;
+            default:
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("Function execution environment not supported.");
+                return;
+        }
+
+        //Write response
+        context.Response.StatusCode = result.StatusCode ?? 200;
+        foreach (var (key, value) in result.Headers)
+        {
+            context.Response.Headers.Append(key, value);
+        }
+
+        await context.Response.WriteAsync(result.Body ?? "");
+        context.Items["_FunctionExecutionResult"] = result;
+    }
+
+    private async Task<FunctionExecutionResult> InProcess(HttpContext context, Scripts scripts,
+        IAppRepository appRepository,
+        InProcessFunctionExecutionManager inProcessFunctionExecutionManager, App app, Route route)
+    {
         var engine = new Engine(options =>
         {
             if (app.Settings.CheckFunctionExecutionLimitMemory)
@@ -25,11 +54,6 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
                 memoryLimit += 10 * 1024 * 1024;
 
                 options.LimitMemory(memoryLimit);
-            }
-
-            if (app.Settings.CheckFunctionExecutionTimeout)
-            {
-                options.TimeoutInterval(TimeSpan.FromSeconds(app.Settings.FunctionExecutionTimeoutSeconds ?? 10));
             }
         });
 
@@ -46,20 +70,26 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
         using var scope = context.RequestServices.CreateScope();
         var dbContext2 = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         InjectPlugIns(engine, dbContext2, app);
-
+        
         JsValue jsResult;
         var result = new FunctionExecutionResult();
         //Start measuring time for function execution
         var startingTimestamp = Stopwatch.GetTimestamp();
         try
         {
-            engine.Execute(route.FunctionHandler);
-
             await engine.SetRequestValue(context.Request);
-
             const string code = "(() => { return $FunctionHandler$(request); })();";
 
-            jsResult = engine.Evaluate(code.Replace("$FunctionHandler$", route.FunctionHandlerMethod ?? "handler"));
+            jsResult = await inProcessFunctionExecutionManager.EnqueueJob(token =>
+            {
+                engine.Execute(route.FunctionHandler);
+                var value = engine.Evaluate(code.Replace("$FunctionHandler$",
+                    route.FunctionHandlerMethod ?? "handler"));
+
+                return Task.FromResult(value);
+            }, TimeSpan.FromSeconds(app.Settings.FunctionExecutionTimeoutSeconds ?? 10));
+
+            var resultx = JintExecutor.Map(jsResult);
         }
         catch (Exception e)
         {
@@ -76,75 +106,13 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
             result.Duration = Stopwatch.GetElapsedTime(startingTimestamp);
         }
 
-        var statusCode = jsResult.Get("statusCode");
-        if (statusCode.IsNumber())
-        {
-            result.StatusCode = (int)statusCode.AsNumber();
-        }
-
-        var headers = jsResult.Get("headers");
-        if (headers.IsObject())
-        {
-            var headersObject = headers.AsObject();
-            var headersObjectProperties = headersObject.GetOwnProperties();
-            foreach (var (k, v) in headersObjectProperties)
-            {
-                var headerName = k.AsString();
-                string headerValue;
-
-                var value = v.Value;
-
-                if (value.IsNull())
-                {
-                    continue;
-                }
-
-                if (value.IsNumber())
-                {
-                    headerValue = value.AsNumber().ToString(CultureInfo.InvariantCulture);
-                }
-                else if (value.IsString())
-                {
-                    headerValue = value.AsString();
-                }
-                else if (value.IsBoolean())
-                {
-                    headerValue = value.AsBoolean().ToString();
-                }
-                else
-                {
-                    continue;
-                }
-
-                if (!result.Headers.TryAdd(headerName, headerValue))
-                {
-                    result.Headers[headerName] = headerValue;
-                }
-            }
-        }
-
-
-        var body = jsResult.Get("body");
-        if (body.IsString())
-        {
-            result.Body = body.AsString();
-        }
-
         var additionalLogMessage = jsResult.Get("additionalLogMessage");
         if (additionalLogMessage.IsString())
         {
             result.AdditionalLogMessage = additionalLogMessage.AsString();
         }
 
-        //Write response
-        context.Response.StatusCode = result.StatusCode ?? 200;
-        foreach (var (key, value) in result.Headers)
-        {
-            context.Response.Headers.Append(key, value);
-        }
-
-        await context.Response.WriteAsync(result.Body ?? "");
-        context.Items["_FunctionExecutionResult"] = result;
+        return result;
     }
 
     private static void InjectPlugIns(Engine engine, AppDbContext dbContext, App app)

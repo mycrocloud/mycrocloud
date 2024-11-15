@@ -2,19 +2,19 @@ using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using WebApp.Domain.Entities;
 using Route = WebApp.Domain.Entities.Route;
+
 namespace WebApp.RestApi.Models.Routes;
 
 public class RouteCreateUpdateRequest
 {
-    [Required]
-    public string Name { get; set; }
-    [Required]
-    public string Method { get; set; }
-    [Required]
-    public string Path { get; set; }
+    [Required] public string Name { get; set; }
+    [Required] public string Method { get; set; }
+    [Required] public string Path { get; set; }
+
     [Required]
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public ResponseType ResponseType { get; set; }
+
     public int? ResponseStatusCode { get; set; }
     public List<ResponseHeader> ResponseHeaders { get; set; } = [];
     public string? ResponseBody { get; set; }
@@ -31,7 +31,7 @@ public class RouteCreateUpdateRequest
     public int? FolderId { get; set; }
 
     public bool Enabled { get; set; } = true;
-    
+
     public Route ToCreateEntity()
     {
         return new Route
@@ -52,10 +52,12 @@ public class RouteCreateUpdateRequest
             FunctionHandlerDependencies = FunctionHandlerDependencies,
             RequireAuthorization = RequireAuthorization,
             FileId = FileId,
-            Enabled = Enabled
+            Enabled = Enabled,
+            FunctionExecutionEnvironment =
+                ResponseType == ResponseType.Function ? FunctionExecutionEnvironment.InProcess : null
         };
     }
-    
+
     public void ToUpdateEntity(ref Route route)
     {
         route.Name = Name;
@@ -80,10 +82,8 @@ public class RouteCreateUpdateRequest
 
 public class ResponseHeader
 {
-    [Required]
-    public string Name { get; set; }
-    [Required]
-    public string Value { get; set; }
+    [Required] public string Name { get; set; }
+    [Required] public string Value { get; set; }
 
     public Domain.Entities.ResponseHeader ToEntity()
     {

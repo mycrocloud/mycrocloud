@@ -1,10 +1,9 @@
-using WebApp.Domain.Entities;
 using WebApp.Infrastructure;
 using Object = WebApp.Domain.Entities.Object;
 
-namespace WebApp.MiniApiGateway.PlugIns;
+namespace WebApp.FunctionShared.PlugIns;
 
-internal class ObjectStorageAdapter(int appId, AppDbContext dbContext)
+public class ObjectStorageAdapter(int appId, AppDbContext dbContext)
 {
     public byte[] Read(string key)
     {

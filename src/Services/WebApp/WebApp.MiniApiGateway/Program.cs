@@ -32,19 +32,18 @@ builder.Services.AddSingleton(new Scripts
     Lodash = File.ReadAllText("Scripts/lodash.min.js")
 });
 builder.Services.AddSingleton<ICachedOpenIdConnectionSigningKeys, MemoryCachedOpenIdConnectionSigningKeys>();
+builder.Services.AddSingleton(new InProcessFunctionExecutionManager(100));
 builder.Services.AddHealthChecks();
+
 var app = builder.Build();
 
 app.UseHttpLogging();
 app.UseWhen(context => context.Request.Host.Host == builder.Configuration["Host"], config =>
 {
     config.UseHealthChecks("/healthz");
-    
+
     // short-circuit the pipeline here
-    config.Run(async context =>
-    {
-        await context.Response.CompleteAsync();
-    });
+    config.Run(async context => { await context.Response.CompleteAsync(); });
 });
 
 app.UseLoggingMiddleware();

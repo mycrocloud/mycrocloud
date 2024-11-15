@@ -33,6 +33,8 @@ public class Route : BaseEntity
     public RouteFolder Folder { get; set; }
 
     public bool Enabled { get; set; }
+
+    public FunctionExecutionEnvironment? FunctionExecutionEnvironment { get; set; }
     
     // Navigation properties
     public ICollection<Log> Logs { get; set; }
@@ -49,4 +51,11 @@ public enum ResponseType
     Static = 1,
     StaticFile = 2,
     Function = 3
+}
+
+public enum FunctionExecutionEnvironment
+{
+    InProcess = 1,
+    OutOfProcess_DockerContainer = 2,
+    OutOfProcess_KVM = 3
 }
