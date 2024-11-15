@@ -6,6 +6,7 @@ WORKDIR /source
 COPY WebApp.MiniApiGateway/WebApp.MiniApiGateway.csproj WebApp.MiniApiGateway/
 COPY WebApp.Domain/WebApp.Domain.csproj WebApp.Domain/
 COPY WebApp.Infrastructure/WebApp.Infrastructure.csproj WebApp.Infrastructure/
+COPY WebApp.FunctionShared/WebApp.FunctionShared.csproj WebApp.FunctionShared/
 
 RUN dotnet restore WebApp.MiniApiGateway/WebApp.MiniApiGateway.csproj
 
@@ -13,6 +14,7 @@ RUN dotnet restore WebApp.MiniApiGateway/WebApp.MiniApiGateway.csproj
 COPY WebApp.MiniApiGateway/ WebApp.MiniApiGateway/
 COPY WebApp.Domain/ WebApp.Domain/
 COPY WebApp.Infrastructure/ WebApp.Infrastructure/
+COPY WebApp.FunctionShared/ WebApp.FunctionShared/
 
 RUN dotnet publish WebApp.MiniApiGateway/WebApp.MiniApiGateway.csproj -c Release -o /app
 
