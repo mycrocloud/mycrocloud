@@ -7,6 +7,7 @@ on:
     paths: 
       - 'src/Services/WebApp/WebApp.Domain/**'
       - 'src/Services/WebApp/WebApp.Infrastructure/**'
+      - 'src/Services/WebApp/WebApp.FunctionShared/**'
       - 'src/Services/WebApp/WebApp.MiniApiGateway/**'
       
   workflow_dispatch: 
