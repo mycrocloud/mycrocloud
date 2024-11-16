@@ -5,11 +5,21 @@
 }
 
 <h1>Edit App</h1>
-<code>@Json.Serialize(Model.App)</code>
 <form method="post">
     <div>
         <label asp-for="App.Name"></label>
-        <input type="text" asp-for="App.Name" />
+        <input type="text" asp-for="App.Name" class="form-control" />
     </div>
-    <button type="submit">Save</button>
+    <button type="submit" class="btn btn-primary mt-4">Save</button>
 </form>
+<hr/>
+<form id="frmDelete" method="post" asp-page-handler="Delete" class="mt-4">
+    <button type="submit" class="btn btn-danger">Delete</button>
+</form>
+<script>
+    $(function () {
+        $("#frmDelete").submit(function () {
+            return confirm("Are you sure you want to delete this app?");
+        });
+    });
+</script>

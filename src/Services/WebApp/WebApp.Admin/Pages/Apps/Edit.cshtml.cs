@@ -28,4 +28,13 @@ public class EditPageModel(AppDbContext appDbContext) : PageModel
         
         return RedirectToPage("List");
     }
+
+    public async Task<IActionResult> OnPostDelete(int appId)
+    {
+        var app = await appDbContext.Apps.SingleAsync(a => a.Id == appId);
+        appDbContext.Remove(app);
+        await appDbContext.SaveChangesAsync();
+        
+        return RedirectToPage("List");
+    }
 }

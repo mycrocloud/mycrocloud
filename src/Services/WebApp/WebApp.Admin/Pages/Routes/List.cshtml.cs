@@ -6,7 +6,7 @@ using WebApp.Infrastructure;
 using Route = WebApp.Domain.Entities.Route;
 namespace WebApp.Admin.Pages.Routes
 {
-    public class RouteListModel(AppDbContext appDbContext) : PageModel
+    public class ListModel(AppDbContext appDbContext) : PageModel
     {
         public App App { get; set; } = null!;
         public IEnumerable<Route> Routes { get; set; } = new List<Route>();

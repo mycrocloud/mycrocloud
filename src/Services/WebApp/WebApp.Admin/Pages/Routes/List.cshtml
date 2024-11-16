@@ -1,5 +1,5 @@
 ﻿@page "/Apps/{appId:int}/Routes"
-@model RouteListModel
+@model ListModel
 @{
 }
 <h1>Routes</h1>
@@ -23,11 +23,6 @@
                 <td>@route.Status</td>
                 <td>
                     <a href="@Url.Page("Edit", new { appId = route.AppId, routeId = route.Id })">Edit</a>
-                    <a href="@Url.Page("Delete", new { appId = route.AppId, routeId = route.Id })">Delete</a>
-                    <button type="button" data-id="@route.Id" data-status="@route.Status"
-                        class="btn text-secondary jsUnblockButton">
-                        @(route.Status == Domain.Enums.RouteStatus.Blocked ? "Unblock" : "Block")
-                    </button>
                 </td>
             </tr>
         }
