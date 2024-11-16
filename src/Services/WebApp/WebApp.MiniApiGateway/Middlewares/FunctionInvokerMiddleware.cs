@@ -67,7 +67,7 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
         var dockerClient = context.RequestServices.GetRequiredService<DockerClient>();
 
         var hostFilePath =
-            Path.Combine(@"C:\Users\nampv\personal\repos\mycrocloud\src\Services\WebApp\WebApp.MiniApiGateway\Outputs",
+            Path.Combine(configuration["DockerFunctionExecution:HostFilePath"]!,
                 context.TraceIdentifier.Replace(':', '_'));
 
         Directory.CreateDirectory(hostFilePath);
