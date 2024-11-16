@@ -1,3 +1,4 @@
+using Docker.DotNet;
 using Microsoft.EntityFrameworkCore;
 using WebApp.Domain.Entities;
 using WebApp.Domain.Repositories;
@@ -33,8 +34,16 @@ builder.Services.AddSingleton(new Scripts
 });
 builder.Services.AddSingleton<ICachedOpenIdConnectionSigningKeys, MemoryCachedOpenIdConnectionSigningKeys>();
 
-builder.Services.AddKeyedSingleton( "InProcessFunctionExecutionManager",new ConcurrencyJobManager(100));
-builder.Services.AddKeyedSingleton( "DockerContainerFunctionExecutionManager",new ConcurrencyJobManager(100));
+builder.Services.AddKeyedSingleton("InProcessFunctionExecutionManager", new ConcurrencyJobManager(100));
+builder.Services.AddKeyedSingleton("DockerContainerFunctionExecutionManager", new ConcurrencyJobManager(100));
+builder.Services.AddSingleton(sp =>
+{
+    var client = new DockerClientConfiguration(
+            new Uri(builder.Configuration["DockerFunctionExecution:Uri"]!))
+        .CreateClient();
+
+    return client;
+});
 
 builder.Services.AddHealthChecks();
 

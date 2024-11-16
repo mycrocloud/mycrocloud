@@ -1,4 +1,8 @@
 ﻿using System.Diagnostics;
+using System.Text;
+using System.Text.Json;
+using Docker.DotNet;
+using Docker.DotNet.Models;
 using Jint;
 using Jint.Native;
 using WebApp.Domain.Entities;
@@ -6,27 +10,36 @@ using WebApp.Domain.Repositories;
 using WebApp.FunctionShared;
 using WebApp.FunctionShared.PlugIns;
 using WebApp.Infrastructure;
+using File = System.IO.File;
 
 namespace WebApp.MiniApiGateway.Middlewares;
 
 public class FunctionInvokerMiddleware(RequestDelegate next)
 {
     public async Task InvokeAsync(HttpContext context, AppDbContext dbContext, Scripts scripts,
-        IAppRepository appRepository)
+        IAppRepository appRepository, IConfiguration configuration)
     {
         var app = (App)context.Items["_App"]!;
         var route = (Route)context.Items["_Route"]!;
 
-        var concurrencyJobManager =
-            context.RequestServices.GetKeyedService<ConcurrencyJobManager>("InProcessFunctionExecutionManager");
 
         Result result;
         switch (route.FunctionExecutionEnvironment)
         {
             case FunctionExecutionEnvironment.InProcess:
-                result = await ExecuteInProcess(context, scripts, appRepository, concurrencyJobManager, app,
+            {
+                result = await ExecuteInProcess(context, scripts, appRepository, app,
                     route);
                 break;
+            }
+
+            case FunctionExecutionEnvironment.OutOfProcess_DockerContainer:
+            {
+                result = await ExecuteOutOfProcess_DockerContainer(context, app,
+                    route, configuration);
+                break;
+            }
+
             default:
                 context.Response.StatusCode = 500;
                 await context.Response.WriteAsync("Function execution environment not supported.");
@@ -44,10 +57,61 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
         context.Items["_FunctionExecutionResult"] = result;
     }
 
-    private async Task<Result> ExecuteInProcess(HttpContext context, Scripts scripts,
-        IAppRepository appRepository,
-        ConcurrencyJobManager concurrencyJobManager, App app, Route route)
+    private async Task<Result> ExecuteOutOfProcess_DockerContainer(HttpContext context, App app, Route route,
+        IConfiguration configuration)
     {
+        var concurrencyJobManager =
+            context.RequestServices.GetKeyedService<ConcurrencyJobManager>(
+                "DockerContainerFunctionExecutionManager")!;
+
+        var dockerClient = context.RequestServices.GetRequiredService<DockerClient>();
+
+        var hostFilePath =
+            Path.Combine(@"C:\Users\nampv\personal\repos\mycrocloud\src\Services\WebApp\WebApp.MiniApiGateway\Outputs",
+                context.TraceIdentifier.Replace(':', '_'));
+
+        Directory.CreateDirectory(hostFilePath);
+
+        await File.WriteAllTextAsync(Path.Combine(hostFilePath, "request.json"),
+            JsonSerializer.Serialize(new Request()));
+        await File.WriteAllTextAsync(Path.Combine(hostFilePath, "handler.js"), route.FunctionHandler);
+
+        var containerFilePath = "/app/data";
+
+        return await concurrencyJobManager.EnqueueJob(async token =>
+        {
+            var container = await dockerClient.Containers.CreateContainerAsync(new CreateContainerParameters()
+            {
+                Image = configuration["DockerFunctionExecution:Image"],
+                HostConfig = new HostConfig()
+                {
+                    AutoRemove = true,
+                    Binds = [$"{hostFilePath}:{containerFilePath}"]
+                }
+            }, token);
+
+            await dockerClient.Containers.StartContainerAsync(container.ID, new ContainerStartParameters()
+            {
+            }, token);
+
+            await dockerClient.Containers.WaitContainerAsync(container.ID, token);
+
+            var text = await File.ReadAllTextAsync(Path.Combine(hostFilePath, "result.json"), token);
+
+            Directory.Delete(hostFilePath, true);
+
+            return JsonSerializer.Deserialize<Result>(text)!;
+        }, TimeSpan.FromSeconds(app.Settings.FunctionExecutionTimeoutSeconds ?? 10));
+    }
+
+
+    private async Task<Result> ExecuteInProcess(HttpContext context, Scripts scripts,
+        IAppRepository appRepository, App app, Route route)
+    {
+        var concurrencyJobManager =
+            context.RequestServices.GetKeyedService<ConcurrencyJobManager>(
+                "InProcessFunctionExecutionManager")!;
+
         var engine = new Engine(options =>
         {
             if (app.Settings.CheckFunctionExecutionLimitMemory)
