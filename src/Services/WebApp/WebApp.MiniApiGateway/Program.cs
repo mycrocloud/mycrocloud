@@ -32,7 +32,10 @@ builder.Services.AddSingleton(new Scripts
     Lodash = File.ReadAllText("Scripts/lodash.min.js")
 });
 builder.Services.AddSingleton<ICachedOpenIdConnectionSigningKeys, MemoryCachedOpenIdConnectionSigningKeys>();
-builder.Services.AddSingleton(new InProcessFunctionExecutionManager(100));
+
+builder.Services.AddKeyedSingleton( "InProcessFunctionExecutionManager",new ConcurrencyJobManager(100));
+builder.Services.AddKeyedSingleton( "DockerContainerFunctionExecutionManager",new ConcurrencyJobManager(100));
+
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();

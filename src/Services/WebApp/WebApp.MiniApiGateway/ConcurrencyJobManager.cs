@@ -2,14 +2,14 @@ using System.Collections.Concurrent;
 
 namespace WebApp.MiniApiGateway;
 
-public class InProcessFunctionExecutionManager : IDisposable
+public class ConcurrencyJobManager : IDisposable
 {
     private readonly SemaphoreSlim _semaphore;
     private readonly ConcurrentQueue<Func<CancellationToken, Task>> _jobQueue = new();
     private readonly CancellationTokenSource _shutdownCts = new();
     private readonly Task _processingTask;
 
-    public InProcessFunctionExecutionManager(int maxConcurrency)
+    public ConcurrencyJobManager(int maxConcurrency)
     {
         _semaphore = new SemaphoreSlim(maxConcurrency);
         _processingTask = Task.Run(ProcessQueueAsync);

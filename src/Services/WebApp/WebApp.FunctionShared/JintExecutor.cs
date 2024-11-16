@@ -72,7 +72,6 @@ public class JintExecutor(Engine engine) : IExecutor
             }
         }
 
-
         var body = jsResult.Get("body");
         if (body.IsString())
         {

@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Globalization;
 using Jint;
 using Jint.Native;
 using WebApp.Domain.Entities;
@@ -13,16 +12,19 @@ namespace WebApp.MiniApiGateway.Middlewares;
 public class FunctionInvokerMiddleware(RequestDelegate next)
 {
     public async Task InvokeAsync(HttpContext context, AppDbContext dbContext, Scripts scripts,
-        IAppRepository appRepository, InProcessFunctionExecutionManager inProcessFunctionExecutionManager)
+        IAppRepository appRepository)
     {
         var app = (App)context.Items["_App"]!;
         var route = (Route)context.Items["_Route"]!;
 
-        FunctionExecutionResult result;
+        var concurrencyJobManager =
+            context.RequestServices.GetKeyedService<ConcurrencyJobManager>("InProcessFunctionExecutionManager");
+
+        Result result;
         switch (route.FunctionExecutionEnvironment)
         {
             case FunctionExecutionEnvironment.InProcess:
-                result = await InProcess(context, scripts, appRepository, inProcessFunctionExecutionManager, app,
+                result = await ExecuteInProcess(context, scripts, appRepository, concurrencyJobManager, app,
                     route);
                 break;
             default:
@@ -42,9 +44,9 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
         context.Items["_FunctionExecutionResult"] = result;
     }
 
-    private async Task<FunctionExecutionResult> InProcess(HttpContext context, Scripts scripts,
+    private async Task<Result> ExecuteInProcess(HttpContext context, Scripts scripts,
         IAppRepository appRepository,
-        InProcessFunctionExecutionManager inProcessFunctionExecutionManager, App app, Route route)
+        ConcurrencyJobManager concurrencyJobManager, App app, Route route)
     {
         var engine = new Engine(options =>
         {
@@ -70,9 +72,11 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
         using var scope = context.RequestServices.CreateScope();
         var dbContext2 = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         InjectPlugIns(engine, dbContext2, app);
-        
-        JsValue jsResult;
-        var result = new FunctionExecutionResult();
+
+        JsValue jsValue;
+        Exception? exception = null;
+        TimeSpan duration;
+
         //Start measuring time for function execution
         var startingTimestamp = Stopwatch.GetTimestamp();
         try
@@ -80,7 +84,7 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
             await engine.SetRequestValue(context.Request);
             const string code = "(() => { return $FunctionHandler$(request); })();";
 
-            jsResult = await inProcessFunctionExecutionManager.EnqueueJob(token =>
+            jsValue = await concurrencyJobManager.EnqueueJob(token =>
             {
                 engine.Execute(route.FunctionHandler);
                 var value = engine.Evaluate(code.Replace("$FunctionHandler$",
@@ -88,29 +92,25 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
 
                 return Task.FromResult(value);
             }, TimeSpan.FromSeconds(app.Settings.FunctionExecutionTimeoutSeconds ?? 10));
-
-            var resultx = JintExecutor.Map(jsResult);
         }
         catch (Exception e)
         {
-            jsResult = JsValue.FromObject(engine, new
+            jsValue = JsValue.FromObject(engine, new
             {
                 statusCode = 500,
                 body = e.Message,
                 additionalLogMessage = e.Message
             });
-            result.Exception = e;
+            exception = e;
         }
         finally
         {
-            result.Duration = Stopwatch.GetElapsedTime(startingTimestamp);
+            duration = Stopwatch.GetElapsedTime(startingTimestamp);
         }
 
-        var additionalLogMessage = jsResult.Get("additionalLogMessage");
-        if (additionalLogMessage.IsString())
-        {
-            result.AdditionalLogMessage = additionalLogMessage.AsString();
-        }
+        var result = JintExecutor.Map(jsValue);
+        result.Exception = exception;
+        result.Duration = duration;
 
         return result;
     }
@@ -175,14 +175,4 @@ public static class FunctionInvokerMiddlewareExtensions
     {
         return builder.UseMiddleware<FunctionInvokerMiddleware>();
     }
-}
-
-public class FunctionExecutionResult
-{
-    public int? StatusCode { get; set; }
-    public Dictionary<string, string> Headers { get; set; } = [];
-    public string? Body { get; set; }
-    public string? AdditionalLogMessage { get; set; }
-    public TimeSpan Duration { get; set; }
-    public Exception? Exception { get; set; }
 }
