@@ -887,50 +887,8 @@ function FunctionHandler() {
     };
   }, []);
 
-  const [depsInputValue, setDepsInputValue] = useState(
-    getValues("functionHandlerDependencies")?.join(",") || "",
-  );
-  useEffect(() => {
-    setValue("functionHandlerDependencies", depsInputValue?.split(",") || []);
-  }, [depsInputValue]);
-
   return (
     <>
-      <div className="mt-1">
-        <label htmlFor="depsInput" className="block">
-          Dependencies
-          <div className="inline-block">
-            <button
-              type="button"
-              className="ms-2 text-blue-500 hover:underline"
-            >
-              info
-            </button>
-            <div style={{ display: "none" }}>
-              <p>Available packages</p>
-              <ul>
-                {[
-                  "lotash",
-                  "underscore",
-                  "handlebars",
-                  "mustache",
-                  "faker",
-                ].map((p) => (
-                  <li key={p}>{p}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </label>
-        <input
-          id="depsInput"
-          type="text"
-          value={depsInputValue}
-          onChange={(e) => setDepsInputValue(e.target.value)}
-          autoComplete="none"
-          className="inline-block w-full border border-gray-200 px-2 py-1"
-        />
-      </div>
       <div className="mt-1">
         <label>Handler</label>
         <div
