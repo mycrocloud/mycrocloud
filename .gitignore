@@ -453,5 +453,8 @@ $RECYCLE.BIN/
 !.vscode/launch.json
 !.vscode/extensions.json
 
+.env
 .env.production
 appsettings.Production.json
+
+elastic-start-local
