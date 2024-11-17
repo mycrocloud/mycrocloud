@@ -73,7 +73,8 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
         Directory.CreateDirectory(hostFilePath);
 
         await File.WriteAllTextAsync(Path.Combine(hostFilePath, "request.json"),
-            JsonSerializer.Serialize(new Request()));
+            JsonSerializer.Serialize(await context.Request.ToRequest()));
+        
         await File.WriteAllTextAsync(Path.Combine(hostFilePath, "handler.js"), route.FunctionHandler);
 
         var containerFilePath = "/app/data";
@@ -83,7 +84,7 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
             var container = await dockerClient.Containers.CreateContainerAsync(new CreateContainerParameters()
             {
                 Image = configuration["DockerFunctionExecution:Image"],
-                HostConfig = new HostConfig()
+                HostConfig = new HostConfig
                 {
                     AutoRemove = true,
                     Binds = [$"{hostFilePath}:{containerFilePath}"]
@@ -145,7 +146,7 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
         var startingTimestamp = Stopwatch.GetTimestamp();
         try
         {
-            await engine.SetRequestValue(context.Request);
+            engine.SetRequestValue(await context.Request.ToRequest());
             const string code = "(() => { return $FunctionHandler$(request); })();";
 
             jsValue = await concurrencyJobManager.EnqueueJob(token =>

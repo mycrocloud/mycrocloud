@@ -1,4 +1,5 @@
 ﻿using Jint;
+using WebApp.FunctionShared;
 using WebApp.Infrastructure;
 
 namespace WebApp.MiniApiGateway.Middlewares;
@@ -21,7 +22,7 @@ public class StaticResponseMiddleware(RequestDelegate next)
         if (route.UseDynamicResponse)
         {
             var engine = new Engine();
-            await engine.SetRequestValue(context.Request);
+            engine.SetRequestValue(await context.Request.ToRequest());
             body = engine
                 .SetValue("source", body)
                 .Execute(scripts.Handlebars)

@@ -12,7 +12,7 @@ public class JintExecutor(Engine engine) : IExecutor
 
     public Result Execute(Request request, string handler)
     {
-        engine.SetValue("request", new object());
+        engine.SetRequestValue(request);
 
         engine.Execute(handler);
 
