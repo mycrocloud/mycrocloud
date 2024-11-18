@@ -35,7 +35,7 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
 
             case FunctionExecutionEnvironment.OutOfProcess_DockerContainer:
             {
-                result = await ExecuteOutOfProcess_DockerContainer(context, app,
+                result = await ExecuteOutOfProcess_DockerContainer(context, app,appRepository,
                     route, configuration);
                 break;
             }
@@ -57,7 +57,8 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
         context.Items["_FunctionExecutionResult"] = result;
     }
 
-    private async Task<Result> ExecuteOutOfProcess_DockerContainer(HttpContext context, App app, Route route,
+    private async Task<Result> ExecuteOutOfProcess_DockerContainer(HttpContext context, App app,
+        IAppRepository appRepository, Route route,
         IConfiguration configuration)
     {
         var concurrencyJobManager =
@@ -66,16 +67,25 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
 
         var dockerClient = context.RequestServices.GetRequiredService<DockerClient>();
 
-        var hostFilePath =
+        var hostDir =
             Path.Combine(configuration["DockerFunctionExecution:HostFilePath"]!,
                 context.TraceIdentifier.Replace(':', '_'));
 
-        Directory.CreateDirectory(hostFilePath);
+        Directory.CreateDirectory(hostDir);
 
-        await File.WriteAllTextAsync(Path.Combine(hostFilePath, "request.json"),
+        await File.WriteAllTextAsync(Path.Combine(hostDir, "request.json"),
             JsonSerializer.Serialize(await context.Request.ToRequest()));
         
-        await File.WriteAllTextAsync(Path.Combine(hostFilePath, "handler.js"), route.FunctionHandler);
+        // Inject environment variables
+        var appVariables = await appRepository.GetVariables(app.Id);
+        var env = new StringBuilder();
+        foreach (var variable in appVariables)
+        {
+            env.AppendLine($"{variable.Name}={variable.StringValue}");
+        }
+        await File.WriteAllTextAsync(Path.Combine(hostDir, ".env"), env.ToString());
+        
+        await File.WriteAllTextAsync(Path.Combine(hostDir, "handler.js"), route.FunctionHandler);
 
         var containerFilePath = "/app/data";
 
@@ -87,7 +97,7 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
                 HostConfig = new HostConfig
                 {
                     AutoRemove = true,
-                    Binds = [$"{hostFilePath}:{containerFilePath}"]
+                    Binds = [$"{hostDir}:{containerFilePath}"]
                 }
             }, token);
 
@@ -97,9 +107,9 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
 
             await dockerClient.Containers.WaitContainerAsync(container.ID, token);
 
-            var text = await File.ReadAllTextAsync(Path.Combine(hostFilePath, "result.json"), token);
+            var text = await File.ReadAllTextAsync(Path.Combine(hostDir, "result.json"), token);
 
-            Directory.Delete(hostFilePath, true);
+            Directory.Delete(hostDir, true);
 
             return JsonSerializer.Deserialize<Result>(text)!;
         }, TimeSpan.FromSeconds(app.Settings.FunctionExecutionTimeoutSeconds ?? 10));

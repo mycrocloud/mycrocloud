@@ -10,8 +10,9 @@ public class JintExecutor(Engine engine) : IExecutor
     {
     }
 
-    public Result Execute(Request request, string handler)
+    public Result Execute(Request request, string handler, Dictionary<string, string> env)
     {
+        engine.SetEnvironmentVariables(env);
         engine.SetRequestValue(request);
 
         engine.Execute(handler);
@@ -24,7 +25,7 @@ public class JintExecutor(Engine engine) : IExecutor
     public static Result Map(JsValue jsResult)
     {
         var result = new Result();
-        
+
         var statusCode = jsResult.Get("statusCode");
         if (statusCode.IsNumber())
         {

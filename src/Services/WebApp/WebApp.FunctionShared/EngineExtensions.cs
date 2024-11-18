@@ -34,4 +34,9 @@ public static class EngineExtensions
 
         engine.Execute(code);
     }
+
+    public static void SetEnvironmentVariables(this Engine engine, Dictionary<string, string> env)
+    {
+        engine.SetValue("env", env);
+    }
 }
