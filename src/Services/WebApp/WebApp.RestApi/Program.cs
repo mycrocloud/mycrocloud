@@ -12,6 +12,7 @@ using Nest;
 using WebApp.Infrastructure;
 using WebApp.Infrastructure.Repositories;
 using WebApp.RestApi.Filters;
+using WebApp.RestApi.Hubs;
 using WebApp.RestApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -83,6 +84,8 @@ builder.Services.AddKeyedSingleton<ElasticsearchClient>("AppBuildLogs_ES8", (_, 
     return new ElasticsearchClient(settings);
 });
 
+builder.Services.AddSignalR();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -109,6 +112,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHealthChecks("/healthz");
+app.MapHub<TestHub>("/_functionExecutionHub");
 app.Map("ping", () => "pong");
 app.Map("me", async (AppDbContext appDbContext, ClaimsPrincipal user) =>
     {
