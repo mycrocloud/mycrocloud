@@ -2,42 +2,78 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApp.Domain.Entities;
 using WebApp.Infrastructure;
+using WebApp.RestApi.Extensions;
 using WebApp.RestApi.Filters;
 
 namespace WebApp.RestApi.Controllers;
 
-[Route("apps/{appId:int}/[controller]")]
-[TypeFilter<AppOwnerActionFilter>(Arguments = ["appId"])]
+[Route("apps/[controller]")]
 public class RunnerController(AppDbContext appDbContext) : BaseController
 {
     [HttpGet("registration-tokens")]
-    public async Task<IActionResult> GetRegistrationTokens(int appId)
+    public async Task<IActionResult> GetUserRegistrationTokens()
     {
-        var app = await appDbContext.Apps
-            .Include(x => x.RegistrationTokens)
-            .SingleAsync(a => a.Id == appId);
+        var tokens = await appDbContext.RunnerRegistrationTokens
+            .Where(t => t.UserId == User.GetUserId())
+            .ToListAsync();
 
-        return Ok(app.RegistrationTokens.Select(t => new
+        return Ok(tokens.Select(t => new
         {
             t.Id,
+            t.Scope,
             t.Token,
             t.CreatedAt
         }));
     }
 
     [HttpPost("registration-tokens")]
-    public async Task<IActionResult> GenerateRegistrationToken(int appId)
+    public async Task<IActionResult> GenerateUserRegistrationToken()
+    {
+        var token = new RunnerRegistrationToken
+        {
+            UserId = User.GetUserId(),
+            Token = Guid.NewGuid().ToString(),
+            Scope = RunnerRegistrationTokenScope.User,
+            CreatedAt = DateTime.UtcNow
+        };
+        await appDbContext.RunnerRegistrationTokens.AddAsync(token);
+        await appDbContext.SaveChangesAsync();
+
+        return Created(token.Id.ToString(), new { token.Id, token.Token, token.CreatedAt });
+    }
+
+    [HttpGet("{appId:int}/registration-tokens")]
+    [TypeFilter<AppOwnerActionFilter>(Arguments = ["appId"])]
+    public async Task<IActionResult> GetAppRegistrationTokens(int appId)
+    {
+        var app = await appDbContext.Apps
+            .Include(a => a.RegistrationTokens)
+            .SingleAsync(a => a.Id == appId);
+
+        return Ok(app.RegistrationTokens.Select(t => new
+        {
+            t.Id,
+            t.Scope,
+            t.Token,
+            t.CreatedAt
+        }));
+    }
+
+    [HttpPost("{appId:int}/registration-tokens")]
+    [TypeFilter<AppOwnerActionFilter>(Arguments = ["appId"])]
+    public async Task<IActionResult> GenerateAppRegistrationToken(int appId)
     {
         var app = await appDbContext.Apps.SingleAsync(a => a.Id == appId);
-        var token = new AppRegistrationToken
+        var token = new RunnerRegistrationToken
         {
             App = app,
+            Scope = RunnerRegistrationTokenScope.App,
             Token = Guid.NewGuid().ToString(),
             CreatedAt = DateTime.UtcNow
         };
-        await appDbContext.AppRegistrationTokens.AddAsync(token);
+        await appDbContext.RunnerRegistrationTokens.AddAsync(token);
         await appDbContext.SaveChangesAsync();
 
-        return Created(token.Id.ToString(), new { token.Id, token.Token, token.CreatedAt });;
+        return Created(token.Id.ToString(), new { token.Id, token.Token, token.CreatedAt });
     }
 }

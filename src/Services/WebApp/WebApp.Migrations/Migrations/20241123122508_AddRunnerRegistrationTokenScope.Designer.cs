@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using WebApp.Infrastructure;
@@ -12,9 +13,11 @@ using WebApp.Infrastructure;
 namespace WebApp.Migrations.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241123122508_AddRunnerRegistrationTokenScope")]
+    partial class AddRunnerRegistrationTokenScope
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -552,10 +555,7 @@ namespace WebApp.Migrations.Migrations
                     b.HasIndex("Token")
                         .IsUnique();
 
-                    b.ToTable("RunnerRegistrationTokens", t =>
-                        {
-                            t.HasCheckConstraint("CK_RunnerRegistrationToken_Scope_Requirement", "(\"Scope\" = 1 AND \"UserId\" IS NOT NULL AND \"AppId\" IS NULL) OR\n(\"Scope\" = 2 AND \"UserId\" IS NULL AND \"AppId\" IS NOT NULL)");
-                        });
+                    b.ToTable("RunnerRegistrationTokens");
                 });
 
             modelBuilder.Entity("WebApp.Domain.Entities.TextStorage", b =>

@@ -11,6 +11,7 @@ import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import Ajv, { JSONSchemaType } from "ajv";
 import TextCopyButton from "../../components/ui/TextCopyButton";
+import RegistrationToken from "../../models/RegistrationToken";
 
 export default function AppOverview() {
   const { app } = useContext(AppContext)!;
@@ -130,11 +131,6 @@ const corsSettingsSchema: JSONSchemaType<CorsSettings> = {
   additionalProperties: false,
 };
 
-interface RegistrationToken {
-  id: number;
-  token: string;
-  createdAt: string;
-}
 function RunnerSection() {
   const { app } = useContext(AppContext)!;
   const { getAccessTokenSilently } = useAuth0();

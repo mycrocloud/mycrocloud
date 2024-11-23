@@ -1,7 +1,13 @@
 import { ClipboardIcon } from "@heroicons/react/24/outline";
 import { useEffect, useRef, useState } from "react";
 
-export default function TextCopyButton({ text }: { text: string }) {
+export default function TextCopyButton({
+  text,
+  title,
+}: {
+  text: string;
+  title?: string;
+}) {
   const [copied, setCopied] = useState(false);
   const timerIdRef = useRef<number>();
   useEffect(() => {
@@ -25,7 +31,10 @@ export default function TextCopyButton({ text }: { text: string }) {
       {copied ? (
         <span className="text-blue-500">Copied</span>
       ) : (
-        <ClipboardIcon className="h-4 w-4 text-blue-500" />
+        <div className="flex items-center">
+          <ClipboardIcon className="h-4 w-4 text-blue-500" />
+          {title && <span className="ms-1">{title}</span>}
+        </div>
       )}
     </button>
   );

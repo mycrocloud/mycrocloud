@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using WebApp.FunctionShared;
 using WebApp.Infrastructure;
 
@@ -12,40 +13,42 @@ public class FunctionExecutionHub(
 {
     private static readonly ConcurrentDictionary<string, HashSet<string>> GroupConnections = new();
 
+    private readonly Dictionary<string, string> _connectionIdToUserId = new();
+
     public override async Task OnConnectedAsync()
     {
         logger.LogInformation("OnConnectedAsync");
-        
-        var request = Context.GetHttpContext()!.Request;
-        var appId = int.Parse(request.Headers["app-id"].ToString());
-        var token = request.Headers["token"].ToString();
 
-        var app = appDbContext.Apps.SingleOrDefault(a =>
-            a.Id == appId && a.RegistrationTokens.Any(t => t.Token == token
-                                                           && t.CreatedAt.AddHours(1) > DateTime.UtcNow
-            ));
-
-        if (app == null)
+        try
         {
-            logger.LogWarning("Unauthorized");
-            Context.Abort();
+            var request = Context.GetHttpContext()!.Request;
+            var token = request.Headers["token"].ToString();
+
+            var registrationToken = await appDbContext.RunnerRegistrationTokens
+                .Include(t => t.App)
+                .SingleAsync(t => t.Token == token);
+
+            var userId = registrationToken.UserId ?? registrationToken.App.UserId;
+
+            GroupConnections.AddOrUpdate(
+                userId,
+                _ => [Context.ConnectionId],
+                (_, connections) =>
+                {
+                    connections.Add(Context.ConnectionId);
+                    return connections;
+                });
+
+            _connectionIdToUserId[Context.ConnectionId] = userId;
+
+            await base.OnConnectedAsync();
         }
-
-        logger.LogInformation("Authorized");
-
-        // Add the connection to the group
-        GroupConnections.AddOrUpdate(
-            appId.ToString(),
-            _ => [Context.ConnectionId],
-            (_, connections) =>
-            {
-                connections.Add(Context.ConnectionId);
-                return connections;
-            });
-
-        await Groups.AddToGroupAsync(appId.ToString(), Context.ConnectionId);
-
-        await base.OnConnectedAsync();
+        catch (Exception e)
+        {
+            Context.Abort();
+            logger.LogError(e, "Error in OnConnectedAsync");
+            throw;
+        }
     }
 
     public void ReceiveFunctionExecutionResult(string requestId, Result result)
@@ -58,29 +61,26 @@ public class FunctionExecutionHub(
     {
         logger.LogInformation("OnDisconnectedAsync");
 
-        var appId = int.Parse(Context.GetHttpContext()!.Request.Headers["app_id"].ToString());
-
-        // Remove connection from the group
-        if (GroupConnections.TryGetValue(appId.ToString(), out var connections))
+        if (_connectionIdToUserId.TryGetValue(Context.ConnectionId, out var userId))
         {
-            connections.Remove(Context.ConnectionId);
-            if (connections.Count == 0)
+            if (GroupConnections.TryGetValue(userId, out var connections))
             {
-                GroupConnections.TryRemove(appId.ToString(), out _);
+                connections.Remove(Context.ConnectionId);
+                if (connections.Count == 0)
+                {
+                    GroupConnections.TryRemove(userId, out _);
+                }
             }
         }
-
-        await Groups.RemoveFromGroupAsync(appId.ToString(), Context.ConnectionId);
 
         await base.OnDisconnectedAsync(exception);
     }
 
-    // Helper to get a single connection ID from a group
-    public static string? GetSingleConnection(string groupName)
+    public static string? GetSingleConnection(string userId)
     {
-        if (GroupConnections.TryGetValue(groupName, out var connections) && connections.Any())
+        if (GroupConnections.TryGetValue(userId, out var connections) && connections.Any())
         {
-            return connections.First(); // Return the first connection (custom logic can be applied)
+            return connections.First();
         }
 
         return null;

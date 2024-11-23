@@ -86,7 +86,7 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
         IAppRepository appRepository, Route route, IConfiguration configuration, string invocationType)
     {
         var hub = context.RequestServices.GetRequiredService<IHubContext<FunctionExecutionHub>>();
-        var connection = FunctionExecutionHub.GetSingleConnection(app.Id.ToString());
+        var connection = FunctionExecutionHub.GetSingleConnection(app.UserId);
         if (connection is null)
         {
             return new Result

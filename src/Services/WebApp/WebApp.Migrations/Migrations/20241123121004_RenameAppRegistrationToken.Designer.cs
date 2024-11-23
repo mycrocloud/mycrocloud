@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using WebApp.Infrastructure;
@@ -12,9 +13,11 @@ using WebApp.Infrastructure;
 namespace WebApp.Migrations.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241123121004_RenameAppRegistrationToken")]
+    partial class RenameAppRegistrationToken
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -527,23 +530,17 @@ namespace WebApp.Migrations.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("AppId")
+                    b.Property<int>("AppId")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Scope")
-                        .HasColumnType("integer");
 
                     b.Property<string>("Token")
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -552,10 +549,7 @@ namespace WebApp.Migrations.Migrations
                     b.HasIndex("Token")
                         .IsUnique();
 
-                    b.ToTable("RunnerRegistrationTokens", t =>
-                        {
-                            t.HasCheckConstraint("CK_RunnerRegistrationToken_Scope_Requirement", "(\"Scope\" = 1 AND \"UserId\" IS NOT NULL AND \"AppId\" IS NULL) OR\n(\"Scope\" = 2 AND \"UserId\" IS NULL AND \"AppId\" IS NOT NULL)");
-                        });
+                    b.ToTable("RunnerRegistrationTokens");
                 });
 
             modelBuilder.Entity("WebApp.Domain.Entities.TextStorage", b =>
@@ -899,7 +893,9 @@ namespace WebApp.Migrations.Migrations
                 {
                     b.HasOne("WebApp.Domain.Entities.App", "App")
                         .WithMany("RegistrationTokens")
-                        .HasForeignKey("AppId");
+                        .HasForeignKey("AppId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("App");
                 });

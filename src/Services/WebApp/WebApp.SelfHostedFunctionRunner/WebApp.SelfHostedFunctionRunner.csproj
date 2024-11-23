@@ -15,4 +15,11 @@
     <ItemGroup>
       <ProjectReference Include="..\WebApp.FunctionShared\WebApp.FunctionShared.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="publish\appsettings.Development.json" />
+      <_ContentIncludedByDefault Remove="publish\appsettings.json" />
+      <_ContentIncludedByDefault Remove="publish\WebApp.SelfHostedFunctionRunner.deps.json" />
+      <_ContentIncludedByDefault Remove="publish\WebApp.SelfHostedFunctionRunner.runtimeconfig.json" />
+    </ItemGroup>
 </Project>

@@ -1,9 +1,10 @@
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.SignalR.Client;
 using WebApp.FunctionShared;
 
 namespace WebApp.SelfHostedFunctionRunner;
 
-public class HostedService(ILogger<HostedService> logger, IConfiguration configuration)
+public partial class HostedService(ILogger<HostedService> logger, IConfiguration configuration)
     : IHostedService, IDisposable
 {
     private HubConnection? _connection;
@@ -12,14 +13,26 @@ public class HostedService(ILogger<HostedService> logger, IConfiguration configu
     {
         logger.LogInformation("HostedService is starting.");
 
-        var appId = configuration.GetValue<int>("AppId");
-        var token = configuration.GetValue<string>("Token");
+        var url = $"{configuration["Url"]}";
+
+        var match = MyRegex().Match(url);
+        if (!match.Success)
+        {
+            throw new Exception("Invalid Url");
+        }
+
+        var scheme = match.Groups[1].Value;
+        var token = match.Groups[2].Value;
+        var domain = match.Groups[3].Value;
+
+        var hubUrl = $"{scheme}://{domain}/functionExecutionHub";
 
         _connection = new HubConnectionBuilder()
-            .WithUrl($"{configuration["MycroCloudHost"]}/_functionExecutionHub", options =>
+            .WithUrl(hubUrl, options => { options.Headers.Add("token", token!); })
+            .ConfigureLogging(logging =>
             {
-                options.Headers.Add("app_id", appId.ToString());
-                options.Headers.Add("token", token!);
+                logging.AddConsole();
+                logging.SetMinimumLevel(LogLevel.Debug);
             })
             .WithAutomaticReconnect()
             .Build();
@@ -52,4 +65,7 @@ public class HostedService(ILogger<HostedService> logger, IConfiguration configu
     {
         _connection?.DisposeAsync();
     }
+
+    [GeneratedRegex("(https?)://([^@]+)@(.+)")]
+    private static partial Regex MyRegex();
 }

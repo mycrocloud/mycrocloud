@@ -25,7 +25,7 @@ public class AppOwnerActionFilter(AppDbContext appDbContext,
         logger.LogDebug("Executing AppOwnerActionFilter");
         if (context.HttpContext.User.Identity is null || !context.HttpContext.User.Identity.IsAuthenticated)
         {
-            logger.LogWarning("User is not authenticated");
+            logger.LogDebug("User is not authenticated");
             return true;
         }
         var userId = context.HttpContext.User.GetUserId();
