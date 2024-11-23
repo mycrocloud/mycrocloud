@@ -2,6 +2,7 @@ using Docker.DotNet;
 using Microsoft.EntityFrameworkCore;
 using WebApp.Domain.Entities;
 using WebApp.Domain.Repositories;
+using WebApp.FunctionShared;
 using WebApp.Infrastructure;
 using WebApp.Infrastructure.Repositories;
 using WebApp.MiniApiGateway;
@@ -44,15 +45,24 @@ builder.Services.AddSingleton(sp =>
 
     return client;
 });
-
+builder.Services.AddSingleton<RequestResponseWaiter>();
 builder.Services.AddHealthChecks();
+builder.Services.AddSignalR();
+
+var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
+optionsBuilder.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+builder.Services.AddKeyedSingleton("AppDbContext", new AppDbContext(optionsBuilder.Options));
 
 var app = builder.Build();
-
+app.UseRouting();
 app.UseHttpLogging();
 app.UseWhen(context => context.Request.Host.Host == builder.Configuration["Host"], config =>
 {
     config.UseHealthChecks("/healthz");
+    config.UseEndpoints(endpoints =>
+    {
+        app.MapHub<FunctionExecutionHub>("_functionExecutionHub");
+    });
 
     // short-circuit the pipeline here
     config.Run(async context => { await context.Response.CompleteAsync(); });
