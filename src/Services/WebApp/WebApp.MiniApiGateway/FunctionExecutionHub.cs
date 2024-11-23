@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Text.Json;
 using Microsoft.AspNetCore.SignalR;
 using WebApp.FunctionShared;
 using WebApp.Infrastructure;
@@ -15,6 +16,11 @@ public class FunctionExecutionHub(
     public override async Task OnConnectedAsync()
     {
         logger.LogInformation("OnConnectedAsync");
+        var request = Context.GetHttpContext()!.Request;
+        
+        logger.LogInformation("request.Headers: {request.Headers}", JsonSerializer.Serialize(request.Headers));
+        logger.LogInformation("request.Query: {request.Query}", JsonSerializer.Serialize(request.Query));
+        
         var appId = int.Parse(Context.GetHttpContext()!.Request.Headers["app_id"].ToString());
         logger.LogInformation("appId: {appId}", appId);
 
