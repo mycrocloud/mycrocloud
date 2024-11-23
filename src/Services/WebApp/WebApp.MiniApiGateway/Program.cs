@@ -61,7 +61,7 @@ app.UseWhen(context => context.Request.Host.Host == builder.Configuration["Host"
     config.UseHealthChecks("/healthz");
     config.UseEndpoints(endpoints =>
     {
-        app.MapHub<FunctionExecutionHub>("_functionExecutionHub");
+        endpoints.MapHub<FunctionExecutionHub>("/functionExecutionHub");
     });
 
     // short-circuit the pipeline here
