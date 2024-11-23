@@ -112,7 +112,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHealthChecks("/healthz");
-app.MapHub<TestHub>("/_functionExecutionHub");
+app.MapHub<TestHub>("/functionExecutionHub");
 app.Map("ping", () => "pong");
 app.Map("me", async (AppDbContext appDbContext, ClaimsPrincipal user) =>
     {
