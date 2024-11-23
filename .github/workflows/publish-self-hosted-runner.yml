@@ -1,0 +1,58 @@
+name: Publish self-hosted runner
+
+on:
+  push:
+    branches:
+      - dev
+
+    paths:
+      - 'src/Services/WebApp/WebApp.Domain/**'
+      - 'src/Services/WebApp/WebApp.Infrastructure/**'
+      - 'src/Services/WebApp/WebApp.FunctionShared/**'
+      - 'src/Services/WebApp/WebApp.SelfHostedFunctionRunner/**'
+
+  workflow_dispatch:
+
+env:
+  WORK_DIR: src/Services/WebApp
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORK_DIR }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4.1.0
+        with:
+          dotnet-version: 8.0.201
+
+      # Restore dependencies
+      - name: Restore Dependencies
+        run: dotnet restore
+
+      # Build the project
+      - name: Build Project
+        run: dotnet build --configuration Release --no-restore
+
+      # Publish the app
+      - name: Publish Application
+        run: dotnet publish --configuration Release --output ./publish
+
+      # Create a release package (e.g., zip the output)
+      - name: Package Application
+        run: zip -r runner.zip ./publish
+
+      # Create GitHub Release using softprops/action-gh-release
+      - name: Create Release
+        uses: softprops/action-gh-release@v2.1.0
+        with:
+          files: runner.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+       
