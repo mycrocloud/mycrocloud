@@ -32,6 +32,8 @@ public class App : BaseEntity
     public string GitHubWebhookToken { get; set; }
     
     public AppIntegration Integration { get; set; }
+    
+    public ICollection<AppRegistrationToken> RegistrationTokens { get; set; }
 }
 
 public class AppIntegration: BaseEntity

@@ -25,6 +25,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<UserToken> UserTokens { get; set; }
 
     public DbSet<AppBuildJob> AppBuildJobs { get; set; }
+    
+    public DbSet<AppRegistrationToken> AppRegistrationTokens { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -114,6 +116,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         modelBuilder.Entity<UserToken>()
             .HasKey(t => new { t.UserId, t.Provider, t.Purpose });
+
+        modelBuilder.Entity<AppRegistrationToken>()
+            .HasIndex(x => x.Token)
+            .IsUnique()
+            ;
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

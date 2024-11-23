@@ -10,9 +10,13 @@ public class JintExecutor(Engine engine) : IExecutor
     {
     }
 
-    public Result Execute(Request request, string handler, Dictionary<string, string> env)
+    public Result Execute(Request request, string handler, Dictionary<string, string>? env)
     {
-        engine.SetEnvironmentVariables(env);
+        if (env is not null)
+        {
+            engine.SetEnvironmentVariables(env);
+        }
+
         engine.SetRequestValue(request);
 
         engine.Execute(handler);

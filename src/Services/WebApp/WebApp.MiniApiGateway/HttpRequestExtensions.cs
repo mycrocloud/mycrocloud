@@ -11,7 +11,7 @@ public static class HttpRequestExtensions
                && request.Headers.ContainsKey(CorsConstants.AccessControlRequestMethod);
     }
 
-    public static async Task<Request> ToRequest(this HttpRequest request)
+    public static async Task<Request> Normalize(this HttpRequest request)
     {
         return new Request
         {

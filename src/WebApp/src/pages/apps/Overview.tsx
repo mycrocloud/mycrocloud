@@ -6,11 +6,11 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { getAppDomain } from "./service";
 import { PlayCircleIcon, StopCircleIcon } from "@heroicons/react/24/solid";
-import { ClipboardIcon } from "@heroicons/react/24/outline";
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import Ajv, { JSONSchemaType } from "ajv";
+import TextCopyButton from "../../components/ui/TextCopyButton";
 
 export default function AppOverview() {
   const { app } = useContext(AppContext)!;
@@ -55,15 +55,7 @@ export default function AppOverview() {
             <td>Domain</td>
             <td className="flex">
               <p className="text-blue-500 hover:underline">{domain}</p>
-              <button
-                type="button"
-                onClick={() => {
-                  navigator.clipboard.writeText(domain);
-                }}
-                className="ms-2"
-              >
-                <ClipboardIcon className="h-4 w-4 text-blue-500" />
-              </button>
+              <TextCopyButton text={domain} />
             </td>
           </tr>
         </tbody>
@@ -79,6 +71,9 @@ export default function AppOverview() {
       <hr className="mt-2" />
       <div className="mt-2">
         <CorsSettingsSection />
+      </div>
+      <div className="mt-2">
+        <RunnerSection />
       </div>
       <hr className="mt-2" />
       <div className="mt-2">
@@ -134,6 +129,74 @@ const corsSettingsSchema: JSONSchemaType<CorsSettings> = {
   },
   additionalProperties: false,
 };
+
+interface RegistrationToken {
+  id: number;
+  token: string;
+  createdAt: string;
+}
+function RunnerSection() {
+  const { app } = useContext(AppContext)!;
+  const { getAccessTokenSilently } = useAuth0();
+  if (!app) throw new Error();
+
+  const [tokens, setTokens] = useState<RegistrationToken[]>([]);
+  useEffect(() => {
+    const fetchTokens = async () => {
+      const accessToken = await getAccessTokenSilently();
+      const res = await fetch(
+        `/api/apps/${app.id}/runner/registration-tokens`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+      if (res.ok) {
+        const json = await res.json();
+        setTokens(json);
+      }
+    };
+    fetchTokens();
+  }, []);
+
+  const handleGenerateClick = async () => {
+    const accessToken = await getAccessTokenSilently();
+    const res = await fetch(`/api/apps/${app.id}/runner/registration-tokens`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    if (res.ok) {
+      const token = (await res.json()) as RegistrationToken;
+      setTokens([...tokens, token]);
+    }
+  };
+
+  return (
+    <div>
+      <h3 className="font-semibold">Runner</h3>
+      <h4 className="font-semibold">Registration Tokens</h4>
+      <ul>
+        {tokens.map((token) => (
+          <li key={token.id}>
+            <div className="flex">
+              <p>{token.token}</p>
+              <TextCopyButton text={token.token} />
+            </div>
+          </li>
+        ))}
+      </ul>
+      <button
+        onClick={handleGenerateClick}
+        className="bg-primary px-2 py-1 text-white"
+      >
+        Generate
+      </button>
+    </div>
+  );
+}
 
 function CorsSettingsSection() {
   const { app } = useContext(AppContext)!;

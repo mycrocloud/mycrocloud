@@ -22,7 +22,7 @@ public class StaticResponseMiddleware(RequestDelegate next)
         if (route.UseDynamicResponse)
         {
             var engine = new Engine();
-            engine.SetRequestValue(await context.Request.ToRequest());
+            engine.SetRequestValue(await context.Request.Normalize());
             body = engine
                 .SetValue("source", body)
                 .Execute(scripts.Handlebars)
