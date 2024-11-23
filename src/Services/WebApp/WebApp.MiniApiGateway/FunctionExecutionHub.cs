@@ -21,7 +21,9 @@ public class FunctionExecutionHub(
         var token = Context.GetHttpContext()!.Request.Headers["token"].ToString();
 
         var app = appDbContext.Apps.SingleOrDefault(a =>
-            a.Id == appId && a.RegistrationTokens.Any(t => t.Token == token));
+            a.Id == appId && a.RegistrationTokens.Any(t => t.Token == token
+                                                           && t.CreatedAt.AddHours(1) > DateTime.UtcNow
+            ));
 
         if (app == null)
         {
