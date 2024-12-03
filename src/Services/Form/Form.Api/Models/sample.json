@@ -1,0 +1,40 @@
+[
+  {
+    "type": "text_input",
+    "properties": {
+      "text_input": {
+        "placeholder": "Enter your name"
+      }
+    }
+  },
+  {
+    "type": "select",
+    "properties": {
+      "select": {
+        "options": {
+          "type": "items",
+          "items": [
+            {
+              "id": "1",
+              "text": "Option 1"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "type": "select",
+    "properties": {
+      "select": {
+        "options": {
+          "type": "ref",
+          "ref": {
+            "type": "database_id",
+            "id": "database_id"
+          }
+        }
+      }
+    }
+  }
+]

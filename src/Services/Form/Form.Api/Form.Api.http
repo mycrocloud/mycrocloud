@@ -1,6 +1,16 @@
 @Form.Api_HostAddress = http://localhost:5091
 
-GET {{Form.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+POST http://localhost:5091/forms/
+Content-Type: application/json
+'[
+  {
+    "type": "text_input",
+    "properties": {
+      "text_input": {
+        "placeholder": "Enter your name"
+      }
+    }
+  }
+]
 
-###
+
