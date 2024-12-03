@@ -1,0 +1,12 @@
+﻿services:
+  form.api:
+    image: form.api
+    build:
+      context: .
+      dockerfile: Form.Api/Dockerfile
+
+  form.api-1:
+    image: form.api-1
+    build:
+      context: .
+      dockerfile: Form.Api/Dockerfile

@@ -1,0 +1,21 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{20777E95-511A-4852-8D99-E46D8A3A86E4}"
+	ProjectSection(SolutionItems) = preProject
+		docker-compose.yml = docker-compose.yml
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Form.Api", "Form.Api\Form.Api.csproj", "{723065A1-9F4C-426C-B4C4-E8861262A21B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{723065A1-9F4C-426C-B4C4-E8861262A21B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{723065A1-9F4C-426C-B4C4-E8861262A21B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{723065A1-9F4C-426C-B4C4-E8861262A21B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{723065A1-9F4C-426C-B4C4-E8861262A21B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
