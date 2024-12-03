@@ -23,6 +23,7 @@ export default function AppLayout() {
     part3 == "authentications" && part4 === "apikeys";
 
   const isMatchFileStorages = part3 == "storages" && part4 === "files";
+  const isMatchObjectsStorages = part3 == "storages" && part4 === "objects";
   const isMatchTextStorages = part3 == "storages" && part4 === "textstorages";
   const isMatchVariables = part3 == "storages" && part4 === "variables";
 
@@ -116,7 +117,7 @@ export default function AppLayout() {
                 <Link
                   to="storages/objects"
                   className={`text-xs ${
-                    isMatchFileStorages ? "text-primary" : ""
+                    isMatchObjectsStorages ? "text-primary" : ""
                   }`}
                 >
                   Objects
