@@ -23,7 +23,7 @@ public class FormsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateForm([FromBody]List<FormField> formFields)
     {
-        return Created();
+        return Created("", formFields);
     }
     
     [HttpPut]
