@@ -1,0 +1,6 @@
+@CD.Api_HostAddress = http://localhost:5277
+
+GET {{CD.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

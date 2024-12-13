@@ -1,0 +1,12 @@
+﻿services:
+  cd.api:
+    image: cd.api
+    build:
+      context: .
+      dockerfile: CD.Api/Dockerfile
+
+  cd.api-1:
+    image: cd.api-1
+    build:
+      context: .
+      dockerfile: CD.Api/Dockerfile
