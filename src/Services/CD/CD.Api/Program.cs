@@ -1,9 +1,14 @@
+using System.ComponentModel.DataAnnotations;
+using CD.Api;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddDbContext<AppDbContext>(options => { options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")); });
 
 var app = builder.Build();
 
@@ -14,31 +19,56 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
+app.MapGet("/mcrn/{mcrn}", async (string mcrn, AppDbContext dbContext) =>
     {
-        var forecast = Enumerable.Range(1, 5).Select(index =>
-                new WeatherForecast
-                (
-                    DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                    Random.Shared.Next(-20, 55),
-                    summaries[Random.Shared.Next(summaries.Length)]
-                ))
-            .ToArray();
-        return forecast;
+        var domains = await dbContext.Domains.Where(d => d.Mcrn == mcrn).ToListAsync();
+        return Results.Ok(domains);
     })
-    .WithName("GetWeatherForecast")
+    .WithName("GetDomainsByMCRN")
+    .WithOpenApi();
+
+app.MapGet("/{domain}",
+        async (string domain, AppDbContext dbContext) => Results.Ok((object?)await dbContext.Domains.FindAsync(domain)))
+    .WithName("FindMapping")
+    .WithOpenApi();
+
+app.MapPost("/",
+        async (SetDomainRequest request, AppDbContext dbContext) =>
+        {
+            await dbContext.Domains.AddAsync(request.ToNewDomainEntity());
+            await dbContext.SaveChangesAsync();
+        })
+    .WithName("SetMapping")
+    .WithOpenApi();
+
+app.MapDelete("/{domain}",
+        async (string domain, AppDbContext dbContext) =>
+        {
+            var domainEntity = await dbContext.Domains.FindAsync(domain);
+            if (domainEntity is null)
+            {
+                return Results.BadRequest();
+            }
+
+            dbContext.Domains.Remove(domainEntity);
+            await dbContext.SaveChangesAsync();
+            
+            return Results.Ok();
+        })
+    .WithName("DeleteMapping")
     .WithOpenApi();
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+public class SetDomainRequest
 {
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    [Required] public required string Domain { get; set; }
+
+    [Required] public required string Mcrn { get; set; }
+
+    public DomainEntity ToNewDomainEntity() => new()
+    {
+        Domain = Domain, Mcrn = Mcrn,
+        CreatedAt = DateTime.UtcNow
+    };
 }
