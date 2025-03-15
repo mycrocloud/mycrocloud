@@ -18,9 +18,7 @@ export default function Logon() {
     const getStorage = async () => {
       const accessToken = await getAccessTokenSilently();
       const res = await fetch(`/api/apps/${app.id}/textstorages/${storageId}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       const storage = (await res.json()) as ITextStorage;
       setStorage(storage);
@@ -29,7 +27,9 @@ export default function Logon() {
   }, []);
 
   const contentEditorRef = useRef(null);
-  const contentEditor = useRef<monaco.editor.IStandaloneCodeEditor>();
+  const contentEditor = useRef<monaco.editor.IStandaloneCodeEditor | null>(
+    null,
+  );
   const languages = monaco.languages.getLanguages();
   useEffect(() => {
     contentEditor.current?.dispose();
@@ -37,9 +37,7 @@ export default function Logon() {
     contentEditor.current = monaco.editor.create(contentEditorRef.current!, {
       language: "",
       value: "",
-      minimap: {
-        enabled: false,
-      },
+      minimap: { enabled: false },
     });
 
     return () => {
@@ -60,11 +58,7 @@ export default function Logon() {
     const accessToken = await getAccessTokenSilently();
     const res = await fetch(
       `/api/apps/${app.id}/textstorages/${storageId}/content`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      },
+      { headers: { Authorization: `Bearer ${accessToken}` } },
     );
 
     const content = await res.text();

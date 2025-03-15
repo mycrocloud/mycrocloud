@@ -48,9 +48,7 @@ export default function Integrations() {
     (async () => {
       const accessToken = await getAccessTokenSilently();
       const res = await fetch(`/api/integrations/github/repos`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (res.ok) {
         const repos = (await res.json()) as GitHubRepo[];
@@ -65,12 +63,7 @@ export default function Integrations() {
     const accessToken = await getAccessTokenSilently();
     const res = await fetch(
       `/api/apps/${app.id}/integrations/github?repoFullName=${repoFullName}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      },
+      { method: "POST", headers: { Authorization: `Bearer ${accessToken}` } },
     );
     if (res.ok) {
       toast.success("Connected to GitHub");
@@ -86,9 +79,7 @@ export default function Integrations() {
     const accessToken = await getAccessTokenSilently();
     const res = await fetch(`/api/apps/${app.id}/integrations/github`, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
     if (res.ok) {
       toast.success("Disconnected from GitHub");
@@ -103,9 +94,7 @@ export default function Integrations() {
   const fetchBuilds = async () => {
     const accessToken = await getAccessTokenSilently();
     const res = await fetch(`/api/apps/${app.id}/builds`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
     if (res.ok) {
       const builds = (await res.json()) as IBuildJob[];
@@ -113,7 +102,7 @@ export default function Integrations() {
     }
   };
 
-  const interval = useRef<number>();
+  const interval = useRef<number | null>(null);
   useEffect(() => {
     fetchBuilds();
 
@@ -123,7 +112,7 @@ export default function Integrations() {
     }, 2000);
 
     return () => {
-      clearInterval(interval.current);
+      if (interval.current) window.clearInterval(interval.current);
     };
   }, []);
 
@@ -135,9 +124,7 @@ export default function Integrations() {
     (async () => {
       const accessToken = await getAccessTokenSilently();
       const res = await fetch(`/api/apps/${app.id}/builds/${jobId}/logs`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (res.ok) {
         const logs = (await res.json()) as ILogEntry[];
@@ -177,9 +164,7 @@ export default function Integrations() {
     (async () => {
       const accessToken = await getAccessTokenSilently();
       const res = await fetch(`/api/apps/${app.id}/builds/config`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
 
       if (res.ok) {

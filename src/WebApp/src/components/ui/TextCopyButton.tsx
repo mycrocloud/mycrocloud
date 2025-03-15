@@ -9,14 +9,14 @@ export default function TextCopyButton({
   title?: string;
 }) {
   const [copied, setCopied] = useState(false);
-  const timerIdRef = useRef<number>();
+  const timerIdRef = useRef<number | null>(null);
   useEffect(() => {
     if (copied) {
       timerIdRef.current = window.setTimeout(() => {
         setCopied(false);
       }, 2000);
       return () => {
-        window.clearTimeout(timerIdRef.current);
+        if (timerIdRef.current) window.clearTimeout(timerIdRef.current);
       };
     }
   }, [copied]);

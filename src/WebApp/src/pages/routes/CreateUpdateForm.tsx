@@ -58,10 +58,7 @@ export default function RouteCreateUpdate({
       responseStatusCode: route?.responseStatusCode || 200,
       responseHeaders: route?.responseHeaders
         ? route.responseHeaders.map((value) => {
-            return {
-              name: value.name,
-              value: value.value,
-            };
+            return { name: value.name, value: value.value };
           })
         : [],
       responseBody: route?.responseBody,
@@ -239,61 +236,17 @@ export default function RouteCreateUpdate({
 }
 
 const quickAddResponseHeaderButtons = [
-  {
-    text: "Add",
-    key: "",
-    value: "",
-  },
-  {
-    text: "text/css",
-    key: "content-type",
-    value: "text/css",
-  },
-  {
-    text: "text/csv",
-    key: "content-type",
-    value: "text/csv",
-  },
-  {
-    text: "text/html",
-    key: "content-type",
-    value: "text/html",
-  },
-  {
-    text: "image/jpeg",
-    key: "content-type",
-    value: "image/jpeg",
-  },
-  {
-    text: "text/javascript",
-    key: "content-type",
-    value: "text/javascript",
-  },
-  {
-    text: "application/json",
-    key: "content-type",
-    value: "application/json",
-  },
-  {
-    text: "image/png",
-    key: "content-type",
-    value: "image/png",
-  },
-  {
-    text: "application/pdf",
-    key: "content-type",
-    value: "application/pdf",
-  },
-  {
-    text: "image/svg+xml",
-    key: "content-type",
-    value: "image/svg+xml",
-  },
-  {
-    text: "text/plain",
-    key: "content-type",
-    value: "text/plain",
-  },
+  { text: "Add", key: "", value: "" },
+  { text: "text/css", key: "content-type", value: "text/css" },
+  { text: "text/csv", key: "content-type", value: "text/csv" },
+  { text: "text/html", key: "content-type", value: "text/html" },
+  { text: "image/jpeg", key: "content-type", value: "image/jpeg" },
+  { text: "text/javascript", key: "content-type", value: "text/javascript" },
+  { text: "application/json", key: "content-type", value: "application/json" },
+  { text: "image/png", key: "content-type", value: "image/png" },
+  { text: "application/pdf", key: "content-type", value: "application/pdf" },
+  { text: "image/svg+xml", key: "content-type", value: "image/svg+xml" },
+  { text: "text/plain", key: "content-type", value: "text/plain" },
 ];
 
 function RequestValidation() {
@@ -304,10 +257,12 @@ function RequestValidation() {
   } = useFormContext<RouteCreateUpdateInputs>();
   const [tab, setTab] = useState("requestQuerySchema");
   const editorEl = useRef<HTMLDivElement>(null);
-  const editor = useRef<monaco.editor.IStandaloneCodeEditor>();
-  const requestQuerySchemaModel = useRef<monaco.editor.ITextModel>();
-  const requestHeaderSchemaModel = useRef<monaco.editor.ITextModel>();
-  const requestBodySchemaModel = useRef<monaco.editor.ITextModel>();
+  const editor = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+  const requestQuerySchemaModel = useRef<monaco.editor.ITextModel | null>(null);
+  const requestHeaderSchemaModel = useRef<monaco.editor.ITextModel | null>(
+    null,
+  );
+  const requestBodySchemaModel = useRef<monaco.editor.ITextModel | null>(null);
 
   useEffect(() => {
     requestQuerySchemaModel.current?.dispose();
@@ -454,13 +409,10 @@ function StaticResponse() {
     fields: responseHeaders,
     append: addResponseHeaders,
     remove: removeResponseHeader,
-  } = useFieldArray({
-    control,
-    name: "responseHeaders",
-  });
+  } = useFieldArray({ control, name: "responseHeaders" });
 
   const bodyEditorRef = useRef<HTMLDivElement>(null);
-  const bodyEditor = useRef<monaco.editor.IStandaloneCodeEditor>();
+  const bodyEditor = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 
   useEffect(() => {
     bodyEditor.current?.dispose();
@@ -468,9 +420,7 @@ function StaticResponse() {
     bodyEditor.current = monaco.editor.create(bodyEditorRef.current!, {
       language: getValues("responseBodyLanguage"),
       value: getValues("responseBody") || undefined,
-      minimap: {
-        enabled: false,
-      },
+      minimap: { enabled: false },
     });
     bodyEditor.current.onDidChangeModelContent(() => {
       setValue("responseBody", bodyEditor.current!.getValue());
@@ -619,10 +569,7 @@ function StaticFile({ file }: { file?: IFile }) {
     fields: responseHeaders,
     append: addResponseHeaders,
     remove: removeResponseHeader,
-  } = useFieldArray({
-    control,
-    name: "responseHeaders",
-  });
+  } = useFieldArray({ control, name: "responseHeaders" });
   const selectedFile = useRef<IFile | undefined>(file);
   const [modalSelectedFile, setModalSelectedFile] = useState<IFile | undefined>(
     file,
@@ -653,18 +600,13 @@ function StaticFile({ file }: { file?: IFile }) {
     }
     const accessToken = await getAccessTokenSilently();
     const res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
     const items = (await res.json()) as FileFolderItem[];
     const folderPathItems = JSON.parse(
       res.headers.get("Path-Items")!,
     ) as FolderPathItem[];
-    setPageData({
-      items: items,
-      folderPathItems: folderPathItems,
-    });
+    setPageData({ items: items, folderPathItems: folderPathItems });
   };
 
   useEffect(() => {
@@ -853,7 +795,9 @@ function FunctionHandler() {
     getValues,
   } = useFormContext<RouteCreateUpdateInputs>();
   const handlerEditorRef = useRef<HTMLDivElement>(null);
-  const handlerEditor = useRef<monaco.editor.IStandaloneCodeEditor>();
+  const handlerEditor = useRef<monaco.editor.IStandaloneCodeEditor | null>(
+    null,
+  );
 
   const sampleFunctionHandler = `function handler(req) {
   return {
@@ -874,9 +818,7 @@ function FunctionHandler() {
     handlerEditor.current = monaco.editor.create(handlerEditorRef.current!, {
       language: "javascript",
       value: functionHandler || sampleFunctionHandler,
-      minimap: {
-        enabled: false,
-      },
+      minimap: { enabled: false },
     });
     handlerEditor.current.onDidChangeModelContent(() => {
       setValue("functionHandler", handlerEditor.current!.getValue());

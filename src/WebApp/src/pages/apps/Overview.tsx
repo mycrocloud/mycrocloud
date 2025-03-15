@@ -98,35 +98,20 @@ const corsSettingsSchema: JSONSchemaType<CorsSettings> = {
     allowedHeaders: {
       type: "array",
       nullable: true,
-      items: {
-        type: "string",
-      },
+      items: { type: "string" },
     },
     allowedMethods: {
       type: "array",
       nullable: true,
-      items: {
-        type: "string",
-      },
+      items: { type: "string" },
     },
     allowedOrigins: {
       type: "array",
       nullable: true,
-      items: {
-        type: "string",
-      },
+      items: { type: "string" },
     },
-    exposeHeaders: {
-      type: "array",
-      nullable: true,
-      items: {
-        type: "string",
-      },
-    },
-    maxAgeSeconds: {
-      type: "number",
-      nullable: true,
-    },
+    exposeHeaders: { type: "array", nullable: true, items: { type: "string" } },
+    maxAgeSeconds: { type: "number", nullable: true },
   },
   additionalProperties: false,
 };
@@ -142,11 +127,7 @@ function RunnerSection() {
       const accessToken = await getAccessTokenSilently();
       const res = await fetch(
         `/api/apps/${app.id}/runner/registration-tokens`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        },
+        { headers: { Authorization: `Bearer ${accessToken}` } },
       );
       if (res.ok) {
         const json = await res.json();
@@ -160,9 +141,7 @@ function RunnerSection() {
     const accessToken = await getAccessTokenSilently();
     const res = await fetch(`/api/apps/${app.id}/runner/registration-tokens`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
     if (res.ok) {
       const token = (await res.json()) as RegistrationToken;
@@ -200,7 +179,7 @@ function CorsSettingsSection() {
   const { getAccessTokenSilently } = useAuth0();
 
   const editorElRef = useRef(null);
-  const editor = useRef<monaco.editor.IStandaloneCodeEditor>();
+  const editor = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const [error, setError] = useState<string>();
 
   useEffect(() => {
@@ -209,9 +188,7 @@ function CorsSettingsSection() {
     editor.current = monaco.editor.create(editorElRef.current!, {
       language: "json",
       value: "",
-      minimap: {
-        enabled: false,
-      },
+      minimap: { enabled: false },
     });
 
     return () => {
@@ -226,9 +203,7 @@ function CorsSettingsSection() {
     const fetchCorsSettings = async () => {
       const accessToken = await getAccessTokenSilently();
       const res = await fetch(`/api/apps/${app.id}/cors`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (res.ok) {
         const json = await res.json();
@@ -289,25 +264,19 @@ function CorsSettingsSection() {
     </>
   );
 }
-type RenameFormInput = {
-  name: string;
-};
+type RenameFormInput = { name: string };
 function RenameSection() {
   const { app } = useContext(AppContext)!;
   if (!app) throw new Error();
   const { getAccessTokenSilently } = useAuth0();
-  const schema = yup.object({
-    name: yup.string().required(),
-  });
+  const schema = yup.object({ name: yup.string().required() });
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<RenameFormInput>({
     resolver: yupResolver(schema),
-    defaultValues: {
-      name: app.name,
-    },
+    defaultValues: { name: app.name },
   });
   const onSubmit = async (input: RenameFormInput) => {
     const accessToken = await getAccessTokenSilently();
@@ -365,9 +334,7 @@ function DeleteSection() {
       const accessToken = await getAccessTokenSilently();
       const res = await fetch(`/api/apps/${app.id}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (res.ok) {
         toast("Deleted app");
@@ -405,9 +372,7 @@ function ChangeStateSection() {
     const status = app.status === "Active" ? "Inactive" : "Active";
     const res = await fetch(`/api/apps/${app.id}/status?status=${status}`, {
       method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
     if (res.ok) {
       //TODO: update app status in context
