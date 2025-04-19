@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Globalization;
+using Microsoft.AspNetCore.Mvc;
 using WebApp.Domain.Repositories;
 using WebApp.RestApi.Filters;
 
@@ -22,6 +23,13 @@ public class LogsController(ILogRepository logRepository) : BaseController
             .OrderByDescending(l => l.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize);
+        // add page info to the header
+        
+        Response.Headers.Append("X-Total-Count", logs.Count().ToString());
+        Response.Headers.Append("X-Page", page.ToString());
+        Response.Headers.Append("X-Page-Size", pageSize.ToString());
+        Response.Headers.Append("X-Page-Count", Math.Ceiling((double)logs.Count() / pageSize).ToString(CultureInfo.InvariantCulture));
+        
         return Ok(logs.Select(l => new {
             l.Id,
             Timestamp = l.CreatedAt,

@@ -1,7 +1,12 @@
+using System.Collections;
+using System.Text;
+using System.Text.Json;
 using Elastic.Clients.Elasticsearch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Nest;
+using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
 using WebApp.Domain.Entities;
 using WebApp.Infrastructure;
 using WebApp.RestApi.Filters;
@@ -17,8 +22,8 @@ public class BuildsController(
     [FromKeyedServices("AppBuildLogs_ES7")]
     ElasticClient elasticClient,
     [FromKeyedServices("AppBuildLogs_ES8")]
-    ElasticsearchClient elasticsearchClient)
-    : BaseController
+    ElasticsearchClient elasticsearchClient
+    ): BaseController
 {
     [HttpGet]
     public async Task<IActionResult> GetBuilds(int appId)
@@ -132,5 +137,78 @@ public class BuildsController(
                 d.Level
             }));
         }
+    }
+    
+    [HttpGet("{jobId}/logs/stream")]
+    public async Task<IActionResult> Stream(int appId, string jobId)
+    {
+        // use server sent events to stream logs
+        Response.Headers.Append("Content-Type", "text/event-stream");
+        Response.Headers.Append("Cache-Control", "no-cache");
+        Response.Headers.Append("Connection", "keep-alive");
+        
+        var cancellationToken = HttpContext.RequestAborted;
+       
+        var factory = new ConnectionFactory
+        {
+            Uri = new Uri(configuration.GetConnectionString("RabbitMq")!),
+        };
+        
+        // Create a connection and a channel
+        var connection = factory.CreateConnection();
+        var channel = connection.CreateModel();
+        var queueName = $"logs-{jobId}";
+        
+        channel.QueueDeclare(queue: queueName, // Name of the queue
+            durable: true, // Durable queue (persists)
+            exclusive: false, // Not exclusive to one consumer
+            autoDelete: false, // Do not auto-delete the queue
+            arguments: null); // No additional arguments
+        
+        var consumer = new EventingBasicConsumer(channel);
+        consumer.Received += async (model, ea) =>
+        {
+            var body = ea.Body.ToArray();
+            var message = Encoding.UTF8.GetString(body);
+
+            var log = JsonSerializer.Deserialize<BuildLogDoc>(message);
+            
+            // send the log to the client
+            await Response.WriteAsync($"data: {JsonSerializer.Serialize(log)}\n\n", cancellationToken: cancellationToken);
+            await Response.Body.FlushAsync(cancellationToken);
+        };
+        
+        channel.BasicConsume(queue: queueName, // Name of the queue
+            autoAck: true, // Auto-acknowledge the message
+            consumer: consumer); // The consumer to us
+        
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            await Task.Delay(100, cancellationToken); // just wait, messages come via event handler
+        }
+        // clean up
+        channel.BasicCancel(consumer.ConsumerTags[0]);
+        
+        // return a 200 OK response
+        return Ok(); 
+    }
+
+    private async Task<IEnumerable<BuildLogDoc>> CreateMockLogsAsync(string jobId)
+    {
+        var logs = new List<BuildLogDoc>();
+        for (int i = 0; i < 10; i++)
+        {
+            logs.Add(new BuildLogDoc
+            {
+                Source = "build",
+                Timestamp = DateTime.UtcNow,
+                Message = $"Log message {i}",
+                Level = "info"
+            });
+        }
+        
+        // simulate a delay
+        await Task.Delay(1000);
+        return logs;
     }
 }
