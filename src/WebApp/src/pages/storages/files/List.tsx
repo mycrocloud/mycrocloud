@@ -13,9 +13,7 @@ interface PageData {
   folderPathItems: FolderPathItem[];
 }
 
-type CreateRenameFolderFormInputs = {
-  name: string;
-};
+type CreateRenameFolderFormInputs = { name: string };
 
 export default function List() {
   const { app } = useContext(AppContext)!;
@@ -38,18 +36,13 @@ export default function List() {
     }
     const accessToken = await getAccessTokenSilently();
     const res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
     const items = (await res.json()) as Item[];
     const folderPathItems = JSON.parse(
       res.headers.get("Path-Items")!,
     ) as FolderPathItem[];
-    setPageData({
-      items: items,
-      folderPathItems: folderPathItems,
-    });
+    setPageData({ items: items, folderPathItems: folderPathItems });
   };
   useEffect(() => {
     fetchItems();
@@ -70,27 +63,19 @@ export default function List() {
         }
         const res = await fetch(url, {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+          headers: { Authorization: `Bearer ${accessToken}` },
           body: form,
         });
 
         if (res.ok) {
-          const newFile: Item = {
-            ...(await res.json()),
-            type: "File",
-          };
-          setPageData((prev) => ({
-            ...prev,
-            items: [...prev.items, newFile],
-          }));
+          const newFile: Item = { ...(await res.json()), type: "File" };
+          setPageData((prev) => ({ ...prev, items: [...prev.items, newFile] }));
         }
       }
     };
     input.click();
   };
-  const renameFolder = useRef<Item>();
+  const renameFolder = useRef<Item | null>(null);
   const createRenameFolderForm = useForm<CreateRenameFolderFormInputs>();
   const onSumitCreateRenameFolderForm = async (
     inputs: CreateRenameFolderFormInputs,
@@ -118,23 +103,14 @@ export default function List() {
       setShowCreateRenameModal(false);
 
       if (!isEditMode) {
-        const newFolder: Item = {
-          ...(await res.json()),
-          type: "Folder",
-        };
-        setPageData((prev) => ({
-          ...prev,
-          items: [...prev.items, newFolder],
-        }));
+        const newFolder: Item = { ...(await res.json()), type: "Folder" };
+        setPageData((prev) => ({ ...prev, items: [...prev.items, newFolder] }));
       } else {
         setPageData((prev) => ({
           ...prev,
           items: prev.items.map((item) => {
             if (item.id === renameFolder.current!.id) {
-              return {
-                ...item,
-                name: inputs.name,
-              };
+              return { ...item, name: inputs.name };
             }
             return item;
           }),
@@ -152,7 +128,7 @@ export default function List() {
     setShowCreateRenameModal(true);
   };
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const deleteItem = useRef<Item>();
+  const deleteItem = useRef<Item | null>(null);
   const onSubmitDelete = async () => {
     const item = deleteItem.current!;
     const accessToken = await getAccessTokenSilently();
@@ -164,12 +140,10 @@ export default function List() {
     }
     const res = await fetch(url, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
     if (res.ok) {
-      deleteItem.current = undefined;
+      deleteItem.current = null;
       setShowDeleteConfirm(false);
       setPageData((prev) => ({
         ...prev,
@@ -187,9 +161,7 @@ export default function List() {
       url += `?folderId=${item.id}`;
     }
     const res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
     if (res.ok) {
       const blob = await res.blob();
@@ -211,9 +183,7 @@ export default function List() {
     }
     const res = await fetch(url, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
     if (res.ok) {
       toast.success("Route generated successfully");
@@ -232,7 +202,7 @@ export default function List() {
         <button
           onClick={() => {
             if (renameFolder.current) {
-              renameFolder.current = undefined;
+              renameFolder.current = null;
             }
             createRenameFolderForm.reset();
             createRenameFolderForm.resetField("name");
@@ -356,7 +326,7 @@ export default function List() {
               <button
                 onClick={() => {
                   if (renameFolder.current) {
-                    renameFolder.current = undefined;
+                    renameFolder.current = null;
                   }
                   setShowCreateRenameModal(false);
                 }}
@@ -371,7 +341,7 @@ export default function List() {
       <Modal
         show={showDeleteConfirm}
         onClose={() => {
-          deleteItem.current = undefined;
+          deleteItem.current = null;
           setShowDeleteConfirm(false);
         }}
       >
@@ -395,7 +365,7 @@ export default function List() {
             </button>
             <button
               onClick={() => {
-                deleteItem.current = undefined;
+                deleteItem.current = null;
                 setShowDeleteConfirm(false);
               }}
               className="bg-gray-500 px-2 py-1 text-white"

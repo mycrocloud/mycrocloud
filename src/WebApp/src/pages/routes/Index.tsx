@@ -141,18 +141,13 @@ function RouteExplorer() {
     const getRoutes = async () => {
       const accessToken = await getAccessTokenSilently();
       fetch(`/api/apps/${app.id}/routes`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { Authorization: `Bearer ${accessToken}` },
       })
         .then((res) => res.json() as Promise<IRouteFolderRouteItem[]>)
         .then((items) => {
           setExplorerItems(
             items.map((route) => {
-              return {
-                ...route,
-                level: calculateLevel(route, items, null, 0),
-              };
+              return { ...route, level: calculateLevel(route, items, null, 0) };
             }),
           );
         });
@@ -162,10 +157,10 @@ function RouteExplorer() {
 
   //#region Action Menu
   const [showActionMenu, setShowActionMenu] = useState(false);
-  const actionMenuItemRef = useRef<IExplorerItem>();
+  const actionMenuItemRef = useRef<IExplorerItem | null>(null);
   const actionMenuRef = useRef<HTMLDivElement>(null);
-  const actionMenuClientXRef = useRef<number>();
-  const actionMenuClientYRef = useRef<number>();
+  const actionMenuClientXRef = useRef<number | null>(null);
+  const actionMenuClientYRef = useRef<number | null>(null);
 
   function calculateActionMenuTop() {
     if (!actionMenuRef.current || !actionMenuClientYRef.current) {
@@ -225,9 +220,7 @@ function RouteExplorer() {
         id: -1,
         parentId: id,
         route: null,
-        folder: {
-          name: "new folder",
-        },
+        folder: { name: "new folder" },
         isEditing: true,
         level: atRoot ? 0 : level + 1,
       };
@@ -239,10 +232,7 @@ function RouteExplorer() {
     setExplorerItems((items) => {
       return items.map((item) => {
         if (item.type === "Folder" && item.id === folder.id) {
-          return {
-            ...item,
-            isEditing: true,
-          };
+          return { ...item, isEditing: true };
         }
         return item;
       });
@@ -262,10 +252,7 @@ function RouteExplorer() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({
-          name: name,
-          parentId: folder.parentId,
-        }),
+        body: JSON.stringify({ name: name, parentId: folder.parentId }),
       });
       ensureSuccess(res);
       setExplorerItems((items) => {
@@ -274,9 +261,7 @@ function RouteExplorer() {
             return {
               ...item,
               id: parseInt(res.headers.get("Location")!),
-              folder: {
-                name: name,
-              },
+              folder: { name: name },
               isEditing: false,
             };
           }
@@ -292,22 +277,14 @@ function RouteExplorer() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${accessToken}`,
           },
-          body: JSON.stringify({
-            name: name,
-          }),
+          body: JSON.stringify({ name: name }),
         },
       );
       ensureSuccess(res);
       setExplorerItems((items) => {
         return items.map((item) => {
           if (item.id === folder.id) {
-            return {
-              ...item,
-              folder: {
-                name: name,
-              },
-              isEditing: false,
-            };
+            return { ...item, folder: { name: name }, isEditing: false };
           }
           return item;
         });
@@ -325,9 +302,7 @@ function RouteExplorer() {
 
     const res = await fetch(url, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
     ensureSuccess(res);
     if (type === "Folder") {
@@ -368,9 +343,7 @@ function RouteExplorer() {
 
       const res = await fetch(url, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       ensureSuccess(res);
 
@@ -412,10 +385,7 @@ function RouteExplorer() {
     setExplorerItems((items) => {
       return items.map((item) => {
         if (item.type === "Folder" && item.id === folder.id) {
-          return {
-            ...item,
-            collapsed: !item.collapsed,
-          };
+          return { ...item, collapsed: !item.collapsed };
         }
         return item;
       });

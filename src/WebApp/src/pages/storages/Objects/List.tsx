@@ -25,9 +25,7 @@ export default function List() {
     }
     const accessToken = await getAccessTokenSilently();
     const res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
     const objects = (await res.json()) as Object[];
     setObjects(objects);
@@ -51,9 +49,7 @@ export default function List() {
         }
         const res = await fetch(url, {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+          headers: { Authorization: `Bearer ${accessToken}` },
           body: form,
         });
 
@@ -73,16 +69,14 @@ export default function List() {
   };
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const deleteItem = useRef<Object>();
+  const deleteItem = useRef<Object>(undefined);
   const onSubmitDelete = async () => {
     const item = deleteItem.current!;
     const accessToken = await getAccessTokenSilently();
 
     const res = await fetch(`/api/apps/${app.id}/objects/${item.key}`, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
 
     if (res.ok) {
@@ -96,9 +90,7 @@ export default function List() {
     const accessToken = await getAccessTokenSilently();
     await downloadFile(
       `/api/apps/${app.id}/objects/${object.key}`,
-      {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      { Authorization: `Bearer ${accessToken}` },
       object.key,
     );
   };

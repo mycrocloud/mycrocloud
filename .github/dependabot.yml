@@ -2,11 +2,18 @@ version: 2
 updates:
   - package-ecosystem: "nuget"
     directories:
+      - "src/Services/WebApp/WebApp.Admin"
       - "src/Services/WebApp/WebApp.Domain"
+      - "src/Services/WebApp/WebApp.FunctionInvoker"
+      - "src/Services/WebApp/WebApp.FunctionShared"
       - "src/Services/WebApp/WebApp.Infrastructure"
       - "src/Services/WebApp/WebApp.Migrations"
+      - "src/Services/WebApp/WebApp.MigrationTest"
       - "src/Services/WebApp/WebApp.MiniApiGateway"
       - "src/Services/WebApp/WebApp.RestApi"
+      - "src/Services/WebApp/WebApp.SelfHostedFunctionRunner"
+      - "src/Services/WebApp/WebApp.UnitTest"
+
     schedule:
       interval: "daily"
 
