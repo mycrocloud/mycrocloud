@@ -2,7 +2,6 @@ using Docker.DotNet;
 using Microsoft.EntityFrameworkCore;
 using WebApp.Domain.Entities;
 using WebApp.Domain.Repositories;
-using WebApp.FunctionShared;
 using WebApp.Infrastructure;
 using WebApp.Infrastructure.Repositories;
 using WebApp.MiniApiGateway;
