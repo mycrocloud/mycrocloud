@@ -32,6 +32,7 @@ builder.Services.AddSingleton(new Scripts
     Handlebars = File.ReadAllText("Scripts/handlebars.min-v4.7.8.js"),
     Lodash = File.ReadAllText("Scripts/lodash.min.js")
 });
+builder.Services.AddHttpClient("HttpDocumentRetriever");
 builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = builder.Configuration.GetConnectionString("Redis");
