@@ -20,6 +20,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp.MigrationTest", "Web
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp.FunctionInvoker", "WebApp.FunctionInvoker\WebApp.FunctionInvoker.csproj", "{552680A7-FE5E-4520-B507-0F53645DF658}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp.FunctionShared", "WebApp.FunctionShared\WebApp.FunctionShared.csproj", "{AE6D34E0-EBB5-4B5F-AF01-9EF0DB6AEAD1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -65,5 +67,9 @@ Global
 		{552680A7-FE5E-4520-B507-0F53645DF658}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{552680A7-FE5E-4520-B507-0F53645DF658}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{552680A7-FE5E-4520-B507-0F53645DF658}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AE6D34E0-EBB5-4B5F-AF01-9EF0DB6AEAD1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AE6D34E0-EBB5-4B5F-AF01-9EF0DB6AEAD1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AE6D34E0-EBB5-4B5F-AF01-9EF0DB6AEAD1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AE6D34E0-EBB5-4B5F-AF01-9EF0DB6AEAD1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

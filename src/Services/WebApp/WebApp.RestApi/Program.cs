@@ -12,7 +12,6 @@ using Nest;
 using WebApp.Infrastructure;
 using WebApp.Infrastructure.Repositories;
 using WebApp.RestApi.Filters;
-using WebApp.RestApi.Hubs;
 using WebApp.RestApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -112,7 +111,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHealthChecks("/healthz");
-app.MapHub<TestHub>("/functionExecutionHub");
 app.Map("ping", () => "pong");
 app.Map("me", async (AppDbContext appDbContext, ClaimsPrincipal user) =>
     {

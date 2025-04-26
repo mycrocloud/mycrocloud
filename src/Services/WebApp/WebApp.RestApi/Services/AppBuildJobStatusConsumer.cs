@@ -1,6 +1,5 @@
 using System.Text;
 using System.Text.Json;
-using Dapper;
 using Microsoft.EntityFrameworkCore;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
