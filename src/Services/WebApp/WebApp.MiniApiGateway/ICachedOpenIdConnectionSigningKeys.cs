@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
@@ -22,11 +21,8 @@ public class CachedOpenIdConnectionSigningKeys(IDistributedCache cache) : ICache
         if (cachedJsonWebKeySet is not null)
         {
             var jsonWebKeySet = new JsonWebKeySet(cachedJsonWebKeySet);
-            ICollection<SecurityKey> keys = new Collection<SecurityKey>();
-            foreach (var signingKey in jsonWebKeySet.GetSigningKeys())
-                keys.Add(signingKey);
             
-            return keys;
+            return jsonWebKeySet.GetSigningKeys();
         }
         
         var configurationManager = new ConfigurationManager<OpenIdConnectConfiguration>(
@@ -37,10 +33,10 @@ public class CachedOpenIdConnectionSigningKeys(IDistributedCache cache) : ICache
         var openIdConnectConfiguration = await configurationManager.GetConfigurationAsync();
         
         await cache.SetAsync(cacheKey,
-            System.Text.Encoding.UTF8.GetBytes(openIdConnectConfiguration.JsonWebKeySet.ToString()),
+            System.Text.Encoding.UTF8.GetBytes(openIdConnectConfiguration.JsonWebKeySet.ToString()!),
             new DistributedCacheEntryOptions
             {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2)
             });
         
         return openIdConnectConfiguration.SigningKeys;
