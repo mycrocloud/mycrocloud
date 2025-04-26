@@ -1,5 +1,5 @@
-using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
@@ -11,17 +11,21 @@ public interface ICachedOpenIdConnectionSigningKeys
     Task<ICollection<SecurityKey>> Get(string issuer);
 }
 
-public class MemoryCachedOpenIdConnectionSigningKeys : ICachedOpenIdConnectionSigningKeys
+public class CachedOpenIdConnectionSigningKeys(IDistributedCache cache) : ICachedOpenIdConnectionSigningKeys
 {
-    private readonly ConcurrentDictionary<string, JsonWebKeySet> _jsonWebKeySet = new();
-    
     public async Task<ICollection<SecurityKey>> Get(string issuer)
     {
-        if (_jsonWebKeySet.TryGetValue(issuer, out var jsonWebKeySet))
+        var cacheKey = $"OpenIdConnectionSigningKeys:{issuer}";
+        
+        var cachedJsonWebKeySet = await cache.GetStringAsync(cacheKey);
+        
+        if (cachedJsonWebKeySet is not null)
         {
+            var jsonWebKeySet = new JsonWebKeySet(cachedJsonWebKeySet);
             ICollection<SecurityKey> keys = new Collection<SecurityKey>();
             foreach (var signingKey in jsonWebKeySet.GetSigningKeys())
                 keys.Add(signingKey);
+            
             return keys;
         }
         
@@ -32,7 +36,12 @@ public class MemoryCachedOpenIdConnectionSigningKeys : ICachedOpenIdConnectionSi
         
         var openIdConnectConfiguration = await configurationManager.GetConfigurationAsync();
         
-        _jsonWebKeySet.TryAdd(issuer, openIdConnectConfiguration.JsonWebKeySet);
+        await cache.SetAsync(cacheKey,
+            System.Text.Encoding.UTF8.GetBytes(openIdConnectConfiguration.JsonWebKeySet.ToString()),
+            new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)
+            });
         
         return openIdConnectConfiguration.SigningKeys;
     }

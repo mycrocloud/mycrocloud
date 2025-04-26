@@ -33,7 +33,11 @@ builder.Services.AddSingleton(new Scripts
     Handlebars = File.ReadAllText("Scripts/handlebars.min-v4.7.8.js"),
     Lodash = File.ReadAllText("Scripts/lodash.min.js")
 });
-builder.Services.AddSingleton<ICachedOpenIdConnectionSigningKeys, MemoryCachedOpenIdConnectionSigningKeys>();
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("Redis");
+});
+builder.Services.AddSingleton<ICachedOpenIdConnectionSigningKeys, CachedOpenIdConnectionSigningKeys>();
 
 builder.Services.AddKeyedSingleton("InProcessFunctionExecutionManager", new ConcurrencyJobManager(100));
 builder.Services.AddKeyedSingleton("DockerContainerFunctionExecutionManager", new ConcurrencyJobManager(100));
