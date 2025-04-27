@@ -50,7 +50,7 @@ jobs:
 
       # Create GitHub Release using softprops/action-gh-release
       - name: Create Release
-        uses: softprops/action-gh-release@v2.1.0
+        uses: softprops/action-gh-release@v2.2.2
         with:
           files: runner.zip
           tag_name: v1.0.0
