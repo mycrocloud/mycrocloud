@@ -12,7 +12,7 @@ namespace WebApp.Migrations.Migrations
         {
             const string sql = """
                                UPDATE "AppBuildJobs"
-                               SET "Name" = 'build_{' || "CreatedAt"::text || '}'
+                               SET "Name" = 'build_' || "CreatedAt"::text
                                """;
             migrationBuilder.Sql(sql);
         }
