@@ -49,9 +49,6 @@ jobs:
           build-args: |
             COMMIT_HASH=${{ github.sha }}
 
-      - name: Cleanup
-        run: rm -r ~/.ssh
-
   deploy:
     runs-on: ubuntu-latest
     needs: build-and-push-image
