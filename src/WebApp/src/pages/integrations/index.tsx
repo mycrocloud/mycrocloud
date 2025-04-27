@@ -17,6 +17,7 @@ export interface GitHubRepo {
 
 interface IBuildJob {
   id: string;
+  name: string;
   status: string;
   createdAt: string;
   finishedAt: string;
@@ -386,7 +387,7 @@ export default function Integrations() {
             <table className="mt-2 table-fixed">
               <thead>
                 <tr className="border">
-                  <th className="w-80 p-2 text-start">Id</th>
+                  <th className="w-80 p-2 text-start">Name</th>
                   <th className="w-20 text-start">Status</th>
                   <th className="w-60 text-start">Started At</th>
                 </tr>
@@ -401,7 +402,7 @@ export default function Integrations() {
                     }
                     onClick={() => setJobId(build.id)}
                   >
-                    <td className="p-2">{build.id}</td>
+                    <td className="p-2">{build.name}</td>
                     <td className={statusClass(build.status)}>
                       {build.status}
                     </td>
