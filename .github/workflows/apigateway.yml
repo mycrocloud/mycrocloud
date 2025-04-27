@@ -52,7 +52,7 @@ jobs:
           DESTINATION: ${{env.WORK_DIR}}/WebApp.MiniApiGateway/appsettings.json
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5.3.0
+        uses: docker/build-push-action@v6.16.0
         with:
           context: ${{env.WORK_DIR}}
           file: ${{env.WORK_DIR}}/WebApp.MiniApiGateway/Dockerfile
