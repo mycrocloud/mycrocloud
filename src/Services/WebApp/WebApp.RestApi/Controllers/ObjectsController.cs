@@ -56,31 +56,32 @@ public class ObjectsController(AppDbContext appDbContext) : BaseController
 
     [HttpPut("{*key}")]
     [Consumes("multipart/form-data")]
-    public async Task<IActionResult> PutObject(int appId, string key, [FromForm] IFormFile file)
+    public async Task<IActionResult> PutObject(int appId, string key, [FromForm]IFormFile file)
     {
+        await using var stream = file.OpenReadStream();
         await using var memoryStream = new MemoryStream();
-        await file.CopyToAsync(memoryStream);
+        await stream.CopyToAsync(memoryStream);
         var content = memoryStream.ToArray();
         
-        var obj = await appDbContext.Objects
-            .SingleOrDefaultAsync(o => o.AppId == appId && o.Key == key);
+        var app = await appDbContext.Apps
+                .Include(app => app.Objects)
+                .SingleAsync(app => app.Id == appId)
+            ;
+
+        var obj = app.Objects.SingleOrDefault(obj => obj.Key == key);
 
         if (obj is null)
         {
             obj = new Domain.Entities.Object
             {
-                AppId = appId,
                 Key = key,
-                Content = content,
-                CreatedAt = DateTime.UtcNow
+                Content = content
             };
-            appDbContext.Objects.Add(obj);
+            app.Objects.Add(obj);
         }
         else
         {
             obj.Content = content;
-            obj.UpdatedAt = DateTime.UtcNow;
-            appDbContext.Objects.Update(obj);
         }
 
         await appDbContext.SaveChangesAsync();
