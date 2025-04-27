@@ -14,27 +14,27 @@ public class CachedOpenIdConnectionSigningKeys(IDistributedCache cache, IHttpCli
 {
     public async Task<ICollection<SecurityKey>> Get(string issuer)
     {
-        var cacheKey = $"OpenIdConnectionSigningKeys:{issuer}";
+        var cacheKey = $"OpenIdConnectionSigningKeys:{issuer}:Keys";
         
-        var doc = await cache.GetStringAsync(cacheKey);
+        var keys = await cache.GetStringAsync(cacheKey);
         
-        if (doc is null)
+        if (keys is null)
         {
             var address = $"{issuer.TrimEnd('/')}/.well-known/openid-configuration";
             var httpClient = httpClientFactory.CreateClient("HttpDocumentRetriever");
             var retriever = new HttpDocumentRetriever(httpClient);
-            doc = await retriever.GetDocumentAsync(address, default);
-            
+            var doc = await retriever.GetDocumentAsync(address, default);
+            var openIdConnectConfiguration = OpenIdConnectConfiguration.Create(doc);
+            keys = await retriever.GetDocumentAsync(openIdConnectConfiguration.JwksUri, default);
+                
             await cache.SetAsync(cacheKey,
-                System.Text.Encoding.UTF8.GetBytes(doc),
+                System.Text.Encoding.UTF8.GetBytes(keys),
                 new DistributedCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2)
                 });
         }
 
-        var openIdConnectConfiguration = OpenIdConnectConfiguration.Create(doc);
-        
-        return openIdConnectConfiguration.SigningKeys;
+        return new JsonWebKeySet(keys).GetSigningKeys();
     }
 }
