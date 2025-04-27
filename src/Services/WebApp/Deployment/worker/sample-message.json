@@ -1,9 +1,17 @@
 {
-    "Id": "1",
-    "RepoFullName": "mycrocloud/sample-react-app",
-    "CloneUrl": "https://github.com/mycrocloud/sample-react-app",
-    "Directory": ".",
-    "OutDir": "dist",
-    "InstallCommand": "npm install",
-    "BuildCommand": "npm run build"
+    "BuildMessage": {
+        "job_id": "001",
+        "repo_full_name": "mycrocloud/sample-react-app",
+        "clone_url": "https://github.com/mycrocloud/sample-react-app",
+        "directory": ".",
+        "out_dir": "dist",
+        "install_command": "npm install",
+        "build_command": "npm run build"
+    },
+    "JobStatusChangedEventMessage": {
+        "job_id": "1",
+        "status": "started",
+        "container_id": "1234567890",
+        "artifacts_key_prefix": "mycrocloud/sample-react-app/1"
+    }
 }
