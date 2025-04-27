@@ -35,6 +35,7 @@ public class BuildsController(
         return Ok(jobs.Select(job => new
         {
             job.Id,
+            job.Name,
             job.Status,
             job.CreatedAt,
             job.UpdatedAt,

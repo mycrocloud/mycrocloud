@@ -130,6 +130,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                                        """;
             tb.HasCheckConstraint("CK_RunnerRegistrationToken_Scope_Requirement", constraints);
         });
+
+        modelBuilder.Entity<AppBuildJob>()
+            .Property(p => p.Name)
+            .HasDefaultValue("build");
+
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
