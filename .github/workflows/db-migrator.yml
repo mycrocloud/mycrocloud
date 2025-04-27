@@ -71,17 +71,6 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           
-      - name: Download appsettings.json file
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ vars.SSH_HOST }} >> ~/.ssh/known_hosts
-          scp ${{ vars.SSH_USERNAME }}@${{ vars.SSH_HOST }}:$SOURCE $DESTINATION
-        env:
-          SOURCE: workspaces/mycrocloud-deploy/dev/config/Services/WebApp/WebApp.Migrations/appsettings.json
-          DESTINATION: ${{env.WORK_DIR}}/WebApp.Migrations/appsettings.json
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v5.3.0
         with:
