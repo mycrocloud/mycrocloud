@@ -111,9 +111,10 @@ public class AuthenticationMiddleware(RequestDelegate next)
             var tokenHandler = new JwtSecurityTokenHandler();
             tokenHandler.ValidateToken(token, validationParameters, out var validatedToken);
             jwt = (JwtSecurityToken)validatedToken;
-    
+
             return true;
-        } catch
+        }
+        catch
         {
             jwt = null;
             return false;
