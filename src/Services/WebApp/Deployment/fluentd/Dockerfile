@@ -1,6 +1,7 @@
-# ref: https://docs.fluentd.org/container-deployment/docker-compose#step-1-create-fluentd-image-with-your-config--plugin
-
 FROM fluent/fluentd:edge-debian
 USER root
-RUN ["gem", "install", "fluent-plugin-elasticsearch", "--no-document", "--version", "5.4.3"]
+RUN gem uninstall -I elasticsearch && \
+    gem install elasticsearch -v 7.17.11 --no-document && \
+    gem install fluent-plugin-elasticsearch --version 5.4.3 --no-document
+
 USER fluent
