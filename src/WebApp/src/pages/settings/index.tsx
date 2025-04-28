@@ -4,7 +4,6 @@ import { useAuth0 } from "@auth0/auth0-react";
 import TextCopyButton from "../../components/ui/TextCopyButton";
 
 const CLIENT_ID = import.meta.env.VITE_GITHUB_CLIENTID;
-const REDIRECT_URI = import.meta.env.VITE_GITHUB_REDIRECT_URI;
 
 function generateUrl(token: string) {
   const baseUrl = import.meta.env.VITE_WEBAPP_APIGATEWAY_DOMAIN;
@@ -20,9 +19,10 @@ function generateUrl(token: string) {
 export default function Settings() {
   const { getAccessTokenSilently } = useAuth0();
   const onReconnectGitHub = async () => {
+    const redirectUri = window.location.origin + "/integrations/callback/github";
     //repo and read:org scope
     const scope = "repo%20read:org";
-    const authUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${scope}`;
+    const authUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${redirectUri}&scope=${scope}`;
     window.location.href = authUrl;
   };
 
