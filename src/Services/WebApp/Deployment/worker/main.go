@@ -49,6 +49,7 @@ func logJob(es7 *elasticsearch7.Client, es8 *elasticsearch8.Client, level string
 		Level:     level,
 		Message:   msg,
 		JobID:     jobID,
+		Source:    "worker",
 	}
 	data, err := json.Marshal(doc)
 	failOnError(err, "Failed to marshal log data")
