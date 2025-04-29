@@ -154,7 +154,7 @@ export default function CreateUpdateScheme() {
           <label htmlFor="type">Type</label>
           <select id="type" {...register("type", { required: true })}>
             <option value="OpenIdConnect">OpenID Connect</option>
-            <option value="ApiKey">API Key</option>
+            {/* <option value="ApiKey">API Key</option> */}
           </select>
           {errors.type && (
             <p className="text-xs text-red-500">{errors.type.message}</p>
@@ -171,7 +171,7 @@ export default function CreateUpdateScheme() {
           </Link>
           <button
             type="submit"
-            className="border border-transparent bg-primary px-3 py-2 text-center font-medium text-white focus:z-10 focus:outline-none focus:ring-2 focus:ring-cyan-300 enabled:hover:bg-cyan-800"
+            className="border border-transparent bg-primary px-2 py-1 text-center font-medium text-white focus:z-10 focus:outline-none focus:ring-2 focus:ring-cyan-300 enabled:hover:bg-cyan-800"
           >
             Save
           </button>

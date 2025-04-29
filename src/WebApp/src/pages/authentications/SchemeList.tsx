@@ -47,26 +47,28 @@ export default function SchemeList() {
         </Link>
       </div>
       <table className="mt-2 w-full">
-        <thead>
+        <thead className="text-left border">
           <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Created At</th>
-            <th>Updated At</th>
-            <th>Enabled</th>
-            <th>Actions</th>
+            <th className="px-2 py-1">Name</th>
+            <th className="px-2 py-1">Type</th>
+            <th className="px-2 py-1">Created At</th>
+            <th className="px-2 py-1">Updated At</th>
+            <th className="px-2 py-1">Enabled</th>
+            <th className="px-2 py-1">Actions</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="text-left px-2">
           {schemes.map((s) => (
-            <tr key={s.id} className="border">
-              <td>{s.name}</td>
-              <td>{s.type}</td>
-              <td>{new Date(s.createdAt).toLocaleString()}</td>
-              <td>
+            <tr key={s.id} className="border px-2">
+              <td className="px-2 py-1">{s.name}</td>
+              <td className="px-2 py-1">{s.type}</td>
+              <td className="px-2 py-1">
+                {new Date(s.createdAt).toLocaleString()}
+              </td>
+              <td className="px-2 py-1">
                 {s.updatedAt ? new Date(s.updatedAt).toLocaleString() : "-"}
               </td>
-              <td>{s.enabled ? "Yes" : "No"}</td>
+              <td className="px-2 py-1">{s.enabled ? "Yes" : "No"}</td>
               <td className="flex space-x-1">
                 <Link to={`${s.id}`} className="text-primary">
                   Edit

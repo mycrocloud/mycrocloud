@@ -19,8 +19,8 @@ export default function AppLayout() {
     part3 == "authentications" && part4 === "schemes";
   const isMatchAuthenticationSettings =
     part3 == "authentications" && part4 === "settings";
-  const isMatchAuthenticationApiKeys =
-    part3 == "authentications" && part4 === "apikeys";
+  // const isMatchAuthenticationApiKeys =
+  //   part3 == "authentications" && part4 === "apikeys";
 
   const isMatchFileStorages = part3 == "storages" && part4 === "files";
   const isMatchObjectsStorages = part3 == "storages" && part4 === "objects";
@@ -85,14 +85,14 @@ export default function AppLayout() {
                 >
                   Schemes
                 </Link>
-                <Link
+                {/* <Link
                   to="authentications/apikeys"
                   className={`text-xs ${
                     isMatchAuthenticationApiKeys ? "text-primary" : ""
                   }`}
                 >
                   API Keys
-                </Link>
+                </Link> */}
                 <Link
                   to="authentications/settings"
                   className={`text-xs ${
