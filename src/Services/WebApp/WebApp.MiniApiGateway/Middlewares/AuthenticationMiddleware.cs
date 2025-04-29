@@ -8,7 +8,7 @@ using WebApp.Infrastructure;
 
 namespace WebApp.MiniApiGateway.Middlewares;
 
-public class AuthenticationMiddleware(RequestDelegate next)
+public class AuthenticationMiddleware(RequestDelegate next, ILogger<AuthenticationMiddleware> logger)
 {
     public async Task InvokeAsync(HttpContext context)
     {
@@ -41,7 +41,7 @@ public class AuthenticationMiddleware(RequestDelegate next)
         await next.Invoke(context);
     }
 
-    private static async Task AuthenticateOpenIdConnectScheme(HttpContext context, AuthenticationScheme scheme)
+    private async Task AuthenticateOpenIdConnectScheme(HttpContext context, AuthenticationScheme scheme)
     {
         var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
         if (string.IsNullOrEmpty(token))
@@ -91,7 +91,7 @@ public class AuthenticationMiddleware(RequestDelegate next)
         context.Items.Add("_ApiKey", apiKeyEntity);
     }
 
-    private static bool ValidateToken(string token, 
+    private bool ValidateToken(string token, 
         string issuer, 
         string audience, 
         IEnumerable<SecurityKey> signingKeys,
@@ -114,8 +114,9 @@ public class AuthenticationMiddleware(RequestDelegate next)
 
             return true;
         }
-        catch
+        catch(Exception e)
         {
+            logger.LogDebug(e, "Token validation failed");
             jwt = null;
             return false;
         }
