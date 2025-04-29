@@ -44,7 +44,7 @@ public class WebhooksController(AppDbContext appDbContext, RabbitMqService rabbi
 
         var job = new AppBuildJob
         {
-            Id = Guid.NewGuid().ToString(),
+            Id = Guid.NewGuid(),
             App = app,
             Name = commitMessage,
             Status = "pending",
@@ -55,7 +55,7 @@ public class WebhooksController(AppDbContext appDbContext, RabbitMqService rabbi
 
         var message = new AppBuildMessage
         {
-            JobId = job.Id,
+            JobId = job.Id.ToString(),
             RepoFullName = repoFullName,
             CloneUrl = $"https://{userToken.Token}@github.com/{repoFullName}.git",
             Directory = app.Integration?.Directory ?? ".",

@@ -33,7 +33,7 @@ public class AppOwnerActionFilter(AppDbContext appDbContext,
         
         if (!TryGetAppId(context, out var appId))
         {
-            logger.LogWarning("AppId argument is missing");
+            logger.LogDebug("AppId argument is missing");
             return true;
         }
         
@@ -44,7 +44,7 @@ public class AppOwnerActionFilter(AppDbContext appDbContext,
         logger.LogDebug("IsAppOwner: {IsAppOwner}", isAppOwner);
         if (!isAppOwner)
         {
-            logger.LogWarning("User {UserId} is not the owner of the app {AppId}", userId, appId);
+            logger.LogDebug("User {UserId} is not the owner of the app {AppId}", userId, appId);
             context.Result = new ForbidResult();
             return false;
         }

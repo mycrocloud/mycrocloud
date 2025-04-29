@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Text;
 using System.Text.Json;
 using Elastic.Clients.Elasticsearch;
@@ -26,7 +25,7 @@ public class BuildsController(
     ILogger<BuildsController> logger): BaseController
 {
     [HttpGet]
-    public async Task<IActionResult> GetBuilds(int appId)
+    public async Task<IActionResult> List(int appId)
     {
         var jobs = await appDbContext.AppBuildJobs
             .Where(j => j.AppId == appId)
@@ -43,7 +42,7 @@ public class BuildsController(
     }
 
     [HttpPost("config")]
-    public async Task<IActionResult> PostConfigBuild(int appId, BuildConfigRequest buildConfigRequest)
+    public async Task<IActionResult> Config(int appId, BuildConfigRequest buildConfigRequest)
     {
         var app = await appDbContext.Apps
             .Include(a => a.Integration)
@@ -70,11 +69,12 @@ public class BuildsController(
         }
 
         await appDbContext.SaveChangesAsync();
+        
         return NoContent();
     }
 
     [HttpGet("config")]
-    public async Task<IActionResult> GetConfigBuild(int appId)
+    public async Task<IActionResult> Config(int appId)
     {
         var app = await appDbContext.Apps
             .Include(a => a.Integration)
@@ -96,8 +96,8 @@ public class BuildsController(
         });
     }
 
-    [HttpGet("{jobId}/logs")]
-    public async Task<IActionResult> GetBuildLogs(int appId, string jobId)
+    [HttpGet("{jobId:guid}/logs")]
+    public async Task<IActionResult> Logs(int appId, Guid jobId)
     {
         var job = await appDbContext.AppBuildJobs
             .SingleAsync(j => j.AppId == appId && j.Id == jobId);
@@ -127,7 +127,7 @@ public class BuildsController(
                 s.Query(q => q
                     .Match(m => m
                         .Field("job_id")
-                        .Query(job.Id)
+                        .Query(job.Id.ToString())
                     )
                 )
             );
@@ -148,8 +148,8 @@ public class BuildsController(
         }));
     }
     
-    [HttpGet("{jobId}/logs/stream")]
-    public async Task<IActionResult> Stream(int appId, string jobId)
+    [HttpGet("{jobId:guid}/logs/stream")]
+    public async Task<IActionResult> Stream(int appId, Guid jobId)
     {
         // use server sent events to stream logs
         Response.Headers.Append("Content-Type", "text/event-stream");
@@ -166,7 +166,7 @@ public class BuildsController(
         // Create a connection and a channel
         var connection = factory.CreateConnection();
         var channel = connection.CreateModel();
-        var queueName = $"logs-{jobId}";
+        const string queueName = "build-logs";
         
         channel.QueueDeclare(queue: queueName, // Name of the queue
             durable: true, // Durable queue (persists)
@@ -180,7 +180,9 @@ public class BuildsController(
             var body = ea.Body.ToArray();
             var message = Encoding.UTF8.GetString(body);
 
-            var log = JsonSerializer.Deserialize<BuildLogDoc>(message);
+            var log = JsonSerializer.Deserialize<BuildLogDoc>(message)!;
+
+            if (log.JobId != jobId) return;
             
             // send the log to the client
             await Response.WriteAsync($"data: {JsonSerializer.Serialize(log)}\n\n", cancellationToken: cancellationToken);
