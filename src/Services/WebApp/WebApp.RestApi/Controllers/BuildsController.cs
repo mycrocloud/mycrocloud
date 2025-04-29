@@ -22,8 +22,8 @@ public class BuildsController(
     [FromKeyedServices("AppBuildLogs_ES7")]
     ElasticClient elasticClient,
     [FromKeyedServices("AppBuildLogs_ES8")]
-    ElasticsearchClient elasticsearchClient
-    ): BaseController
+    ElasticsearchClient elasticsearchClient,
+    ILogger<BuildsController> logger): BaseController
 {
     [HttpGet]
     public async Task<IActionResult> GetBuilds(int appId)
@@ -102,6 +102,7 @@ public class BuildsController(
         var job = await appDbContext.AppBuildJobs
             .SingleAsync(j => j.AppId == appId && j.Id == jobId);
 
+        IReadOnlyCollection<BuildLogDoc> docs;
         if (configuration["Elasticsearch:Version"] == "v8")
         {
             var response = await elasticsearchClient.SearchAsync<BuildLogDoc>(s =>
@@ -112,13 +113,13 @@ public class BuildsController(
                     )
                 )
             );
-            
-            return Ok(response.Documents.Select(d => new
+
+            if (!response.IsValidResponse)
             {
-                d.Timestamp,
-                d.Message,
-                d.Level
-            }));
+                logger.LogError("Elasticsearch response is not valid: {Error}", response.DebugInformation);
+            }
+            
+            docs = response.Documents;
         }
         else
         {
@@ -130,14 +131,21 @@ public class BuildsController(
                     )
                 )
             );
-
-            return Ok(response.Documents.Select(d => new
+            
+            if (!response.IsValid)
             {
-                d.Timestamp,
-                d.Message,
-                d.Level
-            }));
+                logger.LogError("Elasticsearch response is not valid: {Error}", response.DebugInformation);
+            }
+
+            docs = response.Documents;
         }
+        
+        return Ok(docs.Select(d => new
+        {
+            d.Timestamp,
+            d.Message,
+            d.Level
+        }));
     }
     
     [HttpGet("{jobId}/logs/stream")]
