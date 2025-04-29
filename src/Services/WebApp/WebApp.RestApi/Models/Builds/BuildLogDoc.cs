@@ -1,15 +1,19 @@
 using System.Text.Json.Serialization;
+using Nest;
 
 namespace WebApp.RestApi.Models.Builds;
 
 public class BuildLogDoc
 {
     [JsonPropertyName("@timestamp")]
+    [PropertyName("@timestamp")]
     public DateTime Timestamp { get; set; }
     
     [JsonPropertyName("message")]
+    [PropertyName("message")]
     public string Message { get; set; }
     [JsonPropertyName("level")]
+    [PropertyName("level")]
     public string Level { get; set; }
     
     [JsonPropertyName("source")]

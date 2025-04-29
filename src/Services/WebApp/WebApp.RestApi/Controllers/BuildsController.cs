@@ -201,23 +201,4 @@ public class BuildsController(
         // return a 200 OK response
         return Ok(); 
     }
-
-    private async Task<IEnumerable<BuildLogDoc>> CreateMockLogsAsync(string jobId)
-    {
-        var logs = new List<BuildLogDoc>();
-        for (int i = 0; i < 10; i++)
-        {
-            logs.Add(new BuildLogDoc
-            {
-                Source = "build",
-                Timestamp = DateTime.UtcNow,
-                Message = $"Log message {i}",
-                Level = "info"
-            });
-        }
-        
-        // simulate a delay
-        await Task.Delay(1000);
-        return logs;
-    }
 }
