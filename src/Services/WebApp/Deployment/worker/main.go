@@ -115,7 +115,7 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.
 			Type: "fluentd",
 			Config: map[string]string{
 				"fluentd-address": "localhost:24224",
-				"tag":             "mycrocloud.builder",
+				"tag":             fmt.Sprintf("mycrocloud.builder.%s", buildMsg.JobId),
 			},
 		},
 	}, nil, nil, "")
