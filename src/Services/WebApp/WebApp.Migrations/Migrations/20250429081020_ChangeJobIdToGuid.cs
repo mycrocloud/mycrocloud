@@ -14,7 +14,7 @@ namespace WebApp.Migrations.Migrations
             migrationBuilder.AlterColumn<Guid>(
                 name: "Id",
                 table: "AppBuildJobs",
-                type: "uuid",
+                type: "uuid using \"Id\"::uuid",
                 nullable: false,
                 oldClrType: typeof(string),
                 oldType: "text");
