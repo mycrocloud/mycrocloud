@@ -7,12 +7,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\WebApp.Domain\WebApp.Domain.csproj" />
-      <ProjectReference Include="..\WebApp.Infrastructure\WebApp.Infrastructure.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
+      <PackageReference Include="Dapper" Version="2.1.66" />
       <PackageReference Include="Jint" Version="4.1.0" />
+      <PackageReference Include="Npgsql" Version="8.0.3" />
     </ItemGroup>
 
 </Project>

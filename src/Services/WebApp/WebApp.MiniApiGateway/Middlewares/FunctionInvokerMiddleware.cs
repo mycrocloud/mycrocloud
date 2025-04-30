@@ -1,18 +1,15 @@
-﻿using System.Diagnostics;
-using System.Text;
-using System.Text.Json;
+﻿using System.Text.Json;
 using Docker.DotNet;
 using Docker.DotNet.Models;
 using Jint;
-using Jint.Native;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
 using WebApp.Domain.Entities;
 using WebApp.Domain.Repositories;
 using WebApp.FunctionShared;
-using WebApp.FunctionShared.PlugIns;
 using WebApp.Infrastructure;
 using File = System.IO.File;
+using Runtime = WebApp.FunctionShared.Runtime;
+using FunctionSharedConstants = WebApp.FunctionShared.Constants;
 
 namespace WebApp.MiniApiGateway.Middlewares;
 
@@ -45,7 +42,7 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
                 {
                     case FunctionExecutionEnvironment.InProcess:
                     {
-                        result = await ExecuteInProcess(context, scripts, appRepository, app, route, configuration);
+                        result = await ExecuteInProcess(context, appRepository, app, route, configuration);
                         break;
                     }
 
@@ -141,53 +138,48 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
         };
     }
 
-    private async Task<Result> ExecuteOutOfProcess_DockerContainer(HttpContext context, App app,
-        IAppRepository appRepository, Route route,
-        IConfiguration configuration)
+    private async Task<Result> ExecuteOutOfProcess_DockerContainer(HttpContext context, App app, IAppRepository appRepository, Route route, IConfiguration configuration)
     {
-        var concurrencyJobManager =
-            context.RequestServices.GetKeyedService<ConcurrencyJobManager>(
-                "DockerContainerFunctionExecutionManager")!;
+        var concurrencyJobManager = context.RequestServices.GetKeyedService<ConcurrencyJobManager>("DockerContainerFunctionExecutionManager")!;
 
         var dockerClient = context.RequestServices.GetRequiredService<DockerClient>();
 
-        var hostDir =
-            Path.Combine(configuration["DockerFunctionExecution:HostFilePath"]!,
-                context.TraceIdentifier.Replace(':', '_'));
+        var hostDir = Path.Combine(configuration["DockerFunctionExecution:HostFilePath"]!, context.TraceIdentifier.Replace(':', '_'));
 
         Directory.CreateDirectory(hostDir);
 
-        await File.WriteAllTextAsync(Path.Combine(hostDir, "request.json"),
-            JsonSerializer.Serialize(await context.Request.Normalize()));
-
-        // Inject environment variables
-        var appVariables = await appRepository.GetVariables(app.Id);
-        var env = new StringBuilder();
-        foreach (var variable in appVariables)
+        var runtime = new Runtime
         {
-            env.AppendLine($"{variable.Name}={variable.StringValue}");
-        }
+            Env = (await appRepository.GetVariables(app.Id)).ToDictionary(v => v.Name, v => v.StringValue),
+        };
+        
+        await File.WriteAllTextAsync(Path.Combine(hostDir, FunctionSharedConstants.RuntimeFilePath), JsonSerializer.Serialize(runtime));
 
-        await File.WriteAllTextAsync(Path.Combine(hostDir, ".env"), env.ToString());
+        await File.WriteAllTextAsync(Path.Combine(hostDir, FunctionSharedConstants.RequestFilePath), JsonSerializer.Serialize(await context.Request.Normalize()));
 
-        await File.WriteAllTextAsync(Path.Combine(hostDir, "handler.js"), route.FunctionHandler);
-
-        var containerFilePath = "/app/data";
+        await File.WriteAllTextAsync(Path.Combine(hostDir, FunctionSharedConstants.HandlerFilePath), route.FunctionHandler);
 
         return await concurrencyJobManager.EnqueueJob(async token =>
         {
-            var container = await dockerClient.Containers.CreateContainerAsync(new CreateContainerParameters()
+            const string containerDataPath = "/app/data";
+            var container = await dockerClient.Containers.CreateContainerAsync(new CreateContainerParameters
             {
                 Image = configuration["DockerFunctionExecution:Image"],
                 HostConfig = new HostConfig
                 {
                     AutoRemove = true,
-                    Binds = [$"{hostDir}:{containerFilePath}"]
+                    Binds = [$"{hostDir}:{containerDataPath}"],
+                },
+                Env = new List<string>
+                {
+                    $"{FunctionSharedConstants.APP_ID}={app.Id}",
+                    $"{FunctionSharedConstants.CONNECTION_STRING}={configuration.GetConnectionString("DefaultConnection")}"
                 }
             }, token);
 
-            await dockerClient.Containers.StartContainerAsync(container.ID, new ContainerStartParameters()
+            await dockerClient.Containers.StartContainerAsync(container.ID, new ContainerStartParameters
             {
+                
             }, token);
 
             await dockerClient.Containers.WaitContainerAsync(container.ID, token);
@@ -200,12 +192,10 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
         }, TimeSpan.FromSeconds(app.Settings.FunctionExecutionTimeoutSeconds ?? 10));
     }
 
-
-    private async Task<Result> ExecuteInProcess(HttpContext context, Scripts scripts,
-        IAppRepository appRepository, App app, Route route, IConfiguration configuration)
+    private async Task<Result> ExecuteInProcess(HttpContext context, IAppRepository appRepository, App app, Route route, IConfiguration configuration)
     {
         var concurrencyJobManager = context.RequestServices.GetKeyedService<ConcurrencyJobManager>("InProcessFunctionExecutionManager")!;
-
+        
         var engine = new Engine(options =>
         {
             if (app.Settings.CheckFunctionExecutionLimitMemory)
@@ -216,139 +206,28 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
                 options.LimitMemory(memoryLimit);
             }
         });
-
-        //Inject global variables
-        await InjectEnvironmentVariables(appRepository, app, engine);
-
-        // Inject utility scripts
-        InjectBuiltInUtilityScripts(scripts, engine);
-
-        //Inject user-defined dependencies
-        await InjectUserDefinedDependencies(route, engine);
-
-        //Inject plugins
-        InjectPlugIns(engine, app, configuration);
-
-        JsValue jsValue;
-        Exception? exception = null;
-        TimeSpan duration;
-
-        //Start measuring time for function execution
-        var startingTimestamp = Stopwatch.GetTimestamp();
-        try
-        {
-            engine.SetRequestValue(await context.Request.Normalize());
-            const string code = "(() => { return $FunctionHandler$(request); })();";
-
-            jsValue = await concurrencyJobManager.EnqueueJob(token =>
-            {
-                engine.Execute(route.FunctionHandler);
-                var value = engine.Evaluate(code.Replace("$FunctionHandler$",
-                    route.FunctionHandlerMethod ?? "handler"));
-
-                return Task.FromResult(value);
-            }, TimeSpan.FromSeconds(app.Settings.FunctionExecutionTimeoutSeconds ?? 10));
-        }
-        catch (Exception e)
-        {
-            jsValue = JsValue.FromObject(engine, new
-            {
-                statusCode = 500,
-                body = e.Message,
-                additionalLogMessage = e.Message
-            });
-            exception = e;
-        }
-        finally
-        {
-            duration = Stopwatch.GetElapsedTime(startingTimestamp);
-        }
-
-        var result = JintExecutor.Map(jsValue);
-        result.Exception = exception;
-        result.Duration = duration;
-
-        return result;
-    }
-
-    private AppDbContext CreateDbContext(IConfiguration configuration)
-    {
-        var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-        optionsBuilder.UseNpgsql(configuration.GetConnectionString("DefaultConnection"));
-        return new AppDbContext(optionsBuilder.Options);
-    }
-
-    private void InjectPlugIns(Engine engine, App app, IConfiguration configuration)
-    {
-        var dbContext = CreateDbContext(configuration);
         
-        engine.SetValue(TextStorageAdapter.HookName,
-            new Func<string, object>(name =>
-            {
-                var adapter = new TextStorageAdapter(app.Id, name, dbContext);
-
-                return new
-                {
-                    read = new Func<string>(() => adapter.Read()),
-                    write = new Action<string>(content => adapter.Write(content))
-                };
-            }));
-
-        engine.SetValue(ObjectStorageAdapter.HookName,
-            () =>
-            {
-                var adapter = new ObjectStorageAdapter(app.Id, dbContext);
-
-                return new
-                {
-                    read = new Func<string, byte[]>(key => adapter.Read(key)),
-                    write = new Action<string, byte[]>((key, content) => adapter.Write(key, content))
-                };
-            });
-    }
-
-    private async Task InjectUserDefinedDependencies(Route route, Engine engine)
-    {
-        foreach (var dependency in route.FunctionHandlerDependencies ?? [])
+        var runtime = new Runtime
         {
-            var script = await LoadScript(dependency);
-            if (!string.IsNullOrEmpty(script))
-            {
-                engine.Execute(script);
-            }
-        }
-    }
-
-    private static void InjectBuiltInUtilityScripts(Scripts scripts, Engine engine)
-    {
-        //engine.Execute(scripts.Faker);
-        engine.Execute(scripts.Handlebars);
-        engine.Execute(scripts.Lodash);
-    }
-
-    private static async Task InjectEnvironmentVariables(IAppRepository appRepository, App app, Engine engine)
-    {
-        var variables = new Dictionary<string, object?>();
-        var appVariables = await appRepository.GetVariables(app.Id);
-        foreach (var variable in appVariables)
+            Env = (await appRepository.GetVariables(app.Id)).ToDictionary(v => v.Name, v => v.StringValue),
+        };
+        
+        var mcRuntime = new MycroCloudRuntime
         {
-            object? value = variable.ValueType switch
-            {
-                VariableValueType.String => variable.StringValue,
-                VariableValueType.Number => int.Parse(variable.StringValue),
-                VariableValueType.Boolean => bool.Parse(variable.StringValue),
-                VariableValueType.Null => null,
-                _ => throw new ArgumentOutOfRangeException()
-            };
-            variables[variable.Name] = value;
-        }
+            AppId = app.Id,
+            ConnectionString = configuration.GetConnectionString("DefaultConnection")!
+        };
+        
+        var executor = new JintExecutor(engine, runtime, mcRuntime);
 
-        engine.SetValue("env", variables);
-    }
-
-    private async Task<string> LoadScript(string dependency)
-    {
-        return string.Empty;
+        return await concurrencyJobManager.EnqueueJob(async token =>
+        {
+            var request = await context.Request.Normalize();
+            
+            var result = executor.Execute(request, route.FunctionHandler);
+            
+            return result;
+        }, TimeSpan.FromSeconds(app.Settings.FunctionExecutionTimeoutSeconds ?? 10));
     }
 }
 
