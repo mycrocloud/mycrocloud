@@ -9,7 +9,6 @@ public class Runtime
 
     public HashSet<string> Hooks { get; set; } = [TextStorage.HookName, ObjectStorage.HookName];
 
-
     public long? MemoryLimit { get; set; }
     
     [JsonIgnore]

@@ -1,7 +1,6 @@
 ﻿using System.Text.Json;
 using Docker.DotNet;
 using Docker.DotNet.Models;
-using Jint;
 using Microsoft.AspNetCore.SignalR;
 using WebApp.Domain.Entities;
 using WebApp.Domain.Repositories;
