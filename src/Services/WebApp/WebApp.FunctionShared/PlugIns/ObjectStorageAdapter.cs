@@ -5,6 +5,7 @@ namespace WebApp.FunctionShared.PlugIns;
 
 public class ObjectStorageAdapter(int appId, AppDbContext dbContext)
 {
+    public const string HookName = "useObjectStorage";
     public byte[] Read(string key)
     {
         var storage = dbContext.Objects.Single(o => o.App.Id == appId && o.Key == key);

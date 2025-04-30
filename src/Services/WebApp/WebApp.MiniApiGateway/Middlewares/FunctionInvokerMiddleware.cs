@@ -6,6 +6,7 @@ using Docker.DotNet.Models;
 using Jint;
 using Jint.Native;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using WebApp.Domain.Entities;
 using WebApp.Domain.Repositories;
 using WebApp.FunctionShared;
@@ -17,8 +18,7 @@ namespace WebApp.MiniApiGateway.Middlewares;
 
 public class FunctionInvokerMiddleware(RequestDelegate next)
 {
-    public async Task InvokeAsync(HttpContext context, AppDbContext dbContext, Scripts scripts,
-        IAppRepository appRepository, IConfiguration configuration)
+    public async Task InvokeAsync(HttpContext context, AppDbContext dbContext, Scripts scripts, IAppRepository appRepository, IConfiguration configuration)
     {
         var app = (App)context.Items["_App"]!;
         var route = (Route)context.Items["_Route"]!;
@@ -45,15 +45,13 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
                 {
                     case FunctionExecutionEnvironment.InProcess:
                     {
-                        result = await ExecuteInProcess(context, scripts, appRepository, app,
-                            route);
+                        result = await ExecuteInProcess(context, scripts, appRepository, app, route, configuration);
                         break;
                     }
 
                     case FunctionExecutionEnvironment.OutOfProcess_DockerContainer:
                     {
-                        result = await ExecuteOutOfProcess_DockerContainer(context, app, appRepository,
-                            route, configuration);
+                        result = await ExecuteOutOfProcess_DockerContainer(context, app, appRepository, route, configuration);
                         break;
                     }
 
@@ -204,11 +202,9 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
 
 
     private async Task<Result> ExecuteInProcess(HttpContext context, Scripts scripts,
-        IAppRepository appRepository, App app, Route route)
+        IAppRepository appRepository, App app, Route route, IConfiguration configuration)
     {
-        var concurrencyJobManager =
-            context.RequestServices.GetKeyedService<ConcurrencyJobManager>(
-                "InProcessFunctionExecutionManager")!;
+        var concurrencyJobManager = context.RequestServices.GetKeyedService<ConcurrencyJobManager>("InProcessFunctionExecutionManager")!;
 
         var engine = new Engine(options =>
         {
@@ -231,9 +227,7 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
         await InjectUserDefinedDependencies(route, engine);
 
         //Inject plugins
-        using var scope = context.RequestServices.CreateScope();
-        var dbContext2 = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        InjectPlugIns(engine, dbContext2, app);
+        InjectPlugIns(engine, app, configuration);
 
         JsValue jsValue;
         Exception? exception = null;
@@ -277,13 +271,40 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
         return result;
     }
 
-    private static void InjectPlugIns(Engine engine, AppDbContext dbContext, App app)
+    private AppDbContext CreateDbContext(IConfiguration configuration)
     {
-        engine.SetValue("useTextStorage",
-            new Func<string, TextStorageAdapter>(name => new TextStorageAdapter(app, name, dbContext)));
+        var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
+        optionsBuilder.UseNpgsql(configuration.GetConnectionString("DefaultConnection"));
+        return new AppDbContext(optionsBuilder.Options);
+    }
 
-        engine.SetValue("useObjectStorage",
-            () => new ObjectStorageAdapter(app.Id, dbContext));
+    private void InjectPlugIns(Engine engine, App app, IConfiguration configuration)
+    {
+        var dbContext = CreateDbContext(configuration);
+        
+        engine.SetValue(TextStorageAdapter.HookName,
+            new Func<string, object>(name =>
+            {
+                var adapter = new TextStorageAdapter(app.Id, name, dbContext);
+
+                return new
+                {
+                    read = new Func<string>(() => adapter.Read()),
+                    write = new Action<string>(content => adapter.Write(content))
+                };
+            }));
+
+        engine.SetValue(ObjectStorageAdapter.HookName,
+            () =>
+            {
+                var adapter = new ObjectStorageAdapter(app.Id, dbContext);
+
+                return new
+                {
+                    read = new Func<string, byte[]>(key => adapter.Read(key)),
+                    write = new Action<string, byte[]>((key, content) => adapter.Write(key, content))
+                };
+            });
     }
 
     private async Task InjectUserDefinedDependencies(Route route, Engine engine)
