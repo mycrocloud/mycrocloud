@@ -195,36 +195,22 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
     private async Task<Result> ExecuteInProcess(HttpContext context, IAppRepository appRepository, App app, Route route, IConfiguration configuration)
     {
         var concurrencyJobManager = context.RequestServices.GetKeyedService<ConcurrencyJobManager>("InProcessFunctionExecutionManager")!;
-        
-        var engine = new Engine(options =>
-        {
-            if (app.Settings.CheckFunctionExecutionLimitMemory)
-            {
-                var memoryLimit = app.Settings.FunctionExecutionLimitMemoryBytes ?? 1 * 1024 * 1024;
-                memoryLimit += 10 * 1024 * 1024;
 
-                options.LimitMemory(memoryLimit);
-            }
-        });
-        
         var runtime = new Runtime
         {
+            MemoryLimit = 5 * 1024 * 1024,
             Env = (await appRepository.GetVariables(app.Id)).ToDictionary(v => v.Name, v => v.StringValue),
-        };
-        
-        var mcRuntime = new MycroCloudRuntime
-        {
             AppId = app.Id,
-            ConnectionString = configuration.GetConnectionString("DefaultConnection")!
+            ConnectionString = configuration.GetConnectionString("DefaultConnection")!,
         };
         
-        var executor = new JintExecutor(engine, runtime, mcRuntime);
+        var executor = new JintExecutor(runtime);
 
         return await concurrencyJobManager.EnqueueJob(async token =>
         {
             var request = await context.Request.Normalize();
             
-            var result = executor.Execute(request, route.FunctionHandler);
+            var result = executor.Execute(route.FunctionHandler, request);
             
             return result;
         }, TimeSpan.FromSeconds(app.Settings.FunctionExecutionTimeoutSeconds ?? 10));

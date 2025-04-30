@@ -4,18 +4,36 @@ using Jint.Native;
 
 namespace WebApp.FunctionShared;
 
-public class JintExecutor(Engine engine, Runtime runtime, MycroCloudRuntime mcRuntime)
+public class JintExecutor
 {
-    public Result Execute(Request request, string handler)
+    private readonly Engine _engine;
+
+    public JintExecutor(Runtime runtime)
     {
-        engine.SetEnvironmentVariables(runtime.Env);
-        engine.SetHooks(runtime.Hooks, mcRuntime.AppId, mcRuntime.ConnectionString);
+        _engine = new Engine(config =>
+        {
+            if (runtime.MemoryLimit is { } memoryLimit)
+            {
+                config.LimitMemory(memoryLimit);
+            }
+        });
+        
+        Initialize(runtime);
+    }
 
-        engine.SetRequestValue(request);
+    private void Initialize(Runtime runtime)
+    {
+        _engine.SetEnvironmentVariables(runtime.Env);
+        _engine.SetHooks(runtime.Hooks, runtime.AppId, runtime.ConnectionString);
+    }
 
-        engine.Execute(handler);
+    public Result Execute(string handler, Request request)
+    {
+        _engine.SetRequestValue(request);
 
-        var jsResult = engine.Evaluate("(() => { return handler(request); })();");
+        _engine.Execute(handler);
+
+        var jsResult = _engine.Evaluate("(() => { return handler(request); })();");
 
         return Map(jsResult);
     }
