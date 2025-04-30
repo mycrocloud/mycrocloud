@@ -1,5 +1,4 @@
-﻿using System.Text;
-using System.Text.Json;
+﻿using System.Text.Json;
 using Docker.DotNet;
 using Docker.DotNet.Models;
 using Jint;
@@ -7,10 +6,10 @@ using Microsoft.AspNetCore.SignalR;
 using WebApp.Domain.Entities;
 using WebApp.Domain.Repositories;
 using WebApp.FunctionShared;
-using WebApp.FunctionShared.PlugIns;
 using WebApp.Infrastructure;
 using File = System.IO.File;
 using Runtime = WebApp.FunctionShared.Runtime;
+using FunctionSharedConstants = WebApp.FunctionShared.Constants;
 
 namespace WebApp.MiniApiGateway.Middlewares;
 
@@ -141,49 +140,46 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
 
     private async Task<Result> ExecuteOutOfProcess_DockerContainer(HttpContext context, App app, IAppRepository appRepository, Route route, IConfiguration configuration)
     {
-        var concurrencyJobManager =
-            context.RequestServices.GetKeyedService<ConcurrencyJobManager>(
-                "DockerContainerFunctionExecutionManager")!;
+        var concurrencyJobManager = context.RequestServices.GetKeyedService<ConcurrencyJobManager>("DockerContainerFunctionExecutionManager")!;
 
         var dockerClient = context.RequestServices.GetRequiredService<DockerClient>();
 
-        var hostDir =
-            Path.Combine(configuration["DockerFunctionExecution:HostFilePath"]!,
-                context.TraceIdentifier.Replace(':', '_'));
+        var hostDir = Path.Combine(configuration["DockerFunctionExecution:HostFilePath"]!, context.TraceIdentifier.Replace(':', '_'));
 
         Directory.CreateDirectory(hostDir);
 
-        await File.WriteAllTextAsync(Path.Combine(hostDir, "request.json"),
-            JsonSerializer.Serialize(await context.Request.Normalize()));
-
-        // Inject environment variables
-        var appVariables = await appRepository.GetVariables(app.Id);
-        var env = new StringBuilder();
-        foreach (var variable in appVariables)
+        var runtime = new Runtime
         {
-            env.AppendLine($"{variable.Name}={variable.StringValue}");
-        }
+            Env = (await appRepository.GetVariables(app.Id)).ToDictionary(v => v.Name, v => v.StringValue),
+        };
+        
+        await File.WriteAllTextAsync(Path.Combine(hostDir, FunctionSharedConstants.RuntimeFilePath), JsonSerializer.Serialize(runtime));
 
-        await File.WriteAllTextAsync(Path.Combine(hostDir, ".env"), env.ToString());
+        await File.WriteAllTextAsync(Path.Combine(hostDir, FunctionSharedConstants.RequestFilePath), JsonSerializer.Serialize(await context.Request.Normalize()));
 
-        await File.WriteAllTextAsync(Path.Combine(hostDir, "handler.js"), route.FunctionHandler);
-
-        var containerFilePath = "/app/data";
+        await File.WriteAllTextAsync(Path.Combine(hostDir, FunctionSharedConstants.HandlerFilePath), route.FunctionHandler);
 
         return await concurrencyJobManager.EnqueueJob(async token =>
         {
-            var container = await dockerClient.Containers.CreateContainerAsync(new CreateContainerParameters()
+            const string containerDataPath = "/app/data";
+            var container = await dockerClient.Containers.CreateContainerAsync(new CreateContainerParameters
             {
                 Image = configuration["DockerFunctionExecution:Image"],
                 HostConfig = new HostConfig
                 {
                     AutoRemove = true,
-                    Binds = [$"{hostDir}:{containerFilePath}"]
+                    Binds = [$"{hostDir}:{containerDataPath}"],
+                },
+                Env = new List<string>
+                {
+                    $"{FunctionSharedConstants.APP_ID}={app.Id}",
+                    $"{FunctionSharedConstants.CONNECTION_STRING}={configuration.GetConnectionString("DefaultConnection")}"
                 }
             }, token);
 
-            await dockerClient.Containers.StartContainerAsync(container.ID, new ContainerStartParameters()
+            await dockerClient.Containers.StartContainerAsync(container.ID, new ContainerStartParameters
             {
+                
             }, token);
 
             await dockerClient.Containers.WaitContainerAsync(container.ID, token);
@@ -213,13 +209,7 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
         
         var runtime = new Runtime
         {
-            Env = await GetEnvironmentVariables(appRepository, app.Id),
-            //todo: should be dynamic
-            PlugIns =
-            [
-                TextStorageAdapter.HookName,
-                ObjectStorageAdapter.HookName
-            ]
+            Env = (await appRepository.GetVariables(app.Id)).ToDictionary(v => v.Name, v => v.StringValue),
         };
         
         var mcRuntime = new MycroCloudRuntime
@@ -227,6 +217,7 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
             AppId = app.Id,
             ConnectionString = configuration.GetConnectionString("DefaultConnection")!
         };
+        
         var executor = new JintExecutor(engine, runtime, mcRuntime);
 
         return await concurrencyJobManager.EnqueueJob(async token =>
@@ -237,18 +228,6 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
             
             return result;
         }, TimeSpan.FromSeconds(app.Settings.FunctionExecutionTimeoutSeconds ?? 10));
-    }
-
-    private async Task<Dictionary<string, string>> GetEnvironmentVariables(IAppRepository appRepository, int appId)
-    {
-        var variables = new Dictionary<string, string>();
-        var appVariables = await appRepository.GetVariables(appId);
-        foreach (var variable in appVariables)
-        {
-            variables[variable.Name] = variable.StringValue;
-        }
-
-        return variables;
     }
 }
 

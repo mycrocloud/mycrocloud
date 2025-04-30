@@ -9,7 +9,7 @@ public class JintExecutor(Engine engine, Runtime runtime, MycroCloudRuntime mcRu
     public Result Execute(Request request, string handler)
     {
         engine.SetEnvironmentVariables(runtime.Env);
-        engine.SetPlugIns(runtime.PlugIns, mcRuntime.AppId, mcRuntime.ConnectionString);
+        engine.SetHooks(runtime.Hooks, mcRuntime.AppId, mcRuntime.ConnectionString);
 
         engine.SetRequestValue(request);
 
@@ -20,7 +20,7 @@ public class JintExecutor(Engine engine, Runtime runtime, MycroCloudRuntime mcRu
         return Map(jsResult);
     }
 
-    public static Result Map(JsValue jsResult)
+    private static Result Map(JsValue jsResult)
     {
         var result = new Result();
 

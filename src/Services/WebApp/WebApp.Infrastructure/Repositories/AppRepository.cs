@@ -73,4 +73,10 @@ public class AppRepository(AppDbContext dbContext) : IAppRepository
         return await dbContext.Variables.Where(v => v.AppId == appId).ToListAsync();
     }
 
+    public async Task<Dictionary<string, string>> GetEnvironmentVariables(int appId)
+    {
+        var variables = await GetVariables(appId);
+
+        return variables.ToDictionary(v => v.Name, v => v.StringValue);
+    }
 }

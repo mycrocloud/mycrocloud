@@ -1,7 +1,6 @@
 ﻿using Jint;
-using Microsoft.EntityFrameworkCore;
-using WebApp.FunctionShared.PlugIns;
-using WebApp.Infrastructure;
+using Npgsql;
+using WebApp.FunctionShared.Hooks;
 
 namespace WebApp.FunctionShared;
 
@@ -43,26 +42,24 @@ public static class EngineExtensions
         engine.SetValue("env", env);
     }
     
-    public static void SetPlugIns(this Engine engine, HashSet<string> plugins, int appId, string connectionString)
+    public static void SetHooks(this Engine engine, HashSet<string> hooks, int appId, string connectionString)
     {
-        if (plugins.Count == 0)
+        if (hooks.Count == 0)
         {
             return;
         } 
         
-        var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-        optionsBuilder.UseNpgsql(connectionString);
-        var dbContext = new AppDbContext(optionsBuilder.Options);
+        var connection = new NpgsqlConnection(connectionString);
         
-        foreach (var plugin in plugins)
+        foreach (var plugin in hooks)
         {
             switch (plugin)
             {
-                case TextStorageAdapter.HookName:
-                    engine.SetValue(TextStorageAdapter.HookName,
+                case TextStorage.HookName:
+                    engine.SetValue(TextStorage.HookName,
                         new Func<string, object>(name =>
                         {
-                            var adapter = new TextStorageAdapter(appId, name, dbContext);
+                            var adapter = new TextStorage(appId, name, connection);
 
                             return new
                             {
@@ -72,11 +69,11 @@ public static class EngineExtensions
                         }));
                     break;
                 
-                case ObjectStorageAdapter.HookName:
-                    engine.SetValue(ObjectStorageAdapter.HookName,
+                case ObjectStorage.HookName:
+                    engine.SetValue(ObjectStorage.HookName,
                         () =>
                         {
-                            var adapter = new ObjectStorageAdapter(appId, dbContext);
+                            var adapter = new ObjectStorage(appId, connection);
 
                             return new
                             {
