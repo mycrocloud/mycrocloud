@@ -1,8 +1,18 @@
 ﻿using System.Diagnostics;
 using System.Text.Json;
+using Jint;
 using WebApp.FunctionShared;
 
-IExecutor executor = new JintExecutor();
+var runtimeText = File.ReadAllText(Path.Combine("data", "runtime.json"));
+var runtime = JsonSerializer.Deserialize<Runtime>(runtimeText)!;
+
+var mcRuntime = new MycroCloudRuntime
+{
+    AppId = int.Parse(Environment.GetEnvironmentVariable("APP_ID")!),
+    ConnectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING")!
+};
+
+var executor = new JintExecutor(new Engine(), runtime, mcRuntime);
 
 var handler = File.ReadAllText(Path.Combine("data", "handler.js"));
 
@@ -11,7 +21,7 @@ Result result;
 TimeSpan duration;
 try
 {
-    result = executor.Execute(ReadRequest(), handler, ReadEnv());
+    result = executor.Execute(ReadRequest(), handler);
 }
 finally
 {

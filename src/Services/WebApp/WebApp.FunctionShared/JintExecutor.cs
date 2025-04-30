@@ -4,18 +4,12 @@ using Jint.Native;
 
 namespace WebApp.FunctionShared;
 
-public class JintExecutor(Engine engine) : IExecutor
+public class JintExecutor(Engine engine, Runtime runtime, MycroCloudRuntime mcRuntime)
 {
-    public JintExecutor() : this(new Engine())
+    public Result Execute(Request request, string handler)
     {
-    }
-
-    public Result Execute(Request request, string handler, Dictionary<string, string>? env)
-    {
-        if (env is not null)
-        {
-            engine.SetEnvironmentVariables(env);
-        }
+        engine.SetEnvironmentVariables(runtime.Env);
+        engine.SetPlugIns(runtime.PlugIns, mcRuntime.AppId, mcRuntime.ConnectionString);
 
         engine.SetRequestValue(request);
 

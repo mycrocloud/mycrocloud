@@ -1,4 +1,7 @@
 ﻿using Jint;
+using Microsoft.EntityFrameworkCore;
+using WebApp.FunctionShared.PlugIns;
+using WebApp.Infrastructure;
 
 namespace WebApp.FunctionShared;
 
@@ -38,5 +41,51 @@ public static class EngineExtensions
     public static void SetEnvironmentVariables(this Engine engine, Dictionary<string, string> env)
     {
         engine.SetValue("env", env);
+    }
+    
+    public static void SetPlugIns(this Engine engine, HashSet<string> plugins, int appId, string connectionString)
+    {
+        if (plugins.Count == 0)
+        {
+            return;
+        } 
+        
+        var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
+        optionsBuilder.UseNpgsql(connectionString);
+        var dbContext = new AppDbContext(optionsBuilder.Options);
+        
+        foreach (var plugin in plugins)
+        {
+            switch (plugin)
+            {
+                case TextStorageAdapter.HookName:
+                    engine.SetValue(TextStorageAdapter.HookName,
+                        new Func<string, object>(name =>
+                        {
+                            var adapter = new TextStorageAdapter(appId, name, dbContext);
+
+                            return new
+                            {
+                                read = new Func<string>(() => adapter.Read()),
+                                write = new Action<string>(content => adapter.Write(content))
+                            };
+                        }));
+                    break;
+                
+                case ObjectStorageAdapter.HookName:
+                    engine.SetValue(ObjectStorageAdapter.HookName,
+                        () =>
+                        {
+                            var adapter = new ObjectStorageAdapter(appId, dbContext);
+
+                            return new
+                            {
+                                read = new Func<string, byte[]>(key => adapter.Read(key)),
+                                write = new Action<string, byte[]>((key, content) => adapter.Write(key, content))
+                            };
+                        });
+                    break;
+            }
+        }
     }
 }
