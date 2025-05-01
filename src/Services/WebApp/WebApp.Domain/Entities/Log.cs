@@ -12,6 +12,8 @@ public class Log : BaseEntity
     public int StatusCode { get; set; }
     public string AdditionalLogMessage { get; set; }
     public TimeSpan? FunctionExecutionDuration { get; set; }
+    
+    public FunctionExecutionEnvironment? FunctionExecutionEnvironment { get; set; }
     public string RemoteAddress { get; set; }
     public long? RequestContentLength { get; set; }
     public string RequestContentType { get; set; }

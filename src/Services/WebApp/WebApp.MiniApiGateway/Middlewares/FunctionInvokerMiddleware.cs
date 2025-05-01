@@ -26,7 +26,9 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
         var invocationType = context.Request.Headers["X-Invocation-Type"].FirstOrDefault() ?? "RequestResponse";
 
         Result result;
-
+        
+        context.Items["_FunctionExecutionEnvironment"] = route.FunctionExecutionEnvironment;
+        
         switch (runnerEnvironment)
         {
             case "SelfHostedRunner":

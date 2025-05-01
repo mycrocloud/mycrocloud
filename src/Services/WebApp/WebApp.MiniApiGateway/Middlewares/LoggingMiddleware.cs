@@ -17,6 +17,13 @@ public class LoggingMiddleware(RequestDelegate next)
         {
             var route = context.Items["_Route"] as Route;
             var functionExecutionResult = context.Items["_FunctionExecutionResult"] as Result;
+            
+            FunctionExecutionEnvironment? functionExecutionEnvironment = null;
+            if (context.Items.TryGetValue("_FunctionExecutionEnvironment", out var value) &&
+                value is FunctionExecutionEnvironment env)
+            {
+                functionExecutionEnvironment = env;
+            }
 
             await logRepository.Add(new Log
             {
@@ -26,6 +33,7 @@ public class LoggingMiddleware(RequestDelegate next)
                 Path = context.Request.Path + context.Request.QueryString,
                 StatusCode = context.Response.StatusCode,
                 AdditionalLogMessage = functionExecutionResult?.AdditionalLogMessage,
+                FunctionExecutionEnvironment = functionExecutionEnvironment,
                 FunctionExecutionDuration = functionExecutionResult?.Duration,
                 RemoteAddress = context.Request.Headers[configuration["RemoteAddressHeader"]!].ToString(),
                 RequestContentLength = context.Request.ContentLength,
