@@ -42,24 +42,28 @@ public static class EngineExtensions
         engine.SetValue("env", env);
     }
     
-    public static void SetHooks(this Engine engine, HashSet<string> hooks, int appId, string connectionString)
+    public static void SetHooks(this Engine engine, Runtime runtime)
     {
-        if (hooks.Count == 0)
+        if (runtime.Hooks.Count == 0)
         {
             return;
         } 
         
-        var connection = new NpgsqlConnection(connectionString);
+        var connection = new NpgsqlConnection(runtime.ConnectionString);
         
-        foreach (var plugin in hooks)
+        foreach (var plugin in runtime.Hooks)
         {
             switch (plugin)
             {
+                case Constants.LogHookName:
+                    engine.SetValue(Constants.LogHookName, runtime.LogAction);
+                    break;
+                
                 case TextStorage.HookName:
                     engine.SetValue(TextStorage.HookName,
                         new Func<string, object>(name =>
                         {
-                            var adapter = new TextStorage(appId, name, connection);
+                            var adapter = new TextStorage(runtime.AppId, name, connection);
 
                             return new
                             {
@@ -73,7 +77,7 @@ public static class EngineExtensions
                     engine.SetValue(ObjectStorage.HookName,
                         () =>
                         {
-                            var adapter = new ObjectStorage(appId, connection);
+                            var adapter = new ObjectStorage(runtime.AppId, connection);
 
                             return new
                             {

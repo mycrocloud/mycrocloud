@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Text;
+using System.Text.Json;
 using Docker.DotNet;
 using Docker.DotNet.Models;
 using Microsoft.AspNetCore.SignalR;
@@ -183,11 +184,14 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
 
             await dockerClient.Containers.WaitContainerAsync(container.ID, token);
 
-            var text = await File.ReadAllTextAsync(Path.Combine(hostDir, "result.json"), token);
+            var resultText = await File.ReadAllTextAsync(Path.Combine(hostDir, "result.json"), token);
 
+            var result = JsonSerializer.Deserialize<Result>(resultText)!;
+            result.AdditionalLogMessage = await File.ReadAllTextAsync(Path.Combine(hostDir, "log.txt"), token);
+            
             Directory.Delete(hostDir, true);
 
-            return JsonSerializer.Deserialize<Result>(text)!;
+            return result;
         }, TimeSpan.FromSeconds(app.Settings.FunctionExecutionTimeoutSeconds ?? 10));
     }
 
@@ -195,12 +199,18 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
     {
         var concurrencyJobManager = context.RequestServices.GetKeyedService<ConcurrencyJobManager>("InProcessFunctionExecutionManager")!;
 
+        var logBuilder = new StringBuilder();
         var runtime = new Runtime
         {
             MemoryLimit = 5 * 1024 * 1024,
             Env = (await appRepository.GetVariables(app.Id)).ToDictionary(v => v.Name, v => v.StringValue),
             AppId = app.Id,
             ConnectionString = configuration.GetConnectionString("DefaultConnection")!,
+            LogAction = o =>
+            {
+                var logText = o as string ?? JsonSerializer.Serialize(o);
+                logBuilder.AppendLine(logText);
+            }
         };
         
         var executor = new JintExecutor(runtime);
@@ -210,6 +220,7 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
             var request = await context.Request.Normalize();
             
             var result = executor.Execute(route.FunctionHandler, request);
+            result.AdditionalLogMessage = logBuilder.ToString();
             
             return result;
         }, TimeSpan.FromSeconds(app.Settings.FunctionExecutionTimeoutSeconds ?? 10));

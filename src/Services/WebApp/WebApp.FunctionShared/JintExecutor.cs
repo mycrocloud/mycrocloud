@@ -24,7 +24,7 @@ public class JintExecutor
     private void Initialize(Runtime runtime)
     {
         _engine.SetEnvironmentVariables(runtime.Env);
-        _engine.SetHooks(runtime.Hooks, runtime.AppId, runtime.ConnectionString);
+        _engine.SetHooks(runtime);
     }
 
     public Result Execute(string handler, Request request)
