@@ -57,6 +57,16 @@ public static class EngineExtensions
             {
                 case Constants.LogHookName:
                     engine.SetValue(Constants.LogHookName, runtime.LogAction);
+                    
+                    const string code = """
+                                        const console = {};
+                                        ['log', 'info', 'warn', 'error'].forEach(level => {
+                                          console[level] = function(message) {
+                                            log(message);
+                                          };
+                                        });
+                                        """;
+                    engine.Execute(code);
                     break;
                 
                 case TextStorage.HookName:
