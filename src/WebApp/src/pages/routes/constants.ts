@@ -34,3 +34,7 @@ export const sampleRoute: IRoute = {
   functionHandler: "",
   enabled: true,
 };
+
+export const functionExecutionEnvironmentMap = new Map<number, string>(
+  [[1, "In-process (Queued)"], [2, "Isolated (Queued)"]],
+)

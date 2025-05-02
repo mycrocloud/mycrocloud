@@ -5,6 +5,7 @@ import { AppContext } from ".";
 import { IRouteLog } from "../routes";
 import { Link } from "react-router-dom";
 import moment from "moment";
+import { functionExecutionEnvironmentMap } from "../routes/constants";
 
 type Inputs = {
   accessDateFrom?: string;
@@ -182,6 +183,7 @@ export default function AppLogs() {
             <th className="text-start">Method</th>
             <th className="text-start">Path</th>
             <th className="text-start">Status Code</th>
+            <th className="text-start">Function Execution Environment</th>
           </tr>
         </thead>
         <tbody>
@@ -204,6 +206,7 @@ export default function AppLogs() {
               <td>{l.method}</td>
               <td>{l.path}</td>
               <td>{l.statusCode}</td>
+              <td>{l.functionExecutionEnvironment ? functionExecutionEnvironmentMap.get(l.functionExecutionEnvironment) : "-"}</td>
             </tr>
           ))}
         </tbody>

@@ -9,6 +9,7 @@ export default interface ILog {
   path: string;
   statusCode: number;
   additionalLogMessage?: string;
+  functionExecutionEnvironment?: number;
   functionExecutionDuration?: number;
   requestContentLength?: number;
   requestContentType?: string;
