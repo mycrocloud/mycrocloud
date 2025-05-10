@@ -28,7 +28,6 @@ services:
     container_name: mycrocloud-restapi
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Username=postgres;Password=postgres;Database=dev-mycrocloud
     ports:
       - "5000:8080"
     depends_on:
