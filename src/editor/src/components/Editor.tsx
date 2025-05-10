@@ -1,40 +1,43 @@
-import {
-  useRef,
-  useState,
-  useEffect,
-  forwardRef,
-  useImperativeHandle,
-} from "react";
+import { useRef, useEffect } from "react";
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 import styles from "./Editor.module.css";
 
-const Editor = forwardRef(function (props: {
-    value: string;
-    language: string;
-}, ref) {
-  const [editor, setEditor] =
-    useState<monaco.editor.IStandaloneCodeEditor | null>(null);
-  const monacoEl = useRef(null);
+const Editor = ({
+  value,
+  language,
+  onChange
+}: {
+  value: string;
+  language: string;
+  onChange?: (value: string) => void;
+}) => {
+  const editorElementRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(
+    null
+  );
 
-  useImperativeHandle(ref, () => ({
-    getValue: () => editor?.getValue(),
-  }));
   useEffect(() => {
-    if (monacoEl) {
-      setEditor((editor) => {
-        if (editor) return editor;
+    editorRef.current?.dispose();
 
-        return monaco.editor.create(monacoEl.current!, {
-          value: props.value,
-          language: props.language,
-        });
-      });
-    }
+    editorRef.current = monaco.editor.create(editorElementRef.current!, {
+      language: language,
+      value: value,
+      minimap: { enabled: false },
+    });
 
-    return () => editor?.dispose();
-  }, [monacoEl.current]);
+    editorRef.current.onDidChangeModelContent(() => { 
+      const newValue = editorRef.current!.getValue();
+      if (newValue && typeof onChange === "function") {
+        onChange(newValue);
+      }
+    });
 
-  return <div className={styles.Editor} ref={monacoEl}></div>;
-});
+    return () => {
+      editorRef.current?.dispose();
+    };
+  }, []);
+
+  return <div ref={editorElementRef} className={styles.Editor}></div>;
+};
 
 export default Editor;
