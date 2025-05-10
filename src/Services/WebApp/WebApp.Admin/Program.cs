@@ -9,6 +9,7 @@ builder.Services.AddAntiforgery(o => o.HeaderName = "XSRF-TOKEN");
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddCoreAdmin();
 
 var app = builder.Build();
 
@@ -22,6 +23,8 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+app.UseCoreAdminCustomAuth((serviceProvider) => Task.FromResult(true));
+app.MapDefaultControllerRoute();
 
 app.UseRouting();
 
