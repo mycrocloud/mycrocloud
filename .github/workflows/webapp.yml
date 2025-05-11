@@ -1,4 +1,4 @@
-name: Deploy WebApp
+name: Publish WebApp
 
 on:
   push:
@@ -13,6 +13,12 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}-webapp
   WORK_DIR: src/WebApp
+  VITE_BASE_API_URL: https://api.mycrocloud.info
+  VITE_AUTH0_DOMAIN: https://auth.mycrocloud.info
+  VITE_AUTH0_CLIENTID: 8YECKUMM3I7ejQgsVky40b5LooQB0YFf
+  VITE_AUTH0_AUDIENCE: mycrocloud-api
+  VITE_WEBAPP_APIGATEWAY_DOMAIN: https://apigw-__app_id__.mycrocloud.info
+  VITE_GITHUB_CLIENTID: Ov23linUfO6vBqoA0S4n
 
 jobs:
   build-and-push-image:
@@ -24,12 +30,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download .env file
+      - name: Create .env.production file
         run: |
-          curl $URL -o $DESTINATION
-        env:
-          URL: https://${{ secrets.CR_PAT }}@raw.githubusercontent.com/mycrocloud/mycrocloud-deploy/main/dev/config/WebApp/.env
-          DESTINATION: ${{env.WORK_DIR}}/.env.production
+          echo "VITE_BASE_API_URL=${{ env.VITE_BASE_API_URL }}" >> ${{env.WORK_DIR}}/.env.production
+          echo "VITE_AUTH0_DOMAIN=${{ env.VITE_AUTH0_DOMAIN }}" >> ${{env.WORK_DIR}}/.env.production
+          echo "VITE_AUTH0_CLIENTID=${{ env.VITE_AUTH0_CLIENTID }}" >> ${{env.WORK_DIR}}/.env.production
+          echo "VITE_AUTH0_AUDIENCE=${{ env.VITE_AUTH0_AUDIENCE }}" >> ${{env.WORK_DIR}}/.env.production
+          echo "VITE_WEBAPP_APIGATEWAY_DOMAIN=${{ env.VITE_WEBAPP_APIGATEWAY_DOMAIN }}" >> ${{env.WORK_DIR}}/.env.production
+          echo "VITE_GITHUB_CLIENTID=${{ env.VITE_GITHUB_CLIENTID }}" >> ${{env.WORK_DIR}}/.env.production
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -58,10 +66,7 @@ jobs:
           #https://docs.docker.com/build/cache/backends/gha/#using-dockerbuild-push-action
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Cleanup
-        run: rm -rf ~/.ssh
-
+          
   deploy:
     runs-on: ubuntu-latest
     needs: build-and-push-image
