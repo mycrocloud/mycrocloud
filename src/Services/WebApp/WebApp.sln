@@ -8,7 +8,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp.Domain", "WebApp.Dom
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp.Infrastructure", "WebApp.Infrastructure\WebApp.Infrastructure.csproj", "{8ABE237B-CF58-41D8-A3E4-DDD8C2BFE9C9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp.RestApi", "WebApp.RestApi\WebApp.RestApi.csproj", "{29600606-B003-4920-AF2C-FB5300330BBE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp.Api", "WebApp.Api\WebApp.Api.csproj", "{29600606-B003-4920-AF2C-FB5300330BBE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp.Admin", "WebApp.Admin\WebApp.Admin.csproj", "{DB035357-3FFD-4803-82A8-52454CC9F2C7}"
 EndProject
