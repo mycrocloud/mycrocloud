@@ -7,7 +7,7 @@
   <Project Path="WebApp.Migrations\WebApp.Migrations.csproj" Type="Classic C#" />
   <Project Path="WebApp.MigrationTest\WebApp.MigrationTest.csproj" Type="Classic C#" />
   <Project Path="WebApp.MiniApiGateway\WebApp.MiniApiGateway.csproj" Type="Classic C#" />
-  <Project Path="WebApp.RestApi\WebApp.RestApi.csproj" Type="Classic C#" />
+  <Project Path="WebApp.Api\WebApp.Api.csproj" Type="Classic C#" />
   <Project Path="WebApp.SelfHostedFunctionRunner\WebApp.SelfHostedFunctionRunner.csproj" Type="Classic C#" />
   <Project Path="WebApp.UnitTest\WebApp.UnitTest.csproj" Type="Classic C#" />
 </Solution>

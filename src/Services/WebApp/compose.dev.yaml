@@ -24,7 +24,7 @@ services:
   restapi:
     image: mycrocloud-restapi
     build:
-      dockerfile: WebApp.RestApi/Dockerfile
+      dockerfile: WebApp.Api/Dockerfile
     container_name: mycrocloud-restapi
     environment:
       - ASPNETCORE_ENVIRONMENT=Development

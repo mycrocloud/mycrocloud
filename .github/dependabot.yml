@@ -10,7 +10,7 @@ updates:
       - "src/Services/WebApp/WebApp.Migrations"
       - "src/Services/WebApp/WebApp.MigrationTest"
       - "src/Services/WebApp/WebApp.MiniApiGateway"
-      - "src/Services/WebApp/WebApp.RestApi"
+      - "src/Services/WebApp/WebApp.Api"
       - "src/Services/WebApp/WebApp.SelfHostedFunctionRunner"
       - "src/Services/WebApp/WebApp.UnitTest"
 
