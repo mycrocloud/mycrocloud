@@ -21,11 +21,11 @@ services:
     depends_on:
       - db
 
-  restapi:
-    image: mycrocloud-restapi
+  api:
+    image: mycrocloud-api
     build:
       dockerfile: WebApp.Api/Dockerfile
-    container_name: mycrocloud-restapi
+    container_name: mycrocloud-api
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
     ports:
