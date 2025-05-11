@@ -6,7 +6,7 @@ using WebApp.Domain.Enums;
 using WebApp.Domain.Repositories;
 using WebApp.Infrastructure;
 
-namespace WebApp.MiniApiGateway.Middlewares;
+namespace WebApp.ApiGateway.Middlewares;
 
 public class AuthenticationMiddleware(RequestDelegate next, ILogger<AuthenticationMiddleware> logger)
 {

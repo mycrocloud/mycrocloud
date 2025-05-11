@@ -1,4 +1,4 @@
-﻿namespace WebApp.MiniApiGateway;
+﻿namespace WebApp.ApiGateway;
 
 //https://stackoverflow.com/a/69111159/6430433
 public static class ConfigurationHelper

@@ -1,4 +1,4 @@
-﻿namespace WebApp.MiniApiGateway;
+﻿namespace WebApp.ApiGateway;
 
 public class Scripts
 {

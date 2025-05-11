@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Cors.Infrastructure;
 using WebApp.FunctionShared;
 
-namespace WebApp.MiniApiGateway;
+namespace WebApp.ApiGateway;
 
 public static class HttpRequestExtensions
 {

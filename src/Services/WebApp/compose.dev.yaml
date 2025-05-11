@@ -35,7 +35,7 @@ services:
   apigateway:
     image: mycrocloud-apigateway
     build:
-      dockerfile: WebApp.MiniApiGateway/Dockerfile
+      dockerfile: WebApp.ApiGateway/Dockerfile
     container_name: mycrocloud-apigateway
     environment:
       - ASPNETCORE_ENVIRONMENT=Development

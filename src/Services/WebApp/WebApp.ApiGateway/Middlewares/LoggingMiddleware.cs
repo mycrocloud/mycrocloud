@@ -4,7 +4,7 @@ using WebApp.Domain.Enums;
 using WebApp.Domain.Repositories;
 using WebApp.FunctionShared;
 
-namespace WebApp.MiniApiGateway.Middlewares;
+namespace WebApp.ApiGateway.Middlewares;
 
 public class LoggingMiddleware(RequestDelegate next)
 {

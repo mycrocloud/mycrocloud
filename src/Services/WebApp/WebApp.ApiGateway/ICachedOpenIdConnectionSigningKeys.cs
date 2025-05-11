@@ -3,7 +3,7 @@ using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 
-namespace WebApp.MiniApiGateway;
+namespace WebApp.ApiGateway;
 
 public interface ICachedOpenIdConnectionSigningKeys
 {

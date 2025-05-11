@@ -1,6 +1,6 @@
 using WebApp.Domain.Entities;
 
-namespace WebApp.MiniApiGateway.Middlewares;
+namespace WebApp.ApiGateway.Middlewares;
 
 public class AuthorizationMiddleware(RequestDelegate next)
 {

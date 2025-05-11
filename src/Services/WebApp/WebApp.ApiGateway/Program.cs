@@ -4,8 +4,8 @@ using WebApp.Domain.Entities;
 using WebApp.Domain.Repositories;
 using WebApp.Infrastructure;
 using WebApp.Infrastructure.Repositories;
-using WebApp.MiniApiGateway;
-using WebApp.MiniApiGateway.Middlewares;
+using WebApp.ApiGateway;
+using WebApp.ApiGateway.Middlewares;
 using File = System.IO.File;
 
 var builder = WebApplication.CreateBuilder(args);

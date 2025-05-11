@@ -3,7 +3,7 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Schema;
 using WebApp.Domain.Repositories;
 
-namespace WebApp.MiniApiGateway.Middlewares;
+namespace WebApp.ApiGateway.Middlewares;
 
 public class ValidationMiddleware(RequestDelegate next)
 {

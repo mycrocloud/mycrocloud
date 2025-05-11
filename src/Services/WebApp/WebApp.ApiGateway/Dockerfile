@@ -6,20 +6,20 @@ WORKDIR /source
 COPY WebApp.Domain/WebApp.Domain.csproj WebApp.Domain/
 COPY WebApp.Infrastructure/WebApp.Infrastructure.csproj WebApp.Infrastructure/
 COPY WebApp.FunctionShared/WebApp.FunctionShared.csproj WebApp.FunctionShared/
-COPY WebApp.MiniApiGateway/WebApp.MiniApiGateway.csproj WebApp.MiniApiGateway/
+COPY WebApp.ApiGateway/WebApp.ApiGateway.csproj WebApp.ApiGateway/
 
-RUN dotnet restore WebApp.MiniApiGateway/WebApp.MiniApiGateway.csproj
+RUN dotnet restore WebApp.ApiGateway/WebApp.ApiGateway.csproj
 
 # copy and build app and libraries
 COPY WebApp.Domain/ WebApp.Domain/
 COPY WebApp.Infrastructure/ WebApp.Infrastructure/
 COPY WebApp.FunctionShared/ WebApp.FunctionShared/
-COPY WebApp.MiniApiGateway/ WebApp.MiniApiGateway/
+COPY WebApp.ApiGateway/ WebApp.ApiGateway/
 
-RUN dotnet publish WebApp.MiniApiGateway/WebApp.MiniApiGateway.csproj -c Release -o /app
+RUN dotnet publish WebApp.ApiGateway/WebApp.ApiGateway.csproj -c Release -o /app
 
 # final stage/image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 COPY --from=build /app .
-ENTRYPOINT ["dotnet", "WebApp.MiniApiGateway.dll"]
+ENTRYPOINT ["dotnet", "WebApp.ApiGateway.dll"]
