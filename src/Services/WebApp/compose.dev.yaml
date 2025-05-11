@@ -8,7 +8,7 @@ services:
       - db_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-      
+
   db-migrator:
     image: mycrocloud-db-migrator
     build:
@@ -16,7 +16,6 @@ services:
     container_name: mycrocloud-db-migrator
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Username=postgres;Password=postgres;Database=dev-mycrocloud
     depends_on:
       - db
 
@@ -32,15 +31,14 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
-      
+
   apigateway:
     image: mycrocloud-apigateway
-    build: 
+    build:
       dockerfile: WebApp.MiniApiGateway/Dockerfile
     container_name: mycrocloud-apigateway
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Username=postgres;Password=postgres;Database=dev-mycrocloud
     ports:
       - "5001:8080"
 
@@ -57,14 +55,14 @@ services:
     volumes:
       - seq_data:/data
     #restart: "unless-stopped"
-  
+
   redis:
     image: redis:alpine3.21
 
   rabbitmq:
     image: rabbitmq:4.0.9-alpine
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "check_running" ]
       interval: 5s
       timeout: 10s
       retries: 5
