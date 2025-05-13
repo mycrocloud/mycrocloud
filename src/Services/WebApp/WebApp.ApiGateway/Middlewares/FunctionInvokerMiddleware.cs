@@ -189,7 +189,11 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
             var resultText = await File.ReadAllTextAsync(Path.Combine(hostDir, "result.json"), token);
 
             var result = JsonSerializer.Deserialize<Result>(resultText)!;
-            result.AdditionalLogMessage = await File.ReadAllTextAsync(Path.Combine(hostDir, "log.txt"), token);
+            var logFilePath = Path.Combine(hostDir, "log.txt");
+            if (File.Exists(logFilePath))
+            {
+                result.AdditionalLogMessage = await File.ReadAllTextAsync(logFilePath, token);
+            }
             
             Directory.Delete(hostDir, true);
 
