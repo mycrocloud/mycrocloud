@@ -31,6 +31,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import React from "react";
 const apiGatewayDomain = import.meta.env
   .VITE_WEBAPP_APIGATEWAY_DOMAIN as string;
+const editorOrigin = import.meta.env.VITE_EDITOR_ORIGIN as string;
 
 export default function RouteCreateUpdate({
   route,
@@ -788,16 +789,23 @@ function StaticFile({ file }: { file?: IFile }) {
     </div>
   );
 }
+
+function validEditorMessage(e: MessageEvent, editor: string) {
+  if (e.origin !== editorOrigin) return false;
+  if (e.data.editorId !== editor) return false;
+  return true;
+}
+
 function FunctionHandler() {
   const {
     formState: { errors },
     setValue,
     getValues,
   } = useFormContext<RouteCreateUpdateInputs>();
-  const handlerEditorRef = useRef<HTMLDivElement>(null);
-  const handlerEditor = useRef<monaco.editor.IStandaloneCodeEditor | null>(
-    null,
-  );
+  
+  const editorId = "functionHandler";
+  const editorRef = useRef<HTMLIFrameElement>(null);
+  const [editorLoaded, setEditorLoaded] = useState(false);
 
   const sampleFunctionHandler = `function handler(req) {
   return {
@@ -808,39 +816,59 @@ function FunctionHandler() {
 }`;
 
   useEffect(() => {
-    handlerEditor.current?.dispose();
-
     const functionHandler = getValues("functionHandler");
     if (!functionHandler) {
-      console.log("setting sampleFunctionHandler");
       setValue("functionHandler", sampleFunctionHandler);
     }
-    handlerEditor.current = monaco.editor.create(handlerEditorRef.current!, {
-      language: "javascript",
-      value: functionHandler || sampleFunctionHandler,
-      minimap: { enabled: false },
-    });
-    handlerEditor.current.onDidChangeModelContent(() => {
-      setValue("functionHandler", handlerEditor.current!.getValue());
-    });
 
-    return () => {
-      handlerEditor.current?.dispose();
-    };
+    const onMessage = (e: MessageEvent) => { 
+      if (!validEditorMessage(e, editorId)) return;
+
+      const { type, payload } = e.data;
+      switch (type) {
+        case "loaded":
+          setEditorLoaded(true);
+          break;
+        case "changed":
+          setValue("functionHandler", payload);
+          break;
+        default:
+          break;
+      }
+    }
+
+    window.addEventListener("message", onMessage);
+
+    return () => { 
+      window.removeEventListener("message", onMessage);
+    }
   }, []);
 
+  useEffect(() => { 
+    if(!editorLoaded) return;
+
+    editorRef.current?.contentWindow?.postMessage({
+      editorId,
+      type: "load",
+      payload: {
+        value: getValues("functionHandler"),
+        language: "javascript",
+      }
+    }, editorOrigin)
+
+  }, [editorLoaded]);
+
   return (
-    <>
-      <div className="mt-1">
+    <div className="mt-1">
         <label>Handler</label>
-        <div
-          ref={handlerEditorRef}
+        <iframe
+        ref={editorRef}
+          src={editorOrigin + '?id=' + editorId}
           style={{ width: "100%", height: "200px" }}
-        ></div>
+        />
         {errors.functionHandler && (
           <p className="text-red-500">{errors.functionHandler.message}</p>
         )}
       </div>
-    </>
   );
 }
