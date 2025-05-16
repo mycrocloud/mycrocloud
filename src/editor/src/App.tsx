@@ -3,6 +3,10 @@ import Editor from "./components/Editor";
 
 const parentOrigin = import.meta.env.VITE_PARENT_ORIGIN;
 
+function isValidMessage(event: MessageEvent, editorId: string ) { 
+  return event.origin === parentOrigin && event.data.editorId === editorId;
+}
+
 function App() {
   const editorId = new URLSearchParams(window.location.search).get("id") || "editor";
 
@@ -12,12 +16,10 @@ function App() {
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
-      if (event.origin !== parentOrigin) return;
+      if (!isValidMessage(event, editorId)) return;
     
-      const { type, payload, editorId } = event.data;
-      
-      if (editorId !== editorId) return;
-
+      const { type, payload } = event.data;
+     
       if (type === "load") {
         const { value, language } = payload;
         setValue(value);
@@ -40,7 +42,7 @@ function App() {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return null;
   }
 
   return <Editor value={value} language={language} onChange={handleChange} />;
