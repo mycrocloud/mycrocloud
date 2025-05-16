@@ -1,44 +1,45 @@
-import { useEffect, useRef } from "react";
-import * as monaco from "monaco-editor";
-import { EditorAPI } from "./types/editorBridge";
+import { useEffect, useState } from "react";
+import Editor from "./components/Editor";
+
+const parentOrigin = import.meta.env.VITE_PARENT_ORIGIN;
 
 function App() {
-  const editorId = new URLSearchParams(window.location.search).get('id') || 'default';
-
-  const editorElementRef = useRef<HTMLDivElement>(null);
-  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(
-    null
-  );
+  const [value, setValue] = useState<string>("");
+  const [language, setLanguage] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    editorRef.current?.dispose();
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== parentOrigin) return;
+    
+      const { type, payload } = event.data;
 
-    const editor = monaco.editor.create(editorElementRef.current!, {
-      language: 'javascript',
-      value: '',
-      minimap: { enabled: false },
-    });
+      if (type === "load") {
+        const { value, language } = payload;
+        setValue(value);
+        setLanguage(language);
+        setLoading(false);
+      }
+    };
 
-    editorRef.current = editor;
+    window.addEventListener("message", onMessage);
 
-    (window as any).editorAPI = {
-      setValue: (val: string) => editor.setValue(val),
-      getValue: () => editor.getValue(),
-      focus: () => editor.focus(),
-      setLanguage: (lang: string) => monaco.editor.setModelLanguage(editor.getModel()!, lang),
-    } satisfies EditorAPI;
-
-    editor.onDidChangeModelContent(() => {
-      const value = editor.getValue();
-      (window.parent as any).onEditorContentChange?.(editorId, value);
-    });
+    window.parent.postMessage({ type: "loaded" }, parentOrigin);
 
     return () => {
-      editorRef.current?.dispose();
+      window.removeEventListener("message", onMessage);
     };
   }, []);
 
-  return <div ref={editorElementRef} className="editor"></div>;
+  const handleChange = (newValue: string) => {
+    window.parent.postMessage({ type: "change", payload: newValue }, parentOrigin);
+  };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  return <Editor value={value} language={language} onChange={handleChange} />;
 }
 
 export default App;
