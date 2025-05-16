@@ -41,7 +41,7 @@ public class AppsController(
     [HttpPost]
     public async Task<IActionResult> Create(AppCreateRequest appCreateRequest)
     {
-        var app = Map(appCreateRequest);
+        var app = appCreateRequest.ToEntity();
         await appService.Create(User.GetUserId(), app);
         return Created(app.Id.ToString(), new
         {
@@ -49,19 +49,6 @@ public class AppsController(
             app.CreatedAt,
             app.Version
         });
-
-        App Map(AppCreateRequest source)
-        {
-            return new App
-            {
-                Name = source.Name,
-                Description = source.Description,
-                Status = AppStatus.Active,
-                CorsSettings = CorsSettings.Default,
-                Settings = AppSettings.Default,
-                Version = Guid.NewGuid()
-            };
-        }
     }
 
     [HttpGet("{id:int}")]
