@@ -4,6 +4,8 @@ import Editor from "./components/Editor";
 const parentOrigin = import.meta.env.VITE_PARENT_ORIGIN;
 
 function App() {
+  const editorId = new URLSearchParams(window.location.search).get("id") || "editor";
+
   const [value, setValue] = useState<string>("");
   const [language, setLanguage] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
@@ -12,7 +14,9 @@ function App() {
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== parentOrigin) return;
     
-      const { type, payload } = event.data;
+      const { type, payload, editorId } = event.data;
+      
+      if (editorId !== editorId) return;
 
       if (type === "load") {
         const { value, language } = payload;
@@ -24,7 +28,7 @@ function App() {
 
     window.addEventListener("message", onMessage);
 
-    window.parent.postMessage({ type: "loaded" }, parentOrigin);
+    window.parent.postMessage({ editorId, type: "loaded" }, parentOrigin);
 
     return () => {
       window.removeEventListener("message", onMessage);
@@ -32,7 +36,7 @@ function App() {
   }, []);
 
   const handleChange = (newValue: string) => {
-    window.parent.postMessage({ type: "change", payload: newValue }, parentOrigin);
+    window.parent.postMessage({ editorId, type: "change", payload: newValue }, parentOrigin);
   };
 
   if (loading) {
