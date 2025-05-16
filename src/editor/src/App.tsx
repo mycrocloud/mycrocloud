@@ -38,7 +38,7 @@ function App() {
   }, []);
 
   const handleChange = (newValue: string) => {
-    window.parent.postMessage({ editorId, type: "change", payload: newValue }, parentOrigin);
+    window.parent.postMessage({ editorId, type: "changed", payload: newValue }, parentOrigin);
   };
 
   if (loading) {
