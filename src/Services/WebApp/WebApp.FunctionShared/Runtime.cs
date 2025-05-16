@@ -7,7 +7,7 @@ public class Runtime
 {
     public Dictionary<string, string> Env { get; set; }
 
-    public HashSet<string> Hooks { get; set; } = [Constants.LogHookName, TextStorage.HookName, ObjectStorage.HookName];
+    public HashSet<string> Hooks { get; set; } = [Logger.LogHookName, TextStorage.HookName, ObjectStorage.HookName];
 
     public long? MemoryLimit { get; set; }
     

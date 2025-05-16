@@ -1,5 +1,7 @@
 ﻿using System.Data.Common;
 using Dapper;
+using Jint;
+using Npgsql;
 
 namespace WebApp.FunctionShared.Hooks;
 
@@ -31,5 +33,24 @@ public class TextStorage(int appId, string name, DbConnection connection)
             Name = name,
             Content = content
         });
+    }
+}
+
+public static class TextStorageExtension
+{
+    public static void UseTextStorage(this Engine engine, Runtime runtime)
+    {
+        var connection = new NpgsqlConnection(runtime.ConnectionString);
+        engine.SetValue(TextStorage.HookName,
+            new Func<string, object>(name =>
+            {
+                var adapter = new TextStorage(runtime.AppId, name, connection);
+
+                return new
+                {
+                    read = new Func<string>(() => adapter.Read()),
+                    write = new Action<string>(content => adapter.Write(content))
+                };
+            }));
     }
 }

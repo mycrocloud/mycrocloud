@@ -7,7 +7,7 @@ var runtime = JsonSerializer.Deserialize<Runtime>(File.ReadAllText(Path.Combine(
 
 runtime.AppId = int.Parse(Environment.GetEnvironmentVariable(FunctionSharedConstants.APP_ID)!);
 runtime.ConnectionString = Environment.GetEnvironmentVariable(FunctionSharedConstants.CONNECTION_STRING)!;
-runtime.LogAction = (obj) =>
+runtime.LogAction = obj =>
 {
     var logText = obj as string ?? JsonSerializer.Serialize(obj);
     File.AppendAllText(Path.Combine("data", "log.txt"), logText + Environment.NewLine);

@@ -41,60 +41,28 @@ public static class EngineExtensions
     {
         engine.SetValue("env", env);
     }
-    
+
     public static void SetHooks(this Engine engine, Runtime runtime)
     {
         if (runtime.Hooks.Count == 0)
         {
             return;
-        } 
-        
-        var connection = new NpgsqlConnection(runtime.ConnectionString);
-        
+        }
+
         foreach (var plugin in runtime.Hooks)
         {
             switch (plugin)
             {
-                case Constants.LogHookName:
-                    engine.SetValue(Constants.LogHookName, runtime.LogAction);
-                    
-                    const string code = """
-                                        const console = {};
-                                        ['log', 'info', 'warn', 'error'].forEach(level => {
-                                          console[level] = function(message) {
-                                            log(message);
-                                          };
-                                        });
-                                        """;
-                    engine.Execute(code);
+                case Logger.LogHookName:
+                    engine.UseLogger(runtime);
                     break;
-                
+
                 case TextStorage.HookName:
-                    engine.SetValue(TextStorage.HookName,
-                        new Func<string, object>(name =>
-                        {
-                            var adapter = new TextStorage(runtime.AppId, name, connection);
-
-                            return new
-                            {
-                                read = new Func<string>(() => adapter.Read()),
-                                write = new Action<string>(content => adapter.Write(content))
-                            };
-                        }));
+                    engine.UseTextStorage(runtime);
                     break;
-                
-                case ObjectStorage.HookName:
-                    engine.SetValue(ObjectStorage.HookName,
-                        () =>
-                        {
-                            var adapter = new ObjectStorage(runtime.AppId, connection);
 
-                            return new
-                            {
-                                read = new Func<string, byte[]>(key => adapter.Read(key)),
-                                write = new Action<string, byte[]>((key, content) => adapter.Write(key, content))
-                            };
-                        });
+                case ObjectStorage.HookName:
+                    engine.UseObjectStorage(runtime);
                     break;
             }
         }
