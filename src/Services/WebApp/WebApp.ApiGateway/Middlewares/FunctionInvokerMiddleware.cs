@@ -102,7 +102,7 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
         }
 
         await hub.Clients.Client(connection)
-            .SendAsync("ExecuteFunction", context.TraceIdentifier, request, route.FunctionHandler, env);
+            .SendAsync("ExecuteFunction", context.TraceIdentifier, request, route.Response, env);
 
         var waiter = context.RequestServices.GetRequiredService<RequestResponseWaiter>();
 
@@ -159,7 +159,7 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
 
         await File.WriteAllTextAsync(Path.Combine(hostDir, FunctionSharedConstants.RequestFilePath), JsonSerializer.Serialize(await context.Request.Normalize()));
 
-        await File.WriteAllTextAsync(Path.Combine(hostDir, FunctionSharedConstants.HandlerFilePath), route.FunctionHandler);
+        await File.WriteAllTextAsync(Path.Combine(hostDir, FunctionSharedConstants.HandlerFilePath), route.Response);
 
         return await concurrencyJobManager.EnqueueJob(async token =>
         {
@@ -225,7 +225,7 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
         {
             var request = await context.Request.Normalize();
             
-            var result = executor.Execute(route.FunctionHandler, request);
+            var result = executor.Execute(route.Response, request);
             result.AdditionalLogMessage = logBuilder.ToString();
             
             return result;

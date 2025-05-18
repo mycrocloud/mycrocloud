@@ -30,11 +30,11 @@ export const sampleRoute: IRoute = {
   responseHeaders: [{ name: "content-type", value: "text/plain" }],
   useDynamicResponse: false,
   responseBodyLanguage: "plaintext",
-  responseBody: "Hello, world!",
-  functionHandler: "",
+  response: "Hello, world!",
   enabled: true,
 };
 
-export const functionExecutionEnvironmentMap = new Map<number, string>(
-  [[1, "In-process (Queued)"], [2, "Isolated (Queued)"]],
-)
+export const functionExecutionEnvironmentMap = new Map<number, string>([
+  [1, "In-process (Queued)"],
+  [2, "Isolated (Queued)"],
+]);

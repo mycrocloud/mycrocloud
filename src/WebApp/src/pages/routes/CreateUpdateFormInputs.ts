@@ -14,8 +14,7 @@ export type RouteCreateUpdateInputs = {
   responseStatusCode?: number;
   responseHeaders?: HeaderInput[];
   responseBodyLanguage?: string;
-  responseBody?: string | null;
-  functionHandler?: string | null;
+  response?: string | null;
   functionHandlerDependencies?: (string | undefined)[];
   useDynamicResponse?: boolean;
   fileId?: number | null;
@@ -48,8 +47,7 @@ export const routeCreateUpdateInputsSchema: ObjectSchema<RouteCreateUpdateInputs
       }),
     ),
     responseBodyLanguage: yup.string(),
-    responseBody: yup.string().nullable(),
-    functionHandler: yup.string().nullable(),
+    response: yup.string().nullable(),
     functionHandlerDependencies: yup.array().of(yup.string()),
     useDynamicResponse: yup.boolean(),
     fileId: yup.number().nullable(),

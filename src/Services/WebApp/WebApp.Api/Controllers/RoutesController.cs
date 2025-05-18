@@ -88,9 +88,8 @@ public class RoutesController(
                 h.Value
             }),
             route.UseDynamicResponse,
-            route.ResponseBody,
+            route.Response,
             route.ResponseBodyLanguage,
-            route.FunctionHandler,
             route.FunctionHandlerDependencies,
             route.RequireAuthorization,
             Status = route.Status.ToString(),

@@ -62,9 +62,8 @@ export default function RouteCreateUpdate({
             return { name: value.name, value: value.value };
           })
         : [],
-      responseBody: route?.responseBody,
+      response: route?.response,
       responseBodyLanguage: route?.responseBodyLanguage || "plaintext",
-      functionHandler: route?.functionHandler,
       functionHandlerDependencies: route?.functionHandlerDependencies || [],
       useDynamicResponse: route?.useDynamicResponse,
       fileId: route?.fileId,
@@ -219,6 +218,9 @@ export default function RouteCreateUpdate({
                 />
               )}
               {responseType === "Function" && <FunctionHandler />}
+              {errors.response && (
+                <p className="text-red-500">{errors.response.message}</p>
+              )}
             </div>
           </section>
         </div>
@@ -420,11 +422,11 @@ function StaticResponse() {
 
     bodyEditor.current = monaco.editor.create(bodyEditorRef.current!, {
       language: getValues("responseBodyLanguage"),
-      value: getValues("responseBody") || undefined,
+      value: getValues("response") || undefined,
       minimap: { enabled: false },
     });
     bodyEditor.current.onDidChangeModelContent(() => {
-      setValue("responseBody", bodyEditor.current!.getValue());
+      setValue("response", bodyEditor.current!.getValue());
     });
 
     return () => {
@@ -535,8 +537,8 @@ function StaticResponse() {
             ref={bodyEditorRef}
             style={{ width: "100%", height: "300px" }}
           ></div>
-          {errors.responseBody && (
-            <p className="text-red-500">{errors.responseBody.message}</p>
+          {errors.response && (
+            <p className="text-red-500">{errors.response.message}</p>
           )}
         </div>
       </div>
@@ -802,7 +804,7 @@ function FunctionHandler() {
     setValue,
     getValues,
   } = useFormContext<RouteCreateUpdateInputs>();
-  
+
   const editorId = "functionHandler";
   const editorRef = useRef<HTMLIFrameElement>(null);
   const [editorLoaded, setEditorLoaded] = useState(false);
@@ -816,12 +818,12 @@ function FunctionHandler() {
 }`;
 
   useEffect(() => {
-    const functionHandler = getValues("functionHandler");
+    const functionHandler = getValues("response");
     if (!functionHandler) {
-      setValue("functionHandler", sampleFunctionHandler);
+      setValue("response", sampleFunctionHandler);
     }
 
-    const onMessage = (e: MessageEvent) => { 
+    const onMessage = (e: MessageEvent) => {
       if (!validEditorMessage(e, editorId)) return;
 
       const { type, payload } = e.data;
@@ -830,45 +832,47 @@ function FunctionHandler() {
           setEditorLoaded(true);
           break;
         case "changed":
-          setValue("functionHandler", payload);
+          setValue("response", payload);
           break;
         default:
           break;
       }
-    }
+    };
 
     window.addEventListener("message", onMessage);
 
-    return () => { 
+    return () => {
       window.removeEventListener("message", onMessage);
-    }
+    };
   }, []);
 
-  useEffect(() => { 
-    if(!editorLoaded) return;
+  useEffect(() => {
+    if (!editorLoaded) return;
 
-    editorRef.current?.contentWindow?.postMessage({
-      editorId,
-      type: "load",
-      payload: {
-        value: getValues("functionHandler"),
-        language: "javascript",
-      }
-    }, editorOrigin)
-
+    editorRef.current?.contentWindow?.postMessage(
+      {
+        editorId,
+        type: "load",
+        payload: {
+          value: getValues("response"),
+          language: "javascript",
+        },
+      },
+      editorOrigin,
+    );
   }, [editorLoaded]);
 
   return (
     <div className="mt-1">
-        <label>Handler</label>
-        <iframe
+      <label>Handler</label>
+      <iframe
         ref={editorRef}
-          src={editorOrigin + '?id=' + editorId}
-          style={{ width: "100%", height: "200px" }}
-        />
-        {errors.functionHandler && (
-          <p className="text-red-500">{errors.functionHandler.message}</p>
-        )}
-      </div>
+        src={editorOrigin + "?id=" + editorId}
+        style={{ width: "100%", height: "200px" }}
+      />
+      {errors.response && (
+        <p className="text-red-500">{errors.response.message}</p>
+      )}
+    </div>
   );
 }

@@ -14,10 +14,8 @@ public class Route : BaseEntity
     public ResponseType ResponseType { get; set; }
     public int? ResponseStatusCode { get; set; }
     public IList<ResponseHeader> ResponseHeaders { get; set; }
-    public string ResponseBody { get; set; }
+    public string Response { get; set; }
     public string ResponseBodyLanguage { get; set; }
-    public string FunctionHandler { get; set; }
-    
     public string FunctionHandlerMethod { get; set; }
     public IList<string> FunctionHandlerDependencies { get; set; }
     public string RequestQuerySchema { get; set; }

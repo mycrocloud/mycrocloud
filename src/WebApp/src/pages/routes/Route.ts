@@ -10,8 +10,7 @@ export default interface IRoute {
   responseStatusCode?: number;
   responseHeaders?: IResponseHeader[];
   responseBodyLanguage?: string;
-  responseBody?: string;
-  functionHandler?: string;
+  response?: string;
   functionHandlerDependencies?: string[];
   requireAuthorization: boolean;
   status: string;

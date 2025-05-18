@@ -17,7 +17,7 @@ public class RouteCreateUpdateRequest
 
     public int? ResponseStatusCode { get; set; }
     public List<ResponseHeader> ResponseHeaders { get; set; } = [];
-    public string? ResponseBody { get; set; }
+    public string? Response { get; set; }
     public bool UseDynamicResponse { get; set; }
     public string? ResponseBodyLanguage { get; set; }
     public string? FunctionHandler { get; set; }
@@ -46,9 +46,8 @@ public class RouteCreateUpdateRequest
             ResponseStatusCode = ResponseStatusCode,
             ResponseHeaders = ResponseHeaders.Select(h => h.ToEntity()).ToList(),
             ResponseBodyLanguage = ResponseBodyLanguage,
-            ResponseBody = ResponseBody,
+            Response = Response,
             UseDynamicResponse = UseDynamicResponse,
-            FunctionHandler = FunctionHandler,
             FunctionHandlerDependencies = FunctionHandlerDependencies,
             RequireAuthorization = RequireAuthorization,
             FileId = FileId,
@@ -69,9 +68,8 @@ public class RouteCreateUpdateRequest
         route.ResponseStatusCode = ResponseStatusCode;
         route.ResponseHeaders = ResponseHeaders.Select(h => h.ToEntity()).ToList();
         route.ResponseBodyLanguage = ResponseBodyLanguage;
-        route.ResponseBody = ResponseBody;
+        route.Response = Response;
         route.UseDynamicResponse = UseDynamicResponse;
-        route.FunctionHandler = FunctionHandler;
         route.FunctionHandlerDependencies = FunctionHandlerDependencies;
         route.RequireAuthorization = RequireAuthorization;
         route.FileId = FileId;

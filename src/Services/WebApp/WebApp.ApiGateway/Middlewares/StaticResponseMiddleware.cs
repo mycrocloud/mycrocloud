@@ -18,7 +18,7 @@ public class StaticResponseMiddleware(RequestDelegate next)
             context.Response.Headers.Append(header.Name, header.Value);
         }
 
-        var body = route.ResponseBody;
+        var body = route.Response;
         if (route.UseDynamicResponse)
         {
             var engine = new Engine();
