@@ -28,6 +28,9 @@ The Form service will let you design forms and collect user data seamlessly.
 <hr>
 Feel free to expand on the upcoming services or add additional sections such as installation guides or FAQs!
 
+### Architecture
+![](/mycrocloud.drawio.png)
+
 ### Building Status
 ![api](https://github.com/mycrocloud/mycrocloud/actions/workflows/publish-api.yml/badge.svg)
 
