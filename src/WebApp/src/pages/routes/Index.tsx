@@ -153,7 +153,7 @@ function RouteExplorer() {
         });
     };
     getRoutes();
-  }, []);
+  }, [routeId]); //todo: force update when routeId changes after creating new route. someday need better solution.
 
   //#region Action Menu
   const [showActionMenu, setShowActionMenu] = useState(false);
