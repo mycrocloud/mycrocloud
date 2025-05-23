@@ -11,7 +11,6 @@ import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import Ajv, { JSONSchemaType } from "ajv";
 import TextCopyButton from "../../components/ui/TextCopyButton";
-import RegistrationToken from "../../models/RegistrationToken";
 
 export default function AppOverview() {
   const { app } = useContext(AppContext)!;
@@ -73,9 +72,6 @@ export default function AppOverview() {
       <div className="mt-2">
         <CorsSettingsSection />
       </div>
-      <div className="mt-2">
-        <RunnerSection />
-      </div>
       <hr className="mt-2" />
       <div className="mt-2">
         <DeleteSection />
@@ -115,63 +111,6 @@ const corsSettingsSchema: JSONSchemaType<CorsSettings> = {
   },
   additionalProperties: false,
 };
-
-function RunnerSection() {
-  const { app } = useContext(AppContext)!;
-  const { getAccessTokenSilently } = useAuth0();
-  if (!app) throw new Error();
-
-  const [tokens, setTokens] = useState<RegistrationToken[]>([]);
-  useEffect(() => {
-    const fetchTokens = async () => {
-      const accessToken = await getAccessTokenSilently();
-      const res = await fetch(
-        `/api/apps/${app.id}/runner/registration-tokens`,
-        { headers: { Authorization: `Bearer ${accessToken}` } },
-      );
-      if (res.ok) {
-        const json = await res.json();
-        setTokens(json);
-      }
-    };
-    fetchTokens();
-  }, []);
-
-  const handleGenerateClick = async () => {
-    const accessToken = await getAccessTokenSilently();
-    const res = await fetch(`/api/apps/${app.id}/runner/registration-tokens`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    if (res.ok) {
-      const token = (await res.json()) as RegistrationToken;
-      setTokens([...tokens, token]);
-    }
-  };
-
-  return (
-    <div>
-      <h3 className="font-semibold">Runner</h3>
-      <h4 className="font-semibold">Registration Tokens</h4>
-      <ul>
-        {tokens.map((token) => (
-          <li key={token.id}>
-            <div className="flex">
-              <p>{token.token}</p>
-              <TextCopyButton text={token.token} />
-            </div>
-          </li>
-        ))}
-      </ul>
-      <button
-        onClick={handleGenerateClick}
-        className="bg-primary px-2 py-1 text-white"
-      >
-        Generate
-      </button>
-    </div>
-  );
-}
 
 function CorsSettingsSection() {
   const { app } = useContext(AppContext)!;
