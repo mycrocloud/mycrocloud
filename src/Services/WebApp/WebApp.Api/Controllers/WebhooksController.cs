@@ -21,7 +21,7 @@ public class WebhooksController(AppDbContext appDbContext, RabbitMqService rabbi
         var rawBodyString = HttpContext.Items["RawBodyString"] as string;
         var payloadNode = JsonNode.Parse(rawBodyString!);
         var repoFullName = (string)payloadNode!["repository"]!["full_name"]!;
-        var commitMessage = (string)payloadNode!["head_commit"]!["message"]!;
+        var commitMessage = (string?)payloadNode["head_commit"]?["message"];
 
         var app = await appDbContext.Apps
             .Include(a => a.Integration)
@@ -46,7 +46,7 @@ public class WebhooksController(AppDbContext appDbContext, RabbitMqService rabbi
         {
             Id = Guid.NewGuid(),
             App = app,
-            Name = commitMessage,
+            Name = commitMessage ?? $"Build {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}",
             Status = "pending",
             CreatedAt = DateTime.UtcNow
         };
