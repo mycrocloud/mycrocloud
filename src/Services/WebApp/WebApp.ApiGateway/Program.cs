@@ -63,11 +63,7 @@ app.UseHttpLogging();
 app.UseWhen(context => context.Request.Host.Host == builder.Configuration["Host"], config =>
 {
     config.UseHealthChecks("/healthz");
-    config.UseEndpoints(endpoints =>
-    {
-        endpoints.MapHub<FunctionExecutionHub>("/functionExecutionHub");
-    });
-
+    
     // short-circuit the pipeline here
     config.Run(async context => { await context.Response.CompleteAsync(); });
 });
