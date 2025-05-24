@@ -1,4 +1,3 @@
-using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace WebApp.Api.Models;
@@ -12,7 +11,7 @@ public enum JobStatus
 public class JobStatusChangedEventMessage
 {
     [JsonPropertyName("job_id")]
-    public required string JobId { get; set; }
+    public required Guid JobId { get; set; }
     
     [JsonPropertyName("status")]
     public JobStatus Status { get; set; }
