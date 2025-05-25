@@ -42,6 +42,14 @@ function Header() {
               </Link>
             </li>
           </ul>
+          <a
+            className="me-2 ms-auto block border-b border-gray-100 py-2 pl-3 pr-4 text-gray-700 hover:bg-gray-50 md:border-0 md:p-0 md:hover:bg-transparent md:hover:text-cyan-700"
+            href="https://docs.mycrocloud.info" // todo: use env variable
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            Docs
+          </a>
           <Dropdown
             arrowIcon={false}
             inline
