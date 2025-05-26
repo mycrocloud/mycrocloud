@@ -26,8 +26,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     public DbSet<AppBuildJob> AppBuildJobs { get; set; }
 
-    public DbSet<RunnerRegistrationToken> RunnerRegistrationTokens { get; set; }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<App>()
@@ -117,24 +115,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<UserToken>()
             .HasKey(t => new { t.UserId, t.Provider, t.Purpose });
 
-        modelBuilder.Entity<RunnerRegistrationToken>()
-            .HasIndex(x => x.Token)
-            .IsUnique()
-            ;
-
-        modelBuilder.Entity<RunnerRegistrationToken>().ToTable(tb =>
-        {
-            const string constraints = """
-                                       ("Scope" = 1 AND "UserId" IS NOT NULL AND "AppId" IS NULL) OR
-                                       ("Scope" = 2 AND "UserId" IS NULL AND "AppId" IS NOT NULL)
-                                       """;
-            tb.HasCheckConstraint("CK_RunnerRegistrationToken_Scope_Requirement", constraints);
-        });
-
         modelBuilder.Entity<AppBuildJob>()
             .Property(p => p.Name)
             .HasDefaultValue("build");
-
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
