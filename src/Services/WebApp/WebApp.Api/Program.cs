@@ -63,7 +63,7 @@ builder.Services.AddScoped<ILogRepository, LogRepository>();
 builder.Services.AddSingleton<RabbitMqService>();
 builder.Services.AddHttpClient();
 builder.Services.AddHostedService<AppBuildJobStatusConsumer>();
-builder.Services.AddKeyedSingleton<ElasticClient>("AppBuildLogs_ES7", (_, _) =>
+builder.Services.AddKeyedSingleton("AppBuildLogs_ES7", (_, _) =>
 {
     var settings = new ConnectionSettings(new Uri(builder.Configuration["Elasticsearch:Host"]!))
         .BasicAuthentication(builder.Configuration["Elasticsearch:Username"]!,
@@ -73,7 +73,7 @@ builder.Services.AddKeyedSingleton<ElasticClient>("AppBuildLogs_ES7", (_, _) =>
     return new ElasticClient(settings);
 });
 
-builder.Services.AddKeyedSingleton<ElasticsearchClient>("AppBuildLogs_ES8", (_, _) =>
+builder.Services.AddKeyedSingleton("AppBuildLogs_ES8", (_, _) =>
 {
     var settings = new ElasticsearchClientSettings(new Uri(builder.Configuration["Elasticsearch:Host"]!))
         .Authentication(new BasicAuthentication(builder.Configuration["Elasticsearch:Username"]!,
