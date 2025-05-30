@@ -1,11 +1,9 @@
 import { Link } from "react-router-dom";
 import IApp from "./App";
 import { useEffect, useMemo, useState } from "react";
-import { useAuth0 } from "@auth0/auth0-react";
+import request from "../../utils/fetchUtils";
 
 export default function List() {
-  const { getAccessTokenSilently } = useAuth0();
-
   const [searchTerm, setSearchTerm] = useState("");
   const [apps, setApps] = useState<IApp[]>([]);
   const filteredApps = useMemo(() => {
@@ -20,16 +18,13 @@ export default function List() {
 
   useEffect(() => {
     document.title = "Apps";
+
     const getApps = async () => {
-      const accessToken = await getAccessTokenSilently();
-      const res = await fetch("/api/apps", {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      const apps = (await res.json()) as IApp[];
+      const res = await request("/api/apps");
+      const apps = await res.json();
       setApps(apps);
     };
+
     getApps();
   }, []);
 
@@ -55,7 +50,7 @@ export default function List() {
             setSearchTerm(e.target.value);
           }}
           placeholder="Search..."
-          className="block w-full border border-gray-300 bg-gray-50 p-1.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 "
+          className="block w-full border border-gray-300 bg-gray-50 p-1.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500"
         />
       </form>
       <ul className="mt-3 divide-y">
