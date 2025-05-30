@@ -20,7 +20,7 @@ import {
   EllipsisVerticalIcon,
 } from "@heroicons/react/24/solid";
 import { useForm } from "react-hook-form";
-import { ensureSuccess } from "../../utils/fetchUtils";
+import { ensureSuccess } from "../../hooks/useAuthRequest";
 import IRouteFolderRouteItem, { calculateLevel } from "./IRouteFolderRouteItem";
 import IRoute from "./Route";
 //import { toast } from "react-toastify";

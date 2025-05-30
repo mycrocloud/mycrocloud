@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import IApp from "./App";
 import { useEffect, useMemo, useState } from "react";
-import useAuthRequest from "../../utils/fetchUtils";
+import useAuthRequest from "../../hooks/useAuthRequest";
 
 export default function List() {
   const authRequest = useAuthRequest();
