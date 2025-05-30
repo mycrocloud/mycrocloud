@@ -21,8 +21,7 @@ export default function List() {
     document.title = "Apps";
 
     const getApps = async () => {
-      const res = await authRequest("/api/apps");
-      const apps = await res.json();
+      const apps = await authRequest("/api/apps");
       setApps(apps);
     };
 
