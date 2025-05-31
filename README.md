@@ -17,16 +17,6 @@ File, Object, Text, Variable.
 - Allows viewing and exporting of logs for monitoring and debugging.
 - Execute functions using a self-hosted or MycroCloud-hosted runner.
 - Integrates with GitHub for automatic deployment from your repositories.
-- Supports custom domains (coming soon).
-
-### Database (coming soon)
-The Database service will allow you to create, manage, and scale databases effortlessly.
-
-### Form (coming soon)
-The Form service will let you design forms and collect user data seamlessly.
-
-<hr>
-Feel free to expand on the upcoming services or add additional sections such as installation guides or FAQs!
 
 ### Architecture
 ![](/mycrocloud.drawio.png)
