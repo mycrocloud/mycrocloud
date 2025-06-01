@@ -15,7 +15,6 @@ File, Object, Text, Variable.
 - Includes request validation to ensure proper data handling.
 - Provides request authentication and authorization using OpenID Connect or API keys.
 - Allows viewing and exporting of logs for monitoring and debugging.
-- Execute functions using a self-hosted or MycroCloud-hosted runner.
 - Integrates with GitHub for automatic deployment from your repositories.
 
 ### Architecture
