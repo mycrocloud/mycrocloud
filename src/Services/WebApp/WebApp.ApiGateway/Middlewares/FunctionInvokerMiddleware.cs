@@ -75,44 +75,58 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
 
         await File.WriteAllTextAsync(Path.Combine(hostDir, FunctionSharedConstants.HandlerFilePath), route.Response);
 
-        return await concurrencyJobManager.EnqueueJob(async token =>
+        Result result;
+        try
         {
-            const string containerDataPath = "/app/data";
-            var container = await dockerClient.Containers.CreateContainerAsync(new CreateContainerParameters
+            result = await concurrencyJobManager.EnqueueJob(async token =>
             {
-                Image = configuration["DockerFunctionExecution:Image"],
-                HostConfig = new HostConfig
+                const string containerDataPath = "/app/data";
+                var container = await dockerClient.Containers.CreateContainerAsync(new CreateContainerParameters
                 {
-                    AutoRemove = true,
-                    Binds = [$"{hostDir}:{containerDataPath}"],
-                },
-                Env = new List<string>
+                    Image = configuration["DockerFunctionExecution:Image"],
+                    HostConfig = new HostConfig
+                    {
+                        AutoRemove = true,
+                        Binds = [$"{hostDir}:{containerDataPath}"],
+                    },
+                    Env = new List<string>
+                    {
+                        $"{FunctionSharedConstants.APP_ID}={app.Id}",
+                        $"{FunctionSharedConstants.CONNECTION_STRING}={configuration.GetConnectionString("DefaultConnection")}"
+                    }
+                }, token);
+
+                await dockerClient.Containers.StartContainerAsync(container.ID, new ContainerStartParameters
                 {
-                    $"{FunctionSharedConstants.APP_ID}={app.Id}",
-                    $"{FunctionSharedConstants.CONNECTION_STRING}={configuration.GetConnectionString("DefaultConnection")}"
+
+                }, token);
+
+                await dockerClient.Containers.WaitContainerAsync(container.ID, token);
+
+                var resultText = await File.ReadAllTextAsync(Path.Combine(hostDir, "result.json"), token);
+
+                var localResult = JsonSerializer.Deserialize<Result>(resultText)!;
+                var logFilePath = Path.Combine(hostDir, "log.txt");
+                if (File.Exists(logFilePath))
+                {
+                    localResult.AdditionalLogMessage = await File.ReadAllTextAsync(logFilePath, token);
                 }
-            }, token);
 
-            await dockerClient.Containers.StartContainerAsync(container.ID, new ContainerStartParameters
+                Directory.Delete(hostDir, true);
+
+                return localResult;
+            }, TimeSpan.FromSeconds(app.Settings.FunctionExecutionTimeoutSeconds ?? 10));
+        }
+        catch (TaskCanceledException)
+        {
+            result = new Result
             {
-                
-            }, token);
+                StatusCode = 500,
+                Body = "Timeout",
+            };
+        }
 
-            await dockerClient.Containers.WaitContainerAsync(container.ID, token);
-
-            var resultText = await File.ReadAllTextAsync(Path.Combine(hostDir, "result.json"), token);
-
-            var result = JsonSerializer.Deserialize<Result>(resultText)!;
-            var logFilePath = Path.Combine(hostDir, "log.txt");
-            if (File.Exists(logFilePath))
-            {
-                result.AdditionalLogMessage = await File.ReadAllTextAsync(logFilePath, token);
-            }
-            
-            Directory.Delete(hostDir, true);
-
-            return result;
-        }, TimeSpan.FromSeconds(app.Settings.FunctionExecutionTimeoutSeconds ?? 10));
+        return result;
     }
 
     private async Task<Result> ExecuteInProcess(HttpContext context, IAppRepository appRepository, App app, Route route, IConfiguration configuration)
