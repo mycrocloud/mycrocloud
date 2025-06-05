@@ -24,7 +24,7 @@
     "monaco-editor": "^0.52.2",
     "react": "^19.0.0",
     "react-dom": "^19.1.0",
-    "react-hook-form": "^7.56.3",
+    "react-hook-form": "^7.57.0",
     "react-router-dom": "^7.4.0",
     "react-toastify": "^11.0.5",
     "uuid": "^11.1.0",
