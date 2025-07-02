@@ -1,5 +1,4 @@
 # MycroCloud
-**MycroCloud** provides cloud computing services to help you build and manage applications effortlessly.
 
 ## Available Services
 ### WebApp
@@ -8,13 +7,13 @@ The **WebApp** service enables you to create fully managed web applications with
 **Key Features**:
 - Supports three types of responses:
     - *Static*: Returns content you specified with Handlebar supported for dynamic content.
-    - *StaticFile*: Serves files from storage.
-    - *Function*: Executes serverless functions.
+    - *StaticFile*: Serves uploaded files.
+    - *Function*: Executes JavaScript code.
 - Offers various storage options for data persistence:
 File, Object, Text, Variable.
 - Includes request validation to ensure proper data handling.
-- Provides request authentication and authorization using OpenID Connect or API keys.
-- Allows viewing and exporting of logs for monitoring and debugging.
+- Provides request authentication and authorization using OpenID Connect.
+- Allows viewing and exporting of logs.
 - Integrates with GitHub for automatic deployment from your repositories.
 
 ### Architecture
