@@ -23,6 +23,9 @@ resource "aws_eks_cluster" "cluster" {
 
   role_arn = aws_iam_role.cluster_role.arn
 
+  access_config {
+    authentication_mode = "API"
+  }
   vpc_config {
     subnet_ids = [aws_subnet.az1.id, aws_subnet.az2.id, aws_subnet.az3.id]
   }
