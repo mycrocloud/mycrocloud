@@ -5,3 +5,7 @@ variable "region" {
 variable "profile" {
   default = "default"
 }
+
+variable "project_name" {
+  default = "mycrocloud"
+}
