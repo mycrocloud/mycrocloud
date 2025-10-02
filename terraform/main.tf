@@ -1,9 +1,9 @@
 terraform {
   backend "s3" {
-    bucket         = "mycrocloud"
-    key            = "terraform.tfstate"
-    region         = "ap-northeast-1"
-    profile        = "personal"
+    bucket  = "mycrocloud"
+    key     = "terraform.tfstate"
+    region  = "ap-northeast-1"
+    profile = "personal"
   }
 
   required_providers {
@@ -14,10 +14,4 @@ terraform {
   }
 
   required_version = ">= 1.2"
-}
-
-provider "aws" {
-  region                   = "ap-northeast-1"
-  shared_credentials_files = ["~/.aws/credentials"]
-  profile                  = "personal"
 }
