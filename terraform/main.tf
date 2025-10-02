@@ -45,6 +45,8 @@ resource "aws_eks_cluster" "cluster" {
     }
   }
 
+  bootstrap_self_managed_addons = true
+
   depends_on = [
     aws_iam_role_policy_attachment.AmazonEKSBlockStoragePolicy,
     aws_iam_role_policy_attachment.AmazonEKSClusterPolicy,
