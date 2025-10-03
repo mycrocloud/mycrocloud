@@ -58,3 +58,12 @@ resource "aws_eks_cluster" "cluster" {
     aws_iam_role_policy_attachment.AmazonEKSNetworkingPolicy
   ]
 }
+
+data "aws_caller_identity" "current" {}
+
+resource "aws_eks_access_entry" "admin" {
+  cluster_name      = aws_eks_cluster.cluster.name
+  principal_arn     = data.aws_caller_identity.current.arn
+  kubernetes_groups = ["system:masters"]
+  type              = "STANDARD"
+}
