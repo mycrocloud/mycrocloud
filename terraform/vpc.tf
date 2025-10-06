@@ -1,11 +1,14 @@
 resource "aws_vpc" "vpc" {
-  cidr_block = "10.0.0.0/16"
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_hostnames = true
+  enable_dns_support   = true
 }
 
 resource "aws_subnet" "az1" {
-  vpc_id            = aws_vpc.vpc.id
-  availability_zone = "ap-northeast-1a"
-  cidr_block        = "10.0.0.0/20"
+  vpc_id                  = aws_vpc.vpc.id
+  availability_zone       = "ap-northeast-1a"
+  cidr_block              = "10.0.0.0/20"
+  map_public_ip_on_launch = true
 }
 
 resource "aws_subnet" "az2" {
@@ -38,12 +41,30 @@ resource "aws_route_table_association" "az1" {
   subnet_id      = aws_subnet.az1.id
 }
 
-resource "aws_route_table_association" "az2" {
-  route_table_id = aws_route_table.public.id
-  subnet_id      = aws_subnet.az2.id
+resource "aws_eip" "nat" {
+  domain = "vpc"
 }
 
-resource "aws_route_table_association" "az3" {
-  route_table_id = aws_route_table.public.id
-  subnet_id      = aws_subnet.az3.id
+resource "aws_nat_gateway" "nat" {
+  subnet_id     = aws_subnet.az1.id
+  allocation_id = aws_eip.nat.id
+}
+
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.vpc.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat.id
+  }
+}
+
+resource "aws_route_table_association" "private_az1" {
+  subnet_id      = aws_subnet.az1.id
+  route_table_id = aws_route_table.private.id
+}
+
+resource "aws_route_table_association" "private_az2" {
+  subnet_id      = aws_subnet.az2.id
+  route_table_id = aws_route_table.private.id
 }
