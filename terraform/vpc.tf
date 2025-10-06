@@ -32,3 +32,18 @@ resource "aws_route_table" "public" {
     gateway_id = aws_internet_gateway.ig.id
   }
 }
+
+resource "aws_route_table_association" "az1" {
+  route_table_id = aws_route_table.public.id
+  subnet_id      = aws_subnet.az1.id
+}
+
+resource "aws_route_table_association" "az2" {
+  route_table_id = aws_route_table.public.id
+  subnet_id      = aws_subnet.az2.id
+}
+
+resource "aws_route_table_association" "az3" {
+  route_table_id = aws_route_table.public.id
+  subnet_id      = aws_subnet.az3.id
+}
