@@ -28,10 +28,6 @@ resource "aws_eks_cluster" "cluster" {
   }
 
   depends_on = [
-    aws_iam_role_policy_attachment.AmazonEKSBlockStoragePolicy,
-    aws_iam_role_policy_attachment.AmazonEKSClusterPolicy,
-    aws_iam_role_policy_attachment.AmazonEKSComputePolicy,
-    aws_iam_role_policy_attachment.AmazonEKSLoadBalancingPolicy,
-    aws_iam_role_policy_attachment.AmazonEKSNetworkingPolicy
+    aws_iam_role_policy_attachment.AmazonEKSClusterPolicy
   ]
 }

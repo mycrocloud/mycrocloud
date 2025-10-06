@@ -4,8 +4,7 @@ resource "aws_iam_role" "cluster_role" {
     Statement = [
       {
         Action = [
-          "sts:AssumeRole",
-          "sts:TagSession"
+          "sts:AssumeRole"
         ]
         Effect = "Allow"
         Principal = {
@@ -24,19 +23,4 @@ resource "aws_iam_role_policy_attachment" "AmazonEKSBlockStoragePolicy" {
 resource "aws_iam_role_policy_attachment" "AmazonEKSClusterPolicy" {
   role       = aws_iam_role.cluster_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-}
-
-resource "aws_iam_role_policy_attachment" "AmazonEKSComputePolicy" {
-  role       = aws_iam_role.cluster_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSComputePolicy"
-}
-
-resource "aws_iam_role_policy_attachment" "AmazonEKSLoadBalancingPolicy" {
-  role       = aws_iam_role.cluster_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSLoadBalancingPolicy"
-}
-
-resource "aws_iam_role_policy_attachment" "AmazonEKSNetworkingPolicy" {
-  role       = aws_iam_role.cluster_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSNetworkingPolicy"
 }
