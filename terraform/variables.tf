@@ -5,7 +5,7 @@ variable "region" {
 
 variable "profile" {
   type    = string
-  default = "default"
+  default = "personal"
 }
 
 variable "project_name" {

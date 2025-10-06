@@ -23,32 +23,9 @@ resource "aws_eks_cluster" "cluster" {
 
   role_arn = aws_iam_role.cluster_role.arn
 
-  access_config {
-    authentication_mode = "API_AND_CONFIG_MAP"
-  }
   vpc_config {
     subnet_ids = [aws_subnet.az1.id, aws_subnet.az2.id, aws_subnet.az3.id]
   }
-
-  compute_config {
-    enabled       = true
-    node_pools    = ["general-purpose"]
-    node_role_arn = aws_iam_role.node_role.arn
-  }
-
-  kubernetes_network_config {
-    elastic_load_balancing {
-      enabled = true
-    }
-  }
-
-  storage_config {
-    block_storage {
-      enabled = true
-    }
-  }
-
-  bootstrap_self_managed_addons = false
 
   depends_on = [
     aws_iam_role_policy_attachment.AmazonEKSBlockStoragePolicy,
@@ -57,13 +34,4 @@ resource "aws_eks_cluster" "cluster" {
     aws_iam_role_policy_attachment.AmazonEKSLoadBalancingPolicy,
     aws_iam_role_policy_attachment.AmazonEKSNetworkingPolicy
   ]
-}
-
-data "aws_caller_identity" "current" {}
-
-resource "aws_eks_access_entry" "admin" {
-  cluster_name      = aws_eks_cluster.cluster.name
-  principal_arn     = data.aws_caller_identity.current.arn
-  kubernetes_groups = ["system:masters"]
-  type              = "STANDARD"
 }
