@@ -21,9 +21,12 @@ resource "aws_iam_role_policy_attachment" "alb_role_attachment" {
   policy_arn = aws_iam_policy.AWSLoadBalancerControllerIAMPolicy.arn
 }
 
-# resource "kubernetes_service_account" "alb" {
-#   metadata {
-#     name = "aws-load-balancer-controller"
-#     namespace = "kube-system"
-#   }
-# }
+resource "kubernetes_service_account" "alb" {
+  metadata {
+    name = "aws-load-balancer-controller"
+    namespace = "kube-system"
+    annotations = {
+      "eks.amazonaws.com/role-arn" = aws_iam_role.alb_role.arn
+    }
+  }
+}
