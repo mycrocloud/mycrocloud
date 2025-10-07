@@ -1,7 +1,7 @@
 
 resource "aws_iam_openid_connect_provider" "oidc_provider" {
   client_id_list = ["sts.amazonaws.com"]
-  url = aws_eks_cluster.cluster.identity[0].oidc[0].issuer
+  url            = aws_eks_cluster.cluster.identity[0].oidc[0].issuer
 }
 
 resource "aws_iam_role" "alb_role" {
@@ -12,7 +12,7 @@ resource "aws_iam_role" "alb_role" {
 }
 
 resource "aws_iam_policy" "AWSLoadBalancerControllerIAMPolicy" {
-  name = "AWSLoadBalancerControllerIAMPolicy"
+  name   = "AWSLoadBalancerControllerIAMPolicy"
   policy = file("iam_policy.json")
 }
 
@@ -23,10 +23,35 @@ resource "aws_iam_role_policy_attachment" "alb_role_attachment" {
 
 resource "kubernetes_service_account" "alb" {
   metadata {
-    name = "aws-load-balancer-controller"
+    name      = "aws-load-balancer-controller"
     namespace = "kube-system"
     annotations = {
       "eks.amazonaws.com/role-arn" = aws_iam_role.alb_role.arn
     }
   }
 }
+
+provider "helm" {
+  kubernetes = {
+    config_path = "~/.kube/config"
+  }
+}
+
+# resource "helm_release" "aws-load-balancer-controller" {
+#   name = "aws-load-balancer-controller"
+#   namespace = "kube-system"
+
+#   repository = "https://aws.github.io/eks-charts"
+#   chart      = "aws-load-balancer-controller"
+
+#   set = [{
+#     name  = "clusterName"
+#     value = aws_eks_cluster.cluster.name
+#     }, {
+#     name  = "serviceAccount.create"
+#     value = false
+#     }, {
+#     name  = "serviceAccount.name"
+#     value = kubernetes_service_account.alb.metadata[0].name
+#   }]
+# }
