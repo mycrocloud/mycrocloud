@@ -4,25 +4,38 @@ resource "aws_vpc" "vpc" {
   enable_dns_support   = true
 }
 
-resource "aws_subnet" "az1" {
+#############################
+# Subnets
+#############################
+resource "aws_subnet" "public_az1" {
   vpc_id                  = aws_vpc.vpc.id
   availability_zone       = "ap-northeast-1a"
   cidr_block              = "10.0.0.0/20"
   map_public_ip_on_launch = true
 }
 
-resource "aws_subnet" "az2" {
+resource "aws_subnet" "public_az2" {
+  vpc_id                  = aws_vpc.vpc.id
+  availability_zone       = "ap-northeast-1c"
+  cidr_block              = "10.0.48.0/20"
+  map_public_ip_on_launch = true
+}
+
+resource "aws_subnet" "private_az1" {
   vpc_id            = aws_vpc.vpc.id
-  availability_zone = "ap-northeast-1c"
+  availability_zone = "ap-northeast-1a"
   cidr_block        = "10.0.16.0/20"
 }
 
-resource "aws_subnet" "az3" {
+resource "aws_subnet" "private_az2" {
   vpc_id            = aws_vpc.vpc.id
-  availability_zone = "ap-northeast-1d"
+  availability_zone = "ap-northeast-1c"
   cidr_block        = "10.0.32.0/20"
 }
 
+#############################
+# Internet Gateway + Route
+#############################
 resource "aws_internet_gateway" "ig" {
   vpc_id = aws_vpc.vpc.id
 }
@@ -36,17 +49,20 @@ resource "aws_route_table" "public" {
   }
 }
 
-resource "aws_route_table_association" "az1" {
+resource "aws_route_table_association" "public_az1" {
   route_table_id = aws_route_table.public.id
-  subnet_id      = aws_subnet.az1.id
+  subnet_id      = aws_subnet.public_az1.id
 }
 
+#############################
+# NAT Gateway
+#############################
 resource "aws_eip" "nat" {
   domain = "vpc"
 }
 
 resource "aws_nat_gateway" "nat" {
-  subnet_id     = aws_subnet.az1.id
+  subnet_id     = aws_subnet.public_az1.id
   allocation_id = aws_eip.nat.id
 }
 
@@ -60,11 +76,11 @@ resource "aws_route_table" "private" {
 }
 
 resource "aws_route_table_association" "private_az1" {
-  subnet_id      = aws_subnet.az1.id
+  subnet_id      = aws_subnet.private_az1.id
   route_table_id = aws_route_table.private.id
 }
 
 resource "aws_route_table_association" "private_az2" {
-  subnet_id      = aws_subnet.az2.id
+  subnet_id      = aws_subnet.private_az2.id
   route_table_id = aws_route_table.private.id
 }

@@ -38,9 +38,15 @@ resource "aws_eks_node_group" "node_group" {
 
   node_role_arn = aws_iam_role.node_group_role.arn
   subnet_ids = [
-    aws_subnet.az2.id,
-    aws_subnet.az3.id,
+    aws_subnet.private_az1.id,
+    aws_subnet.private_az2.id,
   ]
   instance_types = ["t3.small"]
+
+  depends_on = [
+    aws_iam_role_policy_attachment.AmazonEC2ContainerRegistryReadOnly,
+    aws_iam_role_policy_attachment.AmazonEKS_CNI_Policy,
+    aws_iam_role_policy_attachment.AmazonEKSWorkerNodePolicy,
+  ]
 }
 
