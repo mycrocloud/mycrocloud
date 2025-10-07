@@ -10,7 +10,7 @@ resource "aws_iam_policy" "AWSLoadBalancerControllerIAMPolicy" {
 
 resource "kubernetes_service_account" "alb" {
   metadata {
-    name = ""
+    name = "aws-load-balancer-controller"
     namespace = "kube-system"
   }
 }
