@@ -2,9 +2,11 @@
 resource "aws_iam_openid_connect_provider" "oidc_provider" {
   client_id_list = ["sts.amazonaws.com"]
   url            = aws_eks_cluster.cluster.identity[0].oidc[0].issuer
+  // TODO: add thumbprints
 }
 
 resource "aws_iam_role" "alb_role" {
+  name = "AWSLoadBalancerControllerIAMRole"
   assume_role_policy = templatefile("alb_trust_policy.json.tftpl", {
     oidc_provider_arn = aws_iam_openid_connect_provider.oidc_provider.arn,
     oidc_provider_url = replace(aws_eks_cluster.cluster.identity[0].oidc[0].issuer, "https://", "")
@@ -28,12 +30,6 @@ resource "kubernetes_service_account" "alb" {
     annotations = {
       "eks.amazonaws.com/role-arn" = aws_iam_role.alb_role.arn
     }
-  }
-}
-
-provider "helm" {
-  kubernetes = {
-    config_path = "~/.kube/config"
   }
 }
 

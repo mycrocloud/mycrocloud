@@ -1,3 +1,7 @@
+data "aws_availability_zones" "azs" {
+  state = "available"
+}
+
 resource "aws_vpc" "vpc" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
@@ -9,28 +13,48 @@ resource "aws_vpc" "vpc" {
 #############################
 resource "aws_subnet" "public_az1" {
   vpc_id                  = aws_vpc.vpc.id
-  availability_zone       = "ap-northeast-1a"
+  availability_zone       = data.aws_availability_zones.azs.names[0]
   cidr_block              = "10.0.0.0/20"
   map_public_ip_on_launch = true
+
+  tags = {
+    "kubernetes.io/role/elb"                    = "1"
+    "kubernetes.io/cluster/${var.project_name}" = "shared"
+  }
 }
 
 resource "aws_subnet" "public_az2" {
   vpc_id                  = aws_vpc.vpc.id
-  availability_zone       = "ap-northeast-1c"
+  availability_zone       = data.aws_availability_zones.azs.names[1]
   cidr_block              = "10.0.48.0/20"
   map_public_ip_on_launch = true
+
+  tags = {
+    "kubernetes.io/role/elb"                    = "1"
+    "kubernetes.io/cluster/${var.project_name}" = "shared"
+  }
 }
 
 resource "aws_subnet" "private_az1" {
   vpc_id            = aws_vpc.vpc.id
-  availability_zone = "ap-northeast-1a"
+  availability_zone = data.aws_availability_zones.azs.names[0]
   cidr_block        = "10.0.16.0/20"
+
+  tags = {
+    "kubernetes.io/role/internal-elb"           = "1"
+    "kubernetes.io/cluster/${var.project_name}" = "shared"
+  }
 }
 
 resource "aws_subnet" "private_az2" {
   vpc_id            = aws_vpc.vpc.id
-  availability_zone = "ap-northeast-1c"
+  availability_zone = data.aws_availability_zones.azs.names[1]
   cidr_block        = "10.0.32.0/20"
+
+  tags = {
+    "kubernetes.io/role/internal-elb"           = "1"
+    "kubernetes.io/cluster/${var.project_name}" = "shared"
+  }
 }
 
 #############################
@@ -52,6 +76,11 @@ resource "aws_route_table" "public" {
 resource "aws_route_table_association" "public_az1" {
   route_table_id = aws_route_table.public.id
   subnet_id      = aws_subnet.public_az1.id
+}
+
+resource "aws_route_table_association" "public_az2" {
+  route_table_id = aws_route_table.public.id
+  subnet_id      = aws_subnet.public_az2.id
 }
 
 #############################

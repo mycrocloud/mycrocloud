@@ -1,7 +1,3 @@
-provider "kubernetes" {
-  config_path = "~/.kube/config"
-}
-
 resource "kubernetes_secret" "ghcr_secret" {
   metadata {
     name      = "ghcr-secret"
