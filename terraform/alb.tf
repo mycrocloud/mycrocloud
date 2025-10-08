@@ -33,21 +33,24 @@ resource "kubernetes_service_account" "alb" {
   }
 }
 
-# resource "helm_release" "aws-load-balancer-controller" {
-#   name = "aws-load-balancer-controller"
-#   namespace = "kube-system"
+resource "helm_release" "aws-load-balancer-controller" {
+  name      = "aws-load-balancer-controller"
+  namespace = "kube-system"
 
-#   repository = "https://aws.github.io/eks-charts"
-#   chart      = "aws-load-balancer-controller"
+  repository = "https://aws.github.io/eks-charts"
+  chart      = "aws-load-balancer-controller"
 
-#   set = [{
-#     name  = "clusterName"
-#     value = aws_eks_cluster.cluster.name
-#     }, {
-#     name  = "serviceAccount.create"
-#     value = false
-#     }, {
-#     name  = "serviceAccount.name"
-#     value = kubernetes_service_account.alb.metadata[0].name
-#   }]
-# }
+  set = [{
+    name  = "clusterName"
+    value = aws_eks_cluster.cluster.name
+    }, {
+    name  = "serviceAccount.create"
+    value = false
+    }, {
+    name  = "serviceAccount.name"
+    value = kubernetes_service_account.alb.metadata[0].name
+    }, {
+    name  = "vpcId"
+    value = aws_vpc.vpc.id
+  }]
+}
