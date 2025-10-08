@@ -10,7 +10,7 @@ resource "cloudflare_dns_record" "root" {
   name = "@"
   type = "CNAME"
   ttl = 1
-  content = data.aws_lb.alb.dns_name
+  content = data.kubernetes_service.nginx_ingress_lb.status[0].load_balancer[0].ingress[0].ip
   
   proxied = true
 }
