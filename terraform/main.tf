@@ -3,7 +3,6 @@ terraform {
     bucket  = "mycrocloud"
     key     = "terraform.tfstate"
     region  = "ap-northeast-1"
-    profile = "default"
   }
 
   required_providers {
