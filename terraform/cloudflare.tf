@@ -1,0 +1,16 @@
+resource "cloudflare_zone" "domain" {
+  account = {
+    id = var.cloudflare_account_id
+  }
+  name = var.domain
+}
+
+resource "cloudflare_dns_record" "apex" {
+  zone_id = var.cloudflare_zone_id
+  name = "@"
+  type = "CNAME"
+  ttl = 1
+  content = data.aws_lb.alb.dns_name
+  
+  proxied = true
+}

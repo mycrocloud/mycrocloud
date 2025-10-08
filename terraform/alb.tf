@@ -54,3 +54,20 @@ resource "helm_release" "aws-load-balancer-controller" {
     value = aws_vpc.vpc.id
   }]
 }
+
+data "kubernetes_service" "alb" {
+  metadata {
+    name = "aws-load-balancer-controller"
+    namespace = helm_release.aws-load-balancer-controller.namespace
+  }
+}
+
+data "aws_lb" "alb" {
+  tags = {
+    "elbv2.k8s.aws/cluster"    = aws_eks_cluster.cluster.name
+    "ingress.k8s.aws/stack"    = "default/web-ingress"
+    "ingress.k8s.aws/resource" = "LoadBalancer"
+  }
+
+  depends_on = [helm_release.aws-load-balancer-controller]
+}

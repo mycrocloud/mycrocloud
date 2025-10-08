@@ -8,12 +8,13 @@ metadata:
 spec:
   ingressClassName: alb
   rules:
-    - http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: web-service
-                port:
-                  number: 80
+    - host: mycrocloud.info
+      http:
+          paths:
+            - path: /
+              pathType: Prefix
+              backend:
+                service:
+                  name: web-service
+                  port:
+                    number: 80
