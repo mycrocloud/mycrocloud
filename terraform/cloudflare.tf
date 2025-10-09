@@ -5,7 +5,7 @@ resource "cloudflare_zone" "domain" {
   name = var.domain
 }
 
-resource "cloudflare_dns_record" "apex" {
+resource "cloudflare_dns_record" "root" {
   zone_id = var.cloudflare_zone_id
   name = "@"
   type = "CNAME"
