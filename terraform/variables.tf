@@ -1,6 +1,21 @@
-variable "region" {
-  type    = string
-  default = "ap-northeast-1"
+variable "cloudflare_api_token" {
+  type        = string
+  sensitive   = true
+  description = "Cloudflare API token for DNS management"
+}
+
+variable "cloudflare_account_id" {
+  type        = string
+  description = "Cloudflare account ID"
+}
+
+variable "cloudflare_zone_id" {
+  type        = string
+  description = "Cloudflare zone ID for the domain"
+}
+
+variable "domain" {
+  type = string
 }
 
 variable "project_name" {
@@ -8,34 +23,12 @@ variable "project_name" {
   default = "mycrocloud"
 }
 
-variable "domain" {
+variable "aws_region" {
   type    = string
-  default = "mycrocloud.info"
+  default = "ap-northeast-1"
 }
 
 variable "k8s_version" {
   type    = string
   default = "1.33"
-}
-
-variable "ghcr_pat" {
-  type      = string
-  sensitive = true
-}
-
-variable "ghcr_username" {
-  type = string
-}
-
-variable "cloudflare_api_token" {
-  type      = string
-  sensitive = true
-}
-
-variable "cloudflare_account_id" {
-  type = string
-}
-
-variable "cloudflare_zone_id" {
-  type = string
 }

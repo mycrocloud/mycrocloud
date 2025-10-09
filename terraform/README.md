@@ -1,9 +1,7 @@
 ### TODO
-- [ ] Decide to create ALB using controller or manually (both using terraform)
 
-- [ ]
-
-### Quick commands
+### MEMO
+Write kubecofig
 ```bash
-eksctl utils write-kubeconfig --region ap-northeast-1 --cluster mycrocloud
+eksctl utils write-kubeconfig --cluster=mycrocloud
 ```
