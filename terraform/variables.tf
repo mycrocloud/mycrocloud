@@ -14,6 +14,10 @@ variable "cloudflare_zone_id" {
   description = "Cloudflare zone ID for the domain"
 }
 
+variable "domain" {
+  type = string
+}
+
 variable "project_name" {
   type    = string
   default = "mycrocloud"
