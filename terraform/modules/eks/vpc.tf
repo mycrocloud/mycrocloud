@@ -18,8 +18,7 @@ resource "aws_subnet" "public_az1" {
   map_public_ip_on_launch = true
 
   tags = {
-    "kubernetes.io/role/elb"                    = "1"
-    "kubernetes.io/cluster/${var.project_name}" = "shared"
+    "kubernetes.io/role/elb" = "1"
   }
 }
 
@@ -30,8 +29,7 @@ resource "aws_subnet" "public_az2" {
   map_public_ip_on_launch = true
 
   tags = {
-    "kubernetes.io/role/elb"                    = "1"
-    "kubernetes.io/cluster/${var.project_name}" = "shared"
+    "kubernetes.io/role/elb" = "1"
   }
 }
 
@@ -41,8 +39,7 @@ resource "aws_subnet" "private_az1" {
   cidr_block        = "10.0.16.0/20"
 
   tags = {
-    "kubernetes.io/role/internal-elb"           = "1"
-    "kubernetes.io/cluster/${var.project_name}" = "shared"
+    "kubernetes.io/role/internal-elb" = "1"
   }
 }
 
@@ -52,8 +49,7 @@ resource "aws_subnet" "private_az2" {
   cidr_block        = "10.0.32.0/20"
 
   tags = {
-    "kubernetes.io/role/internal-elb"           = "1"
-    "kubernetes.io/cluster/${var.project_name}" = "shared"
+    "kubernetes.io/role/internal-elb" = "1"
   }
 }
 

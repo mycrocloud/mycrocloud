@@ -13,7 +13,6 @@ resource "helm_release" "nginx_ingress" {
   values = [
     yamlencode({
       controller = {
-        replicaCount = 2
         service = {
           type = "LoadBalancer"
         }

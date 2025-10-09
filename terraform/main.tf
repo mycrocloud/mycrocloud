@@ -15,23 +15,33 @@ terraform {
       source  = "cloudflare/cloudflare"
       version = "~> 5"
     }
+
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.38"
+    }
+
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 3.0"
+    }
   }
 
   required_version = ">= 1.2"
 }
 
+module "eks" {
+  source       = "./modules/eks"
+  cluster_name = var.project_name
+  aws_region   = var.aws_region
+  k8s_version  = var.k8s_version
+}
 
-resource "aws_eks_cluster" "cluster" {
-  name    = var.project_name
-  version = var.k8s_version
+module "cloudflare" {
+  source = "./modules/cloudflare"
 
-  role_arn = aws_iam_role.cluster_role.arn
-
-  vpc_config {
-    subnet_ids = [aws_subnet.private_az1.id, aws_subnet.private_az2.id]
-  }
-
-  depends_on = [
-    aws_iam_role_policy_attachment.AmazonEKSClusterPolicy
-  ]
+  cloudflare_api_token  = var.cloudflare_api_token
+  cloudflare_account_id = var.cloudflare_account_id
+  cloudflare_zone_id    = var.cloudflare_zone_id
+  ingress_hostname      = module.eks.ingress_nginx_hostname
 }
