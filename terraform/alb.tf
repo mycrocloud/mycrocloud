@@ -55,13 +55,6 @@ resource "helm_release" "aws-load-balancer-controller" {
   }]
 }
 
-data "kubernetes_service" "alb" {
-  metadata {
-    name = "aws-load-balancer-controller"
-    namespace = helm_release.aws-load-balancer-controller.namespace
-  }
-}
-
 data "aws_lb" "alb" {
   tags = {
     "elbv2.k8s.aws/cluster"    = aws_eks_cluster.cluster.name
