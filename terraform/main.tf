@@ -1,8 +1,9 @@
 terraform {
   backend "s3" {
-    bucket = "mycrocloud"
-    key    = "terraform.tfstate"
-    region = "ap-northeast-1"
+    bucket  = "mycrocloud"
+    key     = "terraform.tfstate"
+    profile = "default"
+    region  = "ap-northeast-1"
   }
 
   required_providers {
