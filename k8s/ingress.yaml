@@ -1,20 +1,17 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: web-ingress
-  annotations:
-    alb.ingress.kubernetes.io/scheme: internet-facing
-    alb.ingress.kubernetes.io/target-type: ip
+  name: ingress
 spec:
-  ingressClassName: alb
+  ingressClassName: nginx
   rules:
     - host: mycrocloud.info
       http:
-          paths:
-            - path: /
-              pathType: Prefix
-              backend:
-                service:
-                  name: web-service
-                  port:
-                    number: 80
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-service
+                port:
+                  number: 80
