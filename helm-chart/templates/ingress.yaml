@@ -2,6 +2,9 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ .Release.Name }}-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
   ingressClassName: nginx
   rules:
@@ -13,5 +16,12 @@ spec:
             backend:
               service:
                 name: {{ .Release.Name }}-web
+                port:
+                  number: {{ .Values.web.service.port }}
+          - path: /api/(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ .Release.Name }}-api
                 port:
                   number: {{ .Values.web.service.port }}
