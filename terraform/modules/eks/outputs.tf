@@ -14,7 +14,7 @@ output "cluster_certificate_authority" {
   sensitive   = true
 }
 
-output "ingress_nginx_hostname" {
-  description = "LoadBalancer hostname for nginx ingress controller"
-  value       = data.kubernetes_service.nginx_ingress_lb.status[0].load_balancer[0].ingress[0].hostname
+output "load_balancer_hostname" {
+  description = "LoadBalancer hostname"
+  value       = data.kubernetes_service.traefik.status[0].load_balancer[0].ingress[0].hostname
 }
