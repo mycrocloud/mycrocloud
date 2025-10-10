@@ -1,4 +1,14 @@
 apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: strip-api
+spec:
+  stripPrefix:
+    prefixes:
+      - /api
+
+---
+apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: ingress
@@ -6,6 +16,13 @@ spec:
   entryPoints:
     - web
   routes:
+    - match: Host(`{{ .Values.host }}`) && PathPrefix(`/api`)
+      kind: Rule
+      middlewares:
+        - name: strip-api
+      services:
+        - name: {{ .Release.Name }}-api
+          port: 80
     - match: Host(`{{ .Values.host }}`)
       kind: Rule
       services:
