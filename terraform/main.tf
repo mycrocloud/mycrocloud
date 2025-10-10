@@ -43,5 +43,5 @@ module "cloudflare" {
   cloudflare_api_token  = var.cloudflare_api_token
   cloudflare_account_id = var.cloudflare_account_id
   cloudflare_zone_id    = var.cloudflare_zone_id
-  ingress_hostname      = module.eks.ingress_nginx_hostname
+  hostname              = module.eks.load_balancer_hostname
 }
