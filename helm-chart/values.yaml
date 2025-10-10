@@ -28,7 +28,7 @@ api:
     AppIntegrations__GitHubWebhook__Config__Secret: ""
     Elasticsearch__Password: ""
 
-apigatewate:
+apigateway:
   replicaCount: 2
   containerPort: 8080
   imagePullSecret: ghcr-secret
