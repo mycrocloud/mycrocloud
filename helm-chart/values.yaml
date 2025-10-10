@@ -1,3 +1,5 @@
+host: mycrocloud.info
+
 web:
   replicaCount: 1
   containerPort: 80
