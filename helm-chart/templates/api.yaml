@@ -19,6 +19,11 @@ spec:
           image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
           ports:
             - containerPort: {{ .Values.api.containerPort }}
+          env:
+            {{- range $key, $value := .Values.api.secretEnv }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
           
 
 ---

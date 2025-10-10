@@ -19,6 +19,13 @@ api:
   service:
     type: ClusterIP
     port: 80
+  secretEnv:
+    ConnectionStrings__DefaultConnection: ""
+    ConnectionStrings__RabbitMq: ""
+    OAuthApps__GitHub__ClientSecret: ""
+    AppIntegrations__GitHubWebhook__Config__Secret: ""
+    Elasticsearch__Password: ""
+    ConnectionStrings__Redis: ""
 
 ingress:
   enabled: true
