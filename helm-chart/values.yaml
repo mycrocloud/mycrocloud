@@ -41,7 +41,3 @@ apigateway:
   secretEnv:
     ConnectionStrings__DefaultConnection: ""
     ConnectionStrings__Redis: ""
-
-ingress:
-  enabled: true
-  host: mycrocloud.info
