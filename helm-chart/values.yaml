@@ -8,3 +8,18 @@ web:
   service:
     type: ClusterIP
     port: 80
+
+api:
+  replicaCount: 2
+  containerPort: 8080
+  image:
+    repository: ghcr.io/mycrocloud/mycrocloud-api
+    tag: dev
+  imagePullSecret: ghcr-secret
+  service:
+    type: ClusterIP
+    port: 80
+
+ingress:
+  enabled: true
+  host: mycrocloud.info
