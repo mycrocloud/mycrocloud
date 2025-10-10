@@ -25,6 +25,19 @@ api:
     OAuthApps__GitHub__ClientSecret: ""
     AppIntegrations__GitHubWebhook__Config__Secret: ""
     Elasticsearch__Password: ""
+
+apigatewate:
+  replicaCount: 2
+  containerPort: 8080
+  imagePullSecret: ghcr-secret
+  image:
+    repository: ghcr.io/mycrocloud/mycrocloud-apigateway
+    tag: dev
+  service:
+    type: ClusterIP
+    port: 80
+  secretEnv:
+    ConnectionStrings__DefaultConnection: ""
     ConnectionStrings__Redis: ""
 
 ingress:
