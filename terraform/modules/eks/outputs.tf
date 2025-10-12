@@ -13,8 +13,3 @@ output "cluster_certificate_authority" {
   value       = aws_eks_cluster.cluster.certificate_authority[0].data
   sensitive   = true
 }
-
-output "load_balancer_hostname" {
-  description = "LoadBalancer hostname"
-  value       = data.kubernetes_service.traefik.status[0].load_balancer[0].ingress[0].hostname
-}
