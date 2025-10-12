@@ -32,7 +32,3 @@ variable "k8s_version" {
   type    = string
   default = "1.33"
 }
-
-variable "load_balancer_hostname" {
-  type = string
-}
