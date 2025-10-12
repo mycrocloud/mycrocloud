@@ -1,5 +1,3 @@
-Deploy
-```bash
 export $(cat .env | xargs) 
 helm upgrade --install mycrocloud \
 --set api.secretEnv.ConnectionStrings__DefaultConnection=$ConnectionStrings__DefaultConnection \
@@ -11,4 +9,3 @@ helm upgrade --install mycrocloud \
 --set apigateway.secretEnv.ConnectionStrings__DefaultConnection=$ConnectionStrings__DefaultConnection \
 --set apigateway.secretEnv.ConnectionStrings__Redis=$ConnectionStrings__Redis \
 .
-```
