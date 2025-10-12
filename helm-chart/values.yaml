@@ -1,4 +1,5 @@
 host: mycrocloud.info
+apigateway_server_name: ~^apigw-\d+\.mycrocloud\.info$
 
 web:
   replicaCount: 1
