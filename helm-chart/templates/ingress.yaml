@@ -1,57 +1,59 @@
-apiVersion: traefik.io/v1alpha1
-kind: Middleware
+apiVersion: v1
+kind: ConfigMap
 metadata:
-  name: strip-api
-spec:
-  stripPrefix:
-    prefixes:
-      - /api
+  name: nginx-lb-config
+data:
+  nginx.conf: |
+{{ .Files.Get "config/nginx/nginx.conf" | indent 4 }}
+  web.conf: |
+{{ (.Files.Get "config/nginx/web.conf"
+  | replace "$WEB_SERVICE$" (printf "%s-web" .Release.Name)
+  | replace "$API_SERVICE$" (printf "%s-api" .Release.Name)
+) | indent 4
+}}
 
 ---
-apiVersion: traefik.io/v1alpha1
-kind: Middleware
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: extract-appid
+  name: nginx-lb
 spec:
-  plugin:
-    regexextractor:
-      regex: "^apigw-(?P<appid>[0-9]+)\\.mycrocloud\\.info$" # Check if can use a value from values.yaml here
-      headers:
-        X-App-Id: "{appid}"
-
----
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
-metadata:
-  name: ingress
-spec:
-  entryPoints:
-    - web
-  routes:
-    - match: HostRegexp(`^apigw-([0-9]+)\.mycrocloud\.info$`)
-      kind: Rule
-      middlewares:
-        - name: extract-appid
-      services:
-        - name: {{ .Release.Name }}-apigateway
-          port: 80
-
-    - match: Host(`apigw.{{ .Values.host }}`)
-      kind: Rule
-      services:
-        - name: {{ .Release.Name }}-apigateway
-          port: 80
-
-    - match: Host(`{{ .Values.host }}`) && PathPrefix(`/api`)
-      kind: Rule
-      middlewares:
-        - name: strip-api
-      services:
-        - name: {{ .Release.Name }}-api
-          port: 80
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx-lb
+  template:
+    metadata:
+      labels:
+        app: nginx-lb
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:stable
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: config
+          subPath: nginx.conf
+          mountPath: /etc/nginx/nginx.conf
+        - name: config
+          subPath: web.conf
+          mountPath: /etc/nginx/conf.d/web.conf
           
-    - match: Host(`{{ .Values.host }}`)
-      kind: Rule
-      services:
-        - name: {{ .Release.Name }}-web
-          port: 80
+      volumes:
+      - name: config
+        configMap:
+          name: nginx-lb-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-lb-svc
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx-lb
+  ports:
+  - port: 80
+    targetPort: 80
