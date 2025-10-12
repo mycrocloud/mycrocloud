@@ -1,0 +1,57 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: strip-api
+spec:
+  stripPrefix:
+    prefixes:
+      - /api
+
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: extract-appid
+spec:
+  plugin:
+    regexextractor:
+      regex: "^apigw-(?P<appid>[0-9]+)\\.mycrocloud\\.info$" # Check if can use a value from values.yaml here
+      headers:
+        X-App-Id: "{appid}"
+
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ingress
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: HostRegexp(`^apigw-([0-9]+)\.mycrocloud\.info$`)
+      kind: Rule
+      middlewares:
+        - name: extract-appid
+      services:
+        - name: {{ .Release.Name }}-apigateway
+          port: 80
+
+    - match: Host(`apigw.{{ .Values.host }}`)
+      kind: Rule
+      services:
+        - name: {{ .Release.Name }}-apigateway
+          port: 80
+
+    - match: Host(`{{ .Values.host }}`) && PathPrefix(`/api`)
+      kind: Rule
+      middlewares:
+        - name: strip-api
+      services:
+        - name: {{ .Release.Name }}-api
+          port: 80
+          
+    - match: Host(`{{ .Values.host }}`)
+      kind: Rule
+      services:
+        - name: {{ .Release.Name }}-web
+          port: 80
