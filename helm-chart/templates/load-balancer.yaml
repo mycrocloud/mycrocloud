@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-lb-config
+data:
+  nginx.conf: |
+{{ .Files.Get "config/nginx/nginx.conf" | indent 4 }}
+  web.conf: |
+{{ (.Files.Get "config/nginx/web.conf"
+  | replace "$WEB_SERVICE$" (printf "%s-web" .Release.Name)
+  | replace "$API_SERVICE$" (printf "%s-api" .Release.Name)
+) | indent 4
+}}
+  apigateway.conf: |
+{{ (.Files.Get "config/nginx/apigateway.conf"
+  | replace "$SERVER_NAME$" .Values.apigateway_server_name
+  | replace "$APIGATEWAY_SERVICE$" (printf "%s-apigateway" .Release.Name)
+) | indent 4
+}}  
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-lb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-lb
+  template:
+    metadata:
+      labels:
+        app: nginx-lb
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:stable
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: config
+          subPath: nginx.conf
+          mountPath: /etc/nginx/nginx.conf
+        - name: config
+          subPath: web.conf
+          mountPath: /etc/nginx/conf.d/web.conf
+        - name: config
+          subPath: apigateway.conf
+          mountPath: /etc/nginx/conf.d/apigateway.conf
+          
+      volumes:
+      - name: config
+        configMap:
+          name: nginx-lb-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: load-balancer
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx-lb
+  ports:
+  - port: 80
+    targetPort: 80

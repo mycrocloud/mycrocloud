@@ -14,7 +14,12 @@ output "cluster_certificate_authority" {
   sensitive   = true
 }
 
+data "kubernetes_service" "load_balancer" {
+  metadata {
+    name = "load-balancer"
+  }
+}
+
 output "load_balancer_hostname" {
-  description = "LoadBalancer hostname"
-  value       = data.kubernetes_service.traefik.status[0].load_balancer[0].ingress[0].hostname
+  value = data.kubernetes_service.load_balancer.status[0].load_balancer[0].ingress[0].hostname
 }
