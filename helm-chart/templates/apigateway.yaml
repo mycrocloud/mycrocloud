@@ -1,35 +1,35 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Release.Name }}-apigatewate-appsettings
+  name: {{ .Release.Name }}-apigateway-appsettings
 data:
   appsettings.json: |
-{{ .Files.Get "config/apigatewate.appsettings.json" | indent 4 }}
+{{ .Files.Get "config/apigateway.appsettings.json" | indent 4 }}
 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-apigatewate
+  name: {{ .Release.Name }}-apigateway
 spec:
-  replicas: {{ .Values.apigatewate.replicaCount }}
+  replicas: {{ .Values.apigateway.replicaCount }}
   selector:
     matchLabels:
-      app: {{ .Release.Name }}-apigatewate
+      app: {{ .Release.Name }}-apigateway
   template:
     metadata:
       labels:
-        app: {{ .Release.Name }}-apigatewate
+        app: {{ .Release.Name }}-apigateway
     spec:
       imagePullSecrets:
-        - name: {{ .Values.apigatewate.imagePullSecret }}
+        - name: {{ .Values.apigateway.imagePullSecret }}
       containers:
-        - name: apigatewate
-          image: "{{ .Values.apigatewate.image.repository }}:{{ .Values.apigatewate.image.tag }}"
+        - name: apigateway
+          image: "{{ .Values.apigateway.image.repository }}:{{ .Values.apigateway.image.tag }}"
           ports:
-            - containerPort: {{ .Values.apigatewate.containerPort }}
+            - containerPort: {{ .Values.apigateway.containerPort }}
           env:
-            {{- range $key, $value := .Values.apigatewate.secretEnv }}
+            {{- range $key, $value := .Values.apigateway.secretEnv }}
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
@@ -42,17 +42,17 @@ spec:
       volumes:
         - name: appsettings
           configMap:
-            name: {{ .Release.Name }}-apigatewate-appsettings
+            name: {{ .Release.Name }}-apigateway-appsettings
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-apigatewate
+  name: {{ .Release.Name }}-apigateway
 spec:
   selector:
-    app: {{ .Release.Name }}-apigatewate
+    app: {{ .Release.Name }}-apigateway
   ports:
-    - port: {{ .Values.apigatewate.service.port }}
-      targetPort: {{ .Values.apigatewate.containerPort }}
-  type: {{ .Values.apigatewate.service.type }}
+    - port: {{ .Values.apigateway.service.port }}
+      targetPort: {{ .Values.apigateway.containerPort }}
+  type: {{ .Values.apigateway.service.type }}

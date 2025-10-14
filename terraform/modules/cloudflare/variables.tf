@@ -16,7 +16,6 @@ variable "cloudflare_zone_id" {
   type = string
 }
 
-variable "ingress_hostname" {
+variable "hostname" {
   type        = string
-  description = "LoadBalancer hostname from nginx ingress controller"
 }

@@ -15,7 +15,7 @@ resource "cloudflare_dns_record" "root" {
   name    = "@"
   type    = "CNAME"
   ttl     = 1
-  content = var.ingress_hostname
+  content = var.hostname
 
   proxied = true
 }
