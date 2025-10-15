@@ -72,4 +72,6 @@ resource "aws_instance" "server" {
   key_name                    = aws_key_pair.ssh_key.key_name
   associate_public_ip_address = true
   subnet_id                   = aws_subnet.subnet.id
+
+  user_data = file("user_data.sh")
 }
