@@ -16,5 +16,6 @@ sudo apt-get update
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
 # https://docs.docker.com/engine/install/linux-postinstall/
-sudo usermod -aG docker $USER
-newgrp docker
+sudo usermod -aG docker ubuntu  # Use explicit username
+sudo systemctl enable docker    # Ensure Docker starts on boot
+sudo systemctl start docker     # Start Docker immediately
