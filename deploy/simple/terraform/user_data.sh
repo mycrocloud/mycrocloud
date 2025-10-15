@@ -1,4 +1,5 @@
 #!/bin/sh
+# https://docs.docker.com/engine/install/ubuntu/
 # Add Docker's official GPG key:
 sudo apt-get update
 sudo apt-get install -y ca-certificates curl
@@ -13,3 +14,7 @@ echo \
   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 sudo apt-get update
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# https://docs.docker.com/engine/install/linux-postinstall/
+sudo usermod -aG docker $USER
+newgrp docker
