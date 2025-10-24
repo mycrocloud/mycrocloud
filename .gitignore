@@ -458,3 +458,4 @@ $RECYCLE.BIN/
 appsettings.Production.json
 
 elastic-start-local
+.envrc
