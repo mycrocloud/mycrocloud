@@ -10,7 +10,6 @@ using WebApp.Domain.Repositories;
 using WebApp.Domain.Services;
 using WebApp.Infrastructure;
 using WebApp.Api.Extensions;
-using WebApp.Api.Services;
 
 namespace WebApp.Api.Controllers;
 

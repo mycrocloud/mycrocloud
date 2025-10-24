@@ -2,6 +2,9 @@ namespace WebApp.Domain.Entities;
 
 public class UserToken
 {
+    public int Id { get; set; }
+    
+    public string Name { get; set; }
     public string UserId { get; set; }
     public string Token { get; set; }
     public string Provider { get; set; }
@@ -13,4 +16,5 @@ public class UserToken
 public enum UserTokenPurpose
 {
     AppIntegration,
+    ApiToken
 }

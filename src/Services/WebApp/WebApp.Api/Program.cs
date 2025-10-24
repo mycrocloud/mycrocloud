@@ -9,6 +9,7 @@ using System.Reflection;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Transport;
 using Nest;
+using WebApp.Api.Authentications;
 using WebApp.Infrastructure;
 using WebApp.Infrastructure.Repositories;
 using WebApp.Api.Filters;
@@ -44,12 +45,18 @@ builder.Services.AddCors(options =>
 });
 
 // 1. Add Authentication Services
-builder.Services.AddAuthentication()
-    .AddJwtBearer(options =>
+builder.Services.AddAuthentication("MultiAuthSchemes")
+    .AddJwtBearer("JWT", options =>
     {
         options.Authority = builder.Configuration["Authentication:Schemes:Auth0JwtBearer:Authority"];
         options.Audience = builder.Configuration["Authentication:Schemes:Auth0JwtBearer:Audience"];
+    })
+    .AddScheme<ApiTokenAuthenticationOptions, ApiTokenAuthenticationHandler>("PAT", options => { })
+    .AddPolicyScheme("MultiAuthSchemes", displayName: null, options =>
+    {
+        options.ForwardDefaultSelector = ctx => ctx.Request.Host.Host.StartsWith("api") ? "PAT" : "JWT";
     });
+
 builder.Services.AddAuthorization();
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
