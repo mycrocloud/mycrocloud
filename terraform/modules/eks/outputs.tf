@@ -13,13 +13,3 @@ output "cluster_certificate_authority" {
   value       = aws_eks_cluster.cluster.certificate_authority[0].data
   sensitive   = true
 }
-
-data "kubernetes_service" "load_balancer" {
-  metadata {
-    name = "load-balancer"
-  }
-}
-
-output "load_balancer_hostname" {
-  value = data.kubernetes_service.load_balancer.status[0].load_balancer[0].ingress[0].hostname
-}
