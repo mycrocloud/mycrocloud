@@ -112,8 +112,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .WithMany(a => a.Objects)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder.Entity<UserToken>()
-            .HasKey(t => new { t.UserId, t.Provider, t.Purpose });
+        // modelBuilder.Entity<UserToken>()
+        //     .HasKey(t => new { t.UserId, t.Provider, t.Purpose });
 
         modelBuilder.Entity<AppBuildJob>()
             .Property(p => p.Name)

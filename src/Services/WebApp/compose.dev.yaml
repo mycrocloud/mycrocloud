@@ -61,6 +61,8 @@ services:
 
   rabbitmq:
     image: rabbitmq:4.0.9-alpine
+    ports:
+      - "5672:5672"
     healthcheck:
       test: [ "CMD", "rabbitmq-diagnostics", "-q", "check_running" ]
       interval: 5s

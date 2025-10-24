@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0.202 AS build
 WORKDIR /source
 
-RUN dotnet tool install --global dotnet-ef
+RUN dotnet tool install --global dotnet-ef --version 8.0.12
 ENV PATH="${PATH}:/root/.dotnet/tools"
 
 COPY WebApp.Domain/WebApp.Domain.csproj WebApp.Domain/
