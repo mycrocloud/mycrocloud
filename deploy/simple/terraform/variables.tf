@@ -1,8 +1,3 @@
-variable "ssh_public_key" {
-  type        = string
-  description = "SSH public key for EC2 instance access"
-}
-
 variable "project_name" {
   type        = string
   description = "Project name used for resource naming"

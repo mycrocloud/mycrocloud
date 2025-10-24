@@ -5,11 +5,14 @@ terraform {
       version = "~> 6.16.0"
     }
   }
+
+  backend "s3" {
+    bucket = "075313985331-terraform"
+    key    = "mycrocloud-simple-deploy/terraform.tfstate"
+  }
 }
 
-provider "aws" {
-  region = var.aws_region
-}
+provider "aws" {}
 
 data "aws_ami" "ubuntu" {
   most_recent = true
@@ -26,7 +29,7 @@ data "aws_ami" "ubuntu" {
 
 resource "aws_key_pair" "ssh_key" {
   key_name   = "${var.project_name}-key"
-  public_key = var.ssh_public_key
+  public_key = file("id.pub")
 
   tags = {
     Name = "${var.project_name}-key"
@@ -74,12 +77,12 @@ resource "aws_route_table" "public" {
   }
 }
 
-resource "aws_route_table_association" "public" {
+resource "aws_route_table_association" "public_assoc" {
   route_table_id = aws_route_table.public.id
   subnet_id      = aws_subnet.subnet.id
 }
 
-resource "aws_security_group" "server" {
+resource "aws_security_group" "sg" {
   name        = "${var.project_name}-server-sg"
   description = "Security group for server instance"
   vpc_id      = aws_vpc.vpc.id
@@ -128,7 +131,7 @@ resource "aws_instance" "server" {
   key_name                    = aws_key_pair.ssh_key.key_name
   associate_public_ip_address = true
   subnet_id                   = aws_subnet.subnet.id
-  vpc_security_group_ids      = [aws_security_group.server.id]
+  vpc_security_group_ids      = [aws_security_group.sg.id]
 
   user_data = file("user_data.sh")
 
