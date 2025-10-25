@@ -1,3 +1,7 @@
+locals {
+  project_name = "mycrocloud"
+}
+
 terraform {
   required_providers {
     aws = {
@@ -7,10 +11,6 @@ terraform {
 
     cloudflare = {
       source = "cloudflare/cloudflare"
-    }
-
-    auth0 = {
-      source = "auth0/auth0"
     }
   }
 
@@ -40,11 +40,11 @@ data "aws_ami" "ubuntu" {
 }
 
 resource "aws_key_pair" "ssh_key" {
-  key_name   = "${var.project_name}-key"
-  public_key = file("id.pub")
+  key_name   = "${locals.project_name}-key"
+  public_key = var.public_key
 
   tags = {
-    Name = "${var.project_name}-key"
+    Name = "${locals.project_name}-key"
   }
 }
 
@@ -54,7 +54,7 @@ resource "aws_vpc" "vpc" {
   enable_dns_support   = true
 
   tags = {
-    Name = "${var.project_name}-vpc"
+    Name = "${locals.project_name}-vpc"
   }
 }
 
@@ -62,7 +62,7 @@ resource "aws_internet_gateway" "ig" {
   vpc_id = aws_vpc.vpc.id
 
   tags = {
-    Name = "${var.project_name}-igw"
+    Name = "${locals.project_name}-igw"
   }
 }
 
@@ -71,7 +71,7 @@ resource "aws_subnet" "subnet" {
   cidr_block        = "10.0.1.0/24"
 
   tags = {
-    Name = "${var.project_name}-subnet"
+    Name = "${locals.project_name}-subnet"
   }
 }
 
@@ -84,7 +84,7 @@ resource "aws_route_table" "public" {
   }
 
   tags = {
-    Name = "${var.project_name}-public-rt"
+    Name = "${locals.project_name}-public-rt"
   }
 }
 
@@ -94,7 +94,7 @@ resource "aws_route_table_association" "public_assoc" {
 }
 
 resource "aws_security_group" "sg" {
-  name        = "${var.project_name}-server-sg"
+  name        = "${locals.project_name}-server-sg"
   description = "Security group for server instance"
   vpc_id      = aws_vpc.vpc.id
 
@@ -131,7 +131,7 @@ resource "aws_security_group" "sg" {
   }
 
   tags = {
-    Name = "${var.project_name}-server-sg"
+    Name = "${locals.project_name}-server-sg"
   }
 }
 
@@ -147,7 +147,7 @@ resource "aws_instance" "server" {
   user_data = file("user_data.sh")
 
   tags = {
-    Name = "${var.project_name}-server"
+    Name = "${locals.project_name}-server"
   }
 }
 

@@ -1,8 +1,3 @@
-variable "project_name" {
-  type        = string
-  default     = "mycrocloud"
-}
-
 variable "public_key" {
   type = string
 }
