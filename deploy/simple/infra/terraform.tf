@@ -4,16 +4,27 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 6.16.0"
     }
+
+    cloudflare = {
+      source = "cloudflare/cloudflare"
+    }
+
+    auth0 = {
+      source = "auth0/auth0"
+    }
   }
 
-  // update with your S3 bucket info
   backend "s3" {
-    bucket = "075313985331-terraform"
-    key    = "mycrocloud-simple-deploy/terraform.tfstate"
+    bucket = ""
+    key    = ""
   }
 }
 
 provider "aws" {}
+
+provider "cloudflare" {
+  api_token = var.cloudflare_api_token
+}
 
 data "aws_ami" "ubuntu" {
   most_recent = true
@@ -38,7 +49,7 @@ resource "aws_key_pair" "ssh_key" {
 }
 
 resource "aws_vpc" "vpc" {
-  cidr_block           = var.vpc_cidr
+  cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
   enable_dns_support   = true
 
@@ -57,8 +68,7 @@ resource "aws_internet_gateway" "ig" {
 
 resource "aws_subnet" "subnet" {
   vpc_id            = aws_vpc.vpc.id
-  cidr_block        = var.subnet_cidr
-  availability_zone = var.availability_zone
+  cidr_block        = "10.0.1.0/24"
 
   tags = {
     Name = "${var.project_name}-subnet"
@@ -127,7 +137,7 @@ resource "aws_security_group" "sg" {
 
 resource "aws_instance" "server" {
   ami           = data.aws_ami.ubuntu.id
-  instance_type = var.instance_type
+  instance_type = "t3.micro"
 
   key_name                    = aws_key_pair.ssh_key.key_name
   associate_public_ip_address = true
@@ -139,4 +149,17 @@ resource "aws_instance" "server" {
   tags = {
     Name = "${var.project_name}-server"
   }
+}
+
+data "cloudflare_zone" "zone" {
+  zone_id = var.cloudflare_zone_id
+}
+
+resource "cloudflare_dns_record" "apex" {
+  zone_id = data.cloudflare_zone.zone.zone_id
+  name    = "@"
+  type = "A"
+  ttl = 1
+  content = aws_instance.server.public_ip
+  proxied = true
 }
