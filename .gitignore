@@ -457,5 +457,5 @@ $RECYCLE.BIN/
 .env.production
 appsettings.Production.json
 
-elastic-start-local
+.key
 .envrc

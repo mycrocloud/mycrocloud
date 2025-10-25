@@ -6,6 +6,7 @@ terraform {
     }
   }
 
+  // update with your S3 bucket info
   backend "s3" {
     bucket = "075313985331-terraform"
     key    = "mycrocloud-simple-deploy/terraform.tfstate"

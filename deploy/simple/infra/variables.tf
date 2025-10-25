@@ -4,12 +4,6 @@ variable "project_name" {
   default     = "mycrocloud"
 }
 
-variable "aws_region" {
-  type        = string
-  description = "AWS region for resources"
-  default     = "ap-northeast-1"
-}
-
 variable "availability_zone" {
   type        = string
   description = "Availability zone for subnet"

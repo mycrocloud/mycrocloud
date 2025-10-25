@@ -1,0 +1,68 @@
+services:
+  db-migrator:
+    image: ghcr.io/mycrocloud/mycrocloud-db-migrator:dev
+    container_name: mycrocloud-db-migrator
+    environment:
+      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
+    volumes:
+      - ./config/Services/WebApp/WebApp.Migrations/appsettings.json:/db-migrator/appsettings.json:ro
+
+  seq:
+    image: datalust/seq
+    container_name: mycrocloud-seq
+    volumes:
+      - mycrocloud-seq-data:/data
+    environment:
+      - ACCEPT_EULA=Y
+      - SEQ_FIRSTRUN_ADMINPASSWORDHASH=QP3ZwBGCUn+Ija3VuMpr3OAzeWmNgYRh/TxaA3V9hOWUQHiL5fA3g3SQjYi/Q7W6co8ui1CO3pZQh5TfxJU511iqGOQRxrKSCd+2kSJcddf9
+
+  webapp:
+    image: ghcr.io/mycrocloud/mycrocloud-webapp:dev
+    container_name: mycrocloud-webapp
+
+  api:
+    image: ghcr.io/mycrocloud/mycrocloud-api:dev
+    container_name: mycrocloud-api
+    environment:
+      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
+      - ConnectionStrings__RabbitMq=${ConnectionStrings__RabbitMq}
+      - OAuthApps__GitHub__ClientSecret=${OAuthApps__GitHub__ClientSecret}
+      - AppIntegrations__GitHubWebhook__Config__Secret=${AppIntegrations__GitHubWebhook__Config__Secret}
+      - Elasticsearch__Password=${Elasticsearch__Password}
+    volumes:
+      - ./config/Services/WebApp/WebApp.Api/appsettings.json:/app/appsettings.json:ro
+
+  apigateway:
+    image: ghcr.io/mycrocloud/mycrocloud-apigateway:dev
+    container_name: mycrocloud-apigateway
+    environment:
+      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
+      - ConnectionStrings__Redis=${ConnectionStrings__Redis}
+    volumes:
+      - ./config/Services/WebApp/WebApp.ApiGateway/appsettings.json:/app/appsettings.json:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /srv/function-data:/srv/function-data
+
+  lb:
+    image: nginx:mainline-alpine3.18-perl
+    container_name: mycrocloud-lb
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - ./nginx/includes:/etc/nginx/includes:ro
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+
+  editor:
+    image: ghcr.io/mycrocloud/mycrocloud-editor:dev
+    container_name: mycrocloud-editor
+
+volumes:
+  mycrocloud-seq-data:
+
+
+networks:
+  default:
+    name: mycrocloud_dev
