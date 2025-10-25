@@ -1,7 +1,3 @@
-locals {
-  project_name = "mycrocloud"
-}
-
 terraform {
   required_providers {
     aws = {
@@ -26,6 +22,10 @@ provider "cloudflare" {
   api_token = var.cloudflare_api_token
 }
 
+locals {
+  project_name = "mycrocloud"
+}
+
 data "aws_ami" "ubuntu" {
   most_recent = true
   owners      = ["099720109477"] // Canonical
@@ -40,11 +40,11 @@ data "aws_ami" "ubuntu" {
 }
 
 resource "aws_key_pair" "ssh_key" {
-  key_name   = "${locals.project_name}-key"
+  key_name   = "${local.project_name}-key"
   public_key = var.public_key
 
   tags = {
-    Name = "${locals.project_name}-key"
+    Name = "${local.project_name}-key"
   }
 }
 
@@ -54,7 +54,7 @@ resource "aws_vpc" "vpc" {
   enable_dns_support   = true
 
   tags = {
-    Name = "${locals.project_name}-vpc"
+    Name = "${local.project_name}-vpc"
   }
 }
 
@@ -62,7 +62,7 @@ resource "aws_internet_gateway" "ig" {
   vpc_id = aws_vpc.vpc.id
 
   tags = {
-    Name = "${locals.project_name}-igw"
+    Name = "${local.project_name}-igw"
   }
 }
 
@@ -71,7 +71,7 @@ resource "aws_subnet" "subnet" {
   cidr_block        = "10.0.1.0/24"
 
   tags = {
-    Name = "${locals.project_name}-subnet"
+    Name = "${local.project_name}-subnet"
   }
 }
 
@@ -84,7 +84,7 @@ resource "aws_route_table" "public" {
   }
 
   tags = {
-    Name = "${locals.project_name}-public-rt"
+    Name = "${local.project_name}-public-rt"
   }
 }
 
@@ -94,7 +94,7 @@ resource "aws_route_table_association" "public_assoc" {
 }
 
 resource "aws_security_group" "sg" {
-  name        = "${locals.project_name}-server-sg"
+  name        = "${local.project_name}-server-sg"
   description = "Security group for server instance"
   vpc_id      = aws_vpc.vpc.id
 
@@ -131,7 +131,7 @@ resource "aws_security_group" "sg" {
   }
 
   tags = {
-    Name = "${locals.project_name}-server-sg"
+    Name = "${local.project_name}-server-sg"
   }
 }
 
@@ -147,7 +147,7 @@ resource "aws_instance" "server" {
   user_data = file("user_data.sh")
 
   tags = {
-    Name = "${locals.project_name}-server"
+    Name = "${local.project_name}-server"
   }
 }
 
