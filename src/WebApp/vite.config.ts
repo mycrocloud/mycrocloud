@@ -10,9 +10,14 @@ export default defineConfig(({ mode }) => {
       {
         name: "inject-config-tag",
         transformIndexHtml(html) {
+          const version =
+            process.env.COMMIT_HASH?.slice(0, 7) ||
+            process.env.BUILD_ID ||
+            Date.now();
+
           return html.replace(
             "</body>",
-            '<script src="config.js"></script>\n</body>',
+            `<script src="config.js?v=${version}"></script>\n</body>`,
           );
         },
       },
