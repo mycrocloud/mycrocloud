@@ -32,7 +32,7 @@ import React from "react";
 import { getConfig } from "../../config";
 const { WEBAPP_APIGATEWAY_DOMAIN } = getConfig();
 const apiGatewayDomain = WEBAPP_APIGATEWAY_DOMAIN;
-const editorOrigin = import.meta.env.VITE_EDITOR_ORIGIN as string;
+const { EDITOR_ORIGIN } = getConfig();
 
 export default function RouteCreateUpdate({
   route,
@@ -794,7 +794,7 @@ function StaticFile({ file }: { file?: IFile }) {
 }
 
 function validEditorMessage(e: MessageEvent, editor: string) {
-  if (e.origin !== editorOrigin) return false;
+  if (e.origin !== EDITOR_ORIGIN) return false;
   if (e.data.editorId !== editor) return false;
   return true;
 }
@@ -859,7 +859,7 @@ function FunctionHandler() {
           language: "javascript",
         },
       },
-      editorOrigin,
+      EDITOR_ORIGIN,
     );
   }, [editorLoaded]);
 
@@ -868,7 +868,7 @@ function FunctionHandler() {
       <label>Handler</label>
       <iframe
         ref={editorRef}
-        src={editorOrigin + "?id=" + editorId}
+        src={EDITOR_ORIGIN + "?id=" + editorId}
         style={{ width: "100%", height: "200px" }}
       />
       {errors.response && (
