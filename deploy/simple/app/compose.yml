@@ -19,6 +19,8 @@ services:
   webapp:
     image: ghcr.io/mycrocloud/mycrocloud-webapp:dev
     container_name: mycrocloud-webapp
+    volumes:
+      - ./config/Web/.env:/usr/share/nginx/html/.env:ro
 
   api:
     image: ghcr.io/mycrocloud/mycrocloud-api:dev

@@ -13,12 +13,6 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}-webapp
   WORK_DIR: src/WebApp
-  VITE_AUTH0_DOMAIN: https://auth.mycrocloud.info
-  VITE_AUTH0_CLIENTID: 8YECKUMM3I7ejQgsVky40b5LooQB0YFf
-  VITE_AUTH0_AUDIENCE: mycrocloud-api
-  VITE_WEBAPP_APIGATEWAY_DOMAIN: https://apigw-__app_id__.mycrocloud.info
-  VITE_GITHUB_CLIENTID: Ov23linUfO6vBqoA0S4n
-  VITE_EDITOR_ORIGIN: https://editor.mycrocloud.info
 
 jobs:
   build-and-push-image:
@@ -29,16 +23,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-
-      - name: Create .env.production file
-        run: |
-          echo "VITE_BASE_API_URL=${{ env.VITE_BASE_API_URL }}" >> ${{env.WORK_DIR}}/.env.production
-          echo "VITE_AUTH0_DOMAIN=${{ env.VITE_AUTH0_DOMAIN }}" >> ${{env.WORK_DIR}}/.env.production
-          echo "VITE_AUTH0_CLIENTID=${{ env.VITE_AUTH0_CLIENTID }}" >> ${{env.WORK_DIR}}/.env.production
-          echo "VITE_AUTH0_AUDIENCE=${{ env.VITE_AUTH0_AUDIENCE }}" >> ${{env.WORK_DIR}}/.env.production
-          echo "VITE_WEBAPP_APIGATEWAY_DOMAIN=${{ env.VITE_WEBAPP_APIGATEWAY_DOMAIN }}" >> ${{env.WORK_DIR}}/.env.production
-          echo "VITE_GITHUB_CLIENTID=${{ env.VITE_GITHUB_CLIENTID }}" >> ${{env.WORK_DIR}}/.env.production
-          echo "VITE_EDITOR_ORIGIN=${{ env.VITE_EDITOR_ORIGIN }}" >> ${{env.WORK_DIR}}/.env.production
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
