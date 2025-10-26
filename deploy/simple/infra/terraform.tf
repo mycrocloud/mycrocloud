@@ -8,6 +8,10 @@ terraform {
     cloudflare = {
       source = "cloudflare/cloudflare"
     }
+
+    auth0 = {
+      source = "auth0/auth0"
+    }
   }
 
   backend "s3" {
@@ -20,6 +24,13 @@ provider "aws" {}
 
 provider "cloudflare" {
   api_token = var.cloudflare_api_token
+}
+
+module "auth0" {
+  source        = "./auth0"
+  domain        = var.auth0_domain
+  client_id     = var.auth0_client_id
+  client_secret = var.auth0_client_secret
 }
 
 locals {
@@ -67,8 +78,8 @@ resource "aws_internet_gateway" "ig" {
 }
 
 resource "aws_subnet" "subnet" {
-  vpc_id            = aws_vpc.vpc.id
-  cidr_block        = "10.0.1.0/24"
+  vpc_id     = aws_vpc.vpc.id
+  cidr_block = "10.0.1.0/24"
 
   tags = {
     Name = "${local.project_name}-subnet"
@@ -158,8 +169,8 @@ data "cloudflare_zone" "zone" {
 resource "cloudflare_dns_record" "apex" {
   zone_id = data.cloudflare_zone.zone.zone_id
   name    = "@"
-  type = "A"
-  ttl = 1
+  type    = "A"
+  ttl     = 1
   content = aws_instance.server.public_ip
   proxied = true
 }
