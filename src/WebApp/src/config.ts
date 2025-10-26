@@ -3,6 +3,8 @@ interface Config {
   AUTH0_CLIENTID: string;
   AUTH0_AUDIENCE: string;
   WEBAPP_APIGATEWAY_DOMAIN: string;
+  GITHUB_CLIENTID: string;
+  VITE_EDITOR_ORIGIN: string;
 }
 
 export const getConfig = (): Config => {
@@ -15,5 +17,7 @@ export const getConfig = (): Config => {
     AUTH0_CLIENTID: import.meta.env.VITE_AUTH0_CLIENTID,
     AUTH0_AUDIENCE: import.meta.env.VITE_AUTH0_AUDIENCE,
     WEBAPP_APIGATEWAY_DOMAIN: import.meta.env.VITE_WEBAPP_APIGATEWAY_DOMAIN,
+    GITHUB_CLIENTID: import.meta.env.VITE_GITHUB_CLIENTID,
+    VITE_EDITOR_ORIGIN: import.meta.env.VITE_EDITOR_ORIGIN,
   };
 };

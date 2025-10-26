@@ -7,6 +7,8 @@ interface ImportMetaEnv {
   readonly VITE_AUTH0_CLIENTID: string;
   readonly VITE_AUTH0_AUDIENCE: string;
   readonly VITE_WEBAPP_APIGATEWAY_DOMAIN: string;
+  readonly VITE_GITHUB_CLIENTID: string;
+  readonly VITE_EDITOR_ORIGIN: string;
 }
 
 interface ImportMeta {
