@@ -41,7 +41,6 @@ export default function RouteCreateUpdate({
   route?: IRoute;
   onSubmit: (data: RouteCreateUpdateInputs) => void;
 }) {
-  //route = route || sampleRoute;
   const { app } = useContext(AppContext)!;
   if (!app) throw new Error();
   const appDomain = apiGatewayDomain.replace("__app_id__", app.id.toString());
