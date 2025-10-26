@@ -29,8 +29,9 @@ import {
 import { Link } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import React from "react";
-const apiGatewayDomain = import.meta.env
-  .VITE_WEBAPP_APIGATEWAY_DOMAIN as string;
+import { getConfig } from "../../config";
+const { WEBAPP_APIGATEWAY_DOMAIN } = getConfig();
+const apiGatewayDomain = WEBAPP_APIGATEWAY_DOMAIN;
 const editorOrigin = import.meta.env.VITE_EDITOR_ORIGIN as string;
 
 export default function RouteCreateUpdate({

@@ -13,7 +13,6 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}-webapp
   WORK_DIR: src/WebApp
-  VITE_BASE_API_URL: https://api.mycrocloud.info
   VITE_AUTH0_DOMAIN: https://auth.mycrocloud.info
   VITE_AUTH0_CLIENTID: 8YECKUMM3I7ejQgsVky40b5LooQB0YFf
   VITE_AUTH0_AUDIENCE: mycrocloud-api

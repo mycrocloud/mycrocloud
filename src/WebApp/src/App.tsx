@@ -46,15 +46,17 @@ import { ApiKeyCreateUpdate, ApiKeyList } from "./pages/authentications/apikey";
 import { default as Integrations } from "./pages/integrations";
 import { default as IntegrationsGitHubCallback } from "./pages/settings/github_callback";
 import Settings from "./pages/settings";
+import { getConfig } from "./config";
+const { AUTH0_DOMAIN, AUTH0_CLIENTID, AUTH0_AUDIENCE } = getConfig();
 
 function App() {
   return (
     <Auth0Provider
-      domain={import.meta.env.VITE_AUTH0_DOMAIN}
-      clientId={import.meta.env.VITE_AUTH0_CLIENTID}
+      domain={AUTH0_DOMAIN}
+      clientId={AUTH0_CLIENTID}
       authorizationParams={{
         redirect_uri: window.location.origin,
-        audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+        audience: AUTH0_AUDIENCE,
       }}
     >
       <BrowserRouter>
