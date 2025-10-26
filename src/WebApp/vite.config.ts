@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
 
           return html.replace(
             "</body>",
-            `<script src="config.js?v=${version}"></script>\n</body>`,
+            `<script src="_config.js?v=${version}"></script>\n</body>`,
           );
         },
       },
