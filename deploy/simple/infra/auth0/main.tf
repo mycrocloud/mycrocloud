@@ -24,6 +24,11 @@ resource "auth0_connection" "github" {
   }
 }
 
+resource "auth0_connection_client" "web_github" {
+  client_id = auth0_client.web.client_id
+  connection_id = auth0_connection.github.id
+}
+
 resource "auth0_connection" "google" {
   name = "google-oauth2"
   strategy = "google-oauth2"
@@ -34,7 +39,7 @@ resource "auth0_connection" "google" {
   }
 }
 
-resource "auth0_connection_client" "web_github" {
+resource "auth0_connection_client" "web_google" {
   client_id = auth0_client.web.client_id
-  connection_id = auth0_connection.github.id
+  connection_id = auth0_connection.google.id
 }
