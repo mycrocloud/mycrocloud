@@ -43,3 +43,8 @@ resource "auth0_connection_client" "web_google" {
   client_id = auth0_client.web.client_id
   connection_id = auth0_connection.google.id
 }
+
+resource "auth0_resource_server" "api" {
+  identifier = "mycrocloud-api"
+  name = "mycrocloud"
+}
