@@ -19,3 +19,12 @@ variable "github_oauth_app_client_secret" {
   type      = string
   sensitive = true
 }
+
+variable "google_oauth_app_client_id" {
+  type      = string
+}
+
+variable "google_oauth_app_client_secret" {
+  type      = string
+  sensitive = true
+}
