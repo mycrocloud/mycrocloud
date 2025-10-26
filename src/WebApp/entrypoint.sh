@@ -3,7 +3,7 @@
 CONFIG_PATH=/usr/share/nginx/html/config.js
 ENV_FILE=/usr/share/nginx/html/.env
 
-echo "window.RUNTIME_CONFIG = {" > $CONFIG_PATH
+echo "window.CONFIG = {" > $CONFIG_PATH
 while IFS='=' read -r key value; do
   [ -z "$key" ] && continue
   case "$key" in \#*) continue;; esac
