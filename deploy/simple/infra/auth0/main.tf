@@ -13,3 +13,18 @@ resource "auth0_client" "web" {
   cross_origin_auth = true
   organization_require_behavior = "no_prompt"
 }
+
+resource "auth0_connection" "github" {
+  name = "github"
+  strategy = "github"
+
+  options {
+    client_id = var.github_oauth_app_client_id
+    client_secret = var.github_oauth_app_client_secret
+  }
+}
+
+resource "auth0_connection_client" "web_github" {
+  client_id = auth0_client.web.client_id
+  connection_id = auth0_connection.github.id
+}

@@ -23,3 +23,12 @@ variable "auth0_client_secret" {
   type      = string
   sensitive = true
 }
+
+variable "auth0_github_oauth_app_client_id" {
+  type      = string
+}
+
+variable "auth0_github_oauth_app_client_secret" {
+  type      = string
+  sensitive = true
+}
