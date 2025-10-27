@@ -178,3 +178,21 @@ resource "cloudflare_dns_record" "apex" {
   content = aws_instance.server.public_ip
   proxied = true
 }
+
+resource "cloudflare_dns_record" "editor" {
+  zone_id = data.cloudflare_zone.zone.zone_id
+  name = "editor"
+  type = "CNAME"
+  ttl = 1
+  proxied = true
+  content = "mycrocloud.info"
+}
+
+resource "cloudflare_dns_record" "wildcard" {
+  zone_id = data.cloudflare_zone.zone.zone_id
+  name = "*"
+  type = "CNAME"
+  ttl = 1
+  proxied = true
+  content = "mycrocloud.info"
+}
