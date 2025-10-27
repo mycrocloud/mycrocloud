@@ -15,7 +15,7 @@ resource "auth0_client" "web" {
 }
 
 resource "auth0_connection" "github" {
-  name = "github"
+  name = "GitHub"
   strategy = "github"
 
   options {
@@ -30,7 +30,7 @@ resource "auth0_connection_client" "web_github" {
 }
 
 resource "auth0_connection" "google" {
-  name = "google-oauth2"
+  name = "Google"
   strategy = "google-oauth2"
 
   options {
