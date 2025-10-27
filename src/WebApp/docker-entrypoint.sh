@@ -12,5 +12,5 @@ done < "$ENV_FILE"
 echo "};" >> $CONFIG_PATH
 
 echo "Generated runtime config from $ENV_FILE"
-cat $CONFIG_PATH
+
 exec nginx -g "daemon off;"
