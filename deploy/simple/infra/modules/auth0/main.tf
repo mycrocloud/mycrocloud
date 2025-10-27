@@ -3,7 +3,7 @@ locals {
 }
 
 resource "auth0_client" "web" {
-  name = "mycrocloud"
+  name = "Web"
   app_type = "spa"
   callbacks = [ "https://${local.domain}" ]
   allowed_logout_urls = [ "https://${local.domain}" ]
@@ -46,5 +46,10 @@ resource "auth0_connection_client" "web_google" {
 
 resource "auth0_resource_server" "api" {
   identifier = "mycrocloud-api"
-  name = "mycrocloud"
+  name = "API"
+}
+
+resource "auth0_client" "build_worker" {
+  name = "Build Worker"
+  app_type = "non_interactive"
 }

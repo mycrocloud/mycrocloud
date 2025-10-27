@@ -24,3 +24,7 @@ output "auth0_web_client_id" {
 output "auth0_api_identifier" {
   value = module.auth0.api_identifier
 }
+
+output "auth0_build_worker_client_id" {
+  value = module.auth0.build_worker_client_id
+}
