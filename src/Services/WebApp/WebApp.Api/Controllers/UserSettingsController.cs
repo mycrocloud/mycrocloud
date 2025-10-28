@@ -44,8 +44,10 @@ public class UserSettingsController(AppDbContext dbContext): BaseController
 
         return Ok(tokens.Select(t => new
         {
+            t.Id,
             t.Name,
             t.Token,
+            Status = t.Status.ToString(),
             t.CreatedAt
         }));
     }

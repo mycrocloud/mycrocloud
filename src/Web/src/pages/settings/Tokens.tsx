@@ -6,8 +6,10 @@ import { useForm } from "react-hook-form";
 import { useAuthRequest } from "@/hooks";
 
 interface IToken {
+    id: number
     name: string
     token: string
+    status: "None" | "Revoked"
 }
 
 type CreateType = {
@@ -15,7 +17,7 @@ type CreateType = {
 }
 
 export default function Tokens() {
-    const { get, post } = useAuthRequest();
+    const { get, post, xdelete } = useAuthRequest();
 
     const [tokens, setTokens] = useState<IToken[]>([]);
 
@@ -41,6 +43,25 @@ export default function Tokens() {
         }
     }
 
+    const _delete = async (id: number) => {
+        if (confirm('Are you sure want to delete this token?')) {
+            await xdelete(`/api/usersettings/tokens/${id}`)
+            setTokens(tokens.filter(t => t.id !== id));
+        }
+    }
+
+    const revoke = async (id: number) => {
+        if (confirm('Are you sure want to revoke this token?')) {
+            await post(`/api/usersettings/tokens/${id}/revoke`)
+
+            setTokens((tokens) =>
+                tokens.map((t) =>
+                    t.id === id ? { ...t, status: "Revoked" } : t
+                )
+            );
+        }
+    }
+
     return (
         <section className="mt-4">
             <h2>Tokens</h2>
@@ -50,21 +71,23 @@ export default function Tokens() {
                     <tr>
                         <th className="w-[30%] px-4 py-2 text-left text-gray-700">Name</th>
                         <th className="w-[50%] px-4 py-2 text-left text-gray-700">Token</th>
-                        <th className="w-[20%] px-4 py-2 text-left text-gray-700">Actions</th>
+                        <th className="w-[5%] px-4 py-2 text-left text-gray-700">Status</th>
+                        <th className="w-[15%] px-4 py-2 text-left text-gray-700">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {tokens.map(t => (
-                        <tr key={t.token} className="border-t hover:bg-gray-50">
+                        <tr key={t.id} className="border-t hover:bg-gray-50">
                             <td className="px-4 py-2 truncate">{t.name}</td>
                             <td className="px-4 py-2 flex items-center gap-2 truncate">
                                 {t.token}
                                 <TextCopyButton text={t.token} />
                             </td>
+                            <td>{t.status == "None" ? "-": t.status}</td>
                             <td className="px-4 py-2">
                                 <div className="flex gap-2 justify-end">
-                                    <button className="text-blue-600 hover:underline">Revoke</button>
-                                    <button className="text-red-600 hover:underline">Delete</button>
+                                    <button onClick={() => revoke(t.id)} className="text-blue-600 hover:underline">Revoke</button>
+                                    <button onClick={() => _delete(t.id)} className="text-red-600 hover:underline">Delete</button>
                                 </div>
                             </td>
                         </tr>

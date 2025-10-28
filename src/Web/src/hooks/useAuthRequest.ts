@@ -64,7 +64,14 @@ const useAuthRequest = () => {
     [send]
   );
 
-  return { send, get, post };
+  const xdelete = useCallback(
+    async <T>(url: string, body?: any): Promise<T> => {
+      return send<T>(url, { method: "DELETE", body });
+    },
+    [send]
+  );
+
+  return { send, get, post, xdelete: xdelete };
 };
 
 export default useAuthRequest;
