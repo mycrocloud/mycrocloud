@@ -31,6 +31,7 @@ module "auth0" {
   domain                         = var.auth0_domain
   client_id                      = var.auth0_client_id
   client_secret                  = var.auth0_client_secret
+  web_origin                     = var.web_origin
   github_oauth_app_client_id     = var.auth0_github_oauth_app_client_id
   github_oauth_app_client_secret = var.auth0_github_oauth_app_client_secret
   google_oauth_app_client_id     = var.auth0_google_oauth_app_client_id
@@ -181,18 +182,18 @@ resource "cloudflare_dns_record" "apex" {
 
 resource "cloudflare_dns_record" "editor" {
   zone_id = data.cloudflare_zone.zone.zone_id
-  name = "editor"
-  type = "CNAME"
-  ttl = 1
+  name    = "editor"
+  type    = "CNAME"
+  ttl     = 1
   proxied = true
   content = "mycrocloud.info"
 }
 
 resource "cloudflare_dns_record" "wildcard" {
   zone_id = data.cloudflare_zone.zone.zone_id
-  name = "*"
-  type = "CNAME"
-  ttl = 1
+  name    = "*"
+  type    = "CNAME"
+  ttl     = 1
   proxied = true
   content = "mycrocloud.info"
 }

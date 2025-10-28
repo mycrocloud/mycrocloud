@@ -5,9 +5,9 @@ locals {
 resource "auth0_client" "web" {
   name = "Web"
   app_type = "spa"
-  callbacks = [ "https://${local.domain}" ]
-  allowed_logout_urls = [ "https://${local.domain}" ]
-  web_origins = [ "https://${local.domain}" ]
+  callbacks = [ var.web_origin ]
+  allowed_logout_urls = [ var.web_origin ]
+  web_origins = [ var.web_origin ]
   
   //TODO: confirm what these do
   cross_origin_auth = true

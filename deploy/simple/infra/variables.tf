@@ -24,6 +24,10 @@ variable "auth0_client_secret" {
   sensitive = true
 }
 
+variable "web_origin" {
+  type = string
+}
+
 variable "auth0_github_oauth_app_client_id" {
   type = string
 }
