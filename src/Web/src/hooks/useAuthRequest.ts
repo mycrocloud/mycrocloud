@@ -11,7 +11,7 @@ type RequestOptions = {
 const useAuthRequest = () => {
   const { getAccessTokenSilently, isAuthenticated } = useAuth0();
 
-  const authRequest = useCallback(
+  const send = useCallback(
     async <T>(url: string, options: RequestOptions = {}): Promise<T> => {
       if (!isAuthenticated) {
         throw new Error("User is not authenticated");
@@ -52,19 +52,19 @@ const useAuthRequest = () => {
 
   const get = useCallback(
     async <T>(url: string): Promise<T> => {
-      return authRequest<T>(url, { method: "GET" });
+      return send<T>(url, { method: "GET" });
     },
-    [authRequest]
+    [send]
   );
 
   const post = useCallback(
     async <T>(url: string, body?: any): Promise<T> => {
-      return authRequest<T>(url, { method: "POST", body });
+      return send<T>(url, { method: "POST", body });
     },
-    [authRequest]
+    [send]
   );
 
-  return { authRequest, get, post };
+  return { send, get, post };
 };
 
 export default useAuthRequest;

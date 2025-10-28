@@ -3,10 +3,10 @@ import { AppContext } from ".";
 import { useEffect, useState } from "react";
 import IApp from "./App";
 import { Breadcrumb } from "flowbite-react";
-import { useAuth0 } from "@auth0/auth0-react";
+import { useAuthRequest } from "@/hooks";
 
 export default function AppLayout() {
-  const { getAccessTokenSilently } = useAuth0();
+  const { get } = useAuthRequest();
   const appId = parseInt(useParams()["appId"]!.toString());
   const [app, setApp] = useState<IApp>();
   const { pathname } = useLocation();
@@ -32,14 +32,7 @@ export default function AppLayout() {
 
   useEffect(() => {
     const getApp = async () => {
-      const accessToken = await getAccessTokenSilently();
-      const app = (await (
-        await fetch(`/api/apps/${appId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        })
-      ).json()) as IApp;
+      const app = await get<IApp>(`/api/apps/${appId}`);
       setApp(app);
     };
     getApp();
