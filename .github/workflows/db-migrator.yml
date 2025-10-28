@@ -3,7 +3,7 @@ name: Publish database
 on:
   push:
     branches:
-      - dev
+      - main
     paths:
       - "src/Services/WebApp/WebApp.Domain/**"
       - "src/Services/WebApp/WebApp.Infrastructure/**"
@@ -81,7 +81,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build-and-push-image
-    if: ${{ vars.SSH_DOCKER_DEPLOY == 'true' }}
+    if: ${{ github.ref == 'refs/heads/main' }}
     
     steps:
       - name: Checkout
@@ -89,6 +89,8 @@ jobs:
 
       - name: Deploy
         uses: ./.github/actions/deploy-action
+        if: ${{ vars.SSH_DOCKER_DEPLOY == 'true' }}
+
         with:
           work-dir: app
           ssh-host: ${{ vars.SSH_HOST}}

@@ -3,7 +3,7 @@ name: Deployment Worker
 on:
   push:
     branches:
-      - dev
+      - main
 
     paths:
       - "src/Services/WebApp/Deployment/worker/**"

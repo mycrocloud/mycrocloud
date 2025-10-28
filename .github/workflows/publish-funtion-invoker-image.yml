@@ -3,7 +3,7 @@ name: Publish function invoker image
 on:
   push:
     branches:
-      - dev
+      - main
 
     paths:
       - 'src/Services/WebApp/WebApp.Domain/**'

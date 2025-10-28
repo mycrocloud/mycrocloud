@@ -3,7 +3,7 @@ name: Publish fluentd image
 on:
   push:
     branches:
-      - dev
+      - main
 
     paths:
       - "src/Services/WebApp/Deployment/fluentd/**"
