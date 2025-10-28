@@ -1,4 +1,4 @@
-name: Publish fluentd image
+name: CI/CD Deployment/Fluentd
 
 on:
   push:

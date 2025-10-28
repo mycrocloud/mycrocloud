@@ -1,6 +1,6 @@
 services:
   db-migrator:
-    image: ghcr.io/mycrocloud/mycrocloud-db-migrator:dev
+    image: ghcr.io/mycrocloud/mycrocloud-db-migrator:main
     container_name: mycrocloud-db-migrator
     environment:
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
@@ -17,12 +17,12 @@ services:
       - SEQ_FIRSTRUN_ADMINPASSWORDHASH=QP3ZwBGCUn+Ija3VuMpr3OAzeWmNgYRh/TxaA3V9hOWUQHiL5fA3g3SQjYi/Q7W6co8ui1CO3pZQh5TfxJU511iqGOQRxrKSCd+2kSJcddf9
 
   web:
-    image: ghcr.io/mycrocloud/mycrocloud-web:dev
+    image: ghcr.io/mycrocloud/mycrocloud-web:main
     volumes:
       - ./config/Web/.env:/usr/share/nginx/html/.env:ro
 
   api:
-    image: ghcr.io/mycrocloud/mycrocloud-api:dev
+    image: ghcr.io/mycrocloud/mycrocloud-api:main
     container_name: mycrocloud-api
     environment:
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
@@ -34,7 +34,7 @@ services:
       - ./config/Services/WebApp/WebApp.Api/appsettings.json:/app/appsettings.json:ro
 
   apigateway:
-    image: ghcr.io/mycrocloud/mycrocloud-apigateway:dev
+    image: ghcr.io/mycrocloud/mycrocloud-apigateway:main
     container_name: mycrocloud-apigateway
     environment:
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
@@ -57,7 +57,7 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
 
   web-editor:
-    image: ghcr.io/mycrocloud/mycrocloud-web-editor:dev
+    image: ghcr.io/mycrocloud/mycrocloud-web-editor:main
 
 volumes:
   mycrocloud-seq-data:
@@ -65,4 +65,4 @@ volumes:
 
 networks:
   default:
-    name: mycrocloud_dev
+    name: mycrocloud

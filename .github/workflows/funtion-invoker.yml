@@ -1,4 +1,4 @@
-name: Publish function invoker image
+name: CI/CD Function Invoker
 
 on:
   push:

@@ -1,4 +1,4 @@
-name: Publish builder image
+name: CI/CD Deployment/Builder
 
 on:
   push:

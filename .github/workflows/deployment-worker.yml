@@ -1,4 +1,4 @@
-name: Deployment Worker
+name: CI/CD Deployment/Worker
 
 on:
   push:

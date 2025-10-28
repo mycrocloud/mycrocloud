@@ -1,4 +1,4 @@
-name: Publish database
+name: CI/CD Database
 
 on:
   push:
