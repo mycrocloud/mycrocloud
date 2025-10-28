@@ -89,6 +89,7 @@ jobs:
       - name: Deploy
         uses: ./.github/actions/deploy-action
         with:
+          work-dir: app
           ssh-host: ${{ vars.SSH_HOST}}
           ssh-username: ${{ vars.SSH_USERNAME }}
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}

@@ -13,6 +13,10 @@ inputs:
     description: 'SSH private key'
     required: true
 
+  work-dir:
+    description: 'Working directory'
+    required: true
+
   service:
     description: 'Service name'
     required: true
@@ -36,7 +40,7 @@ runs:
       run: |
         echo deploying $SERVICE
         ssh $SSH_USERNAME@$SSH_HOST "
-            cd workspaces/mycrocloud-deploy/dev \
+            cd $WORK_DIR \
               && docker compose down $SERVICE \
               && docker compose pull $SERVICE \
               && docker compose up $SERVICE -d
@@ -44,6 +48,7 @@ runs:
       env:
         SSH_HOST: ${{ inputs.ssh-host }}
         SSH_USERNAME: ${{ inputs.ssh-username }}
+        WORK_DIR: ${{ inputs.work-dir }}
         SERVICE: ${{ inputs.service }}
 
     - name: Cleanup
