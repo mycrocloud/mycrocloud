@@ -5,7 +5,7 @@ go 1.22
 toolchain go1.23.0
 
 require (
-	github.com/docker/docker v27.3.1+incompatible
+	github.com/docker/docker v28.0.0+incompatible
 	github.com/elastic/go-elasticsearch/v7 v7.10.0
 	github.com/elastic/go-elasticsearch/v8 v8.15.0
 	github.com/joho/godotenv v1.5.1
