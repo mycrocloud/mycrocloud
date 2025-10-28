@@ -18,7 +18,9 @@ updates:
       interval: "daily"
 
   - package-ecosystem: "npm"
-    directory: "src/WebApp"
+    directories:
+      - "src/Web"
+      - "src/WebEditor"
     schedule:
       interval: "daily"
 
