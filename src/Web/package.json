@@ -28,7 +28,7 @@
     "react-router-dom": "^7.6.2",
     "react-toastify": "^11.0.5",
     "uuid": "^11.1.0",
-    "yup": "^1.6.1"
+    "yup": "^1.7.1"
   },
   "devDependencies": {
     "@types/node": "^22.15.30",
