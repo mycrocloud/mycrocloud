@@ -1,18 +1,16 @@
-name: Publish Editor
-
 on:
   push:
     branches:
       - main
     paths:
-      - "src/editor/**"
+      - "src/WebEditor/**"
 
   workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-editor
-  WORK_DIR: src/editor
+  IMAGE_NAME: ${{ github.repository }}-web-editor
+  WORK_DIR: src/WebEditor
   VITE_PARENT_ORIGIN: https://mycrocloud.info
 
 jobs:
