@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
 import IApp from "./App";
 import { useEffect, useMemo, useState } from "react";
-import useAuthRequest from "../../hooks/useAuthRequest";
+import { useAuthRequest } from "@/hooks";
 
 export default function List() {
-  const authRequest = useAuthRequest();
+  const { get } = useAuthRequest();
   const [searchTerm, setSearchTerm] = useState("");
   const [apps, setApps] = useState<IApp[]>([]);
   const filteredApps = useMemo(() => {
@@ -21,7 +21,7 @@ export default function List() {
     document.title = "Apps";
 
     const getApps = async () => {
-      const apps = await authRequest("/api/apps");
+      const apps = await get<IApp[]>("/api/apps");
       setApps(apps);
     };
 

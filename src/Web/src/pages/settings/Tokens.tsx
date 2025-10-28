@@ -1,9 +1,9 @@
-import { useAuth0 } from "@auth0/auth0-react";
 import { useEffect, useState } from "react"
 import { toast } from "react-toastify";
 import TextCopyButton from "../../components/ui/TextCopyButton";
 import { Modal } from "flowbite-react";
 import { useForm } from "react-hook-form";
+import { useAuthRequest } from "@/hooks";
 
 interface IToken {
     name: string
@@ -15,45 +15,27 @@ type CreateType = {
 }
 
 export default function Tokens() {
-    const { getAccessTokenSilently } = useAuth0()
+    const { get, post } = useAuthRequest();
+
     const [tokens, setTokens] = useState<IToken[]>([]);
 
     useEffect(() => {
         (async () => {
-            const token = await getAccessTokenSilently();
-            const res = await fetch("/api/usersettings/tokens", {
-                method: "GET",
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-
-            const tokens = await res.json() as IToken[];
+            const tokens = await get<IToken[]>("/api/usersettings/tokens");
             setTokens(tokens);
         })();
-
     }, []);
 
     const [showCreateModal, setShowCreateModal] = useState(false);
-    const { handleSubmit, register, formState: { errors } } = useForm<CreateType>();
+    const { handleSubmit, register, formState: { errors }, reset } = useForm<CreateType>();
 
     const onCreateClickHandler = async (data: CreateType) => {
-        const token = await getAccessTokenSilently();
-
-        const res = await fetch("/api/usersettings/tokens", {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "content-type": "application/json"
-            },
-            body: JSON.stringify({
-                name: data.name
-            })
-        });
-
         try {
-            const pat = await res.json() as IToken;
-            setTokens([...tokens, pat]);
+            const token = await post<IToken>("/api/usersettings/tokens", { name: data.name })
+            setTokens([...tokens, token]);
+
+            reset();
+            setShowCreateModal(false);
         } catch (error) {
             toast.error('Something went wrong.')
         }

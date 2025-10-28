@@ -3,9 +3,8 @@ import { useCallback } from "react";
 
 type RequestOptions = {
   headers?: Record<string, string>;
-  //body?: any;
-  //method?: string;
-  //accessToken?: string;
+  body?: any;
+  method?: string;
   //[key: string]: any;
 };
 
@@ -13,35 +12,59 @@ const useAuthRequest = () => {
   const { getAccessTokenSilently, isAuthenticated } = useAuth0();
 
   const authRequest = useCallback(
-    async (url: string, options: RequestOptions = {}) => {
+    async <T>(url: string, options: RequestOptions = {}): Promise<T> => {
       if (!isAuthenticated) {
         throw new Error("User is not authenticated");
       }
 
       const token = await getAccessTokenSilently();
 
-      const headers = {
-        ...options.headers,
-        Authorization: `Bearer ${token}`,
+      const headers: Record<string, string> = {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        ...options.headers,
       };
 
       const response = await fetch(url, {
         ...options,
         headers,
+        body:
+          options.body && typeof options.body !== "string"
+            ? JSON.stringify(options.body)
+            : options.body,
       });
 
+      const contentType = response.headers.get("content-type");
+      const data = contentType?.includes("application/json")
+        ? await response.json().catch(() => ({}))
+        : await response.text();
+
       if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || "Request failed");
+        const message =
+          (data as any)?.message || `Request failed with ${response.status}`;
+        throw new Error(message);
       }
 
-      return response.json();
+      return data as T;
     },
-    [getAccessTokenSilently, isAuthenticated],
+    [getAccessTokenSilently, isAuthenticated]
   );
 
-  return authRequest;
+  const get = useCallback(
+    async <T>(url: string): Promise<T> => {
+      return authRequest<T>(url, { method: "GET" });
+    },
+    [authRequest]
+  );
+
+  const post = useCallback(
+    async <T>(url: string, body?: any): Promise<T> => {
+      return authRequest<T>(url, { method: "POST", body });
+    },
+    [authRequest]
+  );
+
+  return { authRequest, get, post };
 };
 
 export default useAuthRequest;
