@@ -1,3 +1,4 @@
+name: CI/CD Web Editor
 on:
   push:
     branches:
