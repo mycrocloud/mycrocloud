@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => {
       react(),
       {
         name: "inject-config-tag",
+        apply: "build",
         transformIndexHtml(html) {
           const version =
             process.env.COMMIT_HASH?.slice(0, 7) ||
