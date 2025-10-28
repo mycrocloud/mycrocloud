@@ -49,4 +49,28 @@ public class UserSettingsController(AppDbContext dbContext): BaseController
             t.CreatedAt
         }));
     }
+    
+    [HttpPost("tokens/{id:int}/revoke")]
+    public async Task<IActionResult> RevokeToken(int id)
+    {
+        var token = await dbContext.UserTokens.SingleAsync(t => t.UserId == User.GetUserId() && t.Id == id);
+
+        token.Status = TokenStatus.Revoked;
+
+        await dbContext.SaveChangesAsync();
+
+        return NoContent();
+    }
+    
+    [HttpDelete("tokens/{id:int}")]
+    public async Task<IActionResult> DeleteToken(int id)
+    {
+        await dbContext.UserTokens
+            .Where(t => t.UserId == User.GetUserId() && t.Id == id)
+            .ExecuteDeleteAsync();
+        
+        await dbContext.SaveChangesAsync();
+
+        return NoContent();
+    }
 }

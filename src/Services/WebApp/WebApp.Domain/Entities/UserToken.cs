@@ -9,6 +9,7 @@ public class UserToken
     public string Token { get; set; }
     public string Provider { get; set; }
     public UserTokenPurpose Purpose { get; set; }
+    public TokenStatus Status { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 }
@@ -17,4 +18,10 @@ public enum UserTokenPurpose
 {
     AppIntegration,
     ApiToken
+}
+
+public enum TokenStatus
+{
+    None,
+    Revoked
 }

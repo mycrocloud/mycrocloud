@@ -26,7 +26,9 @@ public class ApiTokenAuthenticationHandler: AuthenticationHandler<ApiTokenAuthen
     {
         var token = Context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
 
-        var userToken = await _dbContext.UserTokens.SingleOrDefaultAsync(t => t.Token == token && t.Purpose == UserTokenPurpose.ApiToken);
+        var userToken = await _dbContext.UserTokens
+            .SingleOrDefaultAsync(t =>
+                t.Token == token && t.Purpose == UserTokenPurpose.ApiToken && t.Status != TokenStatus.Revoked);
 
         if (userToken is null)
         {
