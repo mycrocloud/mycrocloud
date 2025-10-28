@@ -92,8 +92,8 @@ jobs:
         if: ${{ vars.SSH_DOCKER_DEPLOY == 'true' }}
 
         with:
-          work-dir: app
           ssh-host: ${{ vars.SSH_HOST}}
           ssh-username: ${{ vars.SSH_USERNAME }}
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          work-dir: app
           service: db-migrator
