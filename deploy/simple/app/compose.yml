@@ -17,8 +17,8 @@ services:
       - SEQ_FIRSTRUN_ADMINPASSWORDHASH=QP3ZwBGCUn+Ija3VuMpr3OAzeWmNgYRh/TxaA3V9hOWUQHiL5fA3g3SQjYi/Q7W6co8ui1CO3pZQh5TfxJU511iqGOQRxrKSCd+2kSJcddf9
 
   webapp:
-    image: ghcr.io/mycrocloud/mycrocloud-webapp:dev
-    container_name: mycrocloud-webapp
+    image: ghcr.io/mycrocloud/mycrocloud-web:dev
+    container_name: mycrocloud-web
     volumes:
       - ./config/Web/.env:/usr/share/nginx/html/.env:ro
 

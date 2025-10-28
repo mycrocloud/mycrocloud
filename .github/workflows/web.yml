@@ -1,18 +1,16 @@
-name: Publish WebApp
-
 on:
   push:
     branches:
       - main
     paths:
-      - "src/WebApp/**"
+      - "src/Web/**"
 
   workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-webapp
-  WORK_DIR: src/WebApp
+  IMAGE_NAME: ${{ github.repository }}-web
+  WORK_DIR: src/Web
 
 jobs:
   build-and-push-image:
@@ -70,4 +68,4 @@ jobs:
           ssh-host: ${{ vars.SSH_HOST}}
           ssh-username: ${{ vars.SSH_USERNAME }}
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          service: webapp
+          service: web
