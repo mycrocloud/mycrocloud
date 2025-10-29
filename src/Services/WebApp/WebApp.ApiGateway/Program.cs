@@ -28,9 +28,7 @@ builder.Services.AddScoped<IRouteRepository, RouteRepository>();
 builder.Services.AddScoped<ILogRepository, LogRepository>();
 builder.Services.AddSingleton(new Scripts
 {
-    Faker = File.ReadAllText("Scripts/faker.js"),
     Handlebars = File.ReadAllText("Scripts/handlebars.min-v4.7.8.js"),
-    Lodash = File.ReadAllText("Scripts/lodash.min.js")
 });
 builder.Services.AddHttpClient("HttpDocumentRetriever");
 builder.Services.AddStackExchangeRedisCache(options =>
@@ -41,7 +39,7 @@ builder.Services.AddSingleton<ICachedOpenIdConnectionSigningKeys, CachedOpenIdCo
 
 builder.Services.AddKeyedSingleton("InProcessFunctionExecutionManager", new ConcurrencyJobManager(100));
 builder.Services.AddKeyedSingleton("DockerContainerFunctionExecutionManager", new ConcurrencyJobManager(100));
-builder.Services.AddSingleton(sp =>
+builder.Services.AddSingleton(_ =>
 {
     var client = new DockerClientConfiguration(
             new Uri(builder.Configuration["DockerFunctionExecution:Uri"]!))
@@ -49,13 +47,7 @@ builder.Services.AddSingleton(sp =>
 
     return client;
 });
-builder.Services.AddSingleton<RequestResponseWaiter>();
 builder.Services.AddHealthChecks();
-builder.Services.AddSignalR();
-
-var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-optionsBuilder.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
-builder.Services.AddKeyedSingleton("AppDbContext", new AppDbContext(optionsBuilder.Options));
 
 var app = builder.Build();
 app.UseRouting();
