@@ -14,21 +14,11 @@ public class RouteRepository(AppDbContext dbContext) : IRouteRepository
         return route.Id;
     }
 
-    public Task AddMatchMethods(int id, List<string> list)
-    {
-        throw new NotImplementedException();
-    }
-
     public async Task Delete(int id)
     {
         var route = await dbContext.Routes.FirstOrDefaultAsync(r => r.Id == id);
         dbContext.Routes.Remove(route);
         await dbContext.SaveChangesAsync();
-    }
-
-    public Task<Route> Find(int appId, string method, string path)
-    {
-        throw new NotImplementedException();
     }
 
     public async Task<Route> GetById(int id)
