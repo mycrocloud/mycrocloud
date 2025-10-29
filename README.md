@@ -17,7 +17,14 @@ File, Object, Text, Variable.
 - Integrates with GitHub for automatic deployment from your repositories.
 
 ### Architecture
-![](/mycrocloud.drawio.png)
+- CloudFlare for DNS
+- Auth0 for identity
+- PostgreSQL
+- Nginx for proxying
+- React
+- ASP.NET Core
+- Redis, RabbitMQ
+- Seq, Fluentd, ElasticSearch for logging
 
 ### Building Status
 ![api](https://github.com/mycrocloud/mycrocloud/actions/workflows/api.yml/badge.svg)
