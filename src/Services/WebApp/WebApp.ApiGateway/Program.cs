@@ -9,7 +9,6 @@ using WebApp.ApiGateway.Middlewares;
 using File = System.IO.File;
 
 var builder = WebApplication.CreateBuilder(args);
-ConfigurationHelper.Initialize(builder.Configuration);
 builder.Services.AddLogging(options =>
 {
     options.AddSeq(builder.Configuration["Logging:Seq:ServerUrl"], builder.Configuration["Logging:Seq:ApiKey"]);

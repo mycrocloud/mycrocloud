@@ -45,11 +45,8 @@ runs:
               && docker compose pull $SERVICE \
               && docker compose up $SERVICE -d
               
-            if [[ 'web api' =~ (^|[[:space:]])$SERVICE($|[[:space:]]) ]]; then
-              echo 'Detected service in [web, api], reloading Nginx in lb...'
+            if [[ 'api apigateway web-editor web ' =~ (^|[[:space:]])$SERVICE($|[[:space:]]) ]]; then
               docker compose exec lb nginx -s reload || docker compose restart lb
-            else
-              echo 'Service is not web/api, skipping lb reload.'
             fi
             "
       env:
