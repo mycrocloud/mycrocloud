@@ -13,3 +13,7 @@ output "api_identifier" {
 output "build_worker_client_id" {
   value = auth0_client.build_worker.client_id
 }
+
+output "slack_integration_api_identifier" {
+  value = auth0_resource_server.slack_integration_api.identifier
+}

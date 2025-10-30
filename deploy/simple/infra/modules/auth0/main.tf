@@ -53,3 +53,8 @@ resource "auth0_client" "build_worker" {
   name = "Build Worker"
   app_type = "non_interactive"
 }
+
+resource "auth0_resource_server" "slack_integration_api" {
+  identifier = "slack-integration-api"
+  name = "API"
+}
