@@ -27,6 +27,7 @@ export default defineConfig(({ mode }) => {
       },
     ],
     server: {
+      host: "mycrocloud.dev",
       proxy: {
         "/api": {
           target: env.VITE_BASE_API_URL,

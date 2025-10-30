@@ -5,6 +5,7 @@ interface Config {
   WEBAPP_APIGATEWAY_DOMAIN: string;
   GITHUB_CLIENTID: string;
   EDITOR_ORIGIN: string;
+  SLACK_CLIENT_ID: string;
 }
 
 export const getConfig = (): Config => {
@@ -19,5 +20,6 @@ export const getConfig = (): Config => {
     WEBAPP_APIGATEWAY_DOMAIN: import.meta.env.VITE_WEBAPP_APIGATEWAY_DOMAIN,
     GITHUB_CLIENTID: import.meta.env.VITE_GITHUB_CLIENTID,
     EDITOR_ORIGIN: import.meta.env.VITE_EDITOR_ORIGIN,
+    SLACK_CLIENT_ID: import.meta.env.VITE_SLACK_CLIENT_ID,
   };
 };
