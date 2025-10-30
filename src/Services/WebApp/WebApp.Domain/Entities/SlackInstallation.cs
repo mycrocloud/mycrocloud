@@ -1,0 +1,86 @@
+
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace WebApp.Domain.Entities;
+
+public class SlackInstallation
+{
+    [Key]
+    public int Id { get; set; }
+
+    [Required]
+    [MaxLength(32)]
+    public string TeamId { get; set; } = default!;
+
+    [MaxLength(128)]
+    public string? TeamName { get; set; }
+
+    [MaxLength(32)]
+    public string? BotUserId { get; set; }
+
+    [Required]
+    [MaxLength(512)]
+    public string BotAccessToken { get; set; } = default!; // ⚠️ Mã hóa trước khi lưu thực tế
+
+    [MaxLength(512)]
+    public string? Scopes { get; set; }
+
+    [MaxLength(32)]
+    public string? InstalledByUserId { get; set; }
+
+    [MaxLength(32)]
+    public string? EnterpriseId { get; set; }
+
+    public bool IsEnterpriseInstall { get; set; } = false;
+
+    public DateTime InstalledAt { get; set; } = DateTime.UtcNow;
+
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    //public ICollection<SlackUserLink> UserLinks { get; set; } = new List<SlackUserLink>();
+}
+
+// public class SlackUserLink
+// {
+//     [Key]
+//     public int Id { get; set; }
+
+//     [Required]
+//     [MaxLength(32)]
+//     public string SlackUserId { get; set; } = default!;
+
+//     [Required]
+//     [MaxLength(32)]
+//     public string TeamId { get; set; } = default!;
+
+//     [Required]
+//     [MaxLength(64)]
+//     public string MyHubUserId { get; set; } = default!;
+
+//     public DateTime LinkedAt { get; set; } = DateTime.UtcNow;
+
+//     [ForeignKey(nameof(TeamId))]
+//     public SlackInstallation? Installation { get; set; }
+// }
+
+// public class SlackChannel
+// {
+//     [Key]
+//     [MaxLength(32)]
+//     public string ChannelId { get; set; } = default!;
+
+//     [Required]
+//     [MaxLength(32)]
+//     public string TeamId { get; set; } = default!;
+
+//     [MaxLength(128)]
+//     public string? Name { get; set; }
+
+//     public bool Subscribed { get; set; } = false;
+
+//     public DateTime? LastJoinedAt { get; set; }
+
+//     [ForeignKey(nameof(TeamId))]
+//     public SlackInstallation? Installation { get; set; }
+// }

@@ -27,6 +27,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     public DbSet<AppBuildJob> AppBuildJobs { get; set; }
 
+    public DbSet<SlackInstallation> SlackInstallations { get; set; }
+
+    //public DbSet<SlackUserLink> SlackUserLinks { get; set; }
+
+    //public DbSet<SlackChannel> SlackChannels { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<App>()
@@ -119,6 +125,25 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<AppBuildJob>()
             .Property(p => p.Name)
             .HasDefaultValue("build");
+
+        modelBuilder.Entity<SlackInstallation>()
+            .HasIndex(x => x.TeamId)
+            .IsUnique();
+
+        // modelBuilder.Entity<SlackUserLink>()
+        //     .HasIndex(x => new { x.SlackUserId, x.TeamId })
+        //     .IsUnique();
+
+        // modelBuilder.Entity<SlackChannel>()
+        //     .HasIndex(x => x.TeamId);
+
+        // // Cascade delete optional
+        // modelBuilder.Entity<SlackInstallation>()
+        //     .HasMany(x => x.UserLinks)
+        //     .WithOne(x => x.Installation)
+        //     .HasForeignKey(x => x.TeamId)
+        //     .HasPrincipalKey(x => x.TeamId)
+        //     .OnDelete(DeleteBehavior.Cascade);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
