@@ -46,6 +46,8 @@ import { ApiKeyCreateUpdate, ApiKeyList } from "./pages/authentications/apikey";
 import { default as Integrations } from "./pages/integrations";
 import { default as IntegrationsGitHubCallback } from "./pages/settings/github_callback";
 import { default as IntegrationsSlackCallback } from "./pages/settings/slack_callback";
+import { default as IntegrationsSlackLink } from "./pages/settings/slack_link";
+
 import Settings from "./pages/settings";
 import { getConfig } from "./config";
 const { AUTH0_DOMAIN, AUTH0_CLIENTID, AUTH0_AUDIENCE } = getConfig();
@@ -146,6 +148,10 @@ function App() {
               <Route
                 path="slack/oauth/callback"
                 Component={IntegrationsSlackCallback}
+              />
+              <Route
+                path="slack/link"
+                Component={IntegrationsSlackLink}
               />
             </Route>
             <Route

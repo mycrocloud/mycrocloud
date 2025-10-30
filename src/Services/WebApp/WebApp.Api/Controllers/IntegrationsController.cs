@@ -17,7 +17,7 @@ public class IntegrationsController(
     IHttpClientFactory httpClientFactory) : BaseController
 {
     [HttpPost("github/callback")]
-    public async Task<IActionResult> GitHubCallback(GitHubAuthRequest request)
+    public async Task<IActionResult> GitHubCallback(OAuthRequest request)
     {
         var authResponse = await ExchangeGitHubAccessToken(request);
 
@@ -49,7 +49,7 @@ public class IntegrationsController(
         return Ok();
     }
 
-    private async Task<GitHubAuthResponse> ExchangeGitHubAccessToken(GitHubAuthRequest request)
+    private async Task<OAuthResponse> ExchangeGitHubAccessToken(OAuthRequest request)
     {
         var client = httpClientFactory.CreateClient();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -63,7 +63,7 @@ public class IntegrationsController(
             new FormUrlEncodedContent(requestData));
         response.EnsureSuccessStatusCode();
         var responseBody = await response.Content.ReadAsStringAsync();
-        var authResponse = JsonSerializer.Deserialize<GitHubAuthResponse>(responseBody)!;
+        var authResponse = JsonSerializer.Deserialize<OAuthResponse>(responseBody)!;
         return authResponse;
     }
 
@@ -103,6 +103,64 @@ public class IntegrationsController(
             repo.UpdatedAt
         }));
     }
+
+    #region Slack
+
+    [HttpPost("slack/callback")]
+    public async Task<IActionResult> SlackCallback(OAuthRequest request)
+    {
+        const string provider = "Slack";
+        var authResponse = await ExchangeSlackAccessToken(request);
+
+        var existingToken = await appDbContext.UserTokens
+            .Where(t => t.UserId == User.GetUserId() && t.Provider == provider &&
+                        t.Purpose == UserTokenPurpose.AppIntegration)
+            .SingleOrDefaultAsync();
+
+        if (existingToken is not null)
+        {
+            existingToken.Token = authResponse.AccessToken;
+            existingToken.UpdatedAt = DateTime.UtcNow;
+            appDbContext.UserTokens.Update(existingToken);
+        }
+        else
+        {
+            await appDbContext.UserTokens.AddAsync(new UserToken()
+            {
+                UserId = User.GetUserId(),
+                Provider = provider,
+                Purpose = UserTokenPurpose.AppIntegration,
+                CreatedAt = DateTime.UtcNow,
+                Token = authResponse.AccessToken
+            });
+        }
+
+        await appDbContext.SaveChangesAsync();
+
+        await System.IO.File.WriteAllTextAsync(".env", authResponse.AccessToken);
+        return Ok();
+    }
+    
+    private async Task<OAuthResponse> ExchangeSlackAccessToken(OAuthRequest request)
+    {
+        var client = httpClientFactory.CreateClient();
+        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("multipart/form-data"));
+        var requestData = new Dictionary<string, string>
+        {
+            { "client_id", configuration[$"OAuthApps:Slack:ClientId"]! },
+            { "client_secret", configuration[$"OAuthApps:Slack:ClientSecret"]! },
+            { "code", request.Code },
+            { "redirect_uri", request.RedirectUrl}
+        };
+        var response = await client.PostAsync("https://slack.com/api/oauth.v2.access",
+            new FormUrlEncodedContent(requestData));
+        response.EnsureSuccessStatusCode();
+        var responseBody = await response.Content.ReadAsStringAsync();
+        var authResponse = JsonSerializer.Deserialize<OAuthResponse>(responseBody)!;
+        return authResponse;
+    }
+
+    #endregion
 }
 
 public class GitHubRepo
@@ -120,12 +178,14 @@ public class GitHubRepo
     [JsonPropertyName("updated_at")] public DateTime UpdatedAt { get; set; }
 }
 
-public class GitHubAuthRequest
+public class OAuthRequest
 {
     public string Code { get; set; }
+
+    [JsonPropertyName("redirect_uri")]public string? RedirectUrl { get; set; }
 }
 
-public class GitHubAuthResponse
+public class OAuthResponse
 {
     [JsonPropertyName("access_token")] public string AccessToken { get; set; }
 }

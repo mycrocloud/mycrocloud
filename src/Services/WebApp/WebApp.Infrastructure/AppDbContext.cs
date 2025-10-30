@@ -21,7 +21,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Variable> Variables { get; set; }
     public DbSet<TextStorage> TextStorages { get; set; }
     public DbSet<Object> Objects { get; set; }
-
+    
+    //TODO: re-design?
     public DbSet<UserToken> UserTokens { get; set; }
 
     public DbSet<AppBuildJob> AppBuildJobs { get; set; }
