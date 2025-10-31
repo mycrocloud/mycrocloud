@@ -169,8 +169,6 @@ public class IntegrationsController(
         response.EnsureSuccessStatusCode();
         var responseBody = await response.Content.ReadAsStringAsync();
 
-        await System.IO.File.WriteAllTextAsync(".env", responseBody);
-
         var authResponse = JsonSerializer.Deserialize<SlackOAuthResponse>(responseBody)!;
         return authResponse;
     }
