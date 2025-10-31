@@ -1,13 +1,18 @@
+import { useAuthRequest } from "@/hooks";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 
+interface LinkResponse {
+    redirect_url: string
+}
+
 export default function SlackLink() {
-    console.log("SlackLink")
-    const { isAuthenticated, isLoading, loginWithRedirect, getAccessTokenSilently, user } = useAuth0();
+    const { isAuthenticated, isLoading, loginWithRedirect } = useAuth0();
+    const { post } = useAuthRequest();
 
     const [searchParams] = useSearchParams();
-    const redirectUri = searchParams.get("redirectUri") || "/api/intergations/slack/link-callback";
+    const redirectUri = searchParams.get("redirectUri")!;
     const state = searchParams.get("state");
 
     useEffect(() => {
@@ -22,30 +27,9 @@ export default function SlackLink() {
     }, [isAuthenticated, isLoading]);
 
     const handleConnect = async () => {
-        try {
-            const token = await getAccessTokenSilently({
-                //authorizationParams: { audience: "slack-integration-api" }
-            });
-
-            const res = await fetch(redirectUri, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ state }),
-            });
-
-            if (res.ok) {
-                alert(`✅ Slack linked successfully as ${user?.email}`);
-            } else {
-                const err = await res.text();
-                alert("⚠️ Failed to link Slack: " + err);
-            }
-        } catch (e) {
-            console.error(e);
-            alert("Error linking Slack");
-        }
+        const res = await post<LinkResponse>(redirectUri, { state });
+        
+        window.location.href = res.redirect_url;
     };
 
     if (isLoading) {
@@ -53,16 +37,15 @@ export default function SlackLink() {
     }
 
     return (
-        <div style={{ textAlign: "center", paddingTop: "5rem" }}>
-            <h2>Connect your MyHub account</h2>
+        <div className="text-center pt-[10rem]">
+            <div>
+                <p className="text-lg">Connect your MycroCloud account</p>
+                <p className="my-2">
+                    Please authorize MycroCloud to connect with Slack to get personalized notifications for threads you participate in.
+                </p>
+            </div>
             <button
-                style={{
-                    background: "black",
-                    color: "white",
-                    padding: "10px 20px",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                }}
+            className="bg-black text-white px-4 py-2 rounded-md mt-5"
                 onClick={handleConnect}
             >
                 Continue with MycroCloud
