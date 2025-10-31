@@ -580,6 +580,29 @@ namespace WebApp.Migrations.Migrations
                     b.ToTable("SlackInstallations");
                 });
 
+            modelBuilder.Entity("WebApp.Domain.Entities.SlackUserLink", b =>
+                {
+                    b.Property<string>("TeamId")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("SlackUserId")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime>("LinkedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("TeamId", "SlackUserId");
+
+                    b.ToTable("SlackUserLinks");
+                });
+
             modelBuilder.Entity("WebApp.Domain.Entities.TextStorage", b =>
                 {
                     b.Property<int>("Id")

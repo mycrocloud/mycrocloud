@@ -1,6 +1,5 @@
 
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WebApp.Domain.Entities;
 
@@ -21,7 +20,7 @@ public class SlackInstallation
 
     [Required]
     [MaxLength(512)]
-    public string BotAccessToken { get; set; } = default!; // ⚠️ Mã hóa trước khi lưu thực tế
+    public string BotAccessToken { get; set; } = default!;
 
     [MaxLength(512)]
     public string? Scopes { get; set; }
@@ -37,32 +36,24 @@ public class SlackInstallation
     public DateTime InstalledAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-    //public ICollection<SlackUserLink> UserLinks { get; set; } = new List<SlackUserLink>();
 }
 
-// public class SlackUserLink
-// {
-//     [Key]
-//     public int Id { get; set; }
+public class SlackUserLink
+{
+    [Required]
+    [MaxLength(32)]
+    public string TeamId { get; set; } = default!;
 
-//     [Required]
-//     [MaxLength(32)]
-//     public string SlackUserId { get; set; } = default!;
+    [Required]
+    [MaxLength(32)]
+    public string SlackUserId { get; set; } = default!;
 
-//     [Required]
-//     [MaxLength(32)]
-//     public string TeamId { get; set; } = default!;
+    [Required]
+    [MaxLength(64)]
+    public string UserId { get; set; } = default!;
 
-//     [Required]
-//     [MaxLength(64)]
-//     public string MyHubUserId { get; set; } = default!;
-
-//     public DateTime LinkedAt { get; set; } = DateTime.UtcNow;
-
-//     [ForeignKey(nameof(TeamId))]
-//     public SlackInstallation? Installation { get; set; }
-// }
+    public DateTime LinkedAt { get; set; } = DateTime.UtcNow;
+}
 
 // public class SlackChannel
 // {

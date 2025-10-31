@@ -29,7 +29,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     public DbSet<SlackInstallation> SlackInstallations { get; set; }
 
-    //public DbSet<SlackUserLink> SlackUserLinks { get; set; }
+    public DbSet<SlackUserLink> SlackUserLinks { get; set; }
 
     //public DbSet<SlackChannel> SlackChannels { get; set; }
 
@@ -130,14 +130,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasIndex(x => x.TeamId)
             .IsUnique();
 
-        // modelBuilder.Entity<SlackUserLink>()
-        //     .HasIndex(x => new { x.SlackUserId, x.TeamId })
-        //     .IsUnique();
+        modelBuilder.Entity<SlackUserLink>()
+            .HasKey(x => new { x.TeamId, x.SlackUserId });
 
         // modelBuilder.Entity<SlackChannel>()
         //     .HasIndex(x => x.TeamId);
 
-        // // Cascade delete optional
+        // Cascade delete optional
         // modelBuilder.Entity<SlackInstallation>()
         //     .HasMany(x => x.UserLinks)
         //     .WithOne(x => x.Installation)
