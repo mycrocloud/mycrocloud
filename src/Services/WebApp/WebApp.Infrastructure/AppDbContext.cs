@@ -31,7 +31,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     public DbSet<SlackUserLink> SlackUserLinks { get; set; }
 
-    //public DbSet<SlackChannel> SlackChannels { get; set; }
+    public DbSet<SlackAppSubscription> SlackAppSubscriptions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -133,8 +133,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<SlackUserLink>()
             .HasKey(x => new { x.TeamId, x.SlackUserId });
 
-        // modelBuilder.Entity<SlackChannel>()
-        //     .HasIndex(x => x.TeamId);
+        // modelBuilder.Entity<SlackAppSubscription>()
+        //     .HasKey(x => new { x.TeamId, x.SlackUserId });
 
         // Cascade delete optional
         // modelBuilder.Entity<SlackInstallation>()

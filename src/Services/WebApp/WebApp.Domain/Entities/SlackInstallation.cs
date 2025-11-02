@@ -42,17 +42,34 @@ public class SlackUserLink
 {
     [Required]
     [MaxLength(32)]
-    public string TeamId { get; set; } = default!;
+    public string TeamId { get; set; } = null!;
 
     [Required]
     [MaxLength(32)]
-    public string SlackUserId { get; set; } = default!;
+    public string SlackUserId { get; set; } = null!;
 
     [Required]
     [MaxLength(64)]
-    public string UserId { get; set; } = default!;
+    public string UserId { get; set; } = null!;
 
     public DateTime LinkedAt { get; set; } = DateTime.UtcNow;
+}
+
+public class SlackAppSubscription
+{
+    [Key]
+    public int SubscriptionId { get; set; }
+    
+    [Required]
+    [MaxLength(32)]
+    public string TeamId { get; set; } = null!;
+
+    [Required]
+    [MaxLength(32)]
+    public string SlackUserId { get; set; } = null!;
+    
+    [Required]
+    public int? AppId { get; set; }
 }
 
 // public class SlackChannel
