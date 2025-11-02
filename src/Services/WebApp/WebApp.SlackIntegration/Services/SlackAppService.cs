@@ -2,8 +2,11 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Dapper;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
+using WebApp.Domain.Entities;
+using WebApp.Infrastructure;
 using WebApp.SlackIntegration.Controllers;
 
 namespace WebApp.SlackIntegration.Services;
@@ -12,12 +15,14 @@ public class SlackAppService
 {
     private readonly IConfiguration _configuration;
     private readonly LinkGenerator _linkGenerator;
+    private readonly AppDbContext _appDbContext;
     private readonly string? _connectionString;
 
-    public SlackAppService(IConfiguration configuration, LinkGenerator linkGenerator)
+    public SlackAppService(IConfiguration configuration, LinkGenerator linkGenerator, AppDbContext appDbContext)
     {
         _configuration = configuration;
         _linkGenerator = linkGenerator;
+        _appDbContext = appDbContext;
         _connectionString = _configuration.GetConnectionString("DefaultConnection");
     }
     
@@ -158,5 +163,35 @@ ON CONFLICT ("TeamId", "SlackUserId") DO NOTHING;
             TeamId = teamId,
             SlackUserId = slackUserId
         });
+    }
+
+    public async Task<bool> Subscribe(string slackTeamId, string slackUserId, string userId, string appName)
+    {
+        //TODO: add Authorization
+        var app = await _appDbContext.Apps.SingleOrDefaultAsync(a => a.UserId == userId && a.Name == appName);
+        if (app is null)
+        {
+            return false;
+        }
+        
+        var subs = await _appDbContext.SlackAppSubscriptions.SingleOrDefaultAsync(s => s.TeamId == slackTeamId && s.SlackUserId == slackUserId && s.AppId == app.Id);
+
+        if (subs is not null)
+        {
+            return false;
+        }
+
+        var sub = new SlackAppSubscription()
+        {
+            TeamId = slackTeamId,
+            SlackUserId = slackUserId,
+            AppId = app.Id,
+        };
+        
+        await _appDbContext.SlackAppSubscriptions.AddAsync(sub);
+
+        await _appDbContext.SaveChangesAsync();
+
+        return true;
     }
 }

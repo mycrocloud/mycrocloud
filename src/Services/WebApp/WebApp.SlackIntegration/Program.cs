@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.EntityFrameworkCore;
+using WebApp.Infrastructure;
 using WebApp.SlackIntegration.Authentication;
 using WebApp.SlackIntegration.Middlewares;
 using WebApp.SlackIntegration.Services;
@@ -27,10 +29,12 @@ builder.Services.AddCors(options =>
             .AllowCredentials();
     });
 });
-
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
 builder.Services.AddScoped<SlackAppService>();
-builder.Services.AddKeyedSingleton<SlackAppService>("SlackAppService");
-//builder.Services.AddHostedService<SubscribeService>();
+builder.Services.AddHostedService<SubscribeService>();
 
 var app = builder.Build();
 app.UseForwardedHeaders(new ForwardedHeadersOptions
