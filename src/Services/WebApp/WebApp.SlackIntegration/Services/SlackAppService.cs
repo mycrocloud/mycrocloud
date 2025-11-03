@@ -165,26 +165,28 @@ ON CONFLICT ("TeamId", "SlackUserId") DO NOTHING;
         });
     }
 
-    public async Task<bool> Subscribe(string slackTeamId, string slackUserId, string userId, string appName)
+    public async Task<string> Subscribe(string slackTeamId, string slackUserId, string userId, string appName,
+        string channelId)
     {
         //TODO: add Authorization
         var app = await _appDbContext.Apps.SingleOrDefaultAsync(a => a.UserId == userId && a.Name == appName);
         if (app is null)
         {
-            return false;
+            return "App is not found or you are not allowed to subscribe to this app";
         }
         
         var subs = await _appDbContext.SlackAppSubscriptions.SingleOrDefaultAsync(s => s.TeamId == slackTeamId && s.SlackUserId == slackUserId && s.AppId == app.Id);
 
         if (subs is not null)
         {
-            return false;
+            return "You are already subscribed this app in this channel";
         }
 
-        var sub = new SlackAppSubscription()
+        var sub = new SlackAppSubscription
         {
             TeamId = slackTeamId,
             SlackUserId = slackUserId,
+            ChannelId = channelId,
             AppId = app.Id,
         };
         
@@ -192,6 +194,6 @@ ON CONFLICT ("TeamId", "SlackUserId") DO NOTHING;
 
         await _appDbContext.SaveChangesAsync();
 
-        return true;
+        return $"Subscribed to {appName} to {channelId}";
     }
 }

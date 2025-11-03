@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.AspNetCore.Http.Features;
 using WebApp.SlackIntegration.Extensions;
 
 public class SlackVerificationMiddleware

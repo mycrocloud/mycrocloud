@@ -69,6 +69,9 @@ public class SlackAppSubscription
     public string SlackUserId { get; set; } = null!;
     
     [Required]
+    public string ChannelId { get; set; }
+    
+    [Required]
     public int? AppId { get; set; }
 }
 

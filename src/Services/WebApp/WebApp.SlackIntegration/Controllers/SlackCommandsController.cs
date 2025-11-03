@@ -86,12 +86,10 @@ public class SlackCommandsController(SlackAppService slackAppService) : Controll
     [Consumes("application/x-www-form-urlencoded")]
     public async Task<IActionResult> Subscribe([FromForm] SlackCommandPayload cmd)
     {
-        var appName = cmd.Text.Split(' ')[1];
+        var appName = cmd.Text!.Split(' ')[1];
 
-        var result = await slackAppService.Subscribe(User.GetSlackTeamId(), User.GetSlackUserId(), User.GetUserId(), appName);
+        var result = await slackAppService.Subscribe(User.GetSlackTeamId(), User.GetSlackUserId(), User.GetUserId(), appName, cmd.ChannelId!);
 
-        var message = result ? $"Subscribed to {appName}" : "You are not allowed to subscribe";
-        
-        return new JsonResult(new { response_type = "ephemeral", text = message });
+        return new JsonResult(new { response_type = "ephemeral", text = result });
     }
 }

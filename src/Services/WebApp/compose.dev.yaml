@@ -60,9 +60,10 @@ services:
     image: redis:alpine3.21
 
   rabbitmq:
-    image: rabbitmq:4.0.9-alpine
+    image: rabbitmq:4.1.5-management-alpine
     ports:
       - "5672:5672"
+      - "15672:15672"
     healthcheck:
       test: [ "CMD", "rabbitmq-diagnostics", "-q", "check_running" ]
       interval: 5s
