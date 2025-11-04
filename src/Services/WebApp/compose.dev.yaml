@@ -13,7 +13,6 @@ services:
     build:
       dockerfile: WebApp.Migrations/Dockerfile
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Username=postgres;Password=postgres;Database=mycrocloud
     depends_on:
       - db
@@ -23,7 +22,6 @@ services:
     build:
       dockerfile: WebApp.Api/Dockerfile
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Username=postgres;Password=postgres;Database=mycrocloud
       - ConnectionStrings__RabbitMq=amqp://guest:guest@rabbitmq:5672
       - OAuthApps__GitHub__ClientSecret=${OAuthApps__GitHub__ClientSecret}
@@ -38,7 +36,6 @@ services:
     build:
       dockerfile: WebApp.SlackIntegration/Dockerfile
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Username=postgres;Password=postgres;Database=mycrocloud
       - ConnectionStrings__RabbitMq=amqp://guest:guest@rabbitmq:5672
       - Slack__SigningSecret=${Slack__SigningSecret}
@@ -53,8 +50,6 @@ services:
     image: mycrocloud-apigateway
     build:
       dockerfile: WebApp.ApiGateway/Dockerfile
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
     ports:
       - "8081:8080"
 
