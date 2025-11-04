@@ -10,7 +10,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -67,6 +66,61 @@ func logJob(es7 *elasticsearch7.Client, es8 *elasticsearch8.Client, level string
 	}
 }
 
+func getMountSource(jobId string) string {
+	if isInContainer() {
+		return "/srv/build-outputs" + "/" + jobId
+	}
+
+	hostOut := os.Getenv("HOST_OUT_DIR")
+	if !filepath.IsAbs(hostOut) {
+		cwd, _ := os.Getwd()
+		hostOut = filepath.Join(cwd, hostOut)
+	}
+
+	return filepath.Join(hostOut, jobId)
+}
+
+func getMountType() mount.Type {
+	if isInContainer() {
+		return mount.TypeVolume
+	}
+	return mount.TypeBind
+}
+
+func getLogConfig(jobID string) container.LogConfig {
+	driver := os.Getenv("LOGGER_DRIVER")
+	if driver == "" {
+		driver = "json-file"
+	}
+
+	cfg := container.LogConfig{Type: driver}
+
+	switch driver {
+	case "fluentd":
+		addr := os.Getenv("FLUENTD_ADDRESS")
+		if addr == "" {
+			addr = "localhost:24224"
+		}
+		cfg.Config = map[string]string{
+			"fluentd-address": addr,
+			"tag":             fmt.Sprintf("mycrocloud.builder.%s", jobID),
+		}
+		log.Printf("[builder:%s] Fluentd logging enabled (%s)", jobID, addr)
+
+	case "json-file":
+		log.Printf("[builder:%s] Using local json-file logging", jobID)
+
+	case "none":
+		log.Printf("[builder:%s] Logging disabled (none)", jobID)
+
+	default:
+		log.Printf("[builder:%s] Unknown LOGGER_DRIVER=%s, using default json-file", jobID, driver)
+		cfg.Type = "json-file"
+	}
+
+	return cfg
+}
+
 // ProcessJob simulates job processing asynchronously
 func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.Queue, es7 *elasticsearch7.Client, es8 *elasticsearch8.Client) {
 	defer wg.Done()
@@ -84,18 +138,21 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.
 	// Create a container
 	log.Printf("Creating container")
 	builderImage := os.Getenv("BUILDER_IMAGE")
-	hostOutDir := os.Getenv("HOST_OUT_DIR")
-	distDir := path.Join("/output", buildMsg.JobId)
+	distDir := getMountSource(buildMsg.JobId)
+	mountType := getMountType()
+	log.Printf("Mount source: %s, mount type: %s", distDir, mountType)
 
-	log.Printf("Creating output directory: %s", distDir)
-	if err := os.MkdirAll(distDir, 0755); err != nil {
-		log.Fatalf("Failed to create output directory: %v", err)
+	if mountType == mount.TypeBind {
+		if err := os.MkdirAll(distDir, 0o755); err != nil {
+			log.Fatalf("failed to create bind mount source: %v", err)
+		}
 	}
 
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: builderImage,
 		Tty:   false,
-		Env: []string{"REPO_URL=" + buildMsg.CloneUrl,
+		Env: []string{
+			"REPO_URL=" + buildMsg.CloneUrl,
 			"WORK_DIR=" + buildMsg.Directory,
 			"OUT_DIR=" + buildMsg.OutDir,
 			"INSTALL_CMD=" + buildMsg.InstallCommand,
@@ -105,19 +162,13 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.
 	}, &container.HostConfig{
 		Mounts: []mount.Mount{
 			{
-				Type:   mount.TypeBind,
-				Source: hostOutDir + "/" + buildMsg.JobId,
+				Type:   mountType,
+				Source: distDir,
 				Target: "/output",
 			},
 		},
 		AutoRemove: true,
-		LogConfig: container.LogConfig{
-			Type: "fluentd",
-			Config: map[string]string{
-				"fluentd-address": "localhost:24224",
-				"tag":             fmt.Sprintf("mycrocloud.builder.%s", buildMsg.JobId),
-			},
-		},
+		LogConfig:  getLogConfig(buildMsg.JobId),
 	}, nil, nil, "")
 	failOnError(err, "Failed to create container")
 
@@ -259,6 +310,9 @@ func main() {
 		failOnError(err, "Failed to load .env file")
 	}
 
+	inContainer := isInContainer()
+	log.Printf("Running in container: %v", inContainer)
+
 	rabbitMQURL := os.Getenv("RABBITMQ_URL")
 	// Connect to RabbitMQ server
 	log.Printf("Connecting to RabbitMQ server at %s", rabbitMQURL)
@@ -326,10 +380,11 @@ func main() {
 	})
 	failOnError(err, "Failed to create elasticsearch client")
 
-	if ES_VERSION == "7" {
+	switch ES_VERSION {
+	case "7":
 		_, err := es7.Indices.Create(LogIndex)
 		failOnError(err, "Failed to create index")
-	} else if ES_VERSION == "8" {
+	case "8":
 		es8.Indices.Create(LogIndex)
 		failOnError(err, "Failed to create index")
 	}
