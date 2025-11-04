@@ -54,6 +54,7 @@ public class SubscribeService(IServiceScopeFactory serviceScopeFactory, IConfigu
         var slackAppService = scope.ServiceProvider.GetRequiredService<SlackAppService>();
         var appDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
+        logger.LogInformation("Processing job status change for Job ID: {JobId}, Status: {Status}", eventMessage.JobId, eventMessage.Status);
         var buildJob = await appDbContext.AppBuildJobs
             .Include(b => b.App)
             .SingleAsync(b => b.Id == eventMessage.JobId);
@@ -84,6 +85,8 @@ public class SubscribeService(IServiceScopeFactory serviceScopeFactory, IConfigu
         {
             await slackAppService.SendSlackMessage(subscription.TeamId, subscription.ChannelId, text);
         }
+
+        logger.LogInformation("Processed job status change for Job ID: {JobId}", eventMessage.JobId);
     }
 }
 

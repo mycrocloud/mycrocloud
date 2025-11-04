@@ -122,7 +122,7 @@ func getLogConfig(jobID string) container.LogConfig {
 }
 
 // ProcessJob simulates job processing asynchronously
-func ProcessJob(jsonString string, wg *sync.WaitGroup, ch2 *amqp.Channel, es7 *elasticsearch7.Client, es8 *elasticsearch8.Client) {
+func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, es7 *elasticsearch7.Client, es8 *elasticsearch8.Client) {
 	defer wg.Done()
 
 	var buildMsg BuildMessage
@@ -177,7 +177,7 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch2 *amqp.Channel, es7 *e
 	err = cli.ContainerStart(ctx, resp.ID, container.StartOptions{})
 	failOnError(err, "Failed to start container")
 
-	publishJobStatusChangedEventMessage(ch2, JobStatusChangedEventMessage{
+	publishJobStatusChangedEventMessage(ch, JobStatusChangedEventMessage{
 		JobId:       buildMsg.JobId,
 		Status:      Started,
 		ContainerId: resp.ID,
@@ -188,7 +188,7 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch2 *amqp.Channel, es7 *e
 	select {
 	case err := <-errCh:
 		failOnError(err, "Failed to wait for container")
-		publishJobStatusChangedEventMessage(ch2, JobStatusChangedEventMessage{
+		publishJobStatusChangedEventMessage(ch, JobStatusChangedEventMessage{
 			JobId:  buildMsg.JobId,
 			Status: Failed,
 		})
@@ -206,7 +206,7 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch2 *amqp.Channel, es7 *e
 	}
 
 	// publish completion message
-	publishJobStatusChangedEventMessage(ch2, JobStatusChangedEventMessage{
+	publishJobStatusChangedEventMessage(ch, JobStatusChangedEventMessage{
 		JobId:              buildMsg.JobId,
 		Status:             Done,
 		ArtifactsKeyPrefix: "output/" + buildMsg.JobId,
@@ -321,12 +321,12 @@ func main() {
 	defer conn.Close()
 
 	// Open a channel
-	ch, err := conn.Channel()
+	chConsumer, err := conn.Channel()
 	failOnError(err, "Failed to open a channel")
-	defer ch.Close()
+	defer chConsumer.Close()
 
 	// Declare the queue from which jobs are consumed
-	q, err := ch.QueueDeclare(
+	qBuildJob, err := chConsumer.QueueDeclare(
 		"job_queue", // name
 		true,        // durable
 		false,       // delete when unused
@@ -337,10 +337,11 @@ func main() {
 	failOnError(err, "Failed to declare a queue")
 
 	//
-	ch2, err := conn.Channel()
+	chPublisher, err := conn.Channel()
 	failOnError(err, "Failed to open a channel")
-	defer ch2.Close()
-	err = ch2.ExchangeDeclare(
+	defer chPublisher.Close()
+
+	err = chPublisher.ExchangeDeclare(
 		"app.build.events",
 		"fanout",
 		true,
@@ -356,14 +357,14 @@ func main() {
 	wg := &sync.WaitGroup{}
 
 	// RabbitMQ Consumer setup
-	msgs, err := ch.Consume(
-		q.Name, // queue
-		"",     // consumer
-		true,   // auto-ack
-		false,  // exclusive
-		false,  // no-local
-		false,  // no-wait
-		nil,    // args
+	msgs, err := chConsumer.Consume(
+		qBuildJob.Name, // queue
+		"",             // consumer
+		true,           // auto-ack
+		false,          // exclusive
+		false,          // no-local
+		false,          // no-wait
+		nil,            // args
 	)
 	failOnError(err, "Failed to register a consumer")
 
@@ -406,7 +407,7 @@ func main() {
 
 			go func(job string) {
 				defer func() { <-jobLimit }() // Release the slot once the job is done
-				ProcessJob(job, wg, ch2, es7, es8)
+				ProcessJob(job, wg, chPublisher, es7, es8)
 			}(job)
 		}
 	}()
