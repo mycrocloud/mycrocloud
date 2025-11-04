@@ -1,7 +1,6 @@
 services:
   db:
     image: postgres:16.2-alpine
-    container_name: mycrocloud-db
     environment:
       POSTGRES_PASSWORD: postgres
     volumes:
@@ -13,9 +12,9 @@ services:
     image: mycrocloud-db-migrator
     build:
       dockerfile: WebApp.Migrations/Dockerfile
-    container_name: mycrocloud-db-migrator
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Username=postgres;Password=postgres;Database=mycrocloud
     depends_on:
       - db
 
@@ -23,9 +22,10 @@ services:
     image: mycrocloud-api
     build:
       dockerfile: WebApp.Api/Dockerfile
-    container_name: mycrocloud-api
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Username=postgres;Password=postgres;Database=mycrocloud
+      - ConnectionStrings__RabbitMq=amqp://guest:guest@rabbitmq:5672
     ports:
       - "8080:8080"
     depends_on:
@@ -36,7 +36,6 @@ services:
     image: mycrocloud-apigateway
     build:
       dockerfile: WebApp.ApiGateway/Dockerfile
-    container_name: mycrocloud-apigateway
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
     ports:
@@ -44,7 +43,6 @@ services:
 
   seq:
     image: datalust/seq
-    container_name: mycrocloud-seq
     ports:
       - "8000:80"
       - "5341:5341"
