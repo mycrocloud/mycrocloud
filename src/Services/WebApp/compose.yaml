@@ -24,6 +24,7 @@ services:
     environment:
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Username=postgres;Password=postgres;Database=mycrocloud
       - ConnectionStrings__RabbitMq=amqp://guest:guest@rabbitmq:5672
+      - OAuthApps__Slack__ClientSecret=${OAuthApps__Slack__ClientSecret}
       - OAuthApps__GitHub__ClientSecret=${OAuthApps__GitHub__ClientSecret}
     ports:
       - "8080:8080"
