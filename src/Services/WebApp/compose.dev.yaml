@@ -31,7 +31,21 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
-
+  
+  slack-integration:
+    image: mycrocloud-slack-integration
+    build:
+      dockerfile: WebApp.SlackIntegration/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Username=postgres;Password=postgres;Database=mycrocloud
+      - ConnectionStrings__RabbitMq=amqp://guest:guest@rabbitmq:5672
+    ports:
+      - "8082:8080"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+        
   apigateway:
     image: mycrocloud-apigateway
     build:
