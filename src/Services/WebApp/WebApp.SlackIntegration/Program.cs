@@ -37,10 +37,6 @@ builder.Services.AddScoped<SlackAppService>();
 builder.Services.AddHostedService<SubscribeService>();
 
 var app = builder.Build();
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor
-});
 
 app.UseMiddleware<ReadSlackRequestBodyMiddleware>();
 app.UseSlackVerification();

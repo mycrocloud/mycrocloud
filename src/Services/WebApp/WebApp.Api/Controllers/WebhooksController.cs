@@ -13,6 +13,8 @@ namespace WebApp.Api.Controllers;
 
 public class WebhooksController(AppDbContext appDbContext, RabbitMqService rabbitMqService) : BaseController
 {
+    public const string ControllerName = "Webhooks";
+    
     [HttpPost("github/postreceive/{appId:int}")]
     [AllowAnonymous]
     [TypeFilter<GitHubWebhookValidationFilter>]

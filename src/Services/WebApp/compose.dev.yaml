@@ -26,6 +26,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Username=postgres;Password=postgres;Database=mycrocloud
       - ConnectionStrings__RabbitMq=amqp://guest:guest@rabbitmq:5672
+      - OAuthApps__GitHub__ClientSecret=${OAuthApps__GitHub__ClientSecret}
     ports:
       - "8080:8080"
     depends_on:
@@ -40,6 +41,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Username=postgres;Password=postgres;Database=mycrocloud
       - ConnectionStrings__RabbitMq=amqp://guest:guest@rabbitmq:5672
+      - Slack__SigningSecret=${Slack__SigningSecret}
+      - Slack__LinkSecret=${Slack__LinkSecret}
     ports:
       - "8082:8080"
     depends_on:
