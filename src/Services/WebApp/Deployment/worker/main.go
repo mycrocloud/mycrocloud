@@ -122,7 +122,7 @@ func getLogConfig(jobID string) container.LogConfig {
 }
 
 // ProcessJob simulates job processing asynchronously
-func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.Queue, es7 *elasticsearch7.Client, es8 *elasticsearch8.Client) {
+func ProcessJob(jsonString string, wg *sync.WaitGroup, ch2 *amqp.Channel, es7 *elasticsearch7.Client, es8 *elasticsearch8.Client) {
 	defer wg.Done()
 
 	var buildMsg BuildMessage
@@ -177,7 +177,7 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.
 	err = cli.ContainerStart(ctx, resp.ID, container.StartOptions{})
 	failOnError(err, "Failed to start container")
 
-	publishJobStatusChangedEventMessage(ch, q, JobStatusChangedEventMessage{
+	publishJobStatusChangedEventMessage(ch2, JobStatusChangedEventMessage{
 		JobId:       buildMsg.JobId,
 		Status:      Started,
 		ContainerId: resp.ID,
@@ -188,7 +188,7 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.
 	select {
 	case err := <-errCh:
 		failOnError(err, "Failed to wait for container")
-		publishJobStatusChangedEventMessage(ch, q, JobStatusChangedEventMessage{
+		publishJobStatusChangedEventMessage(ch2, JobStatusChangedEventMessage{
 			JobId:  buildMsg.JobId,
 			Status: Failed,
 		})
@@ -206,7 +206,7 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, q amqp.
 	}
 
 	// publish completion message
-	publishJobStatusChangedEventMessage(ch, q, JobStatusChangedEventMessage{
+	publishJobStatusChangedEventMessage(ch2, JobStatusChangedEventMessage{
 		JobId:              buildMsg.JobId,
 		Status:             Done,
 		ArtifactsKeyPrefix: "output/" + buildMsg.JobId,
@@ -336,15 +336,20 @@ func main() {
 	)
 	failOnError(err, "Failed to declare a queue")
 
-	q2, err := ch.QueueDeclare(
-		"job_status", // name
-		true,         // durable
-		false,        // delete when unused
-		false,        // exclusive
-		false,        // no-wait
-		nil,          // arguments
+	//
+	ch2, err := conn.Channel()
+	failOnError(err, "Failed to open a channel")
+	defer ch2.Close()
+	err = ch2.ExchangeDeclare(
+		"app.build.events",
+		"fanout",
+		true,
+		false,
+		false,
+		false,
+		nil,
 	)
-	failOnError(err, "Failed to declare a queue")
+	failOnError(err, "Failed to declare exchange")
 
 	// Create a channel to limit the number of concurrent jobs
 	jobLimit := make(chan struct{}, MaxConcurrentJobs)
@@ -401,7 +406,7 @@ func main() {
 
 			go func(job string) {
 				defer func() { <-jobLimit }() // Release the slot once the job is done
-				ProcessJob(job, wg, ch, q2, es7, es8)
+				ProcessJob(job, wg, ch2, es7, es8)
 			}(job)
 		}
 	}()

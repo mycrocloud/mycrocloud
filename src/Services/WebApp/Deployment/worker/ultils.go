@@ -7,13 +7,13 @@ import (
 	"github.com/streadway/amqp"
 )
 
-func publishJobStatusChangedEventMessage(ch *amqp.Channel, q amqp.Queue, message JobStatusChangedEventMessage) {
+func publishJobStatusChangedEventMessage(ch2 *amqp.Channel, message JobStatusChangedEventMessage) {
 	jsonMessage, err := json.Marshal(message)
 	failOnError(err, "Failed to marshal JSON")
 
-	err = ch.Publish(
+	err = ch2.Publish(
+		"app.build.events",
 		"",
-		q.Name,
 		false,
 		false,
 		amqp.Publishing{
