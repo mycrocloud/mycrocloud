@@ -3,15 +3,15 @@ updates:
   - package-ecosystem: "nuget"
     directories:
       - "src/Services/WebApp/WebApp.Admin"
+      - "src/Services/WebApp/WebApp.Api"
+      - "src/Services/WebApp/WebApp.ApiGateway"
       - "src/Services/WebApp/WebApp.Domain"
       - "src/Services/WebApp/WebApp.FunctionInvoker"
       - "src/Services/WebApp/WebApp.FunctionShared"
       - "src/Services/WebApp/WebApp.Infrastructure"
       - "src/Services/WebApp/WebApp.Migrations"
       - "src/Services/WebApp/WebApp.MigrationTest"
-      - "src/Services/WebApp/WebApp.ApiGateway"
-      - "src/Services/WebApp/WebApp.Api"
-      - "src/Services/WebApp/WebApp.SelfHostedFunctionRunner"
+      - "src/Services/WebApp/WebApp.SlackIntegrationApi"
       - "src/Services/WebApp/WebApp.UnitTest"
 
     schedule:
@@ -27,4 +27,4 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "daily"
