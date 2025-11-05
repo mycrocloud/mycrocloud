@@ -15,7 +15,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-function-invoker
+  IMAGE_NAME: function-invoker
   WORK_DIR: src/Services/WebApp
 
 jobs:
