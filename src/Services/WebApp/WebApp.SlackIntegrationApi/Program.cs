@@ -42,7 +42,7 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseForwardedHeaders(new()
     {
-        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+        ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost
     });
 }
 
