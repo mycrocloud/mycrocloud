@@ -7,6 +7,15 @@ on:
       - "src/Web/**"
 
   workflow_dispatch:
+    inputs:
+      cache:
+        description: "Use build cache"
+        required: false
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
 
 env:
   REGISTRY: ghcr.io
@@ -48,8 +57,8 @@ jobs:
           build-args: |
             COMMIT_HASH=${{ github.sha }}
           #https://docs.docker.com/build/cache/backends/gha/#using-dockerbuild-push-action
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: ${{ github.event.inputs.cache == 'true' && 'type=gha' || '' }}
+          cache-to: ${{ github.event.inputs.cache == 'true' && 'type=gha,mode=max' || '' }}
           
   deploy:
     runs-on: ubuntu-latest
