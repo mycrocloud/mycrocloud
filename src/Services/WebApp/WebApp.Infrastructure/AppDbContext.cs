@@ -134,8 +134,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<SlackUserLink>()
             .HasKey(x => new { x.TeamId, x.SlackUserId });
 
-        // modelBuilder.Entity<SlackAppSubscription>()
-        //     .HasKey(x => new { x.TeamId, x.SlackUserId });
+        modelBuilder.Entity<SlackAppSubscription>()
+            .HasKey(x => new { x.TeamId, x.ChannelId, x.AppId });
 
         // Cascade delete optional
         // modelBuilder.Entity<SlackInstallation>()

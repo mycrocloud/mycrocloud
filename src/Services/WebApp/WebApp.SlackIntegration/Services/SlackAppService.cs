@@ -174,15 +174,16 @@ ON CONFLICT ("TeamId", "SlackUserId") DO NOTHING;
         {
             return "App is not found or you are not allowed to subscribe to this app";
         }
-        
-        var subs = await _appDbContext.SlackAppSubscriptions.SingleOrDefaultAsync(s => s.TeamId == slackTeamId && s.SlackUserId == slackUserId && s.AppId == app.Id);
 
-        if (subs is not null)
+        var sub = await _appDbContext.SlackAppSubscriptions.SingleOrDefaultAsync(s =>
+            s.TeamId == slackTeamId && s.ChannelId == channelId && s.AppId == app.Id);
+
+        if (sub is not null)
         {
             return "You are already subscribed this app in this channel";
         }
 
-        var sub = new SlackAppSubscription
+        sub = new SlackAppSubscription
         {
             TeamId = slackTeamId,
             SlackUserId = slackUserId,
