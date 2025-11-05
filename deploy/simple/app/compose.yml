@@ -42,7 +42,7 @@ services:
       - /srv/function-data:/srv/function-data
   
   slack-integration-api:
-    image: ghcr.io/mycrocloud/slack-integration-api
+    image: ghcr.io/mycrocloud/mycrocloud-slack-integration-api:main
     environment:
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
       - ConnectionStrings__RabbitMq=${ConnectionStrings__RabbitMq}
