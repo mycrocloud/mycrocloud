@@ -1,0 +1,47 @@
+{
+  "ok": true,
+  "manifest": {
+    "display_information": {
+      "name": "MycroCloud"
+    },
+    "features": {
+      "app_home": {
+        "home_tab_enabled": true,
+        "messages_tab_enabled": false,
+        "messages_tab_read_only_enabled": false
+      },
+      "bot_user": {
+        "display_name": "MycroCloud",
+        "always_online": false
+      },
+      "slash_commands": [
+        {
+          "command": "/mycrocloud",
+          "url": "https://slack-integration-api.mycrocloud.info/slack/commands",
+          "description": "Learn how to use MycroCloud integration",
+          "usage_hint": "help",
+          "should_escape": true
+        }
+      ]
+    },
+    "oauth_config": {
+      "redirect_urls": [
+        "https://mycrocloud.info/integrations/slack/oauth/callback"
+      ],
+      "scopes": {
+        "bot": [
+          "channels:read",
+          "chat:write",
+          "commands",
+          "users:read",
+          "channels:join"
+        ]
+      }
+    },
+    "settings": {
+      "org_deploy_enabled": false,
+      "socket_mode_enabled": false,
+      "token_rotation_enabled": false
+    }
+  }
+}
