@@ -12,7 +12,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: deployment-fluentd
+  IMAGE_NAME: ${{ github.repository }}-deployment-fluentd
   WORK_DIR: src/Services/WebApp/Deployment
 
 jobs:

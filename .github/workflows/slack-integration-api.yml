@@ -13,7 +13,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: slack-integration-api
+  IMAGE_NAME: ${{ github.repository }}-slack-integration-api
   WORK_DIR: src/Services/WebApp
 
 jobs:
