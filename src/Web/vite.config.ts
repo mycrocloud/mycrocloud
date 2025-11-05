@@ -1,7 +1,7 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
-import mkcert from 'vite-plugin-mkcert'
+import mkcert from "vite-plugin-mkcert";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -18,10 +18,9 @@ export default defineConfig(({ mode }) => {
             process.env.COMMIT_HASH?.slice(0, 7) ||
             process.env.BUILD_ID ||
             Date.now();
-
           return html.replace(
-            "</body>",
-            `<script src="_config.js?v=${version}"></script>\n</body>`,
+            "</title>",
+            `</title>\n<script src="/_config.js?v=${version}"></script>`,
           );
         },
       },
