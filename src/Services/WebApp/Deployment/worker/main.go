@@ -306,7 +306,7 @@ func GetAccessToken() string {
 }
 
 func main() {
-	if err := godotenv.Load(); err != nil && !os.IsNotExist(err) {
+	if err := godotenv.Load(".conf"); err != nil && !os.IsNotExist(err) {
 		failOnError(err, "Failed to load .env file")
 	}
 
