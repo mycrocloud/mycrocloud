@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
             Date.now();
           return html.replace(
             "</title>",
-            `</title>\n<script src="/_config.js?v=${version}"></script>`,
+            `</title>\n\t\t<script src="/_config.js?v=${version}"></script>`,
           );
         },
       },
