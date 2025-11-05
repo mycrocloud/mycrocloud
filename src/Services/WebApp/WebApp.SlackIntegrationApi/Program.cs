@@ -57,6 +57,19 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapGet("/ping", () => "pong");
+app.MapGet("/__app_echo", (HttpContext ctx) =>
+{
+    var hdr = ctx.Request.Headers;
+    return Results.Text($@"
+Request.Scheme={ctx.Request.Scheme}
+Request.Host={ctx.Request.Host}
+X-Forwarded-Proto={hdr["X-Forwarded-Proto"].FirstOrDefault()}
+X-Forwarded-Host={hdr["X-Forwarded-Host"].FirstOrDefault()}
+HostHeader={hdr["Host"].FirstOrDefault()}
+X-Forwarded-For={hdr["X-Forwarded-For"].FirstOrDefault()}
+", "text/plain");
+});
+
 app.MapControllers();
 app.UseSlackCommandFallback();
 
