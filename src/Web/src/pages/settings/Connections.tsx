@@ -15,7 +15,7 @@ export default function Connections() {
   const connectSlack = async () => {
     const redirect_uri = window.location.origin + "/integrations/slack/oauth/callback";
     const scope = "chat:write,commands,channels:read,users:read";
-    const url =`https://slack.com/oauth/v2/authorize?client_id=${SLACK_CLIENT_ID}&scope=${scope}&redirect_uri=${redirect_uri}`;
+    const url = `https://slack.com/oauth/v2/authorize?client_id=${SLACK_CLIENT_ID}&scope=${scope}&redirect_uri=${redirect_uri}`;
 
     window.location.href = url;
   };
@@ -23,20 +23,22 @@ export default function Connections() {
   return (
     <section className="mt-4">
       <h1 className="font-bold">Settings</h1>
-      <h2>Connections</h2>
-      <button
-        onClick={connectGitHub}
-        className="rounded-sm border bg-gray-900 px-2 py-1.5 text-white"
-      >
-        Connect GitHub
-      </button>
+      <h2 className="mt-4">Connections</h2>
+      <div className="flex space-x-2 items-center mt-2">
+        <button
+          onClick={connectGitHub}
+          className="rounded-sm border  border-1 px-2 py-1.5 text-black-900"
+        >
+          Connect GitHub
+        </button>
 
-      <button
-        onClick={connectSlack}
-        className="rounded-sm border bg-gray-900 px-2 py-1.5 text-white"
-      >
-        Connect Slack
-      </button>
+        <button
+          onClick={connectSlack}
+          className="rounded-sm border border-1 px-2 py-1.5 text-black-900"
+        >
+          Connect Slack
+        </button>
+      </div>
     </section>
   );
 }
