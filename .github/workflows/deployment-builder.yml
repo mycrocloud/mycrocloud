@@ -12,7 +12,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: deployment-builder
+  IMAGE_NAME: ${{ github.repository }}-deployment-builder
   WORK_DIR: src/Services/WebApp/Deployment
 
 jobs:

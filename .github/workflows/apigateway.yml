@@ -14,7 +14,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: apigateway
+  IMAGE_NAME: ${{ github.repository }}-apigateway
   WORK_DIR: src/Services/WebApp
 
 jobs:
