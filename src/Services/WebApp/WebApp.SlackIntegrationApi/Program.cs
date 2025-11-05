@@ -38,6 +38,14 @@ builder.Services.AddHostedService<SubscribeService>();
 
 var app = builder.Build();
 
+if (!app.Environment.IsDevelopment())
+{
+    app.UseForwardedHeaders(new()
+    {
+        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+    });
+}
+
 app.UseMiddleware<ReadSlackRequestBodyMiddleware>();
 app.UseSlackVerification();
 app.UseSlackCommandRewrite();
