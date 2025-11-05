@@ -13,7 +13,7 @@ services:
     build:
       dockerfile: WebApp.Migrations/Dockerfile
     environment:
-      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Username=postgres;Password=postgres;Database=mycrocloud
+      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
     depends_on:
       - db
 
@@ -22,8 +22,8 @@ services:
     build:
       dockerfile: WebApp.Api/Dockerfile
     environment:
-      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Username=postgres;Password=postgres;Database=mycrocloud
-      - ConnectionStrings__RabbitMq=amqp://guest:guest@rabbitmq:5672
+      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
+      - ConnectionStrings__RabbitMq=${ConnectionStrings__RabbitMq}
       - OAuthApps__Slack__ClientSecret=${OAuthApps__Slack__ClientSecret}
       - OAuthApps__GitHub__ClientSecret=${OAuthApps__GitHub__ClientSecret}
     ports:
@@ -32,13 +32,13 @@ services:
       rabbitmq:
         condition: service_healthy
   
-  slack-integration:
-    image: mycrocloud/slack-integration
+  slack-integration-api:
+    image: mycrocloud/slack-integration-api
     build:
-      dockerfile: WebApp.SlackIntegration/Dockerfile
+      dockerfile: WebApp.SlackIntegrationApi/Dockerfile
     environment:
-      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Username=postgres;Password=postgres;Database=mycrocloud
-      - ConnectionStrings__RabbitMq=amqp://guest:guest@rabbitmq:5672
+      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
+      - ConnectionStrings__RabbitMq=${ConnectionStrings__RabbitMq}
       - Slack__SigningSecret=${Slack__SigningSecret}
       - Slack__LinkSecret=${Slack__LinkSecret}
     ports:
