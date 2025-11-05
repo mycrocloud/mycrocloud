@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace WebApp.SlackIntegration.Extensions;
+namespace WebApp.SlackIntegrationApi.Extensions;
 
 public static class RequestExtensions
 {

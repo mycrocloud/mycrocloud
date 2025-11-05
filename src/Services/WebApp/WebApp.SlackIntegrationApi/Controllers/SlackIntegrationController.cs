@@ -5,10 +5,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
-using WebApp.SlackIntegration.Extensions;
-using WebApp.SlackIntegration.Services;
+using WebApp.SlackIntegrationApi.Extensions;
+using WebApp.SlackIntegrationApi.Services;
 
-namespace WebApp.SlackIntegration.Controllers;
+namespace WebApp.SlackIntegrationApi.Controllers;
 
 [ApiController]
 [Route("slack/integration")]

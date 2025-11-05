@@ -7,9 +7,9 @@ using Microsoft.IdentityModel.Tokens;
 using Npgsql;
 using WebApp.Domain.Entities;
 using WebApp.Infrastructure;
-using WebApp.SlackIntegration.Controllers;
+using WebApp.SlackIntegrationApi.Controllers;
 
-namespace WebApp.SlackIntegration.Services;
+namespace WebApp.SlackIntegrationApi.Services;
 
 public class SlackAppService
 {

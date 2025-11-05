@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
-using WebApp.SlackIntegration.Extensions;
+using WebApp.SlackIntegrationApi.Extensions;
 
 public class SlackVerificationMiddleware
 {

@@ -2,9 +2,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using WebApp.Infrastructure;
-using WebApp.SlackIntegration.Authentication;
-using WebApp.SlackIntegration.Middlewares;
-using WebApp.SlackIntegration.Services;
+using WebApp.SlackIntegrationApi.Authentication;
+using WebApp.SlackIntegrationApi.Middlewares;
+using WebApp.SlackIntegrationApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 

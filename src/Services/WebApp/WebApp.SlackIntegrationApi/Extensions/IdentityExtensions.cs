@@ -1,6 +1,6 @@
 using System.Security.Claims;
 
-namespace WebApp.SlackIntegration.Extensions;
+namespace WebApp.SlackIntegrationApi.Extensions;
 
 public static class IdentityExtensions
 {

@@ -3,9 +3,9 @@ using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
-using WebApp.SlackIntegration.Services;
+using WebApp.SlackIntegrationApi.Services;
 
-namespace WebApp.SlackIntegration.Authentication;
+namespace WebApp.SlackIntegrationApi.Authentication;
 
 public class SlackAuthenticationHandler: AuthenticationHandler<SlackAuthenticationOptions>
 {

@@ -1,6 +1,6 @@
-using WebApp.SlackIntegration.Extensions;
+using WebApp.SlackIntegrationApi.Extensions;
 
-namespace WebApp.SlackIntegration.Middlewares;
+namespace WebApp.SlackIntegrationApi.Middlewares;
 
 public class ReadSlackRequestBodyMiddleware(RequestDelegate next, ILogger<ReadSlackRequestBodyMiddleware> logger)
 {

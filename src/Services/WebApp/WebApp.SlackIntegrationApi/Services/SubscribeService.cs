@@ -6,7 +6,7 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using WebApp.Infrastructure;
 
-namespace WebApp.SlackIntegration.Services;
+namespace WebApp.SlackIntegrationApi.Services;
 
 public class SubscribeService(IServiceScopeFactory serviceScopeFactory, IConfiguration configuration, ILogger<SubscribeService> logger) : BackgroundService
 {

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.WebUtilities;
-using WebApp.SlackIntegration.Extensions;
+using WebApp.SlackIntegrationApi.Extensions;
 
-namespace WebApp.SlackIntegration.Middlewares;
+namespace WebApp.SlackIntegrationApi.Middlewares;
 
 public class SlackCommandRewriteMiddleware
 {
