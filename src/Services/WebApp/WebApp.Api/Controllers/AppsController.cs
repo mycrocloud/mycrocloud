@@ -19,7 +19,8 @@ public class AppsController(
     IAppRepository appRepository,
     AppDbContext appDbContext,
     IConfiguration configuration,
-    IHttpClientFactory httpClientFactory
+    IHttpClientFactory httpClientFactory,
+    LinkGenerator linkGenerator
 ) : BaseController
 {
     [HttpGet]
@@ -172,15 +173,14 @@ public class AppsController(
         return repo;
     }
 
-    private async Task CreateWebhook(int appId, string repoFullName, string accessToken,
-        string webhookToken)
+    private async Task CreateWebhook(int appId, string repoFullName, string accessToken, string token)
     {
         var config = configuration.GetSection("AppIntegrations:GitHubWebhook");
 
         //for testing webhook locally
         //ref: https://docs.github.com/en/webhooks/testing-and-troubleshooting-webhooks/testing-webhooks
-        var url = string.Format(config["Config:Url"]!, appId, webhookToken);
-
+        var url = linkGenerator.GetUriByAction(HttpContext, nameof(WebhooksController.ReceiveGitHubEvent), WebhooksController.ControllerName, new { appId, token });
+        
         var webhookRequestBody = new
         {
             events = config.GetSection("Events").Get<string[]>(),

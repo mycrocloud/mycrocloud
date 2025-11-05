@@ -1,0 +1,6 @@
+{
+    "job_id": "1",
+    "status": "started",
+    "container_id": "1234567890",
+    "artifacts_key_prefix": "mycrocloud/sample-react-app/1"
+}

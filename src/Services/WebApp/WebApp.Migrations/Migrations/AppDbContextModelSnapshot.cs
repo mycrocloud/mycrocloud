@@ -525,6 +525,109 @@ namespace WebApp.Migrations.Migrations
                     b.ToTable("RouteFolders");
                 });
 
+            modelBuilder.Entity("WebApp.Domain.Entities.SlackAppSubscription", b =>
+                {
+                    b.Property<string>("TeamId")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("ChannelId")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("AppId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SlackUserId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<int>("SubscriptionId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("TeamId", "ChannelId", "AppId");
+
+                    b.ToTable("SlackAppSubscriptions");
+                });
+
+            modelBuilder.Entity("WebApp.Domain.Entities.SlackInstallation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BotAccessToken")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("BotUserId")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("EnterpriseId")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime>("InstalledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("InstalledByUserId")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<bool>("IsEnterpriseInstall")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Scopes")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("TeamId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("TeamName")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TeamId")
+                        .IsUnique();
+
+                    b.ToTable("SlackInstallations");
+                });
+
+            modelBuilder.Entity("WebApp.Domain.Entities.SlackUserLink", b =>
+                {
+                    b.Property<string>("TeamId")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("SlackUserId")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime>("LinkedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("TeamId", "SlackUserId");
+
+                    b.ToTable("SlackUserLinks");
+                });
+
             modelBuilder.Entity("WebApp.Domain.Entities.TextStorage", b =>
                 {
                     b.Property<int>("Id")
@@ -564,16 +667,7 @@ namespace WebApp.Migrations.Migrations
 
             modelBuilder.Entity("WebApp.Domain.Entities.UserToken", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Name")
+                    b.Property<string>("UserId")
                         .HasColumnType("text");
 
                     b.Property<string>("Provider")
@@ -582,19 +676,26 @@ namespace WebApp.Migrations.Migrations
                     b.Property<int>("Purpose")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("text");
+
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
                     b.Property<string>("Token")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("UserId")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
+                    b.HasKey("UserId", "Provider", "Purpose");
 
                     b.ToTable("UserTokens");
                 });

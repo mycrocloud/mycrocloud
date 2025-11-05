@@ -10,7 +10,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-web
+  IMAGE_NAME: web
   WORK_DIR: src/Web
 
 jobs:

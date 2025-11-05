@@ -13,6 +13,8 @@ namespace WebApp.Api.Controllers;
 
 public class WebhooksController(AppDbContext appDbContext, RabbitMqService rabbitMqService) : BaseController
 {
+    public const string ControllerName = "Webhooks";
+    
     [HttpPost("github/postreceive/{appId:int}")]
     [AllowAnonymous]
     [TypeFilter<GitHubWebhookValidationFilter>]
@@ -47,7 +49,7 @@ public class WebhooksController(AppDbContext appDbContext, RabbitMqService rabbi
             Id = Guid.NewGuid(),
             App = app,
             Name = commitMessage ?? $"Build {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}",
-            Status = "pending",
+            Status = "Queued",
             CreatedAt = DateTime.UtcNow
         };
 

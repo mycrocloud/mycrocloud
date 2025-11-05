@@ -4,22 +4,12 @@ services:
     container_name: mycrocloud-deployment-worker
     environment:
       - RABBITMQ_URL=${RABBITMQ_URL}
-      - UPLOAD_ARTIFACTS=true
-      - AUTH0_DOMAIN=https://auth.mycrocloud.info
-      - AUTH0_CLIENT_ID=3lh3FFSWS5VWnDeX26rC0Kvza1HJ70s7
       - AUTH0_SECRET=${AUTH0_SECRET}
-      - AUTH0_AUDIENCE=mycrocloud-api
-      - UPLOAD_URL=https://mycrocloud.info/api/apps/0/Objects
-      - HOST_OUT_DIR=/srv/build-outputs
-      - BUILDER_IMAGE=ghcr.io/mycrocloud/mycrocloud-deployment-builder:dev
-      - ES_VERSION=7
-      - ES_BUILD_LOGS_INDEX=build-logs
-      - ES_HOST=https://mycrocloud-6595046855.us-east-1.bonsaisearch.net:443
-      - ES_USERNAME=2t9zi8my5c
       - ES_PASSWORD=${ES_PASSWORD}
     volumes:
+      - ./worker.conf:/.conf:ro
       - /var/run/docker.sock:/var/run/docker.sock
-      - /srv/build-outputs:/output
+      - /srv/build-outputs:/build-outputs
 
   fluentd:
     image: ghcr.io/mycrocloud/mycrocloud-deployment-fluentd:dev

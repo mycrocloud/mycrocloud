@@ -1,4 +1,4 @@
-import { getConfig } from "../../config";
+import { getConfig } from "@/config";
 
 const { WEBAPP_APIGATEWAY_DOMAIN } = getConfig();
 export function getAppDomain(appId: number) {

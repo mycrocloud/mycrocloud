@@ -8,5 +8,6 @@
   <Project Path="WebApp.Infrastructure\WebApp.Infrastructure.csproj" Type="Classic C#" />
   <Project Path="WebApp.Migrations\WebApp.Migrations.csproj" Type="Classic C#" />
   <Project Path="WebApp.MigrationTest\WebApp.MigrationTest.csproj" Type="Classic C#" />
+  <Project Path="WebApp.SlackIntegrationApi\WebApp.SlackIntegrationApi.csproj" Type="Classic C#" />
   <Project Path="WebApp.UnitTest\WebApp.UnitTest.csproj" Type="Classic C#" />
 </Solution>

@@ -21,10 +21,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Variable> Variables { get; set; }
     public DbSet<TextStorage> TextStorages { get; set; }
     public DbSet<Object> Objects { get; set; }
-
+    
+    //TODO: re-design?
     public DbSet<UserToken> UserTokens { get; set; }
 
     public DbSet<AppBuildJob> AppBuildJobs { get; set; }
+
+    public DbSet<SlackInstallation> SlackInstallations { get; set; }
+
+    public DbSet<SlackUserLink> SlackUserLinks { get; set; }
+
+    public DbSet<SlackAppSubscription> SlackAppSubscriptions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -111,13 +118,32 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasOne(s => s.App)
             .WithMany(a => a.Objects)
             .OnDelete(DeleteBehavior.Cascade);
-
-        // modelBuilder.Entity<UserToken>()
-        //     .HasKey(t => new { t.UserId, t.Provider, t.Purpose });
+        
+        //TODO: re-design?
+        modelBuilder.Entity<UserToken>()
+            .HasKey(t => new { t.UserId, t.Provider, t.Purpose });
 
         modelBuilder.Entity<AppBuildJob>()
             .Property(p => p.Name)
             .HasDefaultValue("build");
+
+        modelBuilder.Entity<SlackInstallation>()
+            .HasIndex(x => x.TeamId)
+            .IsUnique();
+
+        modelBuilder.Entity<SlackUserLink>()
+            .HasKey(x => new { x.TeamId, x.SlackUserId });
+
+        modelBuilder.Entity<SlackAppSubscription>()
+            .HasKey(x => new { x.TeamId, x.ChannelId, x.AppId });
+
+        // Cascade delete optional
+        // modelBuilder.Entity<SlackInstallation>()
+        //     .HasMany(x => x.UserLinks)
+        //     .WithOne(x => x.Installation)
+        //     .HasForeignKey(x => x.TeamId)
+        //     .HasPrincipalKey(x => x.TeamId)
+        //     .OnDelete(DeleteBehavior.Cascade);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

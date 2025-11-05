@@ -17,7 +17,7 @@ public class IntegrationsController(
     IHttpClientFactory httpClientFactory) : BaseController
 {
     [HttpPost("github/callback")]
-    public async Task<IActionResult> GitHubCallback(GitHubAuthRequest request)
+    public async Task<IActionResult> GitHubCallback(OAuthRequest request)
     {
         var authResponse = await ExchangeGitHubAccessToken(request);
 
@@ -49,7 +49,7 @@ public class IntegrationsController(
         return Ok();
     }
 
-    private async Task<GitHubAuthResponse> ExchangeGitHubAccessToken(GitHubAuthRequest request)
+    private async Task<OAuthResponse> ExchangeGitHubAccessToken(OAuthRequest request)
     {
         var client = httpClientFactory.CreateClient();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -63,7 +63,7 @@ public class IntegrationsController(
             new FormUrlEncodedContent(requestData));
         response.EnsureSuccessStatusCode();
         var responseBody = await response.Content.ReadAsStringAsync();
-        var authResponse = JsonSerializer.Deserialize<GitHubAuthResponse>(responseBody)!;
+        var authResponse = JsonSerializer.Deserialize<OAuthResponse>(responseBody)!;
         return authResponse;
     }
 
@@ -103,6 +103,77 @@ public class IntegrationsController(
             repo.UpdatedAt
         }));
     }
+
+    #region Slack
+
+    [HttpPost("slack/callback")]
+    public async Task<IActionResult> SlackCallback(OAuthRequest request)
+    {
+        var slack = await ExchangeSlackAccessToken(request);
+
+        var existing = await appDbContext.SlackInstallations
+        .FirstOrDefaultAsync(x => x.TeamId == slack.Team!.Id);
+
+        if (existing == null)
+        {
+            var install = new SlackInstallation
+            {
+                //AppId = slack.AppId,
+                TeamId = slack.Team!.Id,
+                TeamName = slack.Team!.Name,
+                BotUserId = slack.BotUserId,
+                BotAccessToken = slack.AccessToken ?? "",
+                Scopes = slack.Scope,
+                InstalledByUserId = slack.AuthedUser?.Id,
+                EnterpriseId = slack.Enterprise?.Id,
+                IsEnterpriseInstall = slack.IsEnterpriseInstall,
+                InstalledAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            appDbContext.SlackInstallations.Add(install);
+        }
+        else
+        {
+            //existing.AppId = slack.AppId;
+            existing.TeamName = slack.Team!.Name;
+            existing.BotUserId = slack.BotUserId;
+            existing.BotAccessToken = slack.AccessToken ?? "";
+            existing.Scopes = slack.Scope;
+            existing.InstalledByUserId = slack.AuthedUser?.Id;
+            existing.EnterpriseId = slack.Enterprise?.Id;
+            existing.IsEnterpriseInstall = slack.IsEnterpriseInstall;
+            existing.UpdatedAt = DateTime.UtcNow;
+
+            appDbContext.SlackInstallations.Update(existing);
+        }
+
+        await appDbContext.SaveChangesAsync();
+
+        return Ok();
+    }
+
+    private async Task<SlackOAuthResponse> ExchangeSlackAccessToken(OAuthRequest request)
+    {
+        var client = httpClientFactory.CreateClient();
+        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("multipart/form-data"));
+        var requestData = new Dictionary<string, string>
+        {
+            { "client_id", configuration[$"OAuthApps:Slack:ClientId"]! },
+            { "client_secret", configuration[$"OAuthApps:Slack:ClientSecret"]! },
+            { "code", request.Code },
+            { "redirect_uri", request.RedirectUrl}
+        };
+        var response = await client.PostAsync("https://slack.com/api/oauth.v2.access",
+            new FormUrlEncodedContent(requestData));
+        response.EnsureSuccessStatusCode();
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        var authResponse = JsonSerializer.Deserialize<SlackOAuthResponse>(responseBody)!;
+        return authResponse;
+    }
+
+    #endregion
 }
 
 public class GitHubRepo
@@ -120,12 +191,85 @@ public class GitHubRepo
     [JsonPropertyName("updated_at")] public DateTime UpdatedAt { get; set; }
 }
 
-public class GitHubAuthRequest
+public class OAuthRequest
 {
     public string Code { get; set; }
+
+    [JsonPropertyName("redirect_uri")] public string? RedirectUrl { get; set; }
 }
 
-public class GitHubAuthResponse
+public class OAuthResponse
 {
     [JsonPropertyName("access_token")] public string AccessToken { get; set; }
+}
+
+// public class SlackOAuthResponse : OAuthResponse
+// {
+
+// }
+
+public class SlackOAuthResponse
+{
+    [JsonPropertyName("ok")]
+    public bool Ok { get; set; }
+
+    [JsonPropertyName("app_id")]
+    public string? AppId { get; set; }
+
+    [JsonPropertyName("authed_user")]
+    public SlackAuthedUser? AuthedUser { get; set; }
+
+    [JsonPropertyName("scope")]
+    public string? Scope { get; set; }
+
+    [JsonPropertyName("token_type")]
+    public string? TokenType { get; set; }
+
+    [JsonPropertyName("access_token")]
+    public string? AccessToken { get; set; }
+
+    [JsonPropertyName("bot_user_id")]
+    public string? BotUserId { get; set; }
+
+    [JsonPropertyName("team")]
+    public SlackTeam? Team { get; set; }
+
+    [JsonPropertyName("enterprise")]
+    public SlackEnterprise? Enterprise { get; set; }
+
+    [JsonPropertyName("is_enterprise_install")]
+    public bool IsEnterpriseInstall { get; set; }
+}
+
+public class SlackAuthedUser
+{
+    [JsonPropertyName("id")]
+    public string? Id { get; set; }
+
+    [JsonPropertyName("scope")]
+    public string? Scope { get; set; }
+
+    [JsonPropertyName("access_token")]
+    public string? AccessToken { get; set; }
+
+    [JsonPropertyName("token_type")]
+    public string? TokenType { get; set; }
+}
+
+public class SlackTeam
+{
+    [JsonPropertyName("id")]
+    public string? Id { get; set; }
+
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+}
+
+public class SlackEnterprise
+{
+    [JsonPropertyName("id")]
+    public string? Id { get; set; }
+
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
 }

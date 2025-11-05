@@ -1,7 +1,6 @@
 services:
   db-migrator:
     image: ghcr.io/mycrocloud/mycrocloud-db-migrator:main
-    container_name: mycrocloud-db-migrator
     environment:
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
     volumes:
@@ -9,9 +8,8 @@ services:
 
   seq:
     image: datalust/seq
-    container_name: mycrocloud-seq
     volumes:
-      - mycrocloud-seq-data:/data
+      - seq-data:/data
     environment:
       - ACCEPT_EULA=Y
       - SEQ_FIRSTRUN_ADMINPASSWORDHASH=QP3ZwBGCUn+Ija3VuMpr3OAzeWmNgYRh/TxaA3V9hOWUQHiL5fA3g3SQjYi/Q7W6co8ui1CO3pZQh5TfxJU511iqGOQRxrKSCd+2kSJcddf9
@@ -23,19 +21,18 @@ services:
 
   api:
     image: ghcr.io/mycrocloud/mycrocloud-api:main
-    container_name: mycrocloud-api
     environment:
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
       - ConnectionStrings__RabbitMq=${ConnectionStrings__RabbitMq}
       - OAuthApps__GitHub__ClientSecret=${OAuthApps__GitHub__ClientSecret}
       - AppIntegrations__GitHubWebhook__Config__Secret=${AppIntegrations__GitHubWebhook__Config__Secret}
       - Elasticsearch__Password=${Elasticsearch__Password}
+      - OAuthApps__Slack__ClientSecret=${OAuthApps__Slack__ClientSecret}
     volumes:
       - ./config/Services/WebApp/WebApp.Api/appsettings.json:/app/appsettings.json:ro
 
   apigateway:
     image: ghcr.io/mycrocloud/mycrocloud-apigateway:main
-    container_name: mycrocloud-apigateway
     environment:
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
       - ConnectionStrings__Redis=${ConnectionStrings__Redis}
@@ -43,10 +40,19 @@ services:
       - ./config/Services/WebApp/WebApp.ApiGateway/appsettings.json:/app/appsettings.json:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - /srv/function-data:/srv/function-data
-
+  
+  slack-integration-api:
+    image: ghcr.io/mycrocloud/slack-integration-api
+    environment:
+      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
+      - ConnectionStrings__RabbitMq=${ConnectionStrings__RabbitMq}
+      - Slack__SigningSecret=${Slack__SigningSecret}
+      - Slack__LinkSecret=${Slack__LinkSecret}
+    volumes:
+      - ./config/Services/WebApp/WebApp.SlackIntegrationApi/appsettings.json:/app/appsettings.json:ro
+      
   lb:
     image: nginx:mainline-alpine3.18-perl
-    container_name: mycrocloud-lb
     ports:
       - "80:80"
       - "443:443"
@@ -60,9 +66,4 @@ services:
     image: ghcr.io/mycrocloud/mycrocloud-web-editor:main
 
 volumes:
-  mycrocloud-seq-data:
-
-
-networks:
-  default:
-    name: mycrocloud
+  seq-data:

@@ -1,7 +1,6 @@
 services:
   db:
     image: postgres:16.2-alpine
-    container_name: mycrocloud-db
     environment:
       POSTGRES_PASSWORD: postgres
     volumes:
@@ -10,41 +9,53 @@ services:
       - "5432:5432"
 
   db-migrator:
-    image: mycrocloud-db-migrator
+    image: mycrocloud/db-migrator
     build:
       dockerfile: WebApp.Migrations/Dockerfile
-    container_name: mycrocloud-db-migrator
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
     depends_on:
       - db
 
   api:
-    image: mycrocloud-api
+    image: mycrocloud/api
     build:
       dockerfile: WebApp.Api/Dockerfile
-    container_name: mycrocloud-api
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
+      - ConnectionStrings__RabbitMq=${ConnectionStrings__RabbitMq}
+      - OAuthApps__Slack__ClientSecret=${OAuthApps__Slack__ClientSecret}
+      - OAuthApps__GitHub__ClientSecret=${OAuthApps__GitHub__ClientSecret}
     ports:
       - "8080:8080"
     depends_on:
       rabbitmq:
         condition: service_healthy
-
+  
+  slack-integration-api:
+    image: mycrocloud/slack-integration-api
+    build:
+      dockerfile: WebApp.SlackIntegrationApi/Dockerfile
+    environment:
+      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
+      - ConnectionStrings__RabbitMq=${ConnectionStrings__RabbitMq}
+      - Slack__SigningSecret=${Slack__SigningSecret}
+      - Slack__LinkSecret=${Slack__LinkSecret}
+    ports:
+      - "8082:8080"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+        
   apigateway:
-    image: mycrocloud-apigateway
+    image: mycrocloud/apigateway
     build:
       dockerfile: WebApp.ApiGateway/Dockerfile
-    container_name: mycrocloud-apigateway
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
     ports:
       - "8081:8080"
 
   seq:
     image: datalust/seq
-    container_name: mycrocloud-seq
     ports:
       - "8000:80"
       - "5341:5341"
@@ -60,9 +71,10 @@ services:
     image: redis:alpine3.21
 
   rabbitmq:
-    image: rabbitmq:4.0.9-alpine
+    image: rabbitmq:4.1.5-management-alpine
     ports:
       - "5672:5672"
+      - "15672:15672"
     healthcheck:
       test: [ "CMD", "rabbitmq-diagnostics", "-q", "check_running" ]
       interval: 5s
