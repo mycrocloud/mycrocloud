@@ -16,7 +16,7 @@ namespace WebApp.SlackIntegrationApi.Controllers;
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public class SlackIntegrationController(IConfiguration configuration, SlackAppService slackAppService) : ControllerBase
 {
-    public const string ControllerName = "WebApp.SlackIntegration";
+    public const string ControllerName = "SlackIntegration";
     
     [HttpPost("link-callback")]
     public async Task<IActionResult> Link(LinkCallbackPayload payload)
