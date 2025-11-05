@@ -170,7 +170,8 @@ public class BuildsController(
         
         channel.ExchangeDeclare(exchange: exchangeName, type: "topic", durable: true);
         
-        var queueName = $"build-logs-{jobId}-{Guid.NewGuid()}";
+        var requestId = HttpContext.TraceIdentifier;
+        var queueName = $"build-logs-{jobId}-{requestId}"; // unique queue name per request
         
         channel.QueueDeclare(
             queue: queueName,
