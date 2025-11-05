@@ -78,7 +78,8 @@ public class SubscribeService(IServiceScopeFactory serviceScopeFactory, IConfigu
             _ => $"{emoji} Build status changed for *{buildJob.App.Name}*"
         };
 
-        var detailsUrl = $"https://mycrocloud.info/apps/{buildJob.AppId}/builds/{buildJob.Id}";
+        var webOrigin = configuration.GetValue<string>("WebOrigin")!.TrimEnd('/');
+        var detailsUrl = $"{webOrigin}/apps/{buildJob.AppId}/integrations/builds/{buildJob.Id}";
         text += $"\n<{detailsUrl}|View build details>";
 
         foreach (var subscription in subscriptions)
