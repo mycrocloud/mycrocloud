@@ -140,13 +140,15 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, es7 *el
 	builderImage := os.Getenv("BUILDER_IMAGE")
 	distDir := getMountSource(buildMsg.JobId)
 	mountType := getMountType()
-	log.Printf("Mount source: %s, mount type: %s", distDir, mountType)
 
 	if mountType == mount.TypeBind {
 		if err := os.MkdirAll(distDir, 0o755); err != nil {
 			log.Fatalf("failed to create bind mount source: %v", err)
 		}
 	}
+
+	log.Printf("Using builder image: %s", builderImage)
+	log.Printf("Mount source: %s, mount type: %s", distDir, mountType)
 
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: builderImage,
