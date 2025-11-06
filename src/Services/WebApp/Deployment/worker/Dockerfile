@@ -1,13 +1,22 @@
-FROM golang:1.23.2-alpine
+FROM golang:1.23.2-alpine AS builder
+
+ENV CGO_ENABLED=0 \
+    GOOS=linux \
+    GOARCH=amd64
 
 WORKDIR /app
 
 COPY go.mod go.sum ./
-
 RUN go mod download
 
-COPY *.go ./
+COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o /worker
+RUN go build -o worker .
 
-CMD ["/worker"]
+FROM alpine:3.21
+
+WORKDIR /app
+
+COPY --from=builder /app/worker .
+
+ENTRYPOINT ["./worker"]

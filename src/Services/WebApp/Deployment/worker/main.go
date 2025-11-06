@@ -66,25 +66,20 @@ func logJob(es7 *elasticsearch7.Client, es8 *elasticsearch8.Client, level string
 	}
 }
 
-func getMountSource(jobId string) string {
-	if isInContainer() {
-		return "/srv/build-outputs" + "/" + jobId
+func getMountConfig(jobID string) mount.Mount {
+	base := os.Getenv("HOST_OUT_DIR")
+	hostPath := filepath.Join(base, jobID)
+
+	if err := os.MkdirAll(hostPath, 0755); err != nil {
+		failOnError(err, "Failed to create output dir")
 	}
 
-	hostOut := os.Getenv("HOST_OUT_DIR")
-	if !filepath.IsAbs(hostOut) {
-		cwd, _ := os.Getwd()
-		hostOut = filepath.Join(cwd, hostOut)
+	log.Printf("Mount output: %s → /output", hostPath)
+	return mount.Mount{
+		Type:   mount.TypeBind,
+		Source: hostPath,
+		Target: "/output",
 	}
-
-	return filepath.Join(hostOut, jobId)
-}
-
-func getMountType() mount.Type {
-	if isInContainer() {
-		return mount.TypeVolume
-	}
-	return mount.TypeBind
 }
 
 func getLogConfig(jobID string) container.LogConfig {
@@ -138,40 +133,44 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, es7 *el
 	// Create a container
 	log.Printf("Creating container")
 	builderImage := os.Getenv("BUILDER_IMAGE")
-	distDir := getMountSource(buildMsg.JobId)
-	mountType := getMountType()
 
-	if mountType == mount.TypeBind {
-		if err := os.MkdirAll(distDir, 0o755); err != nil {
-			log.Fatalf("failed to create bind mount source: %v", err)
-		}
+	jobID := buildMsg.JobId
+	baseOut := getOutputBaseDir()
+	jobOut := filepath.Join(baseOut, jobID)
+
+	if err := os.MkdirAll(jobOut, 0755); err != nil {
+		log.Fatalf("❌ Failed to create job output dir: %v", err)
 	}
 
-	log.Printf("Using builder image: %s", builderImage)
-	log.Printf("Mount source: %s, mount type: %s", distDir, mountType)
+	log.Printf("📦 Starting build job: %s", jobID)
+	log.Printf("HOST_OUT_DIR: %s", baseOut)
+	log.Printf("Job output dir: %s", jobOut)
 
-	resp, err := cli.ContainerCreate(ctx, &container.Config{
-		Image: builderImage,
-		Tty:   false,
-		Env: []string{
-			"REPO_URL=" + buildMsg.CloneUrl,
-			"WORK_DIR=" + buildMsg.Directory,
-			"OUT_DIR=" + buildMsg.OutDir,
-			"INSTALL_CMD=" + buildMsg.InstallCommand,
-			"BUILD_CMD=" + buildMsg.BuildCommand,
-		},
-		Labels: map[string]string{"job_id": buildMsg.JobId},
-	}, &container.HostConfig{
-		Mounts: []mount.Mount{
-			{
-				Type:   mountType,
-				Source: distDir,
-				Target: "/output",
+	resp, err := cli.ContainerCreate(ctx,
+		&container.Config{
+			Image: builderImage,
+			Tty:   false,
+			Env: []string{
+				"REPO_URL=" + buildMsg.CloneUrl,
+				"WORK_DIR=" + buildMsg.Directory,
+				"OUT_DIR=" + buildMsg.OutDir,
+				"INSTALL_CMD=" + buildMsg.InstallCommand,
+				"BUILD_CMD=" + buildMsg.BuildCommand,
 			},
+			Labels: map[string]string{"job_id": buildMsg.JobId},
 		},
-		AutoRemove: true,
-		LogConfig:  getLogConfig(buildMsg.JobId),
-	}, nil, nil, "")
+		&container.HostConfig{
+			Mounts: []mount.Mount{
+				{
+					Type:   mount.TypeBind,
+					Source: jobOut,
+					Target: "/output",
+				},
+			},
+			AutoRemove: true,
+			LogConfig:  getLogConfig(buildMsg.JobId),
+		},
+		nil, nil, "")
 	failOnError(err, "Failed to create container")
 
 	// Start the container
@@ -200,11 +199,11 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, es7 *el
 	}
 
 	//distDir := path.Join("/output", repo.Id)
-	log.Printf("Dist dir: %s", distDir)
+	log.Printf("Dist dir: %s", jobOut)
 	shouldUploadArtifacts := os.Getenv("UPLOAD_ARTIFACTS") != "false"
 
 	if shouldUploadArtifacts {
-		RecursiveUpload(distDir)
+		RecursiveUpload(jobOut)
 	}
 
 	// publish completion message
@@ -216,6 +215,14 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, es7 *el
 
 	log.Printf("Finished processing. Id: %s", buildMsg.JobId)
 	logJob(es7, es8, "info", "Finished processing", buildMsg.JobId)
+}
+
+func getOutputBaseDir() string {
+	dir := os.Getenv("HOST_OUT_DIR")
+	if dir == "" {
+		log.Fatal("❌ HOST_OUT_DIR must be set (compose-only mode)")
+	}
+	return dir
 }
 
 func RecursiveUpload(dir string) {
@@ -308,7 +315,7 @@ func GetAccessToken() string {
 }
 
 func main() {
-	if err := godotenv.Load(".conf"); err != nil && !os.IsNotExist(err) {
+	if err := godotenv.Load(); err != nil && !os.IsNotExist(err) {
 		failOnError(err, "Failed to load .env file")
 	}
 
