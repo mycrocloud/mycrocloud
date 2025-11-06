@@ -1,6 +1,6 @@
 services:
   worker:
-    image: ghcr.io/mycrocloud/mycrocloud-deployment-worker:dev
+    image: ghcr.io/mycrocloud/mycrocloud-deployment-worker:main
     container_name: mycrocloud-deployment-worker
     environment:
       - RABBITMQ_URL=${RABBITMQ_URL}
@@ -12,7 +12,7 @@ services:
       - /srv/build-outputs:/build-outputs
 
   fluentd:
-    image: ghcr.io/mycrocloud/mycrocloud-deployment-fluentd:dev
+    image: ghcr.io/mycrocloud/mycrocloud-deployment-fluentd:main
     environment:
       - ES_HOST=mycrocloud-6595046855.us-east-1.bonsaisearch.net
       - ES_USER=2t9zi8my5c
