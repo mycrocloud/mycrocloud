@@ -113,6 +113,8 @@ if (!app.Environment.IsDevelopment())
     options.KnownProxies.Clear();
     
     app.UseForwardedHeaders(options);
+    
+    app.UsePathBase("/api");
 }
 
 app.UseHttpLogging();
