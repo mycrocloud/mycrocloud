@@ -1,13 +1,12 @@
 services:
   worker:
     image: ghcr.io/mycrocloud/mycrocloud-deployment-worker:main
-    container_name: mycrocloud-deployment-worker
     environment:
       - RABBITMQ_URL=${RABBITMQ_URL}
       - AUTH0_SECRET=${AUTH0_SECRET}
       - ES_PASSWORD=${ES_PASSWORD}
     volumes:
-      - /deployment/worker/.conf:/.conf:ro
+      - ./worker/.conf:/.conf:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - /srv/build-outputs:/build-outputs
 
