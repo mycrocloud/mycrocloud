@@ -1,16 +1,4 @@
 services:
-  rabbitmq:
-    image: rabbitmq:4.1.5-management-alpine
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    healthcheck:
-      test: "rabbitmq-diagnostics -q ping"
-      interval: 5s
-      timeout: 30s
-      retries: 5
-      start_period: 30s
-
   worker:
     build:
       context: ./worker
@@ -23,11 +11,22 @@ services:
       - HOST_OUT_DIR=/srv/build-outputs
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./worker/.conf:/app/.env:ro
-      - ./build-outputs:/srv/build-outputs
+      #- ./worker/.conf:/app/.env:ro
+      - ./.build-outputs:/srv/build-outputs
     depends_on:
       rabbitmq:
         condition: service_healthy
+  
+  rabbitmq:
+    image: rabbitmq:4.1.5-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "check_running" ]
+      interval: 5s
+      timeout: 10s
+      retries: 5
 
   fluentd:
     build: ./fluentd

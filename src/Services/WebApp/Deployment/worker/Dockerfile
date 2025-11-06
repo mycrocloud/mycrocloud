@@ -1,6 +1,8 @@
 FROM golang:1.23.2-alpine AS builder
 
-RUN apk add --no-cache git
+ENV CGO_ENABLED=0 \
+    GOOS=linux \
+    GOARCH=amd64
 
 WORKDIR /app
 
@@ -9,16 +11,12 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o worker .
+RUN go build -o worker .
 
-FROM alpine:3.20
-
-RUN adduser -D -g '' appuser
+FROM alpine:3.21
 
 WORKDIR /app
 
 COPY --from=builder /app/worker .
-
-USER appuser
 
 ENTRYPOINT ["./worker"]

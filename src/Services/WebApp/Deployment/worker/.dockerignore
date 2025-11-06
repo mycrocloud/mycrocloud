@@ -32,3 +32,6 @@ LICENSE
 README.md
 
 build-outputs
+example-messages
+.conf
+.env.example

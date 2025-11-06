@@ -133,27 +133,42 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, es7 *el
 	// Create a container
 	log.Printf("Creating container")
 	builderImage := os.Getenv("BUILDER_IMAGE")
-	outMount := getMountConfig(buildMsg.JobId)
-	outputDir := filepath.Join(os.Getenv("HOST_OUT_DIR"), buildMsg.JobId)
+
+	outDir := getOutputBaseDir()
+	jobOut := filepath.Join(outDir, buildMsg.JobId)
+
+	if err := os.MkdirAll(jobOut, 0755); err != nil {
+		failOnError(err, "Failed to create output directory")
+	}
 
 	log.Printf("builderImage: %s", builderImage)
+	log.Printf("jobOut (mount source): %s", jobOut)
 
-	resp, err := cli.ContainerCreate(ctx, &container.Config{
-		Image: builderImage,
-		Tty:   false,
-		Env: []string{
-			"REPO_URL=" + buildMsg.CloneUrl,
-			"WORK_DIR=" + buildMsg.Directory,
-			"OUT_DIR=" + buildMsg.OutDir,
-			"INSTALL_CMD=" + buildMsg.InstallCommand,
-			"BUILD_CMD=" + buildMsg.BuildCommand,
+	resp, err := cli.ContainerCreate(ctx,
+		&container.Config{
+			Image: builderImage,
+			Tty:   false,
+			Env: []string{
+				"REPO_URL=" + buildMsg.CloneUrl,
+				"WORK_DIR=" + buildMsg.Directory,
+				"OUT_DIR=" + buildMsg.OutDir,
+				"INSTALL_CMD=" + buildMsg.InstallCommand,
+				"BUILD_CMD=" + buildMsg.BuildCommand,
+			},
+			Labels: map[string]string{"job_id": buildMsg.JobId},
 		},
-		Labels: map[string]string{"job_id": buildMsg.JobId},
-	}, &container.HostConfig{
-		Mounts:     []mount.Mount{outMount},
-		AutoRemove: true,
-		LogConfig:  getLogConfig(buildMsg.JobId),
-	}, nil, nil, "")
+		&container.HostConfig{
+			Mounts: []mount.Mount{
+				{
+					Type:   mount.TypeBind,
+					Source: jobOut,
+					Target: "/output",
+				},
+			},
+			AutoRemove: true,
+			LogConfig:  getLogConfig(buildMsg.JobId),
+		},
+		nil, nil, "")
 	failOnError(err, "Failed to create container")
 
 	// Start the container
@@ -182,11 +197,11 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, es7 *el
 	}
 
 	//distDir := path.Join("/output", repo.Id)
-	log.Printf("Dist dir: %s", outputDir)
+	log.Printf("Dist dir: %s", jobOut)
 	shouldUploadArtifacts := os.Getenv("UPLOAD_ARTIFACTS") != "false"
 
 	if shouldUploadArtifacts {
-		RecursiveUpload(outputDir)
+		RecursiveUpload(jobOut)
 	}
 
 	// publish completion message
@@ -198,6 +213,14 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, es7 *el
 
 	log.Printf("Finished processing. Id: %s", buildMsg.JobId)
 	logJob(es7, es8, "info", "Finished processing", buildMsg.JobId)
+}
+
+func getOutputBaseDir() string {
+	dir := os.Getenv("HOST_OUT_DIR")
+	if dir == "" {
+		log.Fatal("❌ HOST_OUT_DIR must be set (compose-only mode)")
+	}
+	return dir
 }
 
 func RecursiveUpload(dir string) {
