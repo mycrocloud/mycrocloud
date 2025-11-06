@@ -134,15 +134,17 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, es7 *el
 	log.Printf("Creating container")
 	builderImage := os.Getenv("BUILDER_IMAGE")
 
-	outDir := getOutputBaseDir()
-	jobOut := filepath.Join(outDir, buildMsg.JobId)
+	jobID := buildMsg.JobId
+	baseOut := getOutputBaseDir()
+	jobOut := filepath.Join(baseOut, jobID)
 
 	if err := os.MkdirAll(jobOut, 0755); err != nil {
-		failOnError(err, "Failed to create output directory")
+		log.Fatalf("❌ Failed to create job output dir: %v", err)
 	}
 
-	log.Printf("builderImage: %s", builderImage)
-	log.Printf("jobOut (mount source): %s", jobOut)
+	log.Printf("📦 Starting build job: %s", jobID)
+	log.Printf("HOST_OUT_DIR: %s", baseOut)
+	log.Printf("Job output dir: %s", jobOut)
 
 	resp, err := cli.ContainerCreate(ctx,
 		&container.Config{

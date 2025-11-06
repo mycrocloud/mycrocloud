@@ -11,8 +11,8 @@ services:
       - HOST_OUT_DIR=/srv/build-outputs
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      #- ./worker/.conf:/app/.env:ro
-      - ./.build-outputs:/srv/build-outputs
+      - ./worker/.conf:/app/.env:ro
+      - /srv/build-outputs:/srv/build-outputs
     depends_on:
       rabbitmq:
         condition: service_healthy
