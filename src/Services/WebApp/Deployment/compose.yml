@@ -1,36 +1,37 @@
 services:
-  # rabbitmq:
-  #   image: rabbitmq:management
-  #   ports:
-  #     - "5672:5672"
-  #     - "15672:15672"
-  #   environment:
-  #     RABBITMQ_DEFAULT_USER: guest
-  #     RABBITMQ_DEFAULT_PASS: guest
-  #   healthcheck:
-  #     test: "rabbitmq-diagnostics -q ping"
-  #     interval: 5s
-  #     timeout: 30s
-  #     retries: 5
-  #     start_period: 30s
-
   worker:
-    build:
-      context: ./worker
-    image: mycrocloud/deployment-worker
+    build: ./worker
+    image: worker
     environment:
       - RABBITMQ_URL=${RABBITMQ_URL}
       - AUTH0_SECRET=${AUTH0_SECRET}
-      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
       - ES_PASSWORD=${ES_PASSWORD}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /srv/build-outputs:/output
+      - ./worker/.conf:/app/.env:ro
+      - /tmp/build-outputs:/tmp/build-outputs
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+  
+  rabbitmq:
+    image: rabbitmq:4.1.5-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "check_running" ]
+      interval: 5s
+      timeout: 10s
+      retries: 5
 
   fluentd:
+    image: fluentd
     build: ./fluentd
-    image: mycrocloud/deployment-fluentd
     volumes:
       - ./fluentd/conf:/fluentd/etc:ro
-    ports:
-      - "24224:24224"
+      - /var/run/fluentd:/var/run/fluentd
+
+  builder:
+    image: builder
+    build: ./builder

@@ -42,8 +42,8 @@
     },
     "Elasticsearch": {
         "Version": "v7",
-        "Host": "https://mycrocloud-6595046855.us-east-1.bonsaisearch.net:443",
-        "Username": "2t9zi8my5c",
+        "Host": "https://mycrocloud-746164292.us-east-1.bonsaisearch.net:443",
+        "Username": "obg41vpb50",
         "Password": "",
         "BuildLogsIndex": "build-logs"
     },

@@ -1,25 +1,21 @@
 services:
   worker:
-    image: ghcr.io/mycrocloud/mycrocloud-deployment-worker:dev
-    container_name: mycrocloud-deployment-worker
+    image: ghcr.io/mycrocloud/mycrocloud-deployment-worker:main
     environment:
       - RABBITMQ_URL=${RABBITMQ_URL}
       - AUTH0_SECRET=${AUTH0_SECRET}
       - ES_PASSWORD=${ES_PASSWORD}
     volumes:
-      - ./worker.conf:/.conf:ro
+      - ./worker/.conf:/app/.env:ro
       - /var/run/docker.sock:/var/run/docker.sock
-      - /srv/build-outputs:/build-outputs
+      - /tmp/build-outputs:/tmp/build-outputs
 
   fluentd:
-    image: ghcr.io/mycrocloud/mycrocloud-deployment-fluentd:dev
+    image: ghcr.io/mycrocloud/mycrocloud-deployment-fluentd:main
     environment:
-      - ES_HOST=mycrocloud-6595046855.us-east-1.bonsaisearch.net
-      - ES_USER=2t9zi8my5c
+      - ES_HOST=mycrocloud-746164292.us-east-1.bonsaisearch.net
+      - ES_USER=obg41vpb50
       - ES_PASSWORD=${ES_PASSWORD}
-
     volumes:
       - ./fluentd/conf:/fluentd/etc:ro
-    ports:
-      - "24224:24224"
-      - "24224:24224/udp"
+      - /var/run/fluentd:/var/run/fluentd

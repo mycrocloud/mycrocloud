@@ -53,71 +53,40 @@ func logJob(es7 *elasticsearch7.Client, es8 *elasticsearch8.Client, level string
 	data, err := json.Marshal(doc)
 	failOnError(err, "Failed to marshal log data")
 
-	if ES_VERSION == "7" {
+	switch ES_VERSION {
+	case "7":
 		if _, err := es7.Index(LogIndex, bytes.NewReader(data)); err != nil {
 			log.Printf("Failed to index document in Elasticsearch 7: %v", err)
 		}
-	} else if ES_VERSION == "8" {
+	case "8":
 		if _, err := es8.Index(LogIndex, bytes.NewReader(data)); err != nil {
 			log.Printf("Failed to index document in Elasticsearch 8: %v", err)
 		}
-	} else {
+	default:
 		log.Printf("Invalid Elasticsearch version: %s", ES_VERSION)
 	}
 }
 
-func getMountSource(jobId string) string {
-	if isInContainer() {
-		return "/srv/build-outputs" + "/" + jobId
-	}
-
-	hostOut := os.Getenv("HOST_OUT_DIR")
-	if !filepath.IsAbs(hostOut) {
-		cwd, _ := os.Getwd()
-		hostOut = filepath.Join(cwd, hostOut)
-	}
-
-	return filepath.Join(hostOut, jobId)
-}
-
-func getMountType() mount.Type {
-	if isInContainer() {
-		return mount.TypeVolume
-	}
-	return mount.TypeBind
-}
-
 func getLogConfig(jobID string) container.LogConfig {
-	driver := os.Getenv("LOGGER_DRIVER")
-	if driver == "" {
-		driver = "json-file"
+	// Fluentd-only: require explicit FLUENTD_ADDRESS as a unix socket
+	addr := strings.TrimSpace(os.Getenv("FLUENTD_ADDRESS"))
+	if addr == "" {
+		log.Fatalf("[builder:%s] FLUENTD_ADDRESS must be set (e.g., unix:///var/run/fluentd.sock)", jobID)
+	}
+	if !strings.HasPrefix(addr, "unix://") {
+		log.Fatalf("[builder:%s] FLUENTD_ADDRESS must be a unix socket (unix://...)", jobID)
 	}
 
-	cfg := container.LogConfig{Type: driver}
+	// Note: we do not pre-check socket existence here to avoid
+	// requiring the worker container to see host paths. Ensure the
+	// socket exists on the Docker host before starting builds.
 
-	switch driver {
-	case "fluentd":
-		addr := os.Getenv("FLUENTD_ADDRESS")
-		if addr == "" {
-			addr = "localhost:24224"
-		}
-		cfg.Config = map[string]string{
-			"fluentd-address": addr,
-			"tag":             fmt.Sprintf("mycrocloud.builder.%s", jobID),
-		}
-		log.Printf("[builder:%s] Fluentd logging enabled (%s)", jobID, addr)
-
-	case "json-file":
-		log.Printf("[builder:%s] Using local json-file logging", jobID)
-
-	case "none":
-		log.Printf("[builder:%s] Logging disabled (none)", jobID)
-
-	default:
-		log.Printf("[builder:%s] Unknown LOGGER_DRIVER=%s, using default json-file", jobID, driver)
-		cfg.Type = "json-file"
+	cfg := container.LogConfig{Type: "fluentd"}
+	cfg.Config = map[string]string{
+		"fluentd-address": addr,
+		"tag":             fmt.Sprintf("app.builder.%s", jobID),
 	}
-
+	log.Printf("[builder:%s] Fluentd logging enabled (%s)", jobID, addr)
 	return cfg
 }
 
@@ -138,38 +107,67 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, es7 *el
 	// Create a container
 	log.Printf("Creating container")
 	builderImage := os.Getenv("BUILDER_IMAGE")
-	distDir := getMountSource(buildMsg.JobId)
-	mountType := getMountType()
-	log.Printf("Mount source: %s, mount type: %s", distDir, mountType)
 
-	if mountType == mount.TypeBind {
-		if err := os.MkdirAll(distDir, 0o755); err != nil {
-			log.Fatalf("failed to create bind mount source: %v", err)
+	jobID := buildMsg.JobId
+	baseOut := getOutputBaseDir()
+	jobOut := filepath.Join(baseOut, jobID)
+
+	if err := os.MkdirAll(jobOut, 0755); err != nil {
+		log.Fatalf("❌ Failed to create job output dir: %v", err)
+	}
+
+	log.Printf("📦 Starting build job: %s", jobID)
+	log.Printf("HOST_OUT_DIR: %s", baseOut)
+	log.Printf("Job output dir: %s", jobOut)
+
+	mounts := []mount.Mount{
+		{
+			Type:   mount.TypeBind,
+			Source: jobOut,
+			Target: "/output",
+		},
+	}
+
+	logConf := getLogConfig(buildMsg.JobId)
+
+	if logConf.Type == "fluentd" {
+		addr := ""
+		if logConf.Config != nil {
+			addr = logConf.Config["fluentd-address"]
+		}
+		// If using a unix socket address, mount it into the builder container.
+		// We do not pre-check the path from inside the worker container; the
+		// Docker daemon will validate the source path on the host.
+		if strings.HasPrefix(addr, "unix://") {
+			socketPath := strings.TrimPrefix(addr, "unix://")
+			mounts = append(mounts, mount.Mount{
+				Type:   mount.TypeBind,
+				Source: socketPath,
+				Target: socketPath,
+			})
+			log.Printf("[builder:%s] Configured fluentd socket mount %s", buildMsg.JobId, socketPath)
 		}
 	}
 
-	resp, err := cli.ContainerCreate(ctx, &container.Config{
-		Image: builderImage,
-		Tty:   false,
-		Env: []string{
-			"REPO_URL=" + buildMsg.CloneUrl,
-			"WORK_DIR=" + buildMsg.Directory,
-			"OUT_DIR=" + buildMsg.OutDir,
-			"INSTALL_CMD=" + buildMsg.InstallCommand,
-			"BUILD_CMD=" + buildMsg.BuildCommand,
-		},
-		Labels: map[string]string{"job_id": buildMsg.JobId},
-	}, &container.HostConfig{
-		Mounts: []mount.Mount{
-			{
-				Type:   mountType,
-				Source: distDir,
-				Target: "/output",
+	resp, err := cli.ContainerCreate(ctx,
+		&container.Config{
+			Image: builderImage,
+			Tty:   false,
+			Env: []string{
+				"REPO_URL=" + buildMsg.CloneUrl,
+				"WORK_DIR=" + buildMsg.Directory,
+				"OUT_DIR=" + buildMsg.OutDir,
+				"INSTALL_CMD=" + buildMsg.InstallCommand,
+				"BUILD_CMD=" + buildMsg.BuildCommand,
 			},
+			Labels: map[string]string{"job_id": buildMsg.JobId},
 		},
-		AutoRemove: true,
-		LogConfig:  getLogConfig(buildMsg.JobId),
-	}, nil, nil, "")
+		&container.HostConfig{
+			Mounts:     mounts,
+			LogConfig:  logConf,
+			AutoRemove: true,
+		},
+		nil, nil, "")
 	failOnError(err, "Failed to create container")
 
 	// Start the container
@@ -198,11 +196,11 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, es7 *el
 	}
 
 	//distDir := path.Join("/output", repo.Id)
-	log.Printf("Dist dir: %s", distDir)
+	log.Printf("Dist dir: %s", jobOut)
 	shouldUploadArtifacts := os.Getenv("UPLOAD_ARTIFACTS") != "false"
 
 	if shouldUploadArtifacts {
-		RecursiveUpload(distDir)
+		RecursiveUpload(jobOut)
 	}
 
 	// publish completion message
@@ -214,6 +212,14 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, es7 *el
 
 	log.Printf("Finished processing. Id: %s", buildMsg.JobId)
 	logJob(es7, es8, "info", "Finished processing", buildMsg.JobId)
+}
+
+func getOutputBaseDir() string {
+	dir := os.Getenv("HOST_OUT_DIR")
+	if dir == "" {
+		log.Fatal("❌ HOST_OUT_DIR must be set (compose-only mode)")
+	}
+	return dir
 }
 
 func RecursiveUpload(dir string) {
@@ -306,7 +312,7 @@ func GetAccessToken() string {
 }
 
 func main() {
-	if err := godotenv.Load(".conf"); err != nil && !os.IsNotExist(err) {
+	if err := godotenv.Load(); err != nil && !os.IsNotExist(err) {
 		failOnError(err, "Failed to load .env file")
 	}
 
@@ -315,7 +321,6 @@ func main() {
 
 	rabbitMQURL := os.Getenv("RABBITMQ_URL")
 	// Connect to RabbitMQ server
-	log.Printf("Connecting to RabbitMQ server at %s", rabbitMQURL)
 	conn, err := amqp.Dial(rabbitMQURL)
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()

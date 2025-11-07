@@ -40,10 +40,15 @@ var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
 {
-    app.UseForwardedHeaders(new()
+    var options = new ForwardedHeadersOptions
     {
-        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-    });
+        ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost
+    };
+
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+    
+    app.UseForwardedHeaders(options);
 }
 
 app.UseMiddleware<ReadSlackRequestBodyMiddleware>();

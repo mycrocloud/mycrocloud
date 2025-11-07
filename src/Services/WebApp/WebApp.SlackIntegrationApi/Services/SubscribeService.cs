@@ -12,23 +12,25 @@ public class SubscribeService(IServiceScopeFactory serviceScopeFactory, IConfigu
 {
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // Create a connection factory
         var factory = new ConnectionFactory
         {
             Uri = new Uri(configuration.GetConnectionString("RabbitMq")!),
         };
 
-        // Create a connection and a channel
         var connection = factory.CreateConnection();
         var channel = connection.CreateModel();
         
-        channel.ExchangeDeclare("app.build.events", ExchangeType.Fanout, durable: true);
-        channel.QueueDeclare("slack.notification", durable: true, exclusive: false, autoDelete: false, arguments: null);
-        channel.QueueBind("slack.notification", "app.build.events", routingKey: "");
+        const string exchange = "app.build.events";
+        const string queue = "slack_integration_api." + exchange;
+        
+        channel.ExchangeDeclare(exchange, ExchangeType.Fanout, durable: true);
+        channel.QueueDeclare(queue, durable: true, exclusive: false, autoDelete: false, arguments: null);
+        channel.QueueBind(queue, exchange, routingKey: "");
         
         var consumer = new EventingBasicConsumer(channel);
-
-        consumer.Received += async (model, ea) =>
+        
+        //TODO: implement retry mechanism and dead-letter queue
+        consumer.Received += async (_, ea) =>
         {
             var body = ea.Body.ToArray();
             var message = Encoding.UTF8.GetString(body);
@@ -38,7 +40,7 @@ public class SubscribeService(IServiceScopeFactory serviceScopeFactory, IConfigu
             channel.BasicAck(ea.DeliveryTag, false);
         };
 
-        channel.BasicConsume("slack.notification", autoAck: false, consumer: consumer);
+        channel.BasicConsume(queue, autoAck: false, consumer: consumer);
 
         return Task.CompletedTask;
     }
