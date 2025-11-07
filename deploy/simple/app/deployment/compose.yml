@@ -6,7 +6,7 @@ services:
       - AUTH0_SECRET=${AUTH0_SECRET}
       - ES_PASSWORD=${ES_PASSWORD}
     volumes:
-      - ./worker/.conf:/app/.conf:ro
+      - ./worker/.conf:/app/.env:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - /srv/build-outputs:/srv/build-outputs
 
