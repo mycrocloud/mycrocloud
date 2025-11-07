@@ -79,11 +79,15 @@ func getLogConfig(jobID string) container.LogConfig {
 	case "fluentd":
 		addr := os.Getenv("FLUENTD_ADDRESS")
 		if addr == "" {
-			addr = "localhost:24224"
+			if _, err := os.Stat("/var/run/fluentd.sock"); err == nil {
+				addr = "unix:///var/run/fluentd.sock"
+			} else {
+				addr = "localhost:24224"
+			}
 		}
 		cfg.Config = map[string]string{
 			"fluentd-address": addr,
-			"tag":             fmt.Sprintf("mycrocloud.builder.%s", jobID),
+			"tag":             fmt.Sprintf("app.builder.%s", jobID),
 		}
 		log.Printf("[builder:%s] Fluentd logging enabled (%s)", jobID, addr)
 
@@ -94,7 +98,7 @@ func getLogConfig(jobID string) container.LogConfig {
 		log.Printf("[builder:%s] Logging disabled (none)", jobID)
 
 	default:
-		log.Printf("[builder:%s] Unknown LOGGER_DRIVER=%s, using default json-file", jobID, driver)
+		log.Printf("[builder:%s] Unknown LOGGER_DRIVER=%s, fallback json-file", jobID, driver)
 		cfg.Type = "json-file"
 	}
 
@@ -131,6 +135,27 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, es7 *el
 	log.Printf("HOST_OUT_DIR: %s", baseOut)
 	log.Printf("Job output dir: %s", jobOut)
 
+	mounts := []mount.Mount{
+		{
+			Type:   mount.TypeBind,
+			Source: jobOut,
+			Target: "/output",
+		},
+	}
+
+	logConf := getLogConfig(buildMsg.JobId)
+
+	if logConf.Type == "fluentd" {
+		if _, err := os.Stat("/var/run/fluentd.sock"); err == nil {
+			mounts = append(mounts, mount.Mount{
+				Type:   mount.TypeBind,
+				Source: "/var/run/fluentd.sock",
+				Target: "/var/run/fluentd.sock",
+			})
+			log.Printf("[builder:%s] Mounted fluentd socket", buildMsg.JobId)
+		}
+	}
+
 	resp, err := cli.ContainerCreate(ctx,
 		&container.Config{
 			Image: builderImage,
@@ -145,15 +170,9 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, es7 *el
 			Labels: map[string]string{"job_id": buildMsg.JobId},
 		},
 		&container.HostConfig{
-			Mounts: []mount.Mount{
-				{
-					Type:   mount.TypeBind,
-					Source: jobOut,
-					Target: "/output",
-				},
-			},
+			Mounts:     mounts,
+			LogConfig:  logConf,
 			AutoRemove: true,
-			LogConfig:  getLogConfig(buildMsg.JobId),
 		},
 		nil, nil, "")
 	failOnError(err, "Failed to create container")
