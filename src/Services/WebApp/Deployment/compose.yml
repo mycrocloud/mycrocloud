@@ -28,7 +28,6 @@ services:
   fluentd:
     image: fluentd
     build: ./fluentd
-    user: root
     volumes:
       - ./fluentd/conf:/fluentd/etc:ro
       - /var/run/fluentd:/var/run/fluentd
