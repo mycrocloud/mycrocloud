@@ -1,18 +1,15 @@
 services:
   worker:
-    build:
-      context: ./worker
-    image: mycrocloud/deployment-worker
-    user: root
+    build: ./worker
+    image: worker
     environment:
       - RABBITMQ_URL=${RABBITMQ_URL}
       - AUTH0_SECRET=${AUTH0_SECRET}
       - ES_PASSWORD=${ES_PASSWORD}
-      - HOST_OUT_DIR=/srv/build-outputs
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./worker/.conf:/app/.env:ro
-      - /srv/build-outputs:/srv/build-outputs
+      - /tmp/build-outputs:/tmp/build-outputs
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -29,9 +26,13 @@ services:
       retries: 5
 
   fluentd:
+    image: fluentd
     build: ./fluentd
-    image: mycrocloud/deployment-fluentd
+    user: root
     volumes:
       - ./fluentd/conf:/fluentd/etc:ro
-    ports:
-      - "24224:24224"
+      - /var/run/fluentd:/var/run/fluentd
+
+  builder:
+    image: builder
+    build: ./builder
