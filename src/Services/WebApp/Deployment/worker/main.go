@@ -68,27 +68,26 @@ func logJob(es7 *elasticsearch7.Client, es8 *elasticsearch8.Client, level string
 }
 
 func getLogConfig(jobID string) container.LogConfig {
-    // Fluentd-only: require explicit FLUENTD_ADDRESS as a unix socket
-    addr := strings.TrimSpace(os.Getenv("FLUENTD_ADDRESS"))
-    if addr == "" {
-        log.Fatalf("[builder:%s] FLUENTD_ADDRESS must be set (e.g., unix:///var/run/fluentd.sock)", jobID)
-    }
-    if !strings.HasPrefix(addr, "unix://") {
-        log.Fatalf("[builder:%s] FLUENTD_ADDRESS must be a unix socket (unix://...)", jobID)
-    }
+	// Fluentd-only: require explicit FLUENTD_ADDRESS as a unix socket
+	addr := strings.TrimSpace(os.Getenv("FLUENTD_ADDRESS"))
+	if addr == "" {
+		log.Fatalf("[builder:%s] FLUENTD_ADDRESS must be set (e.g., unix:///var/run/fluentd.sock)", jobID)
+	}
+	if !strings.HasPrefix(addr, "unix://") {
+		log.Fatalf("[builder:%s] FLUENTD_ADDRESS must be a unix socket (unix://...)", jobID)
+	}
 
-    // Note: we do not pre-check socket existence here to avoid
-    // requiring the worker container to see host paths. Ensure the
-    // socket exists on the Docker host before starting builds.
+	// Note: we do not pre-check socket existence here to avoid
+	// requiring the worker container to see host paths. Ensure the
+	// socket exists on the Docker host before starting builds.
 
-    cfg := container.LogConfig{Type: "fluentd"}
-    cfg.Config = map[string]string{
-        "fluentd-address":       addr,
-        "tag":                   fmt.Sprintf("app.builder.%s", jobID),
-        "fluentd-async-connect": "true",
-    }
-    log.Printf("[builder:%s] Fluentd logging enabled (%s)", jobID, addr)
-    return cfg
+	cfg := container.LogConfig{Type: "fluentd"}
+	cfg.Config = map[string]string{
+		"fluentd-address": addr,
+		"tag":             fmt.Sprintf("app.builder.%s", jobID),
+	}
+	log.Printf("[builder:%s] Fluentd logging enabled (%s)", jobID, addr)
+	return cfg
 }
 
 // ProcessJob simulates job processing asynchronously
@@ -131,24 +130,24 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, es7 *el
 
 	logConf := getLogConfig(buildMsg.JobId)
 
-    if logConf.Type == "fluentd" {
-        addr := ""
-        if logConf.Config != nil {
-            addr = logConf.Config["fluentd-address"]
-        }
-        // If using a unix socket address, mount it into the builder container.
-        // We do not pre-check the path from inside the worker container; the
-        // Docker daemon will validate the source path on the host.
-        if strings.HasPrefix(addr, "unix://") {
-            socketPath := strings.TrimPrefix(addr, "unix://")
-            mounts = append(mounts, mount.Mount{
-                Type:   mount.TypeBind,
-                Source: socketPath,
-                Target: socketPath,
-            })
-            log.Printf("[builder:%s] Configured fluentd socket mount %s", buildMsg.JobId, socketPath)
-        }
-    }
+	if logConf.Type == "fluentd" {
+		addr := ""
+		if logConf.Config != nil {
+			addr = logConf.Config["fluentd-address"]
+		}
+		// If using a unix socket address, mount it into the builder container.
+		// We do not pre-check the path from inside the worker container; the
+		// Docker daemon will validate the source path on the host.
+		if strings.HasPrefix(addr, "unix://") {
+			socketPath := strings.TrimPrefix(addr, "unix://")
+			mounts = append(mounts, mount.Mount{
+				Type:   mount.TypeBind,
+				Source: socketPath,
+				Target: socketPath,
+			})
+			log.Printf("[builder:%s] Configured fluentd socket mount %s", buildMsg.JobId, socketPath)
+		}
+	}
 
 	resp, err := cli.ContainerCreate(ctx,
 		&container.Config{
