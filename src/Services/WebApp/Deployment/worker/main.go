@@ -85,6 +85,7 @@ func getLogConfig() container.LogConfig {
 	cfg.Config = map[string]string{
 		"fluentd-address": addr,
 		"tag":             "app.builder",
+		"labels":          "build_id",
 	}
 	log.Printf("Fluentd logging enabled (%s)", addr)
 	return cfg
