@@ -154,6 +154,9 @@ resource "aws_security_group" "sg" {
 resource "aws_instance" "server" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.micro"
+  root_block_device {
+    volume_size = 20
+  }
 
   key_name                    = aws_key_pair.ssh_key.key_name
   associate_public_ip_address = true
