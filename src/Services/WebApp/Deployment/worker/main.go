@@ -67,14 +67,14 @@ func logJob(es7 *elasticsearch7.Client, es8 *elasticsearch8.Client, level string
 	}
 }
 
-func getLogConfig(jobID string) container.LogConfig {
+func getLogConfig() container.LogConfig {
 	// Fluentd-only: require explicit FLUENTD_ADDRESS as a unix socket
 	addr := strings.TrimSpace(os.Getenv("FLUENTD_ADDRESS"))
 	if addr == "" {
-		log.Fatalf("[builder:%s] FLUENTD_ADDRESS must be set (e.g., unix:///var/run/fluentd.sock)", jobID)
+		log.Fatalf("FLUENTD_ADDRESS must be set (e.g., unix:///var/run/fluentd.sock)")
 	}
 	if !strings.HasPrefix(addr, "unix://") {
-		log.Fatalf("[builder:%s] FLUENTD_ADDRESS must be a unix socket (unix://...)", jobID)
+		log.Fatalf("FLUENTD_ADDRESS must be a unix socket (unix://...)")
 	}
 
 	// Note: we do not pre-check socket existence here to avoid
@@ -84,9 +84,9 @@ func getLogConfig(jobID string) container.LogConfig {
 	cfg := container.LogConfig{Type: "fluentd"}
 	cfg.Config = map[string]string{
 		"fluentd-address": addr,
-		"tag":             fmt.Sprintf("app.builder.%s", jobID),
+		"tag":             "app.builder",
 	}
-	log.Printf("[builder:%s] Fluentd logging enabled (%s)", jobID, addr)
+	log.Printf("Fluentd logging enabled (%s)", addr)
 	return cfg
 }
 
@@ -128,7 +128,7 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, es7 *el
 		},
 	}
 
-	logConf := getLogConfig(buildMsg.JobId)
+	logConf := getLogConfig()
 
 	if logConf.Type == "fluentd" {
 		addr := ""
@@ -160,7 +160,7 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, es7 *el
 				"INSTALL_CMD=" + buildMsg.InstallCommand,
 				"BUILD_CMD=" + buildMsg.BuildCommand,
 			},
-			Labels: map[string]string{"job_id": buildMsg.JobId},
+			Labels: map[string]string{"build_id": buildMsg.JobId},
 		},
 		&container.HostConfig{
 			Mounts:     mounts,
