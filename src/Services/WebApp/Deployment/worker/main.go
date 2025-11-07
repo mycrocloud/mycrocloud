@@ -53,32 +53,17 @@ func logJob(es7 *elasticsearch7.Client, es8 *elasticsearch8.Client, level string
 	data, err := json.Marshal(doc)
 	failOnError(err, "Failed to marshal log data")
 
-	if ES_VERSION == "7" {
+	switch ES_VERSION {
+	case "7":
 		if _, err := es7.Index(LogIndex, bytes.NewReader(data)); err != nil {
 			log.Printf("Failed to index document in Elasticsearch 7: %v", err)
 		}
-	} else if ES_VERSION == "8" {
+	case "8":
 		if _, err := es8.Index(LogIndex, bytes.NewReader(data)); err != nil {
 			log.Printf("Failed to index document in Elasticsearch 8: %v", err)
 		}
-	} else {
+	default:
 		log.Printf("Invalid Elasticsearch version: %s", ES_VERSION)
-	}
-}
-
-func getMountConfig(jobID string) mount.Mount {
-	base := os.Getenv("HOST_OUT_DIR")
-	hostPath := filepath.Join(base, jobID)
-
-	if err := os.MkdirAll(hostPath, 0755); err != nil {
-		failOnError(err, "Failed to create output dir")
-	}
-
-	log.Printf("Mount output: %s → /output", hostPath)
-	return mount.Mount{
-		Type:   mount.TypeBind,
-		Source: hostPath,
-		Target: "/output",
 	}
 }
 
@@ -324,7 +309,6 @@ func main() {
 
 	rabbitMQURL := os.Getenv("RABBITMQ_URL")
 	// Connect to RabbitMQ server
-	log.Printf("Connecting to RabbitMQ server at %s", rabbitMQURL)
 	conn, err := amqp.Dial(rabbitMQURL)
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
