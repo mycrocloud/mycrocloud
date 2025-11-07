@@ -28,10 +28,28 @@ services:
   fluentd:
     image: fluentd
     build: ./fluentd
+    #user: root
     volumes:
       - ./fluentd/conf:/fluentd/etc:ro
-      - /var/run/fluentd:/var/run/fluentd
+      - fluentd-socket:/var/run/fluent
 
   builder:
     image: builder
     build: ./builder
+    labels:
+      - job_id=73318fcf-8d1e-4716-9106-2ae681e79e6d
+    environment:
+      - REPO_URL=https://github.com/mycrocloud/sample-react-app
+      - WORK_DIR=.
+      - OUT_DIR=dist
+      - INSTALL_CMD=npm install
+      - BUILD_CMD=npm run build
+    volumes:
+      - fluentd-socket:/var/run/fluent
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: unix:///var/run/fluent/fluent.sock
+        tag: app.builder
+volumes:
+  fluentd-socket:
