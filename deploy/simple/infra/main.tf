@@ -153,7 +153,7 @@ resource "aws_security_group" "sg" {
 
 resource "aws_instance" "server" {
   ami           = data.aws_ami.ubuntu.id
-  instance_type = "t3.micro"
+  instance_type = "t3.small"
   root_block_device {
     volume_size = 20
   }
