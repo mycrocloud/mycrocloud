@@ -15,47 +15,37 @@ public class AppBuildJobStatusConsumer(
     IServiceProvider serviceProvider)
     : BackgroundService
 {
-    private IConnection _connection;
-    private IModel _channel;
-
-    private void InitRabbitMq()
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // Create a connection factory
         var factory = new ConnectionFactory
         {
             Uri = new Uri(configuration.GetConnectionString("RabbitMq")!),
         };
-
-        // Create a connection and a channel
-        _connection = factory.CreateConnection();
-        _channel = _connection.CreateModel();
-
-        // Declare a queue (ensure the queue exists)
-        _channel.QueueDeclare(queue: "job_status", // Name of the queue
-            durable: true, // Durable queue (persists)
-            exclusive: false, // Not exclusive to one consumer
-            autoDelete: false, // Do not auto-delete the queue
-            arguments: null); // No additional arguments
-    }
-
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        stoppingToken.ThrowIfCancellationRequested();
-        InitRabbitMq();
-        var consumer = new EventingBasicConsumer(_channel);
-
-        consumer.Received += async (model, ea) =>
+        var connection = factory.CreateConnection();
+        var channel = connection.CreateModel();
+        
+        const string exchange = "app.build.events";
+        const string queue = "api." + exchange;
+        
+        channel.ExchangeDeclare(exchange, ExchangeType.Fanout, durable: true);
+        channel.QueueDeclare(queue, durable: true, exclusive: false, autoDelete: false, arguments: null);
+        channel.QueueBind(queue, exchange, routingKey: "");
+        
+        var consumer = new EventingBasicConsumer(channel);
+        
+        //TODO: implement retry mechanism and dead-letter queue
+        consumer.Received += async (_, ea) =>
         {
             var body = ea.Body.ToArray();
             var message = Encoding.UTF8.GetString(body);
 
             await ProcessMessage(message);
+            
+            channel.BasicAck(ea.DeliveryTag, false);
         };
-
-        _channel.BasicConsume(queue: "job_status", // Name of the queue
-            autoAck: true, // Auto-acknowledge the message
-            consumer: consumer); // The consumer to use
-
+        
+        channel.BasicConsume(queue, autoAck: false, consumer: consumer);
+        
         return Task.CompletedTask;
     }
 
