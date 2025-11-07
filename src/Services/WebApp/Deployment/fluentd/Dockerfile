@@ -8,4 +8,6 @@ RUN gem install \
     fluent-plugin-elasticsearch:5.0.3 \
     --no-document
 
+RUN fluent-gem install fluent-plugin-rabbitmq
+
 USER fluent
