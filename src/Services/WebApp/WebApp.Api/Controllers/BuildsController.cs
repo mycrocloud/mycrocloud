@@ -163,15 +163,14 @@ public class BuildsController(
             Uri = new Uri(configuration.GetConnectionString("RabbitMq")!),
         };
         
-        // Create a connection and a channel
         var connection = factory.CreateConnection();
         var channel = connection.CreateModel();
-        const string exchangeName = "build.logs";
+        const string exchange = "app.build.logs";
         
-        channel.ExchangeDeclare(exchange: exchangeName, type: "topic", durable: true);
+        channel.ExchangeDeclare(exchange: exchange, type: "topic", durable: true);
         
         var requestId = HttpContext.TraceIdentifier;
-        var queueName = $"build-logs-{jobId}-{requestId}"; // unique queue name per request
+        var queueName = exchange + $".{jobId}_{requestId}"; // unique queue name per request
         
         channel.QueueDeclare(
             queue: queueName,
@@ -182,12 +181,12 @@ public class BuildsController(
         
         channel.QueueBind(
             queue: queueName,
-            exchange: exchangeName,
-            routingKey: $"build.log.{jobId}"
+            exchange: exchange,
+            routingKey: exchange + $".{jobId}"
         );
         
         var consumer = new EventingBasicConsumer(channel);
-        consumer.Received += async (model, ea) =>
+        consumer.Received += async (_, ea) =>
         {
             var body = ea.Body.ToArray();
             var json = Encoding.UTF8.GetString(body);
@@ -210,7 +209,6 @@ public class BuildsController(
         }
         finally
         {
-            // cleanup
             channel.BasicCancel(consumer.ConsumerTags[0]);
             channel.Close();
             connection.Close();
