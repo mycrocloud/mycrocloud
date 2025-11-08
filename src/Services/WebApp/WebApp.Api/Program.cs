@@ -47,7 +47,7 @@ builder.Services.AddCors(options =>
 
 // 1. Add Authentication Services
 builder.Services.AddAuthentication("MultiAuthSchemes")
-    .AddJwtBearer("JWT", options =>
+    .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
     {
         options.Authority = builder.Configuration["Authentication:Schemes:Auth0JwtBearer:Authority"];
         options.Audience = builder.Configuration["Authentication:Schemes:Auth0JwtBearer:Audience"];
@@ -67,10 +67,10 @@ builder.Services.AddAuthentication("MultiAuthSchemes")
             }
         };
     })
-    .AddScheme<ApiTokenAuthenticationOptions, ApiTokenAuthenticationHandler>("PAT", options => { })
+    .AddScheme<ApiTokenAuthenticationOptions, ApiTokenAuthenticationHandler>(ApiTokenDefaults.AuthenticationScheme, options => { })
     .AddPolicyScheme("MultiAuthSchemes", displayName: null, options =>
     {
-        options.ForwardDefaultSelector = ctx => ctx.Request.Host.Host.StartsWith("api") ? "PAT" : "JWT";
+        options.ForwardDefaultSelector = ctx => ctx.Request.Host.Host.StartsWith("api") ? ApiTokenDefaults.AuthenticationScheme : JwtBearerDefaults.AuthenticationScheme;
     });
 
 builder.Services.AddAuthorization();
