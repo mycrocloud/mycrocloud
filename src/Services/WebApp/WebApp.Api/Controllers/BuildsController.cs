@@ -148,8 +148,8 @@ public class BuildsController(
         }));
     }
     
-    [HttpGet("{jobId:guid}/logs/stream")]
-    public async Task<IActionResult> Stream(int appId, Guid jobId)
+    [HttpGet("{buildId:guid}/logs/stream")]
+    public async Task<IActionResult> Stream(int appId, Guid buildId)
     {
         // use server sent events to stream logs
         Response.Headers.Append("Content-Type", "text/event-stream");
@@ -170,7 +170,7 @@ public class BuildsController(
         channel.ExchangeDeclare(exchange: exchange, type: "topic", durable: true);
         
         var requestId = HttpContext.TraceIdentifier;
-        var queueName = exchange + $".{jobId}_{requestId}"; // unique queue name per request
+        var queueName = exchange + $".{buildId}_{requestId}"; // unique queue name per request
         
         channel.QueueDeclare(
             queue: queueName,
@@ -182,7 +182,7 @@ public class BuildsController(
         channel.QueueBind(
             queue: queueName,
             exchange: exchange,
-            routingKey: exchange + $".{jobId}"
+            routingKey: exchange + $".{buildId}"
         );
         
         var consumer = new EventingBasicConsumer(channel);
