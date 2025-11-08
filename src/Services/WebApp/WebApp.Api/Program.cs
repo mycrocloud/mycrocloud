@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using System.Reflection;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Transport;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Nest;
 using WebApp.Api.Authentications;
 using WebApp.Infrastructure;
@@ -50,6 +51,21 @@ builder.Services.AddAuthentication("MultiAuthSchemes")
     {
         options.Authority = builder.Configuration["Authentication:Schemes:Auth0JwtBearer:Authority"];
         options.Audience = builder.Configuration["Authentication:Schemes:Auth0JwtBearer:Audience"];
+        
+        //for log streaming over SSE
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(accessToken))
+                {
+                    context.Token = accessToken;
+                }
+                
+                return Task.CompletedTask;
+            }
+        };
     })
     .AddScheme<ApiTokenAuthenticationOptions, ApiTokenAuthenticationHandler>("PAT", options => { })
     .AddPolicyScheme("MultiAuthSchemes", displayName: null, options =>
