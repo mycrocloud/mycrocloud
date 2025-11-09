@@ -13,9 +13,7 @@ services:
   fluentd:
     image: ghcr.io/mycrocloud/mycrocloud-deployment-fluentd:main
     environment:
-      - ES_HOST=mycrocloud-746164292.us-east-1.bonsaisearch.net
-      - ES_USER=obg41vpb50
-      - ES_PASSWORD=${ES_PASSWORD}
+      - ES_HOST=${ES_HOST}
     volumes:
       - ./fluentd/conf:/fluentd/etc:ro
       - /var/run/fluentd:/var/run/fluentd
