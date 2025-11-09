@@ -8,19 +8,20 @@ services:
       - ES_PASSWORD=${ES_PASSWORD}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/fluentd:/var/run/fluentd
       - ./worker/.conf:/app/.env:ro
       - /tmp/build-outputs:/tmp/build-outputs
     depends_on:
       rabbitmq:
         condition: service_healthy
-  
+
   rabbitmq:
     image: rabbitmq:4.1.5-management-alpine
     ports:
       - "5672:5672"
       - "15672:15672"
     healthcheck:
-      test: [ "CMD", "rabbitmq-diagnostics", "-q", "check_running" ]
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
       interval: 5s
       timeout: 10s
       retries: 5
@@ -31,7 +32,27 @@ services:
     volumes:
       - ./fluentd/conf:/fluentd/etc:ro
       - /var/run/fluentd:/var/run/fluentd
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   builder:
     image: builder
     build: ./builder
+    labels:
+      - job_id=73318fcf-8d1e-4716-9106-2ae681e79e6d
+    environment:
+      - REPO_URL=https://github.com/mycrocloud/sample-react-app
+      - WORK_DIR=.
+      - OUT_DIR=dist
+      - INSTALL_CMD=npm install
+      - BUILD_CMD=npm run build
+    volumes:
+      - fluentd-socket:/var/run/fluent
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: unix:///var/run/fluent/fluent.sock
+        tag: app.builder
+volumes:
+  fluentd-socket:

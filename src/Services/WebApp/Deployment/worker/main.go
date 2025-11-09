@@ -18,8 +18,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
-	elasticsearch7 "github.com/elastic/go-elasticsearch/v7"
-	elasticsearch8 "github.com/elastic/go-elasticsearch/v8"
+	"github.com/fluent/fluent-logger-golang/fluent"
 	"github.com/joho/godotenv"
 	"github.com/streadway/amqp"
 )
@@ -36,45 +35,28 @@ const MaxConcurrentJobs = 3
 var LogIndex = os.Getenv("ES_BUILD_LOGS_INDEX")
 var ES_VERSION = os.Getenv("ES_VERSION")
 
-func logJob(es7 *elasticsearch7.Client, es8 *elasticsearch8.Client, level string, msg string, jobID string) {
-	doc := struct {
-		Timestamp time.Time `json:"@timestamp"`
-		Level     string    `json:"level"`
-		Message   string    `json:"message"`
-		JobID     string    `json:"job_id"`
-		Source    string    `json:"source"`
-	}{
-		Timestamp: time.Now(),
-		Level:     level,
-		Message:   msg,
-		JobID:     jobID,
-		Source:    "worker",
+func logFluentd(l *fluent.Fluent, msg string, jobID string) {
+	data := map[string]string{
+		"log":      msg,
+		"build_id": jobID,
 	}
-	data, err := json.Marshal(doc)
-	failOnError(err, "Failed to marshal log data")
 
-	switch ES_VERSION {
-	case "7":
-		if _, err := es7.Index(LogIndex, bytes.NewReader(data)); err != nil {
-			log.Printf("Failed to index document in Elasticsearch 7: %v", err)
-		}
-	case "8":
-		if _, err := es8.Index(LogIndex, bytes.NewReader(data)); err != nil {
-			log.Printf("Failed to index document in Elasticsearch 8: %v", err)
-		}
-	default:
-		log.Printf("Invalid Elasticsearch version: %s", ES_VERSION)
+	tag := "app.worker"
+
+	err := l.PostWithTime(tag, time.Now(), data)
+	if err != nil {
+		log.Printf("Failed to send log to fluentd: %v", err)
 	}
 }
 
-func getLogConfig(jobID string) container.LogConfig {
+func getLogConfig() container.LogConfig {
 	// Fluentd-only: require explicit FLUENTD_ADDRESS as a unix socket
 	addr := strings.TrimSpace(os.Getenv("FLUENTD_ADDRESS"))
 	if addr == "" {
-		log.Fatalf("[builder:%s] FLUENTD_ADDRESS must be set (e.g., unix:///var/run/fluentd.sock)", jobID)
+		log.Fatalf("FLUENTD_ADDRESS must be set (e.g., unix:///var/run/fluentd.sock)")
 	}
 	if !strings.HasPrefix(addr, "unix://") {
-		log.Fatalf("[builder:%s] FLUENTD_ADDRESS must be a unix socket (unix://...)", jobID)
+		log.Fatalf("FLUENTD_ADDRESS must be a unix socket (unix://...)")
 	}
 
 	// Note: we do not pre-check socket existence here to avoid
@@ -84,21 +66,22 @@ func getLogConfig(jobID string) container.LogConfig {
 	cfg := container.LogConfig{Type: "fluentd"}
 	cfg.Config = map[string]string{
 		"fluentd-address": addr,
-		"tag":             fmt.Sprintf("app.builder.%s", jobID),
+		"tag":             "app.builder",
+		"labels":          "build_id",
 	}
-	log.Printf("[builder:%s] Fluentd logging enabled (%s)", jobID, addr)
+	log.Printf("Fluentd logging enabled (%s)", addr)
 	return cfg
 }
 
 // ProcessJob simulates job processing asynchronously
-func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, es7 *elasticsearch7.Client, es8 *elasticsearch8.Client) {
+func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, l *fluent.Fluent) {
 	defer wg.Done()
 
 	var buildMsg BuildMessage
 	err := json.Unmarshal([]byte(jsonString), &buildMsg)
 	failOnError(err, "Failed to unmarshal JSON")
 	log.Printf("Processing... Id: %s, RepoFullName: %s", buildMsg.JobId, buildMsg.RepoFullName)
-	logJob(es7, es8, "info", "Processing", buildMsg.JobId)
+	logFluentd(l, "Processing", buildMsg.JobId)
 
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -128,7 +111,7 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, es7 *el
 		},
 	}
 
-	logConf := getLogConfig(buildMsg.JobId)
+	logConf := getLogConfig()
 
 	if logConf.Type == "fluentd" {
 		addr := ""
@@ -160,7 +143,7 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, es7 *el
 				"INSTALL_CMD=" + buildMsg.InstallCommand,
 				"BUILD_CMD=" + buildMsg.BuildCommand,
 			},
-			Labels: map[string]string{"job_id": buildMsg.JobId},
+			Labels: map[string]string{"build_id": buildMsg.JobId},
 		},
 		&container.HostConfig{
 			Mounts:     mounts,
@@ -211,7 +194,7 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, es7 *el
 	})
 
 	log.Printf("Finished processing. Id: %s", buildMsg.JobId)
-	logJob(es7, es8, "info", "Finished processing", buildMsg.JobId)
+	logFluentd(l, "Finished processing", buildMsg.JobId)
 }
 
 func getOutputBaseDir() string {
@@ -373,32 +356,13 @@ func main() {
 	)
 	failOnError(err, "Failed to register a consumer")
 
-	host := os.Getenv("ES_HOST")
-	username := os.Getenv("ES_USERNAME")
-	password := os.Getenv("ES_PASSWORD")
-
-	// Configure the Elasticsearch client
-	es7, err := elasticsearch7.NewClient(elasticsearch7.Config{
-		Addresses: []string{host},
-		Username:  username,
-		Password:  password,
+	l, err := fluent.New(fluent.Config{
+		FluentNetwork:    "unix",
+		FluentSocketPath: strings.TrimSpace(os.Getenv("FLUENTD_ADDRESS"))[7:],
 	})
-	failOnError(err, "Failed to create elasticsearch client")
-	es8, err := elasticsearch8.NewClient(elasticsearch8.Config{
-		Addresses: []string{host},
-		Username:  username,
-		Password:  password,
-	})
-	failOnError(err, "Failed to create elasticsearch client")
 
-	switch ES_VERSION {
-	case "7":
-		_, err := es7.Indices.Create(LogIndex)
-		failOnError(err, "Failed to create index")
-	case "8":
-		es8.Indices.Create(LogIndex)
-		failOnError(err, "Failed to create index")
-	}
+	failOnError(err, "Failed to create fluentd logger")
+	defer l.Close()
 
 	forever := make(chan bool)
 
@@ -412,7 +376,7 @@ func main() {
 
 			go func(job string) {
 				defer func() { <-jobLimit }() // Release the slot once the job is done
-				ProcessJob(job, wg, chPublisher, es7, es8)
+				ProcessJob(job, wg, chPublisher, l)
 			}(job)
 		}
 	}()

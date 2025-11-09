@@ -1,13 +1,12 @@
 module mycrocloud/worker
 
-go 1.22
+go 1.23.0
 
-toolchain go1.23.0
+toolchain go1.24.5
 
 require (
 	github.com/docker/docker v28.0.0+incompatible
-	github.com/elastic/go-elasticsearch/v7 v7.10.0
-	github.com/elastic/go-elasticsearch/v8 v8.15.0
+	github.com/fluent/fluent-logger-golang v1.10.1
 	github.com/joho/godotenv v1.5.1
 	github.com/streadway/amqp v1.1.0
 )
@@ -18,7 +17,6 @@ require (
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
-	github.com/elastic/elastic-transport-go/v8 v8.6.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -28,7 +26,9 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
+	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/tinylib/msgp v1.3.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.56.0 // indirect
 	go.opentelemetry.io/otel v1.31.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.31.0 // indirect

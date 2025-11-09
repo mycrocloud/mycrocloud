@@ -148,8 +148,8 @@ public class BuildsController(
         }));
     }
     
-    [HttpGet("{jobId:guid}/logs/stream")]
-    public async Task<IActionResult> Stream(int appId, Guid jobId)
+    [HttpGet("{buildId:guid}/logs/stream")]
+    public async Task<IActionResult> Stream(int appId, Guid buildId)
     {
         // use server sent events to stream logs
         Response.Headers.Append("Content-Type", "text/event-stream");
@@ -163,44 +163,57 @@ public class BuildsController(
             Uri = new Uri(configuration.GetConnectionString("RabbitMq")!),
         };
         
-        // Create a connection and a channel
         var connection = factory.CreateConnection();
         var channel = connection.CreateModel();
-        const string queueName = "build-logs";
+        const string exchange = "app.build.logs";
         
-        channel.QueueDeclare(queue: queueName, // Name of the queue
-            durable: true, // Durable queue (persists)
-            exclusive: false, // Not exclusive to one consumer
-            autoDelete: false, // Do not auto-delete the queue
-            arguments: null); // No additional arguments
+        channel.ExchangeDeclare(exchange: exchange, type: "topic", durable: true);
+        
+        var requestId = HttpContext.TraceIdentifier;
+        var queueName = exchange + $".{buildId}_{requestId}"; // unique queue name per request
+        
+        channel.QueueDeclare(
+            queue: queueName,
+            durable: false,
+            exclusive: true,
+            autoDelete: true
+        );
+        
+        channel.QueueBind(
+            queue: queueName,
+            exchange: exchange,
+            routingKey: exchange + $".{buildId}"
+        );
         
         var consumer = new EventingBasicConsumer(channel);
-        consumer.Received += async (model, ea) =>
+        consumer.Received += async (_, ea) =>
         {
             var body = ea.Body.ToArray();
-            var message = Encoding.UTF8.GetString(body);
-
-            var log = JsonSerializer.Deserialize<BuildLogDoc>(message)!;
-
-            if (log.JobId != jobId) return;
-            
-            // send the log to the client
-            await Response.WriteAsync($"data: {JsonSerializer.Serialize(log)}\n\n", cancellationToken: cancellationToken);
+            var json = Encoding.UTF8.GetString(body);
+            await Response.WriteAsync($"data: {json}\n\n", cancellationToken: cancellationToken);
             await Response.Body.FlushAsync(cancellationToken);
         };
         
-        channel.BasicConsume(queue: queueName, // Name of the queue
-            autoAck: true, // Auto-acknowledge the message
-            consumer: consumer); // The consumer to us
+        channel.BasicConsume(
+            queue: queueName,
+            autoAck: true,
+            consumer: consumer
+        );
         
-        while (!cancellationToken.IsCancellationRequested)
+        try
         {
-            await Task.Delay(100, cancellationToken); // just wait, messages come via event handler
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                await Task.Delay(100, cancellationToken);
+            }
         }
-        // clean up
-        channel.BasicCancel(consumer.ConsumerTags[0]);
-        
-        // return a 200 OK response
-        return Ok(); 
+        finally
+        {
+            channel.BasicCancel(consumer.ConsumerTags[0]);
+            channel.Close();
+            connection.Close();
+        }
+
+        return new EmptyResult();
     }
 }
