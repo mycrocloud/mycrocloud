@@ -17,6 +17,11 @@ services:
   fluentd:
     image: fluentd
     build: ./fluentd
+    environment:
+      - ES_HOST=localhost
+      - ES_USER=elastic
+      - ES_PASSWORD=changeme
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/%2f
     volumes:
       - ./fluentd/conf:/fluentd/etc:ro
       - /var/run/fluentd:/var/run/fluentd
