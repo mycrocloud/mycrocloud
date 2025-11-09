@@ -4,7 +4,6 @@ services:
     environment:
       - RABBITMQ_URL=${RABBITMQ_URL}
       - AUTH0_SECRET=${AUTH0_SECRET}
-      - ES_PASSWORD=${ES_PASSWORD}
     volumes:
       - ./worker/.conf:/app/.env:ro
       - /var/run/docker.sock:/var/run/docker.sock
