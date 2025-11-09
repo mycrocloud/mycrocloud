@@ -8,8 +8,9 @@ services:
     volumes:
       - ./worker/.conf:/app/.env:ro
       - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/fluentd:/var/run/fluentd
       - /tmp/build-outputs:/tmp/build-outputs
-
+      
   fluentd:
     image: ghcr.io/mycrocloud/mycrocloud-deployment-fluentd:main
     environment:
