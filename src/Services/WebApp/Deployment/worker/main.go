@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"mime/multipart"
+	"mycrocloud/worker/logutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -50,18 +51,7 @@ func logFluentd(l *fluent.Fluent, msg string, jobID string) {
 }
 
 func getLogConfig() container.LogConfig {
-	// Fluentd-only: require explicit FLUENTD_ADDRESS as a unix socket
-	addr := strings.TrimSpace(os.Getenv("FLUENTD_ADDRESS"))
-	if addr == "" {
-		log.Fatalf("FLUENTD_ADDRESS must be set (e.g., unix:///var/run/fluentd.sock)")
-	}
-	if !strings.HasPrefix(addr, "unix://") {
-		log.Fatalf("FLUENTD_ADDRESS must be a unix socket (unix://...)")
-	}
-
-	// Note: we do not pre-check socket existence here to avoid
-	// requiring the worker container to see host paths. Ensure the
-	// socket exists on the Docker host before starting builds.
+	addr := stripProtocol(os.Getenv("FLUENTD_ADDRESS"))
 
 	cfg := container.LogConfig{Type: "fluentd"}
 	cfg.Config = map[string]string{
@@ -69,6 +59,7 @@ func getLogConfig() container.LogConfig {
 		"tag":             "app.builder",
 		"labels":          "build_id",
 	}
+
 	log.Printf("Fluentd logging enabled (%s)", addr)
 	return cfg
 }
@@ -356,13 +347,8 @@ func main() {
 	)
 	failOnError(err, "Failed to register a consumer")
 
-	l, err := fluent.New(fluent.Config{
-		FluentNetwork:    "unix",
-		FluentSocketPath: strings.TrimSpace(os.Getenv("FLUENTD_ADDRESS"))[7:],
-	})
-
-	failOnError(err, "Failed to create fluentd logger")
-	defer l.Close()
+	fluentdLogger := logutil.NewFluentClient()
+	defer fluentdLogger.Close()
 
 	forever := make(chan bool)
 
@@ -376,7 +362,7 @@ func main() {
 
 			go func(job string) {
 				defer func() { <-jobLimit }() // Release the slot once the job is done
-				ProcessJob(job, wg, chPublisher, l)
+				ProcessJob(job, wg, chPublisher, fluentdLogger)
 			}(job)
 		}
 	}()
