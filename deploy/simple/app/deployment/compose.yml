@@ -7,7 +7,6 @@ services:
     volumes:
       - ./worker/.conf:/app/.env:ro
       - /var/run/docker.sock:/var/run/docker.sock
-      - /var/run/fluentd:/var/run/fluentd
       - /tmp/build-outputs:/tmp/build-outputs
       
   fluentd:
@@ -17,6 +16,7 @@ services:
       - ES_USER=obg41vpb50
       - ES_PASSWORD=${ES_PASSWORD}
       - RABBITMQ_URL=${RABBITMQ_URL}
+    ports:
+      - "24224:24224"
     volumes:
       - ./fluentd/conf:/fluentd/etc:ro
-      - /var/run/fluentd:/var/run/fluentd
