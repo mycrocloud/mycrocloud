@@ -44,7 +44,7 @@ public class SlackCommandsController(SlackAppService slackAppService) : Controll
                 new
                 {
                     type = "section",
-                    text = new { type = "mrkdwn", text = "Finish connecting your Vercel account" }
+                    text = new { type = "mrkdwn", text = "Finish connecting your MycroCloud account" }
                 },
                 new
                 {
