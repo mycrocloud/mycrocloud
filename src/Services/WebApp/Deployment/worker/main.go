@@ -123,6 +123,8 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, l *flue
 		}
 	}
 
+	autoRemove := os.Getenv("BUILDER_AUTO_REMOVE") != "false"
+
 	resp, err := cli.ContainerCreate(ctx,
 		&container.Config{
 			Image: builderImage,
@@ -139,7 +141,7 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, l *flue
 		&container.HostConfig{
 			Mounts:     mounts,
 			LogConfig:  logConf,
-			AutoRemove: true,
+			AutoRemove: autoRemove,
 		},
 		nil, nil, "")
 	failOnError(err, "Failed to create container")
