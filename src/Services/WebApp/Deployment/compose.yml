@@ -7,7 +7,6 @@ services:
       - AUTH0_SECRET=${AUTH0_SECRET}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /var/run/fluentd:/var/run/fluentd
       - ./worker/.conf:/app/.env:ro
       - /tmp/build-outputs:/tmp/build-outputs
     depends_on:
@@ -23,8 +22,9 @@ services:
       - ES_PASSWORD=changeme
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/%2f
     volumes:
-      - ./fluentd/conf:/fluentd/etc:ro
-      - /var/run/fluentd:/var/run/fluentd
+      - ./fluentd/conf:/fluentd/etc
+    ports:
+      - "24224:24224"
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -40,13 +40,14 @@ services:
       - OUT_DIR=dist
       - INSTALL_CMD=npm install
       - BUILD_CMD=npm run build
-    volumes:
-      - fluentd-socket:/var/run/fluent
     logging:
       driver: "fluentd"
       options:
-        fluentd-address: unix:///var/run/fluent/fluent.sock
+        fluentd-address: host.docker.internal:24224
         tag: app.builder
+    depends_on:
+      - worker
+      - fluentd
 
   rabbitmq:
     image: rabbitmq:4.1.5-management-alpine
@@ -58,6 +59,3 @@ services:
       interval: 5s
       timeout: 10s
       retries: 5
-      
-volumes:
-  fluentd-socket:

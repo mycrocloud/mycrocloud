@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"os"
+	"strings"
 
 	"github.com/streadway/amqp"
 )
@@ -33,4 +34,11 @@ func isInContainer() bool {
 	}
 
 	return false
+}
+
+func stripProtocol(addr string) string {
+	if idx := strings.Index(addr, "://"); idx != -1 {
+		return addr[idx+3:]
+	}
+	return addr
 }
