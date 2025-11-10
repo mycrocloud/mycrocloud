@@ -51,7 +51,7 @@ func logFluentd(l *fluent.Fluent, msg string, jobID string) {
 }
 
 func getLogConfig() container.LogConfig {
-	addr := stripProtocol(os.Getenv("FLUENTD_ADDRESS"))
+	addr := stripProtocol(os.Getenv("BUILDER_FLUENTD_ADDRESS"))
 
 	cfg := container.LogConfig{Type: "fluentd"}
 	cfg.Config = map[string]string{
