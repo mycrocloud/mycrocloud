@@ -9,7 +9,7 @@ services:
       - "5432:5432"
 
   db-migrator:
-    image: mycrocloud/db-migrator
+    image: mycrocloud-db-migrator
     build:
       dockerfile: WebApp.Migrations/Dockerfile
     environment:
@@ -18,7 +18,7 @@ services:
       - db
 
   api:
-    image: mycrocloud/api
+    image: mycrocloud-api
     build:
       dockerfile: WebApp.Api/Dockerfile
     environment:
@@ -33,7 +33,7 @@ services:
         condition: service_healthy
   
   slack-integration-api:
-    image: mycrocloud/slack-integration-api
+    image: mycrocloud-slack-integration-api
     build:
       dockerfile: WebApp.SlackIntegrationApi/Dockerfile
     environment:
@@ -48,7 +48,7 @@ services:
         condition: service_healthy
         
   apigateway:
-    image: mycrocloud/apigateway
+    image: mycrocloud-apigateway
     build:
       dockerfile: WebApp.ApiGateway/Dockerfile
     ports:
