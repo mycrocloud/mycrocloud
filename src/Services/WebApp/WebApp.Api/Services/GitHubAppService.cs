@@ -60,6 +60,24 @@ public class GitHubAppService(HttpClient httpClient, IOptions<GitHubAppOptions> 
         using var doc = JsonDocument.Parse(json);
         return doc.RootElement.GetProperty("token").GetString()!;
     }
+
+    public async Task<string> GetInstallationRepos(long installationId)
+    {
+        var jwt = GenerateJwt();
+        
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+        httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
+        httpClient.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
+        httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("MycroCloud", "1.0"));
+        
+        var url = $"https://api.github.com/app/installations/{installationId}/repositories";
+        var response = await httpClient.PostAsync(url, null);
+        response.EnsureSuccessStatusCode();
+
+        var json = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(json);
+        return doc.RootElement.GetProperty("token").GetString()!;
+    }
 }
 
 public class GitHubAppOptions

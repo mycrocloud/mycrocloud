@@ -19,45 +19,68 @@ public class IntegrationsController(
     GitHubAppService _githubService) : BaseController
 {
     [HttpPost("github/callback")]
-    public async Task<IActionResult> GitHubCallback(GitHubAppInstallation installation)
+    public async Task<IActionResult> GitHubCallback(GitHubAppInstallation request)
     {
-        var repoJson = await ExchangeGitHubAccessToken(installation);
+        var doc = await GetGitHubInstallation(request);
 
-        return Ok(repoJson); // TODO: return OK(string) is good?
+        var installation = await appDbContext.GitHubInstallations
+            .SingleOrDefaultAsync(i => i.InstallationId == request.InstallationId);
+
+        if (installation == null)
+        {
+            installation = new GitHubInstallation
+            {
+                InstallationId = request.InstallationId,
+                AccountId = doc.GetProperty("account").GetProperty("id").GetInt64(),
+                AccountLogin = doc.GetProperty("account").GetProperty("login").GetString()!,
+                AccountType = Enum.Parse<GitHubAccountType>(doc.GetProperty("account").GetProperty("type").GetString()!),
+                UserId = User.GetUserId(),
+                CreatedAt = DateTime.UtcNow
+            };
+            appDbContext.GitHubInstallations.Add(installation);
+        }
+        else
+        {
+            installation.UpdatedAt = DateTime.UtcNow;
+        }
+
+        await appDbContext.SaveChangesAsync();
+
+        return Ok();
     }
 
-    private async Task<string> ExchangeGitHubAccessToken(GitHubAppInstallation installation)
+    private async Task<JsonElement> GetGitHubInstallation(GitHubAppInstallation installation)
     {
         var installationId = installation.InstallationId;
         var client = httpClientFactory.CreateClient();
         var token = await _githubService.GetInstallationTokenAsync(installationId);
-        
+
         client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("MycroCloud", "1.0"));
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
         client.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
-        
-        var reposJson = await client.GetStringAsync("https://api.github.com/installation/repositories");
-        
-        return reposJson;
+
+        var json = await client.GetStringAsync($"https://api.github.com/app/installations/{installationId}");
+        var doc = JsonDocument.Parse(json).RootElement;
+
+        return doc;
     }
 
     [HttpGet("github/repos")]
     public async Task<IActionResult> GetGitHubRepos()
     {
-        var userToken = await appDbContext.UserTokens
-            .Where(t => t.UserId == User.GetUserId() && t.Provider == "GitHub" &&
-                        t.Purpose == UserTokenPurpose.AppIntegration)
-            .SingleOrDefaultAsync();
+        var installation = await appDbContext.GitHubInstallations
+            .Where(i => i.UserId == User.GetUserId())
+            .FirstOrDefaultAsync(); //TODO: handle multiple installations
 
-        if (userToken is null)
+        if (installation is null)
         {
             return Unauthorized();
         }
 
         var client = httpClientFactory.CreateClient();
         var request = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/user/repos");
-        request.Headers.UserAgent.Add(new ProductInfoHeaderValue("WebApp", "1.0"));
+        request.Headers.UserAgent.Add(new ProductInfoHeaderValue("MycroCloud", "1.0"));
         request.Headers.Add("Accept", "application/vnd.github+json");
         request.Headers.Add("Authorization", "Bearer " + userToken.Token);
         request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
