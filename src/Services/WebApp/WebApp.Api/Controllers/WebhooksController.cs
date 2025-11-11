@@ -16,7 +16,7 @@ public class WebhooksController(AppDbContext appDbContext, RabbitMqService rabbi
     public const string ControllerName = "Webhooks";
     
     [HttpPost("github/postreceive/{appId:int}")]
-    [AllowAnonymous]
+    [HttpPost("github/postreceive")]
     [TypeFilter<GitHubWebhookValidationFilter>]
     public async Task<IActionResult> ReceiveGitHubEvent(int appId, string token)
     {

@@ -14,7 +14,7 @@ public class GitHubWebhookValidationFilter(IConfiguration configuration, ILogger
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
         // Retrieve the secret token from configuration
-        var secret = configuration["AppIntegrations:GitHubWebhook:Config:Secret"];
+        var secret = configuration["ExternalIntegrations:GitHubApp:WebhookSecret"];
         if (string.IsNullOrEmpty(secret))
         {
             logger.LogError("GitHub Webhook secret is not configured.");

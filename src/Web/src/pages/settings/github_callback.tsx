@@ -6,13 +6,17 @@ export default function GitHubCallback() {
   const { getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const code = searchParams.get("code");
+
   const state = searchParams.get("state");
+  const installation_id = searchParams.get("installation_id");
+  const setup_action = searchParams.get("setup_action");
 
   useEffect(() => {
-    if (!code) {
+    if (!installation_id || !setup_action || (setup_action !== "install" && setup_action !== "update")) {
       navigate("/");
+      return;
     }
+
     (async () => {
       const accessToken = await getAccessTokenSilently();
       const res = await fetch("/api/integrations/github/callback", {
@@ -21,7 +25,7 @@ export default function GitHubCallback() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ installation_id, setup_action }),
       });
       if (res.ok) {
         let pathName = "/";
@@ -33,7 +37,8 @@ export default function GitHubCallback() {
         navigate(pathName);
       }
     })();
-  }, [code]);
+    
+  }, [installation_id, setup_action, state]);
 
   return <h1>Loading...</h1>;
 }

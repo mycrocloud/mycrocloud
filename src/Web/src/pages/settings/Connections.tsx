@@ -3,14 +3,14 @@ import { getConfig } from "@/config";
 const { GITHUB_CLIENTID, SLACK_CLIENT_ID } = getConfig();
 
 export default function Connections() {
-  const connectGitHub = async () => {
-    const redirectUri =
-      window.location.origin + "/integrations/callback/github";
-    //repo and read:org scope
-    const scope = "repo%20read:org";
-    const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENTID}&redirect_uri=${redirectUri}&scope=${scope}`;
-    window.location.href = authUrl;
-  };
+  // const connectGitHub = async () => {
+  //   const redirectUri =
+  //     window.location.origin + "/integrations/callback/github";
+  //   //repo and read:org scope
+  //   const scope = "repo%20read:org";
+  //   const authUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENTID}&redirect_uri=${redirectUri}&scope=${scope}`;
+  //   window.location.href = authUrl;
+  // };
 
   const connectSlack = async () => {
     const redirect_uri = window.location.origin + "/integrations/slack/oauth/callback";
@@ -19,18 +19,21 @@ export default function Connections() {
 
     window.location.href = url;
   };
+  
+  const githubAppName = "dev-MycroCloud"; // TODO: load from config
+  const githubAppUrl = `https://github.com/apps/${githubAppName}/installations/new`; //TODO: add state param?
 
   return (
     <section className="mt-4">
       <h1 className="font-bold">Settings</h1>
       <h2 className="mt-4">Connections</h2>
       <div className="flex space-x-2 items-center mt-2">
-        <button
-          onClick={connectGitHub}
+        <a
+          href={githubAppUrl}
           className="rounded-sm border  border-1 px-2 py-1.5 text-black-900"
         >
           Connect GitHub
-        </button>
+        </a>
 
         <button
           onClick={connectSlack}
