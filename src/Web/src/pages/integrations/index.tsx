@@ -1,11 +1,12 @@
 import { useAuth0 } from "@auth0/auth0-react";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AppContext } from "../apps";
 import { Modal } from "flowbite-react";
 import { toast } from "react-toastify";
 import { useForm } from "react-hook-form";
 import { ChevronRightIcon } from "@heroicons/react/24/solid";
+import BuildsSection from "./BuildsSection";
 
 export interface GitHubRepo {
   name: string;
@@ -15,26 +16,12 @@ export interface GitHubRepo {
   updatedAt: string;
 }
 
-interface IBuildJob {
-  id: string;
-  name: string;
-  status: string;
-  createdAt: string;
-  finishedAt: string;
-}
-
 type BuildConfig = {
   branch: string;
   directory: string;
   buildCommand: string;
   outDir: string;
 };
-
-interface ILogEntry {
-  message: string;
-  timestamp: string;
-  level: string;
-}
 
 export default function Integrations() {
   const { getAccessTokenSilently } = useAuth0();
@@ -70,7 +57,7 @@ export default function Integrations() {
       toast.success("Connected to GitHub");
       setRepoFullName(repoFullName);
       setApp((prev) => ({ ...prev!, gitHubRepoFullName: repoFullName }));
-      fetchBuilds();
+      //fetchBuilds(); TODO: uncomment if needed
     }
   };
 
@@ -89,62 +76,6 @@ export default function Integrations() {
       setApp((prev) => ({ ...prev!, gitHubRepoFullName: undefined }));
     }
   };
-
-  const [jobs, setJobs] = useState<IBuildJob[]>([]);
-
-  const fetchBuilds = async () => {
-    const accessToken = await getAccessTokenSilently();
-    const res = await fetch(`/api/apps/${app.id}/builds`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    if (res.ok) {
-      const builds = (await res.json()) as IBuildJob[];
-      setJobs(builds);
-    }
-  };
-
-  const interval = useRef<number | null>(null);
-  useEffect(() => {
-    fetchBuilds();
-
-    //todo: use websockets instead of polling
-    interval.current = window.setInterval(() => {
-      //fetchBuilds();
-    }, 2000);
-
-    return () => {
-      if (interval.current) window.clearInterval(interval.current);
-    };
-  }, []);
-
-  const [jobId, setJobId] = useState<string>();
-  const [logs, setLogs] = useState<ILogEntry[]>([]);
-  useEffect(() => {
-    if (!jobId) return;
-
-    (async () => {
-      const accessToken = await getAccessTokenSilently();
-      const res = await fetch(`/api/apps/${app.id}/builds/${jobId}/logs`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      if (res.ok) {
-        const logs = (await res.json()) as ILogEntry[];
-        setLogs(logs);
-      }
-    })();
-  }, [jobId]);
-
-  function statusClass(status: string) {
-    if (status === "pending") {
-      return "text-yellow-500";
-    } else if (status === "success" || status === "done") {
-      return "text-sky-500";
-    } else if (status === "failed") {
-      return "text-red-500";
-    } else {
-      return "text-gray-300";
-    }
-  }
 
   const [showBuildConfig, setShowBuildConfig] = useState(false);
   const {
@@ -371,73 +302,7 @@ export default function Integrations() {
           </button>
         </Modal.Footer>
       </Modal>
-
-      <section>
-        <div className="mt-4 flex items-center">
-          <h2 className="font-semibold">Builds</h2>
-          <button
-            className="ms-2 text-sm text-sky-500 hover:underline"
-            onClick={() => fetchBuilds()}
-          >
-            Refresh
-          </button>
-        </div>
-        <div className="flex">
-          <div className="">
-            <table className="mt-2 table-fixed">
-              <thead>
-                <tr className="border">
-                  <th className="w-80 p-2 text-start">Name</th>
-                  <th className="w-20 text-start">Status</th>
-                  <th className="w-60 text-start">Started At</th>
-                </tr>
-              </thead>
-              <tbody>
-                {jobs.map((build) => (
-                  <tr
-                    key={build.id}
-                    className={
-                      "cursor-pointer border hover:bg-slate-100" +
-                      (jobId === build.id ? " bg-slate-200" : "")
-                    }
-                    onClick={() => setJobId(build.id)}
-                  >
-                    <td className="p-2">{build.name}</td>
-                    <td className={statusClass(build.status)}>
-                      {build.status}
-                    </td>
-                    <td>{build.createdAt}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="flex-1 p-2">
-            {jobId &&
-              (logs.length > 0 ? (
-                <>
-                  <div className="mt-2 max-h-[400px] overflow-auto bg-black p-4 text-white">
-                    {logs.map((log, i) => (
-                      <div key={i} className="log-item mb-2">
-                        <span className="mr-2 text-xs text-gray-500">
-                          {log.timestamp}
-                        </span>
-                        <span className="font-mono text-sm text-white">
-                          {log.message}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <p>
-                  No logs are available. The build may have been executed before
-                  the system started logging for this feature.
-                </p>
-              ))}
-          </div>
-        </div>
-      </section>
+      <BuildsSection />
     </div>
   );
 }
