@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApp.Api.Filters;
@@ -11,12 +10,13 @@ using WebApp.Infrastructure;
 
 namespace WebApp.Api.Controllers;
 
-public class WebhooksController(AppDbContext appDbContext, RabbitMqService rabbitMqService) : BaseController
+[ApiController]
+[Route("[controller]")]
+public class WebhooksController(AppDbContext appDbContext, RabbitMqService rabbitMqService, ILogger<WebhooksController> logger) : ControllerBase
 {
     public const string ControllerName = "Webhooks";
     
     [HttpPost("github/postreceive/{appId:int}")]
-    [HttpPost("github/postreceive")]
     [TypeFilter<GitHubWebhookValidationFilter>]
     public async Task<IActionResult> ReceiveGitHubEvent(int appId, string token)
     {
@@ -69,6 +69,47 @@ public class WebhooksController(AppDbContext appDbContext, RabbitMqService rabbi
         rabbitMqService.PublishMessage(JsonSerializer.Serialize(message));
 
         await appDbContext.SaveChangesAsync();
+
+        return Ok();
+    }
+
+    [HttpPost("github/postreceive")]
+    [TypeFilter<GitHubWebhookValidationFilter>]
+    public async Task<IActionResult> GitHubAppPostReceive()
+    {
+        var rawBodyString = HttpContext.Items["RawBodyString"] as string;
+        var payloadNode = JsonNode.Parse(rawBodyString!);
+        var installationId = (long)payloadNode!["installation"]!["id"]!;
+        var repoId = (long)payloadNode!["repository"]!["id"]!;
+        var commitMessage = (string?)payloadNode["head_commit"]?["message"];
+
+        logger.LogInformation("Received GitHub App webhook for installation {InstallationId} and repository {RepoId}", installationId, repoId);
+
+        // var job = new AppBuildJob
+        // {
+        //     Id = Guid.NewGuid(),
+        //     App = app,
+        //     Name = commitMessage ?? $"Build {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}",
+        //     Status = "Queued",
+        //     CreatedAt = DateTime.UtcNow
+        // };
+
+        // appDbContext.AppBuildJobs.Add(job);
+
+        // var message = new AppBuildMessage
+        // {
+        //     JobId = job.Id.ToString(),
+        //     RepoFullName = repoFullName,
+        //     CloneUrl = $"https://{userToken.Token}@github.com/{repoFullName}.git",
+        //     Directory = app.Integration?.Directory ?? ".",
+        //     OutDir = app.Integration?.OutDir ?? "dist",
+        //     InstallCommand = app.Integration?.InstallCommand ?? "npm install",
+        //     BuildCommand = app.Integration?.BuildCommand ?? "npm run build"
+        // };
+
+        // rabbitMqService.PublishMessage(JsonSerializer.Serialize(message));
+
+        // await appDbContext.SaveChangesAsync();
 
         return Ok();
     }
