@@ -33,6 +33,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     public DbSet<SlackAppSubscription> SlackAppSubscriptions { get; set; }
 
+    public DbSet<GitHubInstallation> GitHubInstallations { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<App>()
@@ -144,6 +146,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         //     .HasForeignKey(x => x.TeamId)
         //     .HasPrincipalKey(x => x.TeamId)
         //     .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<GitHubInstallation>()
+            .HasKey(x => x.InstallationId);
+
+        modelBuilder.Entity<GitHubInstallation>()
+        .HasIndex(x => x.AccountId)
+        .IsUnique();
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
