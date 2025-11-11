@@ -167,7 +167,7 @@ public class BuildsController(
         var channel = connection.CreateModel();
         const string exchange = "app.build.logs";
         
-        channel.ExchangeDeclare(exchange: exchange, type: "topic", durable: true);
+        channel.ExchangeDeclare(exchange: exchange, type: "topic", durable: false); //TODO: confirm durable setting
         
         var requestId = HttpContext.TraceIdentifier;
         var queueName = exchange + $".{buildId}_{requestId}"; // unique queue name per request
