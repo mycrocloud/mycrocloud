@@ -21,7 +21,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Variable> Variables { get; set; }
     public DbSet<TextStorage> TextStorages { get; set; }
     public DbSet<Object> Objects { get; set; }
-    
+
     //TODO: re-design?
     public DbSet<UserToken> UserTokens { get; set; }
 
@@ -120,7 +120,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasOne(s => s.App)
             .WithMany(a => a.Objects)
             .OnDelete(DeleteBehavior.Cascade);
-        
+
         //TODO: re-design?
         modelBuilder.Entity<UserToken>()
             .HasKey(t => new { t.UserId, t.Provider, t.Purpose });
@@ -151,8 +151,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasKey(x => x.InstallationId);
 
         modelBuilder.Entity<GitHubInstallation>()
-        .HasIndex(x => x.AccountId)
-        .IsUnique();
+            .HasIndex(x => x.AccountId)
+            .IsUnique();
+
+        modelBuilder.Entity<GitHubInstallation>()
+            .HasIndex(x => x.UserId); // no need to be unique because one user can have multiple installations e.g for orgs
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
