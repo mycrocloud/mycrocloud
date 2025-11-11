@@ -9,7 +9,6 @@ using System.Reflection;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Transport;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Mvc;
 using Nest;
 using WebApp.Api.Authentications;
 using WebApp.Infrastructure;
@@ -71,7 +70,7 @@ builder.Services.AddAuthentication("MultiAuthSchemes")
     .AddScheme<ApiTokenAuthenticationOptions, ApiTokenAuthenticationHandler>(ApiTokenDefaults.AuthenticationScheme, options => { })
     .AddPolicyScheme("MultiAuthSchemes", displayName: null, options =>
     {
-        options.ForwardDefaultSelector = ctx => JwtBearerDefaults.AuthenticationScheme;
+        options.ForwardDefaultSelector = ctx => ctx.Request.Host.Host.StartsWith("api") ? ApiTokenDefaults.AuthenticationScheme : JwtBearerDefaults.AuthenticationScheme;
     });
 
 builder.Services.AddAuthorization();
@@ -118,7 +117,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
     app.MapGet("_config", () => builder.Configuration.GetDebugView());
-    app.MapGet("githubapp/jwt", ([FromServices]GitHubAppService gitHubAppService) => gitHubAppService.GenerateJwt());
 }
 
 if (!app.Environment.IsDevelopment())
