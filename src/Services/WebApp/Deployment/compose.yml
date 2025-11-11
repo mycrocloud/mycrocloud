@@ -1,7 +1,7 @@
 services:
   worker:
     build: ./worker
-    image: worker
+    image: mycrocloud-deployment-worker:main
     environment:
       - RABBITMQ_URL=${RABBITMQ_URL}
       - AUTH0_SECRET=${AUTH0_SECRET}
@@ -14,7 +14,7 @@ services:
         condition: service_healthy
 
   fluentd:
-    image: fluentd
+    image: mycrocloud-deployment-fluentd:main
     build: ./fluentd
     environment:
       - ES_HOST=localhost
@@ -30,7 +30,7 @@ services:
         condition: service_healthy
 
   builder:
-    image: builder
+    image: mycrocloud-deployment-builder:main
     build: ./builder
     labels:
       - job_id=73318fcf-8d1e-4716-9106-2ae681e79e6d
