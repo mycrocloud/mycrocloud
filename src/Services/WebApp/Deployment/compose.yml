@@ -20,7 +20,7 @@ services:
       - ES_HOST=localhost
       - ES_USER=elastic
       - ES_PASSWORD=changeme
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/%2f
+      - RABBITMQ_URL=${RABBITMQ_URL}
     volumes:
       - ./fluentd/conf:/fluentd/etc
     ports:
@@ -59,3 +59,10 @@ services:
       interval: 5s
       timeout: 10s
       retries: 5
+
+  es:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
+    environment:
+      - discovery.type=single-node
+    ports:
+      - "9200:9200"
