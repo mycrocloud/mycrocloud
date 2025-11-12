@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using WebApp.Api;
@@ -107,7 +108,12 @@ builder.Services.AddKeyedSingleton("AppBuildLogs_ES8", (_, _) =>
 });
 
 builder.Services.Configure<GitHubAppOptions>(builder.Configuration.GetSection("ExternalIntegrations:GitHubApp"));
-builder.Services.AddHttpClient<GitHubAppService>();
+builder.Services.AddHttpClient<GitHubAppService>(client =>
+{
+    client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("MycroCloud", "1.0.0"));
+    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
+    client.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
+});
 
 var app = builder.Build();
 

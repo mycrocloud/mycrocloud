@@ -16,7 +16,7 @@ public class GitHubAppService(HttpClient httpClient, IOptions<GitHubAppOptions> 
 {
     private readonly GitHubAppOptions _options = options.Value;
 
-    public string GenerateJwt()
+    private string GenerateJwt()
     {
         var now = DateTimeOffset.UtcNow;
         var securityKey = new RsaSecurityKey(ReadPrivateKey(_options.PrivateKeyPath));
@@ -45,18 +45,26 @@ public class GitHubAppService(HttpClient httpClient, IOptions<GitHubAppOptions> 
         rsa.ImportFromPem(privateKeyPem);
         return rsa;
     }
+    
+    public async Task<JsonElement> GetGitHubInstallation(long installationId)
+    {
+        var jwt = GenerateJwt();
 
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+
+        var json = await httpClient.GetStringAsync($"https://api.github.com/app/installations/{installationId}");
+        var doc = JsonDocument.Parse(json).RootElement;
+
+        return doc;
+    }
+    
     public async Task<string> GetInstallationAccessToken(long installationId)
     {
         var jwt = GenerateJwt();
         
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
-        httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
-        httpClient.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
-        httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("MycroCloud", "1.0"));
         
-        var url = $"https://api.github.com/app/installations/{installationId}/access_tokens";
-        var response = await httpClient.PostAsync(url, null);
+        var response = await httpClient.PostAsync($"https://api.github.com/app/installations/{installationId}/access_tokens", null);
         response.EnsureSuccessStatusCode();
 
         var json = await response.Content.ReadAsStringAsync();
@@ -68,10 +76,7 @@ public class GitHubAppService(HttpClient httpClient, IOptions<GitHubAppOptions> 
     {
         var token = await GetInstallationAccessToken(installationId);
         
-        httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("MycroCloud", "1.0"));
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
-        httpClient.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
 
         var json = await httpClient.GetStringAsync("https://api.github.com/installation/repositories");
         

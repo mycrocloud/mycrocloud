@@ -1,5 +1,5 @@
 import { useAuth0 } from "@auth0/auth0-react";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AppContext } from "../apps";
 import { Modal } from "flowbite-react";
 import { toast } from "react-toastify";
@@ -45,14 +45,16 @@ interface IGitHubInstallation {
 
 export default function Integrations() {
   const { getAccessTokenSilently } = useAuth0();
-  const { get } = useAuthRequest();
+  const { get, post } = useAuthRequest();
   const { app, setApp } = useContext(AppContext)!;
   if (!app) throw new Error();
 
   const [repoFullName, setRepoFullName] = useState(app.gitHubRepoFullName);
   const [githubRepos, setGitHubRepos] = useState<GitHubRepo[]>([]);
   const [installations, setInstallations] = useState<IGitHubInstallation[]>([]);
+
   const [installationId, setInstallationId] = useState<number | null>(null);
+  const [repoId, setRepoId] = useState<number | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -70,17 +72,20 @@ export default function Integrations() {
   }, [installationId]);
 
   const onConnectClick = async () => {
-    const accessToken = await getAccessTokenSilently();
-    const res = await fetch(
-      `/api/apps/${app.id}/integrations/github?repoFullName=${repoFullName}`,
-      { method: "POST", headers: { Authorization: `Bearer ${accessToken}` } },
-    );
-    if (res.ok) {
-      toast.success("Connected to GitHub");
-      setRepoFullName(repoFullName);
-      setApp((prev) => ({ ...prev!, gitHubRepoFullName: repoFullName }));
-      fetchBuilds();
-    }
+    if (!installationId || !repoId) return;
+
+    //const accessToken = await getAccessTokenSilently();
+    await post(`/api/apps/${app.id}/integrations/github`, { installationId, repoId });
+    // const res = await fetch(
+    //   `/api/apps/${app.id}/integrations/github?repoFullName=${repoFullName}`,
+    //   { method: "POST", headers: { Authorization: `Bearer ${accessToken}` } },
+    // );
+    // if (res.ok) {
+    //   toast.success("Connected to GitHub");
+    //   setRepoFullName(repoFullName);
+    //   setApp((prev) => ({ ...prev!, gitHubRepoFullName: repoFullName }));
+    //   fetchBuilds();
+    // }
   };
 
   const [showDisconnectConfirmModal, setShowDisconnectConfirmModal] =
@@ -111,20 +116,6 @@ export default function Integrations() {
       setJobs(builds);
     }
   };
-
-  const interval = useRef<number | null>(null);
-  useEffect(() => {
-    fetchBuilds();
-
-    //todo: use websockets instead of polling
-    interval.current = window.setInterval(() => {
-      //fetchBuilds();
-    }, 2000);
-
-    return () => {
-      if (interval.current) window.clearInterval(interval.current);
-    };
-  }, []);
 
   const [jobId, setJobId] = useState<string>();
   const [logs, setLogs] = useState<ILogEntry[]>([]);
@@ -207,38 +198,57 @@ export default function Integrations() {
       <h1 className="font-bold">Integrations</h1>
 
       <section>
-        <h2 className="mt-4 font-semibold">GitHub</h2>
-        <p className="text-sm text-slate-600">
-          Connect your application to a GitHub repository to enable automatic
-          builds on code pushes.
-        </p>
+        <div className="flex items-center gap-3 mt-2">
+          <div className="flex flex-col">
+            <label className="text-sm font-medium text-gray-700 mb-1">
+              Installation
+            </label>
+            <select
+              onChange={(e) => {
+                if (e.target.value === "") setInstallationId(null);
+                else setInstallationId(Number(e.target.value));
+              }}
+              value={installationId?.toString() ?? ""}
+              className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">Select an installation</option>
+              {installations.map((inst) => (
+                <option key={inst.installationId} value={inst.installationId}>
+                  {inst.accountLogin}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div className="flex">
-          <select onChange={(e) => {
-            if (e.target.value === "") {
-              setInstallationId(null);
-            }
-            else {
-              setInstallationId(Number(e.target.value));
-            }
-          }} value={installationId?.toString()} className="border px-2 py-1.5 mt-2">
-            <option>Select an installation</option>
-            {installations.map((inst) => (
-              <option key={inst.installationId} value={inst.installationId}>
-                {inst.accountLogin}
-              </option>
-            ))}
-          </select>
-          <select
-            className="border px-2 py-1.5 mt-2 ms-2"
-          >
-            <option>Select a repository</option>
-            {githubRepos.map((repo) => (
-              <option key={repo.id} value={repo.id}>
-                {repo.name}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-col">
+            <label className="text-sm font-medium text-gray-700 mb-1">
+              Repository
+            </label>
+            <select
+              className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+              value={repoId?.toString() ?? ""}
+              onChange={(e) => {
+                if (e.target.value === "") setRepoId(null);
+                else setRepoId(Number(e.target.value));
+              }}
+            >
+              <option value="">Select a repository</option>
+              {githubRepos.map((repo) => (
+                <option key={repo.id} value={repo.id}>
+                  {repo.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {installationId && repoId && (
+            <button
+              className="self-end bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              onClick={onConnectClick}
+            >
+              Link
+            </button>
+          )}
         </div>
       </section>
 

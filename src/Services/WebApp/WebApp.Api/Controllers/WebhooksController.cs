@@ -21,8 +21,8 @@ public class WebhooksController(GitHubAppService gitHubAppService,AppDbContext a
         var rawBodyString = HttpContext.Items["RawBodyString"] as string;
         var payloadNode = JsonNode.Parse(rawBodyString!);
         var installationId = (long)payloadNode!["installation"]!["id"]!;
-        var repoId = (long)payloadNode!["repository"]!["id"]!;
-        var repoFullName = (string)payloadNode!["repository"]!["full_name"]!;
+        var repoId = (long)payloadNode["repository"]!["id"]!;
+        var repoFullName = (string)payloadNode["repository"]!["full_name"]!;
         var cloneUrl = (string)payloadNode["repository"]!["clone_url"]!;
         var commitMessage = (string?)payloadNode["head_commit"]?["message"];
 

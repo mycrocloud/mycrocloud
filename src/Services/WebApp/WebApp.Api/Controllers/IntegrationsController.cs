@@ -1,6 +1,5 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -23,7 +22,7 @@ public class IntegrationsController(
     [HttpPost("github/callback")]
     public async Task<IActionResult> GitHubCallback(GitHubAppInstallation request)
     {
-        var doc = await GetGitHubInstallation(request);
+        var doc = await githubService.GetGitHubInstallation(request.InstallationId);
 
         var installation = await appDbContext.GitHubInstallations
             .SingleOrDefaultAsync(i => i.InstallationId == request.InstallationId);
@@ -39,6 +38,7 @@ public class IntegrationsController(
                 UserId = User.GetUserId(),
                 CreatedAt = DateTime.UtcNow
             };
+            
             appDbContext.GitHubInstallations.Add(installation);
         }
         else
@@ -49,23 +49,6 @@ public class IntegrationsController(
         await appDbContext.SaveChangesAsync();
 
         return Ok();
-    }
-
-    private async Task<JsonElement> GetGitHubInstallation(GitHubAppInstallation installation)
-    {
-        var installationId = installation.InstallationId;
-        var client = httpClientFactory.CreateClient();
-        var token = githubService.GenerateJwt();
-
-        client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("MycroCloud", "1.0"));
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
-        client.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
-
-        var json = await client.GetStringAsync($"https://api.github.com/app/installations/{installationId}");
-        var doc = JsonDocument.Parse(json).RootElement;
-
-        return doc;
     }
     
     [HttpGet("github/installations")]

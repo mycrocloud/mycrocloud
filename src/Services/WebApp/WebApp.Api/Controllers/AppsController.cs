@@ -126,22 +126,24 @@ public class AppsController(
     }
 
     [HttpPost("{id:int}/integrations/github")]
-    public async Task<IActionResult> ConnectGitHubRepo(int id, long installationId, long repoId)
+    public async Task<IActionResult> ConnectGitHubRepo(int id, GitHubRepoIntegrationRequest request)
     {
         var installation = await appDbContext.GitHubInstallations
-            .Where(i => i.InstallationId == installationId && i.UserId == User.GetUserId())
+            .Where(i => i.InstallationId == request.InstallationId && i.UserId == User.GetUserId())
             .SingleAsync();
 
         var repos = await githubAppService.GetAccessibleRepos(installation.InstallationId);
         
-        var repo = repos.Single(r => r.Id == repoId);
+        var repo = repos.Single(r => r.Id == request.RepoId);
 
-        var app = await appDbContext.Apps.SingleAsync(a => a.Id == id);
+        var app = await appDbContext.Apps
+            .Include(a => a.Integration)
+            .SingleAsync(a => a.Id == id);
         
         app.Integration = new AppIntegration
         {
             InstallationId = installation.InstallationId,
-            RepoId = repoId,
+            RepoId = repo.Id,
             RepoName = repo.Name,
             Branch = "main",
             Directory = "/",
@@ -181,4 +183,10 @@ public class AppsController(
         var repo = JsonSerializer.Deserialize<GitHubRepo>(responseBody)!;
         return repo;
     }
+}
+
+public class GitHubRepoIntegrationRequest
+{
+    public long InstallationId { get; set; }
+    public long RepoId { get; set; }
 }
