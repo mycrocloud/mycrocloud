@@ -1,6 +1,6 @@
-using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,8 +16,10 @@ public class IntegrationsController(
     AppDbContext appDbContext,
     IConfiguration configuration,
     IHttpClientFactory httpClientFactory,
-    GitHubAppService _githubService) : BaseController
+    GitHubAppService githubService) : BaseController
 {
+    #region GitHub
+    
     [HttpPost("github/callback")]
     public async Task<IActionResult> GitHubCallback(GitHubAppInstallation request)
     {
@@ -53,7 +55,7 @@ public class IntegrationsController(
     {
         var installationId = installation.InstallationId;
         var client = httpClientFactory.CreateClient();
-        var token = await _githubService.GetInstallationTokenAsync(installationId);
+        var token = githubService.GenerateJwt();
 
         client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("MycroCloud", "1.0"));
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -65,35 +67,37 @@ public class IntegrationsController(
 
         return doc;
     }
+    
+    [HttpGet("github/installations")]
+    public async Task<IActionResult> GetInstallations()
+    {
+        var installations = await appDbContext.GitHubInstallations
+            .Where(i => i.UserId == User.GetUserId())
+            .ToListAsync();
 
-    [HttpGet("github/repos")]
-    public async Task<IActionResult> GetGitHubRepos()
+        return Ok(installations.Select(i => new
+        {
+            i.InstallationId,
+            i.AccountId,
+            i.AccountLogin,
+            AccountType = i.AccountType.ToString(),
+            i.CreatedAt,
+            i.UpdatedAt
+        }));
+    }
+
+    [HttpGet("github/installations/{installationId:long}/repos")]
+    public async Task<IActionResult> GetGitHubRepos(long installationId)
     {
         var installation = await appDbContext.GitHubInstallations
-            .Where(i => i.UserId == User.GetUserId())
-            .FirstOrDefaultAsync(); //TODO: handle multiple installations
+            .Where(i => i.InstallationId == installationId && i.UserId == User.GetUserId())
+            .SingleAsync();
 
-        if (installation is null)
-        {
-            return Unauthorized();
-        }
-
-        var client = httpClientFactory.CreateClient();
-        var request = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/user/repos");
-        request.Headers.UserAgent.Add(new ProductInfoHeaderValue("MycroCloud", "1.0"));
-        request.Headers.Add("Accept", "application/vnd.github+json");
-        request.Headers.Add("Authorization", "Bearer " + userToken.Token);
-        request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
-        var response = await client.SendAsync(request);
-        if (response.StatusCode != HttpStatusCode.OK)
-        {
-            return Unauthorized();
-        }
-
-        var responseBody = await response.Content.ReadAsStringAsync();
-        var repos = JsonSerializer.Deserialize<List<GitHubRepo>>(responseBody)!;
+        var repos = await githubService.GetAccessibleRepos(installation.InstallationId);
+        
         return Ok(repos.Select(repo => new
         {
+            repo.Id,
             repo.Name,
             repo.FullName,
             repo.Description,
@@ -101,6 +105,8 @@ public class IntegrationsController(
             repo.UpdatedAt
         }));
     }
+    
+    #endregion
 
     #region Slack
 
@@ -174,21 +180,6 @@ public class IntegrationsController(
     #endregion
 }
 
-public class GitHubRepo
-{
-    [JsonPropertyName("id")] public int Id { get; set; }
-
-    [JsonPropertyName("name")] public string Name { get; set; }
-
-    [JsonPropertyName("full_name")] public string FullName { get; set; }
-
-    [JsonPropertyName("description")] public string Description { get; }
-
-    [JsonPropertyName("created_at")] public DateTime CreatedAt { get; set; }
-
-    [JsonPropertyName("updated_at")] public DateTime UpdatedAt { get; set; }
-}
-
 public class GitHubAppInstallation
 {
     [JsonPropertyName("installation_id")] public long InstallationId { get; set; }
@@ -202,16 +193,6 @@ public class OAuthRequest
 
     [JsonPropertyName("redirect_uri")] public string? RedirectUrl { get; set; }
 }
-
-public class OAuthResponse
-{
-    [JsonPropertyName("access_token")] public string AccessToken { get; set; }
-}
-
-// public class SlackOAuthResponse : OAuthResponse
-// {
-
-// }
 
 public class SlackOAuthResponse
 {

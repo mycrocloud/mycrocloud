@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using WebApp.Domain.Enums;
 
 namespace WebApp.Domain.Entities;
@@ -27,18 +28,22 @@ public class App : BaseEntity
 
     public ICollection<Object> Objects { get; set; }
 
-    //todo: move to separate entity
-    public string GitHubRepoFullName { get; set; }
-    public string GitHubWebhookToken { get; set; }
-
     public AppIntegration Integration { get; set; }
 }
 
 public class AppIntegration : BaseEntity
 {
-    public int Id { get; set; }
-    public int AppId { get; set; }
-    public App App { get; set; }
+    // public int AppId { get; set; }
+    //
+    // public App App { get; set; }
+    
+    [ForeignKey(nameof(GitHubInstallation))]
+    public long InstallationId { get; set; }
+    public long RepoId { get; set; }
+
+    public string RepoName { get; set; }
+    public GitHubInstallation GitHubInstallation  { get; set; }
+    
     public string Branch { get; set; }
     public string Directory { get; set; }
     public string BuildCommand { get; set; }

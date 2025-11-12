@@ -1,4 +1,7 @@
 using System.Security.Claims;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+using Elastic.Clients.Elasticsearch.Security;
 
 namespace WebApp.Api.Services;
 
@@ -43,7 +46,7 @@ public class GitHubAppService(HttpClient httpClient, IOptions<GitHubAppOptions> 
         return rsa;
     }
 
-    public async Task<string> GetInstallationTokenAsync(long installationId)
+    public async Task<string> GetInstallationAccessToken(long installationId)
     {
         var jwt = GenerateJwt();
         
@@ -61,22 +64,21 @@ public class GitHubAppService(HttpClient httpClient, IOptions<GitHubAppOptions> 
         return doc.RootElement.GetProperty("token").GetString()!;
     }
 
-    public async Task<string> GetInstallationRepos(long installationId)
+    public async Task<List<GitHubRepo>> GetAccessibleRepos(long installationId)
     {
-        var jwt = GenerateJwt();
+        var token = await GetInstallationAccessToken(installationId);
         
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+        httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("MycroCloud", "1.0"));
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
         httpClient.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
-        httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("MycroCloud", "1.0"));
-        
-        var url = $"https://api.github.com/app/installations/{installationId}/repositories";
-        var response = await httpClient.PostAsync(url, null);
-        response.EnsureSuccessStatusCode();
 
-        var json = await response.Content.ReadAsStringAsync();
-        using var doc = JsonDocument.Parse(json);
-        return doc.RootElement.GetProperty("token").GetString()!;
+        var json = await httpClient.GetStringAsync("https://api.github.com/installation/repositories");
+        
+        var node = JsonNode.Parse(json)!;
+        var repos = JsonSerializer.Deserialize<List<GitHubRepo>>(node["repositories"]!.ToJsonString())!;
+
+        return repos;
     }
 }
 
@@ -85,4 +87,19 @@ public class GitHubAppOptions
     public string AppId { get; set; } = "";
     public string PrivateKeyPath { get; set; } = "";
     public string WebhookSecret { get; set; } = "";
+}
+
+public class GitHubRepo
+{
+    [JsonPropertyName("id")] public int Id { get; set; }
+
+    [JsonPropertyName("name")] public string Name { get; set; }
+
+    [JsonPropertyName("full_name")] public string FullName { get; set; }
+
+    [JsonPropertyName("description")] public string Description { get; }
+
+    [JsonPropertyName("created_at")] public DateTime CreatedAt { get; set; }
+
+    [JsonPropertyName("updated_at")] public DateTime UpdatedAt { get; set; }
 }

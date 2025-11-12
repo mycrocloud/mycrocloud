@@ -1,6 +1,6 @@
 import { getConfig } from "@/config";
 
-const { GITHUB_CLIENTID, SLACK_CLIENT_ID } = getConfig();
+const { SLACK_CLIENT_ID } = getConfig();
 
 export default function Connections() {
   // const connectGitHub = async () => {
@@ -19,7 +19,7 @@ export default function Connections() {
 
     window.location.href = url;
   };
-  
+
   const githubAppName = "dev-MycroCloud"; // TODO: load from config
   const githubAppUrl = `https://github.com/apps/${githubAppName}/installations/new`; //TODO: add state param?
 
@@ -30,7 +30,7 @@ export default function Connections() {
       <div className="flex space-x-2 items-center mt-2">
         <a
           href={githubAppUrl}
-          className="rounded-sm border  border-1 px-2 py-1.5 text-black-900"
+          className="rounded-sm border border-1 px-2 py-1.5 text-black-900"
         >
           Connect GitHub
         </a>

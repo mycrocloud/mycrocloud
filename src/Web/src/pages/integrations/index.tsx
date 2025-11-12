@@ -1,13 +1,14 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import { useContext, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import { AppContext } from "../apps";
 import { Modal } from "flowbite-react";
 import { toast } from "react-toastify";
 import { useForm } from "react-hook-form";
 import { ChevronRightIcon } from "@heroicons/react/24/solid";
+import { useAuthRequest } from "@/hooks";
 
-export interface GitHubRepo {
+interface GitHubRepo {
+  id: number;
   name: string;
   fullName: string;
   description: string;
@@ -36,29 +37,37 @@ interface ILogEntry {
   level: string;
 }
 
+interface IGitHubInstallation {
+  installationId: number;
+  accountLogin: string;
+  accountType: string;
+}
+
 export default function Integrations() {
   const { getAccessTokenSilently } = useAuth0();
+  const { get } = useAuthRequest();
   const { app, setApp } = useContext(AppContext)!;
   if (!app) throw new Error();
 
   const [repoFullName, setRepoFullName] = useState(app.gitHubRepoFullName);
   const [githubRepos, setGitHubRepos] = useState<GitHubRepo[]>([]);
-  const [githubConnectError, setGitHubConnectError] = useState<string | null>();
+  const [installations, setInstallations] = useState<IGitHubInstallation[]>([]);
+  const [installationId, setInstallationId] = useState<number | null>(null);
 
   useEffect(() => {
     (async () => {
-      const accessToken = await getAccessTokenSilently();
-      const res = await fetch(`/api/integrations/github/repos`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      if (res.ok) {
-        const repos = (await res.json()) as GitHubRepo[];
-        setGitHubRepos(repos);
-      } else if (res.status === 401) {
-        setGitHubConnectError("Unauthorized. Please reconnect GitHub.");
-      }
+      const installations = await get<IGitHubInstallation[]>(`/api/integrations/github/installations`);
+      setInstallations(installations);
     })();
   }, []);
+
+  useEffect(() => {
+    if (!installationId) return;
+    (async () => {
+      const repos = await get<GitHubRepo[]>(`/api/integrations/github/installations/${installationId}/repos`);
+      setGitHubRepos(repos);
+    })();
+  }, [installationId]);
 
   const onConnectClick = async () => {
     const accessToken = await getAccessTokenSilently();
@@ -196,18 +205,44 @@ export default function Integrations() {
   return (
     <div className="p-2">
       <h1 className="font-bold">Integrations</h1>
+
+      <section>
+        <h2 className="mt-4 font-semibold">GitHub</h2>
+        <p className="text-sm text-slate-600">
+          Connect your application to a GitHub repository to enable automatic
+          builds on code pushes.
+        </p>
+
+        <div className="flex">
+          <select onChange={(e) => {
+            if (e.target.value === "") {
+              setInstallationId(null);
+            }
+            else {
+              setInstallationId(Number(e.target.value));
+            }
+          }} value={installationId?.toString()} className="border px-2 py-1.5 mt-2">
+            <option>Select an installation</option>
+            {installations.map((inst) => (
+              <option key={inst.installationId} value={inst.installationId}>
+                {inst.accountLogin}
+              </option>
+            ))}
+          </select>
+          <select
+            className="border px-2 py-1.5 mt-2 ms-2"
+          >
+            <option>Select a repository</option>
+            {githubRepos.map((repo) => (
+              <option key={repo.id} value={repo.id}>
+                {repo.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </section>
+
       <div className="mt-4 rounded-sm border p-2">
-        {githubConnectError && (
-          <div className="flex">
-            <p className="text-red-500">{githubConnectError}</p>
-            <Link
-              to={"/settings"}
-              className="ms-2 text-blue-500 hover:underline"
-            >
-              Go to Settings
-            </Link>
-          </div>
-        )}
         {app!.gitHubRepoFullName ? (
           <div>
             <div className="flex items-center p-2">
