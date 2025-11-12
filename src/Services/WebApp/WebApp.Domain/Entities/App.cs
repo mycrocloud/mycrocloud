@@ -33,11 +33,8 @@ public class App : BaseEntity
 
 public class AppIntegration : BaseEntity
 {
-    // public int AppId { get; set; }
-    //
-    // public App App { get; set; }
+    public int AppId { get; set; }
     
-    [ForeignKey(nameof(GitHubInstallation))]
     public long InstallationId { get; set; }
     public long RepoId { get; set; }
 

@@ -41,6 +41,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .OwnsOne(app => app.Settings, ownedNavigationBuilder => { ownedNavigationBuilder.ToJson(); });
         modelBuilder.Entity<App>()
             .OwnsOne(app => app.CorsSettings, ownedNavigationBuilder => { ownedNavigationBuilder.ToJson(); });
+        
+        modelBuilder.Entity<App>()
+            .HasOne(a => a.Integration)
+            .WithOne()
+            .HasForeignKey<AppIntegration>(ai => ai.AppId)
+            .IsRequired(false);
+
+        modelBuilder.Entity<AppIntegration>()
+            .HasKey(ai => ai.AppId);
+        
+        modelBuilder.Entity<AppIntegration>()
+            .HasOne(ai => ai.GitHubInstallation)
+            .WithMany(g => g.AppIntegrations)
+            .HasForeignKey(ai => ai.InstallationId)
+            .IsRequired(false);
 
         modelBuilder.Entity<Route>().OwnsMany(route => route.ResponseHeaders,
             ownedNavigationBuilder => { ownedNavigationBuilder.ToJson(); });
