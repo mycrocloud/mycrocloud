@@ -1,4 +1,4 @@
-import { useAuthRequest } from "@/hooks";
+import { useApiClient } from "@/hooks";
 import { useContext, useEffect, useState } from "react";
 import { AppContext } from "../apps";
 import { useAuth0 } from "@auth0/auth0-react";
@@ -17,12 +17,14 @@ interface ILogEntry {
     level: string;
 }
 
-export default function BuildsSection() {
-    const { get } = useAuthRequest();
-    const { getAccessTokenSilently} = useAuth0();
+export default function Builds() {
     const { app } = useContext(AppContext)!;
     if (!app) throw new Error();
-    const [buildId, setJobId] = useState<string>();
+
+    const { get } = useApiClient();
+    const { getAccessTokenSilently} = useAuth0();
+    
+    const [buildId, setBuildId] = useState<string>();
     const [logs, setLogs] = useState<ILogEntry[]>([]);
 
     useEffect(() => {
@@ -94,7 +96,7 @@ export default function BuildsSection() {
                                     "cursor-pointer border hover:bg-slate-100" +
                                     (buildId === build.id ? " bg-slate-200" : "")
                                 }
-                                onClick={() => setJobId(build.id)}
+                                onClick={() => setBuildId(build.id)}
                             >
                                 <td className="p-2">{build.name}</td>
                                 <td className={statusClass(build.status)}>
