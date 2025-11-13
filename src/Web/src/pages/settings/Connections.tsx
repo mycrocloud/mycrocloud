@@ -27,18 +27,10 @@ export default function Connections() {
     <section className="mt-4">
       <h2 className="mt-4 font-semibold">Connections</h2>
       <div className="flex space-x-2 items-center mt-2">
-        {/* <a
-          href={githubAppUrl}
-          className="rounded-sm border border-1 px-2 py-1.5 text-black-900"
-        >
-          Connect GitHub
-        </a> */}
-
         <button
           onClick={connectSlack}
-          className="rounded-sm border border-1 px-2 py-1.5 text-black-900"
         >
-          Connect Slack
+          <img alt="Add to Slack" height="40" width="139" src="https://platform.slack-edge.com/img/add_to_slack.png" srcSet="https://platform.slack-edge.com/img/add_to_slack.png 1x, https://platform.slack-edge.com/img/add_to_slack@2x.png 2x" />
         </button>
       </div>
     </section>
