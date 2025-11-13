@@ -1,5 +1,4 @@
 using System.Text;
-using System.Text.Json;
 using Elastic.Clients.Elasticsearch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -42,6 +41,7 @@ public class BuildsController(
     }
 
     [HttpPost("config")]
+    [NonAction] //NOTE: not ready for production
     public async Task<IActionResult> Config(int appId, BuildConfigRequest buildConfigRequest)
     {
         var app = await appDbContext.Apps
@@ -52,7 +52,7 @@ public class BuildsController(
         {
             app.Integration = new AppIntegration
             {
-                Branch = buildConfigRequest.Branch,
+                //Branch = buildConfigRequest.Branch,
                 Directory = buildConfigRequest.Directory,
                 BuildCommand = buildConfigRequest.BuildCommand,
                 OutDir = buildConfigRequest.OutDir,

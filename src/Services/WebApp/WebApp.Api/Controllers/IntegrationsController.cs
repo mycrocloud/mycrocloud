@@ -22,7 +22,7 @@ public class IntegrationsController(
     [HttpPost("github/callback")]
     public async Task<IActionResult> GitHubCallback(GitHubAppInstallation request)
     {
-        var doc = await githubService.GetGitHubInstallation(request.InstallationId);
+        var doc = await githubService.GetInstallation(request.InstallationId);
 
         var installation = await appDbContext.GitHubInstallations
             .SingleOrDefaultAsync(i => i.InstallationId == request.InstallationId);
@@ -73,8 +73,7 @@ public class IntegrationsController(
     public async Task<IActionResult> GetGitHubRepos(long installationId)
     {
         var installation = await appDbContext.GitHubInstallations
-            .Where(i => i.InstallationId == installationId && i.UserId == User.GetUserId())
-            .SingleAsync();
+            .SingleAsync(i => i.InstallationId == installationId && i.UserId == User.GetUserId());
 
         var repos = await githubService.GetAccessibleRepos(installation.InstallationId);
         
@@ -163,12 +162,6 @@ public class IntegrationsController(
     #endregion
 }
 
-public class GitHubAppInstallation
-{
-    [JsonPropertyName("installation_id")] public long InstallationId { get; set; }
-
-    [JsonPropertyName("setup_action")] public string SetupAction { get; set; }
-}
 
 public class OAuthRequest
 {

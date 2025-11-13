@@ -1,5 +1,3 @@
-using System.Net.Http.Headers;
-using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApp.Api.Filters;
@@ -124,8 +122,30 @@ public class AppsController(
         var app = await appRepository.GetByAppId(id);
         return Ok(app.CorsSettings);
     }
+    
+    [HttpGet("{id:int}/link")]
+    public async Task<IActionResult> Link(int id)
+    {
+        var app = await appDbContext.Apps
+            .Include(a => a.Integration)
+            .ThenInclude(i => i.GitHubInstallation)
+            .SingleAsync(a => a.Id == id && a.UserId == User.GetUserId());
 
-    [HttpPost("{id:int}/integrations/github")]
+        if (app.Integration is not { } integration)
+        {
+            return NotFound();
+        }
+        
+        return Ok(new
+        {
+            Type = "GitHub", //TODO: 
+            Org = integration.GitHubInstallation.AccountLogin, 
+            integration.RepoId,
+            Repo = integration.RepoName
+        });
+    }
+
+    [HttpPost("{id:int}/link/github")]
     public async Task<IActionResult> ConnectGitHubRepo(int id, GitHubRepoIntegrationRequest request)
     {
         var installation = await appDbContext.GitHubInstallations
@@ -157,31 +177,18 @@ public class AppsController(
         return NoContent();
     }
 
-    [HttpDelete("{id:int}/integrations/github")]
+    [HttpDelete("{id:int}/link")]
     public async Task<IActionResult> DisconnectGitHubRepo(int id)
     {
-        var app = await appDbContext.Apps.SingleAsync(a => a.Id == id);
+        var app = await appDbContext.Apps
+            .Include(app => app.Integration)
+            .SingleAsync(a => a.Id == id);
 
-        app.Integration = null;
+        appDbContext.Remove(app.Integration);
 
         await appDbContext.SaveChangesAsync();
         
         return NoContent();
-    }
-
-    private async Task<GitHubRepo> GetGitHubRepo(string repoFullName, UserToken userToken)
-    {
-        var client = httpClientFactory.CreateClient();
-        var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.github.com/repos/{repoFullName}");
-        request.Headers.UserAgent.Add(new ProductInfoHeaderValue("WebApp", "1.0"));
-        request.Headers.Add("Accept", "application/vnd.github+json");
-        request.Headers.Add("Authorization", "Bearer " + userToken.Token);
-        request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
-        var response = await client.SendAsync(request);
-        response.EnsureSuccessStatusCode();
-        var responseBody = await response.Content.ReadAsStringAsync();
-        var repo = JsonSerializer.Deserialize<GitHubRepo>(responseBody)!;
-        return repo;
     }
 }
 

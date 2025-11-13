@@ -1,16 +1,14 @@
 using System.Security.Claims;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using Elastic.Clients.Elasticsearch.Security;
-
-namespace WebApp.Api.Services;
-
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.Net.Http.Headers;
 using System.Text.Json;
+
+namespace WebApp.Api.Services;
 
 public class GitHubAppService(HttpClient httpClient, IOptions<GitHubAppOptions> options)
 {
@@ -21,12 +19,12 @@ public class GitHubAppService(HttpClient httpClient, IOptions<GitHubAppOptions> 
         var now = DateTimeOffset.UtcNow;
         var securityKey = new RsaSecurityKey(ReadPrivateKey(_options.PrivateKeyPath));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256);
-        
+
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Iat, now.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
         };
-        
+
         var token = new JwtSecurityToken(
             issuer: _options.AppId,
             claims: claims,
@@ -45,8 +43,8 @@ public class GitHubAppService(HttpClient httpClient, IOptions<GitHubAppOptions> 
         rsa.ImportFromPem(privateKeyPem);
         return rsa;
     }
-    
-    public async Task<JsonElement> GetGitHubInstallation(long installationId)
+
+    public async Task<JsonElement> GetInstallation(long installationId)
     {
         var jwt = GenerateJwt();
 
@@ -57,14 +55,16 @@ public class GitHubAppService(HttpClient httpClient, IOptions<GitHubAppOptions> 
 
         return doc;
     }
-    
+
     public async Task<string> GetInstallationAccessToken(long installationId)
     {
         var jwt = GenerateJwt();
-        
+
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
-        
-        var response = await httpClient.PostAsync($"https://api.github.com/app/installations/{installationId}/access_tokens", null);
+
+        var response =
+            await httpClient.PostAsync($"https://api.github.com/app/installations/{installationId}/access_tokens",
+                null);
         response.EnsureSuccessStatusCode();
 
         var json = await response.Content.ReadAsStringAsync();
@@ -75,16 +75,23 @@ public class GitHubAppService(HttpClient httpClient, IOptions<GitHubAppOptions> 
     public async Task<List<GitHubRepo>> GetAccessibleRepos(long installationId)
     {
         var token = await GetInstallationAccessToken(installationId);
-        
+
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var json = await httpClient.GetStringAsync("https://api.github.com/installation/repositories");
-        
+
         var node = JsonNode.Parse(json)!;
         var repos = JsonSerializer.Deserialize<List<GitHubRepo>>(node["repositories"]!.ToJsonString())!;
 
         return repos;
     }
+}
+
+public class GitHubAppInstallation
+{
+    [JsonPropertyName("installation_id")] public long InstallationId { get; set; }
+
+    [JsonPropertyName("setup_action")] public string SetupAction { get; set; }
 }
 
 public class GitHubAppOptions

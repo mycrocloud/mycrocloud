@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations.Schema;
 using WebApp.Domain.Enums;
 
 namespace WebApp.Domain.Entities;
@@ -35,12 +34,14 @@ public class AppIntegration : BaseEntity
 {
     public int AppId { get; set; }
     
+    //TODO: support other providers e.g. GitLab, Bitbucket
     public long InstallationId { get; set; }
     public long RepoId { get; set; }
 
     public string RepoName { get; set; }
     public GitHubInstallation GitHubInstallation  { get; set; }
     
+    //TODO: JSON column maybe better
     public string Branch { get; set; }
     public string Directory { get; set; }
     public string BuildCommand { get; set; }
