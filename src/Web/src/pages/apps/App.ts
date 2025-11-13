@@ -6,5 +6,12 @@ export default interface IApp {
   updatedAt?: string;
   status: string;
   version: string;
-  gitHubRepoFullName?: string;
+  //gitHubRepoFullName?: string;
+}
+
+export interface IAppIntegration {
+  type: string,
+  org: string,
+  repoId: number,
+  repo: string
 }

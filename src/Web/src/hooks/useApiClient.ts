@@ -1,5 +1,6 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import { useCallback } from "react";
+import { NotFoundError} from "@/errors"
 
 type RequestOptions = {
   headers?: Record<string, string>;
@@ -42,7 +43,12 @@ const useApiClient = () => {
       if (!response.ok) {
         const message =
           (data as any)?.message || `Request failed with ${response.status}`;
-        throw new Error(message);
+
+          if (response.status === 404) {
+            throw new NotFoundError(message)
+          } else {
+            throw new Error(message);
+          }
       }
 
       return data as T;
