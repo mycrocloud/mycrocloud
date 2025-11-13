@@ -7,6 +7,7 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using WebApp.Api.Filters;
 using WebApp.Api.Models.Builds;
+using WebApp.Api.Services;
 using WebApp.Domain.Entities;
 using WebApp.Infrastructure;
 
@@ -21,6 +22,7 @@ public class BuildsController(
     ElasticClient elasticClient,
     [FromKeyedServices("AppBuildLogs_ES8")]
     ElasticsearchClient elasticsearchClient,
+    IAppBuildPublisher publisher,
     ILogger<BuildsController> logger): BaseController
 {
     [HttpGet]
@@ -38,6 +40,24 @@ public class BuildsController(
             job.CreatedAt,
             job.UpdatedAt,
         }));
+    }
+    
+    [HttpGet("subscription")]
+    public async Task<IActionResult> Subscribe(int appId)
+    {
+        Response.Headers.Append("Content-Type", "text/event-stream");
+        Response.Headers.Append("Cache-Control", "no-cache");
+        Response.Headers.Append("Connection", "keep-alive");
+
+        var cancellationToken = HttpContext.RequestAborted;
+
+        await foreach (var msg in publisher.Subscribe(appId, cancellationToken))
+        {
+            await Response.WriteAsync($"data: {msg}\n\n");
+            await Response.Body.FlushAsync();
+        }
+
+        return new EmptyResult();
     }
 
     [HttpPost("config")]

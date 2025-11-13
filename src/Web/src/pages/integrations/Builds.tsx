@@ -1,9 +1,9 @@
 import { useApiClient } from "@/hooks";
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { AppContext } from "../apps";
 import { useAuth0 } from "@auth0/auth0-react";
 
-interface IBuildJob {
+interface IBuild {
     id: string;
     name: string;
     status: string;
@@ -22,24 +22,67 @@ export default function Builds() {
     if (!app) throw new Error();
 
     const { get } = useApiClient();
-    const { getAccessTokenSilently} = useAuth0();
-    
+    const { getAccessTokenSilently } = useAuth0();
+
+    const [builds, setBuilds] = useState<IBuild[]>([]);
+
+    const fetchBuilds = useCallback(async () => {
+        const data = await get<IBuild[]>(`/api/apps/${app.id}/builds`);
+        setBuilds(data);
+    }, [app.id]);
+
+    // SSE subscription
+    useEffect(() => {
+        let isMounted = true;
+        const evtRef = { current: null as EventSource | null };
+
+        (async () => {
+            const accessToken = await getAccessTokenSilently();
+            if (!isMounted) return;
+
+            const evtSource = new EventSource(
+                `/api/apps/${app.id}/builds/subscription?access_token=${accessToken}`
+            );
+            evtRef.current = evtSource;
+
+            // Initial load
+            fetchBuilds();
+
+            evtSource.onmessage = () => {
+                if (!isMounted) return;
+                fetchBuilds();
+            };
+
+            evtSource.onerror = (error) => {
+                console.error("SSE error:", error);
+            };
+        })();
+
+        return () => {
+            isMounted = false;
+
+            if (evtRef.current) {
+                evtRef.current.close();
+                evtRef.current = null;
+            }
+        };
+    }, [app.id, fetchBuilds]);
+
     const [buildId, setBuildId] = useState<string>();
     const [logs, setLogs] = useState<ILogEntry[]>([]);
 
     useEffect(() => {
         let evtSource: EventSource;
-        
+
         if (!buildId) return;
 
         (async () => {
             const accessToken = await getAccessTokenSilently();
 
             evtSource = new EventSource(`/api/apps/${app.id}/builds/${buildId}/logs/stream?access_token=${accessToken}`);
-            evtSource.onmessage = function (event) { 
+            evtSource.onmessage = function (event) {
                 console.log("Log event:", event.data);
             }
-
         })();
 
         return () => {
@@ -62,21 +105,9 @@ export default function Builds() {
         }
     }
 
-    const [jobs, setJobs] = useState<IBuildJob[]>([]);
-    const fetchBuilds = async () => {
-        const builds = await get<IBuildJob[]>(`/api/apps/${app.id}/builds`);
-        setJobs(builds);
-    };
-
     return <section>
         <div className="mt-4 flex items-center">
             <h2 className="font-semibold">Builds</h2>
-            <button
-                className="ms-2 text-sm text-sky-500 hover:underline"
-                onClick={() => fetchBuilds()}
-            >
-                Refresh
-            </button>
         </div>
         <div className="flex">
             <div className="">
@@ -89,7 +120,7 @@ export default function Builds() {
                         </tr>
                     </thead>
                     <tbody>
-                        {jobs.map((build) => (
+                        {builds.map((build) => (
                             <tr
                                 key={build.id}
                                 className={

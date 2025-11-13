@@ -12,7 +12,11 @@ namespace WebApp.Api.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class WebhooksController(GitHubAppService gitHubAppService,AppDbContext appDbContext, RabbitMqService rabbitMqService, ILogger<WebhooksController> logger) : ControllerBase
+public class WebhooksController(GitHubAppService gitHubAppService, 
+    AppDbContext appDbContext, 
+    RabbitMqService rabbitMqService,
+    IAppBuildPublisher publisher,
+    ILogger<WebhooksController> logger) : ControllerBase
 {
     [HttpPost("github/postreceive")]
     [TypeFilter<GitHubWebhookValidationFilter>]
@@ -70,6 +74,8 @@ public class WebhooksController(GitHubAppService gitHubAppService,AppDbContext a
             };
 
             rabbitMqService.PublishMessage(JsonSerializer.Serialize(message));
+            
+            publisher.Publish(app.Id);
 
             await appDbContext.SaveChangesAsync();
         }
