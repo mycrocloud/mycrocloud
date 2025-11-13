@@ -1,8 +1,10 @@
 import { useApiClient } from "@/hooks";
+import { useAuth0 } from "@auth0/auth0-react";
 import { useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function GitHubCallback() {
+  const {isAuthenticated, isLoading} = useAuth0();
   const { post } = useApiClient();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -23,6 +25,10 @@ export default function GitHubCallback() {
   }, [state]);
 
   useEffect(() => {
+    if (isLoading || !isAuthenticated) {
+      return;
+    }
+
     if (!installation_id || !setup_action || (setup_action !== "install" && setup_action !== "update")) {
       navigate("/");
       return;
@@ -33,7 +39,7 @@ export default function GitHubCallback() {
       navigate(navigatePath);
     })();
 
-  }, [installation_id, setup_action, navigatePath]);
+  }, [isLoading, isAuthenticated, installation_id, setup_action, navigatePath]);
 
   return <h1>Loading...</h1>;
 }
