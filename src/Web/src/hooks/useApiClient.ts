@@ -8,7 +8,7 @@ type RequestOptions = {
   //[key: string]: any;
 };
 
-const useAuthRequest = () => {
+const useApiClient = () => {
   const { getAccessTokenSilently, isAuthenticated } = useAuth0();
 
   const send = useCallback(
@@ -74,7 +74,7 @@ const useAuthRequest = () => {
   return { send, get, post, del };
 };
 
-export default useAuthRequest;
+export default useApiClient;
 
 export function ensureSuccess(response: Response, message?: string): Response {
   if (response.ok) {

@@ -5,7 +5,7 @@ import { Modal } from "flowbite-react";
 import { toast } from "react-toastify";
 import { useForm } from "react-hook-form";
 import { ChevronRightIcon } from "@heroicons/react/24/solid";
-import { useAuthRequest } from "@/hooks";
+import { useApiClient } from "@/hooks";
 
 interface GitHubRepo {
   id: number;
@@ -45,7 +45,7 @@ interface IGitHubInstallation {
 
 export default function Integrations() {
   const { getAccessTokenSilently } = useAuth0();
-  const { get, post } = useAuthRequest();
+  const { get, post } = useApiClient();
   const { app, setApp } = useContext(AppContext)!;
   if (!app) throw new Error();
 

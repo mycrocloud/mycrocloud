@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
 import IApp from "./App";
 import { useEffect, useMemo, useState } from "react";
-import { useAuthRequest } from "@/hooks";
+import { useApiClient } from "@/hooks";
 
 export default function List() {
-  const { get } = useAuthRequest();
+  const { get } = useApiClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [apps, setApps] = useState<IApp[]>([]);
   const filteredApps = useMemo(() => {

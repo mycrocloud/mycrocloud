@@ -1,9 +1,9 @@
-import { useAuthRequest } from "@/hooks";
+import { useApiClient } from "@/hooks";
 import { useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function GitHubCallback() {
-  const { post } = useAuthRequest();
+  const { post } = useApiClient();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 

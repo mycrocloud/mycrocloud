@@ -1,1 +1,1 @@
-export { default as useAuthRequest } from "./useAuthRequest";
+export { default as useApiClient } from "./useApiClient";

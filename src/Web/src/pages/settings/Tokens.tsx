@@ -3,7 +3,7 @@ import { toast } from "react-toastify";
 import TextCopyButton from "../../components/ui/TextCopyButton";
 import { Modal } from "flowbite-react";
 import { useForm } from "react-hook-form";
-import { useAuthRequest } from "@/hooks";
+import { useApiClient } from "@/hooks";
 
 interface IToken {
     id: number
@@ -17,7 +17,7 @@ type CreateType = {
 }
 
 export default function Tokens() {
-    const { get, post, del } = useAuthRequest();
+    const { get, post, del } = useApiClient();
 
     const [tokens, setTokens] = useState<IToken[]>([]);
 

@@ -1,4 +1,4 @@
-import { useAuthRequest } from "@/hooks";
+import { useApiClient } from "@/hooks";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -9,7 +9,7 @@ interface LinkResponse {
 
 export default function SlackLink() {
     const { isAuthenticated, isLoading, loginWithRedirect } = useAuth0();
-    const { post } = useAuthRequest();
+    const { post } = useApiClient();
 
     const [searchParams] = useSearchParams();
     const redirectUri = searchParams.get("redirectUri")!;
