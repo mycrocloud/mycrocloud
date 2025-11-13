@@ -3,7 +3,8 @@ import Tokens from "./Tokens";
 
 export default function Settings() {
   return (
-    <div className="">
+    <div className="w-10/12 mx-auto mt-4">
+      <h1 className="font-bold">Settings</h1>
       <Connections />
       <Tokens />
     </div>

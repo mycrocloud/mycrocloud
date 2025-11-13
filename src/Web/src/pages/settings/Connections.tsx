@@ -25,15 +25,14 @@ export default function Connections() {
 
   return (
     <section className="mt-4">
-      <h1 className="font-bold">Settings</h1>
-      <h2 className="mt-4">Connections</h2>
+      <h2 className="mt-4 font-semibold">Connections</h2>
       <div className="flex space-x-2 items-center mt-2">
-        <a
+        {/* <a
           href={githubAppUrl}
           className="rounded-sm border border-1 px-2 py-1.5 text-black-900"
         >
           Connect GitHub
-        </a>
+        </a> */}
 
         <button
           onClick={connectSlack}
