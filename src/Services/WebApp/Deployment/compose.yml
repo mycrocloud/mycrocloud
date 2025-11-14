@@ -1,3 +1,4 @@
+name: deployment
 services:
   worker:
     build: ./worker
@@ -32,7 +33,7 @@ services:
     image: mycrocloud-deployment-builder:main
     build: ./builder
     labels:
-      - job_id=73318fcf-8d1e-4716-9106-2ae681e79e6d
+      - build_id=73318fcf-8d1e-4716-9106-2ae681e79e6d
     environment:
       - REPO_URL=https://github.com/mycrocloud/sample-react-app
       - WORK_DIR=.
@@ -44,6 +45,7 @@ services:
       options:
         fluentd-address: host.docker.internal:24224
         tag: app.builder
+        labels: build_id
     depends_on:
       - worker
       - fluentd
