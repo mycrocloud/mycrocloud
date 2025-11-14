@@ -22,7 +22,7 @@ public class BuildsController(
     ElasticClient elasticClient,
     [FromKeyedServices("AppBuildLogs_ES8")]
     ElasticsearchClient elasticsearchClient,
-    IAppBuildPublisher publisher,
+    InMemoryAppBuildPublisher publisher,
     ILogger<BuildsController> logger): BaseController
 {
     [HttpGet]

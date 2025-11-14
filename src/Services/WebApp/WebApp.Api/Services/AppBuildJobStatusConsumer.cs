@@ -192,6 +192,6 @@ public class AppBuildJobStatusConsumer(
             return;
         }
         
-        publisher.Publish(app.Id);
+        publisher.Publish(app.Id, job.Status);
     }
 }

@@ -75,7 +75,7 @@ public class WebhooksController(GitHubAppService gitHubAppService,
 
             rabbitMqService.PublishMessage(JsonSerializer.Serialize(message));
             
-            publisher.Publish(app.Id);
+            publisher.Publish(app.Id, job.Status);
 
             await appDbContext.SaveChangesAsync();
         }

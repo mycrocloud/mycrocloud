@@ -6,27 +6,25 @@ using System.Threading.Channels;
 public interface IAppBuildPublisher
 {
     IAsyncEnumerable<string> Subscribe(int appId, CancellationToken cancellationToken);
-    void Publish(int appId);
+    void Publish(int appId, string message);
 }
 
-public class AppBuildPublisher : IAppBuildPublisher
+public class InMemoryAppBuildPublisher : IAppBuildPublisher
 {
-    // appId → list of subscribers (many SSE connections)
-    private readonly ConcurrentDictionary<int, List<Channel<string>>> _subscribers 
-        = new();
+    private readonly ConcurrentDictionary<int, List<Channel<string>>> _subscribers = new();
 
     public IAsyncEnumerable<string> Subscribe(int appId, CancellationToken cancellationToken)
     {
         var channel = Channel.CreateUnbounded<string>();
 
-        // Add subscriber
-        var list = _subscribers.GetOrAdd(appId, _ => new List<Channel<string>>());
+        var list = _subscribers.GetOrAdd(appId, _ => []);
         lock (list)
         {
             list.Add(channel);
         }
 
-        // Remove subscriber when SSE closes
+        return ReadFromChannel();
+
         async IAsyncEnumerable<string> ReadFromChannel()
         {
             try
@@ -44,11 +42,9 @@ public class AppBuildPublisher : IAppBuildPublisher
                 }
             }
         }
-
-        return ReadFromChannel();
     }
 
-    public void Publish(int appId)
+    public void Publish(int appId, string message)
     {
         if (!_subscribers.TryGetValue(appId, out var list))
             return;
@@ -57,7 +53,7 @@ public class AppBuildPublisher : IAppBuildPublisher
         {
             foreach (var channel in list.ToList())
             {
-                channel.Writer.TryWrite("update");
+                channel.Writer.TryWrite(message);
             }
         }
     }
