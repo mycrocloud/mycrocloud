@@ -24,7 +24,7 @@ function AppCreate() {
   });
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     const accessToken = await getAccessTokenSilently();
-    //TODO: useAuthRequest
+    //TODO: useApiClient
     const res = await fetch("/api/apps", {
       method: "POST",
       headers: {

@@ -1,5 +1,4 @@
 using System.Text;
-using System.Text.Json;
 using Elastic.Clients.Elasticsearch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +7,7 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using WebApp.Api.Filters;
 using WebApp.Api.Models.Builds;
+using WebApp.Api.Services;
 using WebApp.Domain.Entities;
 using WebApp.Infrastructure;
 
@@ -22,6 +22,7 @@ public class BuildsController(
     ElasticClient elasticClient,
     [FromKeyedServices("AppBuildLogs_ES8")]
     ElasticsearchClient elasticsearchClient,
+    IAppBuildPublisher publisher,
     ILogger<BuildsController> logger): BaseController
 {
     [HttpGet]
@@ -31,6 +32,7 @@ public class BuildsController(
             .Where(j => j.AppId == appId)
             .OrderByDescending(j => j.CreatedAt)
             .ToListAsync();
+        
         return Ok(jobs.Select(job => new
         {
             job.Id,
@@ -40,8 +42,27 @@ public class BuildsController(
             job.UpdatedAt,
         }));
     }
+    
+    [HttpGet("subscription")]
+    public async Task<IActionResult> Subscribe(int appId)
+    {
+        Response.Headers.Append("Content-Type", "text/event-stream");
+        Response.Headers.Append("Cache-Control", "no-cache");
+        Response.Headers.Append("Connection", "keep-alive");
+
+        var cancellationToken = HttpContext.RequestAborted;
+
+        await foreach (var msg in publisher.Subscribe(appId, cancellationToken))
+        {
+            await Response.WriteAsync($"data: {msg}\n\n", cancellationToken: cancellationToken);
+            await Response.Body.FlushAsync(cancellationToken);
+        }
+
+        return new EmptyResult();
+    }
 
     [HttpPost("config")]
+    [NonAction] //NOTE: not ready for production
     public async Task<IActionResult> Config(int appId, BuildConfigRequest buildConfigRequest)
     {
         var app = await appDbContext.Apps
@@ -52,7 +73,7 @@ public class BuildsController(
         {
             app.Integration = new AppIntegration
             {
-                Branch = buildConfigRequest.Branch,
+                //Branch = buildConfigRequest.Branch,
                 Directory = buildConfigRequest.Directory,
                 BuildCommand = buildConfigRequest.BuildCommand,
                 OutDir = buildConfigRequest.OutDir,
@@ -151,6 +172,8 @@ public class BuildsController(
     [HttpGet("{buildId:guid}/logs/stream")]
     public async Task<IActionResult> Stream(int appId, Guid buildId)
     {
+        var build = await appDbContext.AppBuildJobs.SingleAsync(b => b.AppId == appId && b.Id == buildId);
+        
         // use server sent events to stream logs
         Response.Headers.Append("Content-Type", "text/event-stream");
         Response.Headers.Append("Cache-Control", "no-cache");
@@ -170,7 +193,7 @@ public class BuildsController(
         channel.ExchangeDeclare(exchange: exchange, type: "topic", durable: false); //TODO: confirm durable setting
         
         var requestId = HttpContext.TraceIdentifier;
-        var queueName = exchange + $".{buildId}_{requestId}"; // unique queue name per request
+        var queueName = exchange + $".{build.Id}_{requestId}"; // unique queue name per request
         
         channel.QueueDeclare(
             queue: queueName,
@@ -182,7 +205,7 @@ public class BuildsController(
         channel.QueueBind(
             queue: queueName,
             exchange: exchange,
-            routingKey: exchange + $".{buildId}"
+            routingKey: exchange + $".{build.Id}"
         );
         
         var consumer = new EventingBasicConsumer(channel);

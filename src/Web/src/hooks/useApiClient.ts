@@ -1,5 +1,6 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import { useCallback } from "react";
+import { NotFoundError} from "@/errors"
 
 type RequestOptions = {
   headers?: Record<string, string>;
@@ -8,7 +9,7 @@ type RequestOptions = {
   //[key: string]: any;
 };
 
-const useAuthRequest = () => {
+const useApiClient = () => {
   const { getAccessTokenSilently, isAuthenticated } = useAuth0();
 
   const send = useCallback(
@@ -42,7 +43,12 @@ const useAuthRequest = () => {
       if (!response.ok) {
         const message =
           (data as any)?.message || `Request failed with ${response.status}`;
-        throw new Error(message);
+
+          if (response.status === 404) {
+            throw new NotFoundError(message)
+          } else {
+            throw new Error(message);
+          }
       }
 
       return data as T;
@@ -64,17 +70,17 @@ const useAuthRequest = () => {
     [send]
   );
 
-  const xdelete = useCallback(
+  const del = useCallback(
     async <T>(url: string, body?: any): Promise<T> => {
       return send<T>(url, { method: "DELETE", body });
     },
     [send]
   );
 
-  return { send, get, post, xdelete: xdelete };
+  return { send, get, post, del };
 };
 
-export default useAuthRequest;
+export default useApiClient;
 
 export function ensureSuccess(response: Response, message?: string): Response {
   if (response.ok) {

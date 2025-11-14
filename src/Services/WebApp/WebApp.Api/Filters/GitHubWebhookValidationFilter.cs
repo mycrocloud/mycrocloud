@@ -14,7 +14,7 @@ public class GitHubWebhookValidationFilter(IConfiguration configuration, ILogger
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
         // Retrieve the secret token from configuration
-        var secret = configuration["AppIntegrations:GitHubWebhook:Config:Secret"];
+        var secret = configuration["ExternalIntegrations:GitHubApp:WebhookSecret"];
         if (string.IsNullOrEmpty(secret))
         {
             logger.LogError("GitHub Webhook secret is not configured.");
@@ -38,6 +38,8 @@ public class GitHubWebhookValidationFilter(IConfiguration configuration, ILogger
         var requestBody = await reader.ReadToEndAsync();
         context.HttpContext.Request.Body.Position = 0; // Reset position again for the next middleware/action
         
+        logger.LogDebug("GitHub Webhook Payload: {Payload}", requestBody);
+
         context.HttpContext.Items["RawBodyString"] = requestBody;
 
         // Compute the HMAC SHA-256 hash of the payload using the secret

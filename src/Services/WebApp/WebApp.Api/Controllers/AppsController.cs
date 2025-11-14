@@ -1,5 +1,3 @@
-using System.Net.Http.Headers;
-using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApp.Api.Filters;
@@ -10,6 +8,7 @@ using WebApp.Domain.Repositories;
 using WebApp.Domain.Services;
 using WebApp.Infrastructure;
 using WebApp.Api.Extensions;
+using WebApp.Api.Services;
 
 namespace WebApp.Api.Controllers;
 
@@ -20,7 +19,8 @@ public class AppsController(
     AppDbContext appDbContext,
     IConfiguration configuration,
     IHttpClientFactory httpClientFactory,
-    LinkGenerator linkGenerator
+    LinkGenerator linkGenerator,
+    GitHubAppService githubAppService
 ) : BaseController
 {
     [HttpGet]
@@ -62,7 +62,13 @@ public class AppsController(
             app.Name,
             app.Description,
             Status = app.Status.ToString(),
-            app.GitHubRepoFullName,
+            Integration = app.Integration != null
+                ? new
+                {
+                    app.Integration.InstallationId,
+                    app.Integration.RepoId,
+                }
+                : null,
             app.CreatedAt,
             app.UpdatedAt,
             app.Version
@@ -116,92 +122,78 @@ public class AppsController(
         var app = await appRepository.GetByAppId(id);
         return Ok(app.CorsSettings);
     }
-
-    [HttpPost("{id:int}/integrations/github")]
-    public async Task<IActionResult> ConnectGitHubRepo(int id, string repoFullName)
+    
+    [HttpGet("{id:int}/link")]
+    public async Task<IActionResult> Link(int id)
     {
-        var userToken = await appDbContext.UserTokens
-            .Where(t => t.UserId == User.GetUserId() && t.Provider == "GitHub" &&
-                        t.Purpose == UserTokenPurpose.AppIntegration)
-            .SingleOrDefaultAsync();
+        var app = await appDbContext.Apps
+            .Include(a => a.Integration)
+            .ThenInclude(i => i.GitHubInstallation)
+            .SingleAsync(a => a.Id == id && a.UserId == User.GetUserId());
 
-        if (userToken is null)
+        if (app.Integration is not { } integration)
         {
-            return Unauthorized();
+            return NotFound();
         }
+        
+        return Ok(new
+        {
+            Type = "GitHub", //TODO: 
+            Org = integration.GitHubInstallation.AccountLogin, 
+            integration.RepoId,
+            Repo = integration.RepoName
+        });
+    }
 
-        var app = await appDbContext.Apps.SingleAsync(a => a.Id == id);
+    [HttpPost("{id:int}/link/github")]
+    public async Task<IActionResult> ConnectGitHubRepo(int id, GitHubRepoIntegrationRequest request)
+    {
+        var installation = await appDbContext.GitHubInstallations
+            .Where(i => i.InstallationId == request.InstallationId && i.UserId == User.GetUserId())
+            .SingleAsync();
 
-        // Fetch repo details
-        var repo = await GetGitHubRepo(repoFullName, userToken);
+        var repos = await githubAppService.GetAccessibleRepos(installation.InstallationId);
+        
+        var repo = repos.Single(r => r.Id == request.RepoId);
 
-        // Add webhook
-        var webhookToken = Guid.NewGuid().ToString();
-        await CreateWebhook(id, repo.FullName, userToken.Token, webhookToken);
-
-        app.GitHubRepoFullName = repo.FullName;
-        app.GitHubWebhookToken = webhookToken;
+        var app = await appDbContext.Apps
+            .Include(a => a.Integration)
+            .SingleAsync(a => a.Id == id);
+        
+        app.Integration = new AppIntegration
+        {
+            InstallationId = installation.InstallationId,
+            RepoId = repo.Id,
+            RepoName = repo.Name,
+            Branch = "main",
+            Directory = "/",
+            BuildCommand = "npm install && npm run build",
+            OutDir = "dist",
+            InstallCommand = "npm install"
+        };
+        
         await appDbContext.SaveChangesAsync();
 
         return NoContent();
     }
 
-    [HttpDelete("{id:int}/integrations/github")]
+    [HttpDelete("{id:int}/link")]
     public async Task<IActionResult> DisconnectGitHubRepo(int id)
     {
-        var app = await appDbContext.Apps.SingleAsync(a => a.Id == id);
+        var app = await appDbContext.Apps
+            .Include(app => app.Integration)
+            .SingleAsync(a => a.Id == id);
 
-        app.GitHubRepoFullName = null;
-        app.GitHubWebhookToken = null;
+        appDbContext.Remove(app.Integration);
 
         await appDbContext.SaveChangesAsync();
+        
         return NoContent();
     }
+}
 
-    private async Task<GitHubRepo> GetGitHubRepo(string repoFullName, UserToken userToken)
-    {
-        var client = httpClientFactory.CreateClient();
-        var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.github.com/repos/{repoFullName}");
-        request.Headers.UserAgent.Add(new ProductInfoHeaderValue("WebApp", "1.0"));
-        request.Headers.Add("Accept", "application/vnd.github+json");
-        request.Headers.Add("Authorization", "Bearer " + userToken.Token);
-        request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
-        var response = await client.SendAsync(request);
-        response.EnsureSuccessStatusCode();
-        var responseBody = await response.Content.ReadAsStringAsync();
-        var repo = JsonSerializer.Deserialize<GitHubRepo>(responseBody)!;
-        return repo;
-    }
-
-    private async Task CreateWebhook(int appId, string repoFullName, string accessToken, string token)
-    {
-        var config = configuration.GetSection("AppIntegrations:GitHubWebhook");
-
-        //for testing webhook locally
-        //ref: https://docs.github.com/en/webhooks/testing-and-troubleshooting-webhooks/testing-webhooks
-        var url = linkGenerator.GetUriByAction(HttpContext, nameof(WebhooksController.ReceiveGitHubEvent), WebhooksController.ControllerName, new { appId, token });
-        
-        var webhookRequestBody = new
-        {
-            events = config.GetSection("Events").Get<string[]>(),
-            config = new
-            {
-                url = url,
-                content_type = "json",
-                secret = config["Config:Secret"]
-            }
-        };
-        var json = JsonSerializer.Serialize(webhookRequestBody);
-
-        var client = httpClientFactory.CreateClient();
-        var request = new HttpRequestMessage(HttpMethod.Post, $"https://api.github.com/repos/{repoFullName}/hooks");
-        request.Headers.UserAgent.Add(new ProductInfoHeaderValue("WebApp", "1.0"));
-        request.Headers.Add("Accept", "application/vnd.github+json");
-        request.Headers.Add("Authorization", $"Bearer {accessToken}");
-        request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
-        var content = new StringContent(json, null, "application/json");
-        request.Content = content;
-        var response = await client.SendAsync(request);
-        response.EnsureSuccessStatusCode();
-    }
+public class GitHubRepoIntegrationRequest
+{
+    public long InstallationId { get; set; }
+    public long RepoId { get; set; }
 }

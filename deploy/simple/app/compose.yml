@@ -29,7 +29,7 @@ services:
       - Elasticsearch__Password=${Elasticsearch__Password}
       - OAuthApps__Slack__ClientSecret=${OAuthApps__Slack__ClientSecret}
     volumes:
-      - ./config/Services/WebApp/WebApp.Api/appsettings.json:/app/appsettings.json:ro
+      - ./config/Services/WebApp/WebApp.Api:/app:ro
 
   apigateway:
     image: ghcr.io/mycrocloud/mycrocloud-apigateway:main

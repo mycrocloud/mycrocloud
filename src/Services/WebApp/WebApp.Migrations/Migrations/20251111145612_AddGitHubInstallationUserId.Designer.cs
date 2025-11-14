@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using WebApp.Infrastructure;
@@ -12,9 +13,11 @@ using WebApp.Infrastructure;
 namespace WebApp.Migrations.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251111145612_AddGitHubInstallationUserId")]
+    partial class AddGitHubInstallationUserId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -74,6 +77,12 @@ namespace WebApp.Migrations.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
+                    b.Property<string>("GitHubRepoFullName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("GitHubWebhookToken")
+                        .HasColumnType("text");
+
                     b.Property<string>("Name")
                         .HasColumnType("text");
 
@@ -130,6 +139,12 @@ namespace WebApp.Migrations.Migrations
 
             modelBuilder.Entity("WebApp.Domain.Entities.AppIntegration", b =>
                 {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
                     b.Property<int>("AppId")
                         .HasColumnType("integer");
 
@@ -148,16 +163,7 @@ namespace WebApp.Migrations.Migrations
                     b.Property<string>("InstallCommand")
                         .HasColumnType("text");
 
-                    b.Property<long>("InstallationId")
-                        .HasColumnType("bigint");
-
                     b.Property<string>("OutDir")
-                        .HasColumnType("text");
-
-                    b.Property<long>("RepoId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("RepoName")
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -167,9 +173,10 @@ namespace WebApp.Migrations.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("uuid");
 
-                    b.HasKey("AppId");
+                    b.HasKey("Id");
 
-                    b.HasIndex("InstallationId");
+                    b.HasIndex("AppId")
+                        .IsUnique();
 
                     b.ToTable("AppIntegration");
                 });
@@ -866,15 +873,13 @@ namespace WebApp.Migrations.Migrations
 
             modelBuilder.Entity("WebApp.Domain.Entities.AppIntegration", b =>
                 {
-                    b.HasOne("WebApp.Domain.Entities.App", null)
+                    b.HasOne("WebApp.Domain.Entities.App", "App")
                         .WithOne("Integration")
-                        .HasForeignKey("WebApp.Domain.Entities.AppIntegration", "AppId");
+                        .HasForeignKey("WebApp.Domain.Entities.AppIntegration", "AppId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.HasOne("WebApp.Domain.Entities.GitHubInstallation", "GitHubInstallation")
-                        .WithMany("AppIntegrations")
-                        .HasForeignKey("InstallationId");
-
-                    b.Navigation("GitHubInstallation");
+                    b.Navigation("App");
                 });
 
             modelBuilder.Entity("WebApp.Domain.Entities.AuthenticationScheme", b =>
@@ -1063,11 +1068,6 @@ namespace WebApp.Migrations.Migrations
                     b.Navigation("Children");
 
                     b.Navigation("Files");
-                });
-
-            modelBuilder.Entity("WebApp.Domain.Entities.GitHubInstallation", b =>
-                {
-                    b.Navigation("AppIntegrations");
                 });
 
             modelBuilder.Entity("WebApp.Domain.Entities.Route", b =>

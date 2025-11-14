@@ -12,7 +12,8 @@ namespace WebApp.Api.Services;
 public class AppBuildJobStatusConsumer(
     IConfiguration configuration,
     ILogger<AppBuildJobStatusConsumer> logger,
-    IServiceProvider serviceProvider)
+    IServiceProvider serviceProvider,
+    IAppBuildPublisher publisher)
     : BackgroundService
 {
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -67,6 +68,8 @@ public class AppBuildJobStatusConsumer(
             default:
                 throw new ArgumentOutOfRangeException();
         }
+
+        await PostProcess(eventMessage);
     }
 
     private async Task ProcessFailedMessage(JobStatusChangedEventMessage message)
@@ -169,5 +172,26 @@ public class AppBuildJobStatusConsumer(
         job.UpdatedAt = DateTime.UtcNow;
         job.ContainerId = message.ContainerId;
         await appDbContext.SaveChangesAsync();
+    }
+
+    private async Task PostProcess(JobStatusChangedEventMessage message)
+    {
+        using var scope = serviceProvider.CreateScope();
+        var appDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var job = await appDbContext.AppBuildJobs.FindAsync(message.JobId);
+        if (job == null)
+        {
+            logger.LogWarning("Job with id {Id} not found", message.JobId);
+            return;
+        }
+        
+        var app = await appDbContext.Apps.FindAsync(job.AppId);
+        if (app == null)
+        {
+            logger.LogWarning("App with id {AppId} not found", job.AppId);
+            return;
+        }
+        
+        publisher.Publish(app.Id, job.Status);
     }
 }

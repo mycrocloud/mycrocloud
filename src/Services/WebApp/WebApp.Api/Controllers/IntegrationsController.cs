@@ -1,4 +1,3 @@
-using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -7,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using WebApp.Domain.Entities;
 using WebApp.Infrastructure;
 using WebApp.Api.Extensions;
+using WebApp.Api.Services;
 
 namespace WebApp.Api.Controllers;
 
@@ -14,88 +14,72 @@ namespace WebApp.Api.Controllers;
 public class IntegrationsController(
     AppDbContext appDbContext,
     IConfiguration configuration,
-    IHttpClientFactory httpClientFactory) : BaseController
+    IHttpClientFactory httpClientFactory,
+    GitHubAppService githubService) : BaseController
 {
+    #region GitHub
+    
     [HttpPost("github/callback")]
-    public async Task<IActionResult> GitHubCallback(OAuthRequest request)
+    public async Task<IActionResult> GitHubCallback(GitHubAppInstallation request)
     {
-        var authResponse = await ExchangeGitHubAccessToken(request);
+        var doc = await githubService.GetInstallation(request.InstallationId);
 
-        var existingToken = await appDbContext.UserTokens
-            .Where(t => t.UserId == User.GetUserId() && t.Provider == "GitHub" &&
-                        t.Purpose == UserTokenPurpose.AppIntegration)
-            .SingleOrDefaultAsync();
+        var installation = await appDbContext.GitHubInstallations
+            .SingleOrDefaultAsync(i => i.InstallationId == request.InstallationId);
 
-        if (existingToken is not null)
+        if (installation == null)
         {
-            existingToken.Token = authResponse.AccessToken;
-            existingToken.UpdatedAt = DateTime.UtcNow;
-            appDbContext.UserTokens.Update(existingToken);
+            installation = new GitHubInstallation
+            {
+                InstallationId = request.InstallationId,
+                AccountId = doc.GetProperty("account").GetProperty("id").GetInt64(),
+                AccountLogin = doc.GetProperty("account").GetProperty("login").GetString()!,
+                AccountType = Enum.Parse<GitHubAccountType>(doc.GetProperty("account").GetProperty("type").GetString()!),
+                UserId = User.GetUserId(),
+                CreatedAt = DateTime.UtcNow
+            };
+            
+            appDbContext.GitHubInstallations.Add(installation);
         }
         else
         {
-            await appDbContext.UserTokens.AddAsync(new UserToken()
-            {
-                UserId = User.GetUserId(),
-                Provider = "GitHub",
-                Purpose = UserTokenPurpose.AppIntegration,
-                CreatedAt = DateTime.UtcNow,
-                Token = authResponse.AccessToken
-            });
+            installation.UpdatedAt = DateTime.UtcNow;
         }
 
         await appDbContext.SaveChangesAsync();
 
         return Ok();
     }
-
-    private async Task<OAuthResponse> ExchangeGitHubAccessToken(OAuthRequest request)
+    
+    [HttpGet("github/installations")]
+    public async Task<IActionResult> GetInstallations()
     {
-        var client = httpClientFactory.CreateClient();
-        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        var requestData = new Dictionary<string, string>
+        var installations = await appDbContext.GitHubInstallations
+            .Where(i => i.UserId == User.GetUserId())
+            .ToListAsync();
+
+        return Ok(installations.Select(i => new
         {
-            { "client_id", configuration["OAuthApps:GitHub:ClientId"]! },
-            { "client_secret", configuration["OAuthApps:GitHub:ClientSecret"]! },
-            { "code", request.Code }
-        };
-        var response = await client.PostAsync("https://github.com/login/oauth/access_token",
-            new FormUrlEncodedContent(requestData));
-        response.EnsureSuccessStatusCode();
-        var responseBody = await response.Content.ReadAsStringAsync();
-        var authResponse = JsonSerializer.Deserialize<OAuthResponse>(responseBody)!;
-        return authResponse;
+            i.InstallationId,
+            i.AccountId,
+            i.AccountLogin,
+            AccountType = i.AccountType.ToString(),
+            i.CreatedAt,
+            i.UpdatedAt
+        }));
     }
 
-    [HttpGet("github/repos")]
-    public async Task<IActionResult> GetGitHubRepos()
+    [HttpGet("github/installations/{installationId:long}/repos")]
+    public async Task<IActionResult> GetGitHubRepos(long installationId)
     {
-        var userToken = await appDbContext.UserTokens
-            .Where(t => t.UserId == User.GetUserId() && t.Provider == "GitHub" &&
-                        t.Purpose == UserTokenPurpose.AppIntegration)
-            .SingleOrDefaultAsync();
+        var installation = await appDbContext.GitHubInstallations
+            .SingleAsync(i => i.InstallationId == installationId && i.UserId == User.GetUserId());
 
-        if (userToken is null)
-        {
-            return Unauthorized();
-        }
-
-        var client = httpClientFactory.CreateClient();
-        var request = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/user/repos");
-        request.Headers.UserAgent.Add(new ProductInfoHeaderValue("WebApp", "1.0"));
-        request.Headers.Add("Accept", "application/vnd.github+json");
-        request.Headers.Add("Authorization", "Bearer " + userToken.Token);
-        request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
-        var response = await client.SendAsync(request);
-        if (response.StatusCode != HttpStatusCode.OK)
-        {
-            return Unauthorized();
-        }
-
-        var responseBody = await response.Content.ReadAsStringAsync();
-        var repos = JsonSerializer.Deserialize<List<GitHubRepo>>(responseBody)!;
+        var repos = await githubService.GetAccessibleRepos(installation.InstallationId);
+        
         return Ok(repos.Select(repo => new
         {
+            repo.Id,
             repo.Name,
             repo.FullName,
             repo.Description,
@@ -103,6 +87,8 @@ public class IntegrationsController(
             repo.UpdatedAt
         }));
     }
+    
+    #endregion
 
     #region Slack
 
@@ -176,20 +162,6 @@ public class IntegrationsController(
     #endregion
 }
 
-public class GitHubRepo
-{
-    [JsonPropertyName("id")] public int Id { get; set; }
-
-    [JsonPropertyName("name")] public string Name { get; set; }
-
-    [JsonPropertyName("full_name")] public string FullName { get; set; }
-
-    [JsonPropertyName("description")] public string Description { get; }
-
-    [JsonPropertyName("created_at")] public DateTime CreatedAt { get; set; }
-
-    [JsonPropertyName("updated_at")] public DateTime UpdatedAt { get; set; }
-}
 
 public class OAuthRequest
 {
@@ -197,16 +169,6 @@ public class OAuthRequest
 
     [JsonPropertyName("redirect_uri")] public string? RedirectUrl { get; set; }
 }
-
-public class OAuthResponse
-{
-    [JsonPropertyName("access_token")] public string AccessToken { get; set; }
-}
-
-// public class SlackOAuthResponse : OAuthResponse
-// {
-
-// }
 
 public class SlackOAuthResponse
 {

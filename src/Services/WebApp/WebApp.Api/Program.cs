@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using WebApp.Api;
@@ -86,6 +87,8 @@ builder.Services.AddScoped<ILogRepository, LogRepository>();
 builder.Services.AddSingleton<RabbitMqService>();
 builder.Services.AddHttpClient();
 builder.Services.AddHostedService<AppBuildJobStatusConsumer>();
+builder.Services.AddSingleton<IAppBuildPublisher, InMemoryAppBuildPublisher>();
+
 builder.Services.AddKeyedSingleton("AppBuildLogs_ES7", (_, _) =>
 {
     var settings = new ConnectionSettings(new Uri(builder.Configuration["Elasticsearch:Host"]!))
@@ -106,7 +109,13 @@ builder.Services.AddKeyedSingleton("AppBuildLogs_ES8", (_, _) =>
     return new ElasticsearchClient(settings);
 });
 
-builder.Services.AddSignalR();
+builder.Services.Configure<GitHubAppOptions>(builder.Configuration.GetSection("ExternalIntegrations:GitHubApp"));
+builder.Services.AddHttpClient<GitHubAppService>(client =>
+{
+    client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("MycroCloud", "1.0.0"));
+    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
+    client.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
+});
 
 var app = builder.Build();
 

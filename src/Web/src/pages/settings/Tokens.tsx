@@ -3,7 +3,7 @@ import { toast } from "react-toastify";
 import TextCopyButton from "../../components/ui/TextCopyButton";
 import { Modal } from "flowbite-react";
 import { useForm } from "react-hook-form";
-import { useAuthRequest } from "@/hooks";
+import { useApiClient } from "@/hooks";
 
 interface IToken {
     id: number
@@ -17,7 +17,7 @@ type CreateType = {
 }
 
 export default function Tokens() {
-    const { get, post, xdelete } = useAuthRequest();
+    const { get, post, del } = useApiClient();
 
     const [tokens, setTokens] = useState<IToken[]>([]);
 
@@ -45,7 +45,7 @@ export default function Tokens() {
 
     const _delete = async (id: number) => {
         if (confirm('Are you sure want to delete this token?')) {
-            await xdelete(`/api/usersettings/tokens/${id}`)
+            await del(`/api/usersettings/tokens/${id}`)
             setTokens(tokens.filter(t => t.id !== id));
         }
     }
@@ -64,8 +64,10 @@ export default function Tokens() {
 
     return (
         <section className="mt-4">
-            <h2>Tokens</h2>
-            <button className="bg-primary text-white px-2 py-1" onClick={() => setShowCreateModal(true)}>Create</button>
+            <div className="flex items-center justify-between">
+                <h2 className="font-semibold">Tokens</h2>
+                <button className="bg-primary text-white px-2 py-1" onClick={() => setShowCreateModal(true)}>Create</button>
+            </div>
             <table className="table-fixed mt-2 w-full border border-gray-200 rounded-lg overflow-hidden">
                 <thead className="bg-gray-50">
                     <tr>
@@ -83,7 +85,7 @@ export default function Tokens() {
                                 {t.token}
                                 <TextCopyButton text={t.token} />
                             </td>
-                            <td>{t.status == "None" ? "-": t.status}</td>
+                            <td>{t.status == "None" ? "-" : t.status}</td>
                             <td className="px-4 py-2">
                                 <div className="flex gap-2 justify-end">
                                     <button onClick={() => revoke(t.id)} className="text-blue-600 hover:underline">Revoke</button>

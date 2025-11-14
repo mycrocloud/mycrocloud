@@ -3,10 +3,10 @@ import { AppContext } from ".";
 import { useEffect, useState } from "react";
 import IApp from "./App";
 import { Breadcrumb } from "flowbite-react";
-import { useAuthRequest } from "@/hooks";
+import { useApiClient } from "@/hooks";
 
 export default function AppLayout() {
-  const { get } = useAuthRequest();
+  const { get } = useApiClient();
   const appId = parseInt(useParams()["appId"]!.toString());
   const [app, setApp] = useState<IApp>();
   const { pathname } = useLocation();

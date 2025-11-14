@@ -1,13 +1,13 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useAuthRequest } from "@/hooks";
+import { useApiClient } from "@/hooks";
 import { useAuth0 } from "@auth0/auth0-react";
 
 
 export default function SlackCallback() {
   const navigate = useNavigate();
   const {isAuthenticated, isLoading} = useAuth0();
-  const { post } = useAuthRequest();
+  const { post } = useApiClient();
 
   const [searchParams] = useSearchParams();
   const code = searchParams.get("code");

@@ -27,18 +27,21 @@ public class App : BaseEntity
 
     public ICollection<Object> Objects { get; set; }
 
-    //todo: move to separate entity
-    public string GitHubRepoFullName { get; set; }
-    public string GitHubWebhookToken { get; set; }
-
     public AppIntegration Integration { get; set; }
 }
 
 public class AppIntegration : BaseEntity
 {
-    public int Id { get; set; }
     public int AppId { get; set; }
-    public App App { get; set; }
+    
+    //TODO: support other providers e.g. GitLab, Bitbucket
+    public long InstallationId { get; set; }
+    public long RepoId { get; set; }
+
+    public string RepoName { get; set; }
+    public GitHubInstallation GitHubInstallation  { get; set; }
+    
+    //TODO: JSON column maybe better
     public string Branch { get; set; }
     public string Directory { get; set; }
     public string BuildCommand { get; set; }
