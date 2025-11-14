@@ -41,7 +41,7 @@ export default function Builds() {
             if (!isMounted) return;
 
             const evtSource = new EventSource(
-                `/api/apps/${app.id}/builds/subscription?access_token=${accessToken}`
+                `/api/apps/${app.id}/builds/stream?access_token=${accessToken}`
             );
             evtRef.current = evtSource;
 

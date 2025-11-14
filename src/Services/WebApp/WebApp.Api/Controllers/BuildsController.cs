@@ -43,12 +43,14 @@ public class BuildsController(
         }));
     }
     
-    [HttpGet("subscription")]
-    public async Task<IActionResult> Subscribe(int appId)
+    [HttpGet("stream")]
+    public async Task<IActionResult> Stream(int appId)
     {
         Response.Headers.Append("Content-Type", "text/event-stream");
         Response.Headers.Append("Cache-Control", "no-cache");
         Response.Headers.Append("Connection", "keep-alive");
+        
+        Response.Headers.Append("X-Accel-Buffering", "no");   // disable Nginx buffering
 
         var cancellationToken = HttpContext.RequestAborted;
 
