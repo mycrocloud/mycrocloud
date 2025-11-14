@@ -61,6 +61,12 @@ services:
       - ./nginx/certs:/etc/nginx/certs:ro
       - ./nginx/includes:/etc/nginx/includes:ro
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+    - web
+    - web-editor
+    - api
+    - apigateway
+    - slack-integration-api
 
   web-editor:
     image: ghcr.io/mycrocloud/mycrocloud-web-editor:main
