@@ -69,6 +69,7 @@ export default function Builds() {
     }, [app.id, fetchBuilds]);
 
     const [buildId, setBuildId] = useState<string>();
+    //@ts-ignore TODO: fix me
     const [logs, setLogs] = useState<ILogEntry[]>([]);
 
     useEffect(() => {

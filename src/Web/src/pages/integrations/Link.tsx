@@ -72,7 +72,6 @@ export default function Link() {
   }, [installationId]);
 
   const connectGitHub = async () => {
-    const githubAppName = "dev-MycroCloud"; // TODO: load from config
     const githubAppUrl = `https://github.com/apps/${GITHUB_APP_NAME}/installations/new?state=foo`; //TODO: add state param?
     window.location.href = githubAppUrl;
   };
