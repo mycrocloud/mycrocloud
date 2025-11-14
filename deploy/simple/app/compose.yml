@@ -24,8 +24,7 @@ services:
     environment:
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
       - ConnectionStrings__RabbitMq=${ConnectionStrings__RabbitMq}
-      - OAuthApps__GitHub__ClientSecret=${OAuthApps__GitHub__ClientSecret}
-      - AppIntegrations__GitHubWebhook__Config__Secret=${AppIntegrations__GitHubWebhook__Config__Secret}
+      - ExternalIntegrations__GitHubApp__WebhookSecret=${ExternalIntegrations__GitHubApp__WebhookSecret}
       - Elasticsearch__Password=${Elasticsearch__Password}
       - OAuthApps__Slack__ClientSecret=${OAuthApps__Slack__ClientSecret}
     volumes:
