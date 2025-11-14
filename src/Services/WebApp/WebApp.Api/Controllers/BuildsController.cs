@@ -44,7 +44,7 @@ public class BuildsController(
     }
     
     [HttpGet("stream")]
-    public async Task<IActionResult> Stream(int appId)
+    public async Task<IActionResult> StreamBuilds(int appId)
     {
         Response.Headers.Append("Content-Type", "text/event-stream");
         Response.Headers.Append("Cache-Control", "no-cache");
@@ -172,14 +172,15 @@ public class BuildsController(
     }
     
     [HttpGet("{buildId:guid}/logs/stream")]
-    public async Task<IActionResult> Stream(int appId, Guid buildId)
+    public async Task<IActionResult> StreamBuildLogs(int appId, Guid buildId)
     {
         var build = await appDbContext.AppBuildJobs.SingleAsync(b => b.AppId == appId && b.Id == buildId);
         
-        // use server sent events to stream logs
         Response.Headers.Append("Content-Type", "text/event-stream");
         Response.Headers.Append("Cache-Control", "no-cache");
         Response.Headers.Append("Connection", "keep-alive");
+        
+        Response.Headers.Append("X-Accel-Buffering", "no");   // disable Nginx buffering
         
         var cancellationToken = HttpContext.RequestAborted;
        
@@ -203,11 +204,12 @@ public class BuildsController(
             exclusive: true,
             autoDelete: true
         );
-        
+
+        var rk = exchange + $".{build.Id.ToString()}";
         channel.QueueBind(
             queue: queueName,
             exchange: exchange,
-            routingKey: exchange + $".{build.Id}"
+            routingKey: rk
         );
         
         var consumer = new EventingBasicConsumer(channel);
@@ -218,6 +220,8 @@ public class BuildsController(
             await Response.WriteAsync($"data: {json}\n\n", cancellationToken: cancellationToken);
             await Response.Body.FlushAsync(cancellationToken);
         };
+        
+        logger.LogInformation("Listening for build logs. exchange: {exchange}, queueName: {queueName}, routingKey: {routingKey}", exchange, queueName, rk);
         
         channel.BasicConsume(
             queue: queueName,

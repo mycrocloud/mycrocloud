@@ -4,6 +4,11 @@ services:
       - default
       - webapp_default
 
+  fluentd:
+    networks:
+      - default
+      - webapp_default
+
 networks:
   default:
     driver: bridge
