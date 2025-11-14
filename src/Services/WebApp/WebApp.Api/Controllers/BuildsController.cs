@@ -32,6 +32,7 @@ public class BuildsController(
             .Where(j => j.AppId == appId)
             .OrderByDescending(j => j.CreatedAt)
             .ToListAsync();
+        
         return Ok(jobs.Select(job => new
         {
             job.Id,
@@ -53,8 +54,8 @@ public class BuildsController(
 
         await foreach (var msg in publisher.Subscribe(appId, cancellationToken))
         {
-            await Response.WriteAsync($"data: {msg}\n\n");
-            await Response.Body.FlushAsync();
+            await Response.WriteAsync($"data: {msg}\n\n", cancellationToken: cancellationToken);
+            await Response.Body.FlushAsync(cancellationToken);
         }
 
         return new EmptyResult();
@@ -171,6 +172,8 @@ public class BuildsController(
     [HttpGet("{buildId:guid}/logs/stream")]
     public async Task<IActionResult> Stream(int appId, Guid buildId)
     {
+        var build = await appDbContext.AppBuildJobs.SingleAsync(b => b.AppId == appId && b.Id == buildId);
+        
         // use server sent events to stream logs
         Response.Headers.Append("Content-Type", "text/event-stream");
         Response.Headers.Append("Cache-Control", "no-cache");
@@ -190,7 +193,7 @@ public class BuildsController(
         channel.ExchangeDeclare(exchange: exchange, type: "topic", durable: false); //TODO: confirm durable setting
         
         var requestId = HttpContext.TraceIdentifier;
-        var queueName = exchange + $".{buildId}_{requestId}"; // unique queue name per request
+        var queueName = exchange + $".{build.Id}_{requestId}"; // unique queue name per request
         
         channel.QueueDeclare(
             queue: queueName,
@@ -202,7 +205,7 @@ public class BuildsController(
         channel.QueueBind(
             queue: queueName,
             exchange: exchange,
-            routingKey: exchange + $".{buildId}"
+            routingKey: exchange + $".{build.Id}"
         );
         
         var consumer = new EventingBasicConsumer(channel);
