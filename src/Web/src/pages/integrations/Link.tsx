@@ -3,7 +3,10 @@ import { IAppIntegration } from "../apps/App";
 import { Spinner } from "flowbite-react";
 import { useApiClient } from "@/hooks";
 import { AppContext } from "../apps";
-import { NotFoundError } from "@/errors"
+import { NotFoundError } from "@/errors";
+import { getConfig } from "@/config";
+
+const { GITHUB_APP_NAME } = getConfig();
 
 interface IGitHubInstallation {
   installationId: number;
@@ -70,7 +73,7 @@ export default function Link() {
 
   const connectGitHub = async () => {
     const githubAppName = "dev-MycroCloud"; // TODO: load from config
-    const githubAppUrl = `https://github.com/apps/${githubAppName}/installations/new?state=foo`; //TODO: add state param?
+    const githubAppUrl = `https://github.com/apps/${GITHUB_APP_NAME}/installations/new?state=foo`; //TODO: add state param?
     window.location.href = githubAppUrl;
   };
 
