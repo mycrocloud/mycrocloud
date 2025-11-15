@@ -2,6 +2,7 @@ import { useApiClient } from "@/hooks";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { AppContext } from "../apps";
 import { useAuth0 } from "@auth0/auth0-react";
+import BuildLogs from "./BuildLogs";
 
 interface IBuild {
     id: string;
@@ -9,12 +10,6 @@ interface IBuild {
     status: string;
     createdAt: string;
     finishedAt: string;
-}
-
-interface ILogEntry {
-    message: string;
-    timestamp: string;
-    level: string;
 }
 
 export default function Builds() {
@@ -69,30 +64,6 @@ export default function Builds() {
     }, [app.id, fetchBuilds]);
 
     const [buildId, setBuildId] = useState<string>();
-    //@ts-ignore TODO: fix me
-    const [logs, setLogs] = useState<ILogEntry[]>([]);
-
-    useEffect(() => {
-        let evtSource: EventSource;
-
-        if (!buildId) return;
-
-        (async () => {
-            const accessToken = await getAccessTokenSilently();
-
-            evtSource = new EventSource(`/api/apps/${app.id}/builds/${buildId}/logs/stream?access_token=${accessToken}`);
-            evtSource.onmessage = function (event) {
-                console.log("Log event:", event.data);
-            }
-        })();
-
-        return () => {
-            if (evtSource) {
-                evtSource.close();
-            }
-        };
-
-    }, [buildId]);
 
     function statusClass(status: string) {
         if (status === "pending") {
@@ -111,7 +82,7 @@ export default function Builds() {
             <h2 className="font-semibold">Builds</h2>
         </div>
         <div className="flex">
-            <div className="">
+            <div className="overflow-y-auto">
                 <table className="mt-2 table-fixed">
                     <thead>
                         <tr className="border">
@@ -140,29 +111,12 @@ export default function Builds() {
                     </tbody>
                 </table>
             </div>
-            <div className="flex-1 p-2">
-                {buildId &&
-                    (logs.length > 0 ? (
-                        <>
-                            <div className="mt-2 max-h-[400px] overflow-auto bg-black p-4 text-white">
-                                {logs.map((log, i) => (
-                                    <div key={i} className="log-item mb-2">
-                                        <span className="mr-2 text-xs text-gray-500">
-                                            {log.timestamp}
-                                        </span>
-                                        <span className="font-mono text-sm text-white">
-                                            {log.message}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        </>
-                    ) : (
-                        <p>
-                            No logs are available. The build may have been executed before
-                            the system started logging for this feature.
-                        </p>
-                    ))}
+            <div className="flex-1 overflow-hidden">
+                {buildId ? (
+                    <BuildLogs appId={app.id} buildId={buildId} />
+                ) : (
+                    <div className="p-4 text-gray-400">Select a build to view logs</div>
+                )}
             </div>
         </div>
     </section>

@@ -25,9 +25,9 @@ services:
       - ./fluentd/conf:/fluentd/etc
     ports:
       - "24224:24224"
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
+    # depends_on:
+    #   rabbitmq:
+    #     condition: service_healthy
 
   builder:
     image: mycrocloud-deployment-builder:main
@@ -46,20 +46,32 @@ services:
         fluentd-address: host.docker.internal:24224
         tag: app.builder
         labels: build_id
-    depends_on:
-      - worker
-      - fluentd
+    
+  logger:
+      image: busybox
+      command: sh -c "i=1; while true; do echo \"loop log $i\"; i=$((i+1)); sleep 3; done"
+      labels:
+      - build_id=81de56d8-56aa-4989-a0da-7ecf39ccc388
+      logging:
+        driver: "fluentd"
+        options:
+          fluentd-address: host.docker.internal:24224
+          tag: app.builder
+          labels: build_id
+  #   depends_on:
+  #     - worker
+  #     - fluentd
 
-  rabbitmq:
-    image: rabbitmq:4.1.5-management-alpine
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
-      interval: 5s
-      timeout: 10s
-      retries: 5
+  # rabbitmq:
+  #   image: rabbitmq:4.1.5-management-alpine
+  #   ports:
+  #     - "5672:5672"
+  #     - "15672:15672"
+  #   healthcheck:
+  #     test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+  #     interval: 5s
+  #     timeout: 10s
+  #     retries: 5
 
   # es:
   #   image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
