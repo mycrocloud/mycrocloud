@@ -1,11 +1,10 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import "./App.css";
 import { Auth0Provider } from "@auth0/auth0-react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import Header from "./components/Header";
-import Home from "./components/Home";
 import ProtectedPage from "./components/ProtectedPage";
 
 import {
@@ -66,7 +65,7 @@ function App() {
         <Header />
         <div className="container mx-auto min-h-screen p-2">
           <Routes>
-            <Route path="/" Component={Home} />
+            <Route path="/" element={<Navigate to={"apps"} />} />
             <Route path="settings" Component={Settings} />
             <Route path="apps">
               <Route index element={<ProtectedPage children={<AppList />} />} />
