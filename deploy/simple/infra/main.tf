@@ -26,6 +26,10 @@ provider "cloudflare" {
   api_token = var.cloudflare_api_token
 }
 
+data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
+
+
 module "auth0" {
   source                         = "./modules/auth0"
   domain                         = var.auth0_domain
@@ -150,6 +154,50 @@ resource "aws_security_group" "sg" {
     Name = "${local.project_name}-server-sg"
   }
 }
+resource "aws_iam_role" "access_secret" {
+  assume_role_policy = data.aws_iam_policy_document.access_secret.json
+}
+
+data "aws_iam_policy_document" "access_secret" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+
+    actions = ["sts:AssumeRole"]
+  }
+}
+
+resource "aws_iam_instance_profile" "access_secret" {
+  role = aws_iam_role.access_secret.name
+}
+
+data "aws_iam_policy_document" "secret_access_policy" {
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "secretsmanager:GetSecretValue",
+      "secretsmanager:DescribeSecret"
+    ]
+
+    resources = [
+      "arn:aws:secretsmanager:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:secret:prod/mycrocloud*"
+    ]
+  }
+}
+
+resource "aws_iam_policy" "secret_access_policy" {
+  policy = data.aws_iam_policy_document.secret_access_policy.json
+}
+
+resource "aws_iam_role_policy_attachment" "ec2_secret_access" {
+  role       = aws_iam_role.access_secret.name
+  policy_arn = aws_iam_policy.secret_access_policy.arn
+}
 
 resource "aws_instance" "server" {
   ami           = data.aws_ami.ubuntu.id
@@ -157,6 +205,8 @@ resource "aws_instance" "server" {
   root_block_device {
     volume_size = 20
   }
+
+  iam_instance_profile = aws_iam_instance_profile.access_secret.name
 
   key_name                    = aws_key_pair.ssh_key.key_name
   associate_public_ip_address = true
@@ -203,18 +253,18 @@ resource "cloudflare_dns_record" "wildcard" {
 
 resource "cloudflare_dns_record" "api" {
   zone_id = data.cloudflare_zone.zone.zone_id
-  name = "api"
-  type = "CNAME"
-  ttl = 1
+  name    = "api"
+  type    = "CNAME"
+  ttl     = 1
   proxied = true
   content = "mycrocloud.info"
 }
 
 resource "cloudflare_dns_record" "slack_integration_api" {
   zone_id = data.cloudflare_zone.zone.zone_id
-  name = "slack-integration-api"
-  type = "CNAME"
-  ttl = 1
+  name    = "slack-integration-api"
+  type    = "CNAME"
+  ttl     = 1
   proxied = true
   content = "mycrocloud.info"
 }
