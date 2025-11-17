@@ -35,6 +35,7 @@ runs:
         SSH_HOST: ${{ inputs.ssh-host }}
         SSH_PRIVATE_KEY: ${{ inputs.ssh-key }}
 
+    # TODO: use Ansible
     - name: Deploy
       shell: bash
       run: |
