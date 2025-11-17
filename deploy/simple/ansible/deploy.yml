@@ -105,3 +105,9 @@
         src: "{{ deploy_path }}/Web/.env.example"
         dest: "{{ deploy_path }}/Web/.env"
         remote_src: true
+    
+    - name: Create build-outputs directory
+      ansible.builtin.file:
+        path: /tmp/build-outputs
+        state: directory
+        mode: "0777"
