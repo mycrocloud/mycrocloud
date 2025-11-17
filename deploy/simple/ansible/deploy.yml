@@ -1,0 +1,56 @@
+- hosts: mycrocloud
+  become: yes
+
+  collections:
+    - amazon.aws
+
+  vars:
+    deploy_path: /opt/mycrocloud
+    aws_region: ap-northeast-1
+
+  tasks:
+    - name: Test SSH connection
+      ping:
+
+    - name: Ensure deploy directory exists
+      ansible.builtin.file:
+        path: "{{ deploy_path }}"
+        state: directory
+        mode: "0755"
+
+    - name: Sync entire deploy repo to server
+      ansible.builtin.synchronize:
+        src: "../app/"
+        dest: "{{ deploy_path }}"
+        recursive: yes
+        delete: yes
+      tags: sync
+
+    # - name: Fetch secrets from AWS Secrets Manager
+    #   amazon.aws.aws_secret:
+    #     name: "prod/mycrocloud/.env"
+    #     region: "{{ aws_region }}"
+    #   register: app_env_secrets
+
+    # - name: Generate .env file from template
+    #   ansible.builtin.template:
+    #     src: "app/env.j2"
+    #     dest: "{{ deploy_path }}/.env"
+    #     mode: "0600"
+    #   vars:
+    #     secrets: "{{ app_env_secrets.value }}"
+
+    # - name: Pull or update Docker images
+    #   ansible.builtin.command:
+    #     cmd: docker compose pull
+    #   args:
+    #     chdir: "{{ deploy_path }}"
+
+    # - name: Build and run services with Docker Compose
+    #   ansible.builtin.command:
+    #     cmd: docker compose up -d --build
+    #   args:
+    #     chdir: "{{ deploy_path }}"
+
+    # - name: Cleanup unused Docker resources
+    #   ansible.builtin.command: docker system prune -f

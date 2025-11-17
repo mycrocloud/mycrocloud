@@ -1,5 +1,0 @@
-- hosts: mycrocloud
-  become: yes
-  tasks:
-    - name: Test SSH connection
-      ping:
