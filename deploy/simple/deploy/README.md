@@ -1,10 +1,19 @@
+- Install Ansible
+```
+python3 -m venv .venv && \
+source .venv/bin/activate && \
+pip install --upgrade pip && \
+pip install ansible boto3 botocore
+```
+
+- (macOS only) Set environment variable to avoid fork safety issues
 ```
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 ```
 
 - Setup
 ```
-ansible-playbook -i ansible/inventory.ini ansible/setup.yml
+ansible-playbook -i inventory.ini setup.yml
 ```
 
 - Create AWS secrets so that below secret files are created
@@ -15,14 +24,14 @@ ansible-playbook -i ansible/inventory.ini ansible/setup.yml
 
 - Sync
 ```
-ansible-playbook -i ansible/inventory.ini ansible/sync.yml
+ansible-playbook -i inventory.ini sync.yml
 ```
 - Deploy
 All (for first run)
 ```
-ansible-playbook -i ansible/inventory.ini ansible/deploy.yml
+ansible-playbook -i inventory.ini deploy.yml
 ```
 Specific service
 ```
-ansible-playbook -i ansible/inventory.ini ansible/deploy.yml -e "service=web"
+ansible-playbook -i inventory.ini deploy.yml -e "service=web"
 ```
