@@ -19,6 +19,3 @@ sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plug
 sudo usermod -aG docker ubuntu  # Use explicit username
 sudo systemctl enable docker    # Ensure Docker starts on boot
 sudo systemctl start docker     # Start Docker immediately
-
-# Deployment prerequisites. TODO: fix this?
-sudo mkdir -p /var/run/fluentd /tmp/build-outputs && sudo chmod 0777 /var/run/fluentd /tmp/build-outputs
