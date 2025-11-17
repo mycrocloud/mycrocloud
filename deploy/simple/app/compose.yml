@@ -4,7 +4,7 @@ services:
     environment:
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
     volumes:
-      - ./config/Services/WebApp/WebApp.Migrations/appsettings.json:/db-migrator/appsettings.json:ro
+      - ./Services/WebApp/WebApp.Migrations/appsettings.json:/db-migrator/appsettings.json:ro
 
   seq:
     image: datalust/seq
@@ -17,7 +17,7 @@ services:
   web:
     image: ghcr.io/mycrocloud/mycrocloud-web:main
     volumes:
-      - ./config/Web/.env:/usr/share/nginx/html/.env:ro
+      - ./Web/.env:/usr/share/nginx/html/.env:ro
 
   api:
     image: ghcr.io/mycrocloud/mycrocloud-api:main
@@ -28,8 +28,8 @@ services:
       - Elasticsearch__Password=${Elasticsearch__Password}
       - OAuthApps__Slack__ClientSecret=${OAuthApps__Slack__ClientSecret}
     volumes:
-      - ./config/Services/WebApp/WebApp.Api/appsettings.json:/app/appsettings.json:ro
-      - ./config/Services/WebApp/WebApp.Api/gha-mycrocloud.pem:/app/gha-mycrocloud.pem:ro
+      - ./Services/WebApp/WebApp.Api/appsettings.json:/app/appsettings.json:ro
+      - ./Services/WebApp/WebApp.Api/gha-mycrocloud.pem:/app/gha-mycrocloud.pem:ro
 
   apigateway:
     image: ghcr.io/mycrocloud/mycrocloud-apigateway:main
@@ -37,7 +37,7 @@ services:
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
       - ConnectionStrings__Redis=${ConnectionStrings__Redis}
     volumes:
-      - ./config/Services/WebApp/WebApp.ApiGateway/appsettings.json:/app/appsettings.json:ro
+      - ./Services/WebApp/WebApp.ApiGateway/appsettings.json:/app/appsettings.json:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - /srv/function-data:/srv/function-data
   
@@ -49,7 +49,7 @@ services:
       - Slack__SigningSecret=${Slack__SigningSecret}
       - Slack__LinkSecret=${Slack__LinkSecret}
     volumes:
-      - ./config/Services/WebApp/WebApp.SlackIntegrationApi/appsettings.json:/app/appsettings.json:ro
+      - ./Services/WebApp/WebApp.SlackIntegrationApi/appsettings.json:/app/appsettings.json:ro
       
   lb:
     image: nginx:mainline-alpine3.18-perl
@@ -57,10 +57,10 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./nginx/certs:/etc/nginx/certs:ro
-      - ./nginx/includes:/etc/nginx/includes:ro
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./lb/conf.d:/etc/nginx/conf.d:ro
+      - ./lb/certs:/etc/nginx/certs:ro
+      - ./lb/includes:/etc/nginx/includes:ro
+      - ./lb/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
     - web
     - web-editor

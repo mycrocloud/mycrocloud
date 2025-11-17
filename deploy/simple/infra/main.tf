@@ -26,6 +26,10 @@ provider "cloudflare" {
   api_token = var.cloudflare_api_token
 }
 
+data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
+
+
 module "auth0" {
   source                         = "./modules/auth0"
   domain                         = var.auth0_domain
@@ -203,18 +207,18 @@ resource "cloudflare_dns_record" "wildcard" {
 
 resource "cloudflare_dns_record" "api" {
   zone_id = data.cloudflare_zone.zone.zone_id
-  name = "api"
-  type = "CNAME"
-  ttl = 1
+  name    = "api"
+  type    = "CNAME"
+  ttl     = 1
   proxied = true
   content = "mycrocloud.info"
 }
 
 resource "cloudflare_dns_record" "slack_integration_api" {
   zone_id = data.cloudflare_zone.zone.zone_id
-  name = "slack-integration-api"
-  type = "CNAME"
-  ttl = 1
+  name    = "slack-integration-api"
+  type    = "CNAME"
+  ttl     = 1
   proxied = true
   content = "mycrocloud.info"
 }

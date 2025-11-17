@@ -1,0 +1,32 @@
+---
+- name: Deploy application via Docker Compose
+  hosts: mycrocloud
+  become: yes
+  vars:
+    service: all
+    deploy_path: /opt/mycrocloud
+
+  tasks:
+    - name: Show target service(s)
+      debug:
+        msg: "Deploying service={{ service }}"
+
+    - name: Pull latest images (all or specific)
+      command: >
+        docker compose pull {{ service if service != 'all' else '' }}
+      args:
+        chdir: "{{ deploy_path }}"
+      register: pull_result
+      changed_when: "'Downloaded newer image' in pull_result.stdout"
+
+    - name: Deploy service(s)
+      command: >
+        docker compose up -d {{ service if service != 'all' else '' }}
+      args:
+        chdir: "{{ deploy_path }}"
+
+    - name: Restart LB if dependencies require it
+      when: service in ['web', 'api']
+      command: docker compose restart lb
+      args:
+        chdir: "{{ deploy_path }}"
