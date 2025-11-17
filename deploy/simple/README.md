@@ -1,5 +1,7 @@
 - Create infra
-- Copy `app` folder to server and create below secret files:
-```deployment/.env```
-```.env```
-```nginx/certs/mycrocloud.info.key```
+- Create AWS secrets so that below secret files are created
+    - [ ] lb/certs/mycrocloud.info.pem
+    - [ ] Services/WebApp/deployment/.env
+    - [ ] .env
+    - [ ] Services/WebApp/WebApp.Api/gha-mycrocloud.pem.example
+    - [ ] Web/.env (no need AWS secret)
