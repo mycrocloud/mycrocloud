@@ -19,11 +19,17 @@
         lb_certs_mycrocloud_info_key: "{{ lookup('amazon.aws.aws_secret', 'prod/mycrocloud/lb/certs/mycrocloud.info.key', region=aws_region) }}"
       no_log: true
 
+    - name: Fetch Services/WebApp/deployment/.env
+      set_fact:
+        Services_WebApp_deployment_dotenv: "{{ lookup('amazon.aws.aws_secret', 'prod/mycrocloud/Services/WebApp/deployment/.env', region=aws_region) | from_json }}"
+      no_log: true
+
 - name: Deploy application to server
   hosts: mycrocloud
   become: yes
 
   vars:
+    src: ../app
     deploy_path: /opt/mycrocloud
 
   tasks:
@@ -38,7 +44,7 @@
 
     - name: Sync application files to server
       ansible.builtin.synchronize:
-        src: "../app/"
+        src: "{{ src }}/"
         dest: "{{ deploy_path }}"
         recursive: yes
         delete: yes
@@ -46,7 +52,7 @@
 
     - name: Generate .env file from template
       ansible.builtin.template:
-        src: "../app/.env.j2"
+        src: "{{ src }}/.env.j2"
         dest: "{{ deploy_path }}/.env"
         mode: "0600"
         owner: ubuntu
@@ -67,3 +73,15 @@
       tags:
         - secrets
         - certs
+
+    - name: Generate Services/WebApp/deployment/.env file from template
+      ansible.builtin.template:
+        src: "{{ src }}/Services/WebApp/deployment/.env.j2"
+        dest: "{{ deploy_path }}/Services/WebApp/deployment/.env"
+        mode: "0600"
+        owner: ubuntu
+        group: ubuntu
+      vars:
+        secrets: "{{ hostvars['localhost']['Services_WebApp_deployment_dotenv'] }}"
+      no_log: true
+      tags: Services_WebApp_deployment_dotenv
