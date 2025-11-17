@@ -5,9 +5,6 @@
   gather_facts: no
   collections:
     - amazon.aws
-
-  vars:
-    aws_region: ap-northeast-1
   tasks:
     - name: Fetch secret from AWS Secrets Manager
       set_fact:
@@ -32,10 +29,6 @@
 - name: Sync files to server
   hosts: mycrocloud
   become: yes
-
-  vars:
-    src: app
-    deploy_path: /opt/mycrocloud
 
   tasks:
     - name: Ensure deploy directory exists

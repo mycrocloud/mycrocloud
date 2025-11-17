@@ -11,9 +11,15 @@ pip install ansible boto3 botocore
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 ```
 
+- 
+```
+export SERVER_IP=<your_server_ip>
+```
+- Update group_vars/* files with your configuration
+
 - Setup
 ```
-ansible-playbook -i inventory.ini setup.yml
+ansible-playbook setup.yml
 ```
 
 - Create AWS secrets so that below secret files are created
@@ -24,14 +30,14 @@ ansible-playbook -i inventory.ini setup.yml
 
 - Sync
 ```
-ansible-playbook -i inventory.ini sync.yml
+ansible-playbook sync.yml
 ```
 - Deploy
 All (for first run)
 ```
-ansible-playbook -i inventory.ini deploy.yml
+ansible-playbook deploy.yml
 ```
 Specific service
 ```
-ansible-playbook -i inventory.ini deploy.yml -e "service=web"
+ansible-playbook deploy.yml -e "service=web"
 ```
