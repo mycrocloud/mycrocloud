@@ -24,6 +24,11 @@
         Services_WebApp_deployment_dotenv: "{{ lookup('amazon.aws.aws_secret', 'prod/mycrocloud/Services/WebApp/deployment/.env', region=aws_region) | from_json }}"
       no_log: true
 
+    - name: Fetch Services/WebApp/WebApp.Api/gha-mycrocloud.pem
+      set_fact:
+        Services_WebApp_WebApp_Api_gha_mycrocloud_pem: "{{ lookup('amazon.aws.aws_secret', 'prod/mycrocloud/Services/WebApp/WebApp.Api/gha-mycrocloud.pem', region=aws_region) }}"
+      no_log: true
+
 - name: Deploy application to server
   hosts: mycrocloud
   become: yes
@@ -85,3 +90,12 @@
         secrets: "{{ hostvars['localhost']['Services_WebApp_deployment_dotenv'] }}"
       no_log: true
       tags: Services_WebApp_deployment_dotenv
+
+    - name: Write Services/WebApp/WebApp.Api/gha-mycrocloud.pem file
+      ansible.builtin.copy:
+        content: "{{ hostvars['localhost']['Services_WebApp_WebApp_Api_gha_mycrocloud_pem'] }}"
+        dest: "{{ deploy_path }}/Services/WebApp/WebApp.Api/gha-mycrocloud.pem"
+        mode: "0600"
+        owner: ubuntu
+        group: ubuntu
+      no_log: true
