@@ -56,6 +56,9 @@ jobs:
       WORK_DIR: "/opt/mycrocloud"
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        
       - name: Deploy apigateway
         uses: ./.github/actions/deploy-action
         if: ${{ vars.SSH_DOCKER_DEPLOY == 'true' }}
