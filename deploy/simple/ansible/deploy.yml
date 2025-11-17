@@ -26,7 +26,7 @@
         chdir: "{{ deploy_path }}"
 
     - name: Restart LB if dependencies require it
-      when: service in ['web', 'api']
+      when: service in ['api', 'apigateway', 'slack-integration-api', 'web', 'web-editor']
       command: docker compose restart lb
       args:
         chdir: "{{ deploy_path }}"
