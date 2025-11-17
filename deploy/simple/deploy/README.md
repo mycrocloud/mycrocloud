@@ -1,4 +1,6 @@
-- Create infra
+```
+export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+```
 
 - Setup
 ```
@@ -11,10 +13,7 @@ ansible-playbook -i ansible/inventory.ini ansible/setup.yml
     - [ ] prod/mycrocloud/.env
     - [ ] prod/mycrocloud/Services/WebApp/WebApp.Api/gha-mycrocloud.pem
 
-```
-export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
-```
-- Setup
+- Sync
 ```
 ansible-playbook -i ansible/inventory.ini ansible/sync.yml
 ```
