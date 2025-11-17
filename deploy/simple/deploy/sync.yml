@@ -34,7 +34,7 @@
   become: yes
 
   vars:
-    src: ../app
+    src: app
     deploy_path: /opt/mycrocloud
 
   tasks:
