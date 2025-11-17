@@ -99,3 +99,9 @@
         owner: ubuntu
         group: ubuntu
       no_log: true
+
+    - name: Rename Web/.env.example to Web/.env
+      ansible.builtin.copy:
+        src: "{{ deploy_path }}/Web/.env.example"
+        dest: "{{ deploy_path }}/Web/.env"
+        remote_src: true
