@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import "./App.css";
 import { Auth0Provider } from "@auth0/auth0-react";
 import { ToastContainer } from "react-toastify";
@@ -49,6 +49,7 @@ import { default as IntegrationsSlackLink } from "./pages/settings/slack_link";
 
 import Settings from "./pages/settings";
 import { getConfig } from "./config";
+import Home from "./pages/Home";
 const { AUTH0_DOMAIN, AUTH0_CLIENTID, AUTH0_AUDIENCE } = getConfig();
 
 function App() {
@@ -65,7 +66,7 @@ function App() {
         <Header />
         <div className="container mx-auto min-h-screen p-2">
           <Routes>
-            <Route path="/" element={<Navigate to={"apps"} />} />
+            <Route path="/" Component={Home} />
             <Route path="settings" Component={Settings} />
             <Route path="apps">
               <Route index element={<ProtectedPage children={<AppList />} />} />
@@ -148,10 +149,7 @@ function App() {
                 path="slack/oauth/callback"
                 Component={IntegrationsSlackCallback}
               />
-              <Route
-                path="slack/link"
-                Component={IntegrationsSlackLink}
-              />
+              <Route path="slack/link" Component={IntegrationsSlackLink} />
             </Route>
             <Route
               path="_about"
