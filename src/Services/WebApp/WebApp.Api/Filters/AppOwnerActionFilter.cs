@@ -88,12 +88,8 @@ public class AppOwnerActionFilter(AppDbContext appDbContext,
     /// </summary>
     private bool IsInternalService(ClaimsPrincipal user)
     {
-        var sub = user.FindFirst("sub")?.Value;
+        var gty = user.FindFirst("gty")?.Value;
 
-        if (string.IsNullOrEmpty(sub)) return true;
-        
-        if (!sub.StartsWith("auth0|")) return true;
-
-        return false;
+        return gty == "client-credentials";
     }
 }
