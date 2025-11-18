@@ -7,9 +7,9 @@ using WebApp.Infrastructure;
 
 namespace WebApp.Api.Services;
 
-public class AppBuildJobStatusConsumer(
+public class AppBuildStatusConsumer(
     IConfiguration configuration,
-    ILogger<AppBuildJobStatusConsumer> logger,
+    ILogger<AppBuildStatusConsumer> logger,
     IServiceProvider serviceProvider,
     IAppBuildPublisher publisher)
     : BackgroundService
@@ -109,6 +109,8 @@ public class AppBuildJobStatusConsumer(
 
         build.Status = "done";
         build.UpdatedAt = DateTime.UtcNow;
+
+        app.LatestBuild = build;
         
         await appDbContext.SaveChangesAsync();
     }

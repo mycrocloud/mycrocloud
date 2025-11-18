@@ -28,6 +28,11 @@ public class App : BaseEntity
     public AppLink Link { get; set; }
 
     public AppBuildConfigs BuildConfigs { get; set; }
+
+    public ICollection<AppBuild> AppBuilds { get; set; } = [];
+    public AppBuild LatestBuild { get; set; }
+
+    public Guid? LatestBuildId { get; set; }
 }
 
 public class AppLink : BaseEntity

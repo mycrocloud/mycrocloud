@@ -89,7 +89,7 @@ builder.Services.AddScoped<IRouteService, RouteService>();
 builder.Services.AddScoped<ILogRepository, LogRepository>();
 builder.Services.AddSingleton<RabbitMqService>();
 builder.Services.AddHttpClient();
-builder.Services.AddHostedService<AppBuildJobStatusConsumer>();
+builder.Services.AddHostedService<AppBuildStatusConsumer>();
 builder.Services.AddSingleton<IAppBuildPublisher, InMemoryAppBuildPublisher>();
 
 builder.Services.AddKeyedSingleton("AppBuildLogs_ES7", (_, _) =>

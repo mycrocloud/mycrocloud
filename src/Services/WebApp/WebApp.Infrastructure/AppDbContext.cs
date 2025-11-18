@@ -135,6 +135,20 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<UserToken>()
             .HasKey(t => new { t.UserId, t.Provider, t.Purpose });
 
+        modelBuilder.Entity<App>(entity =>
+        {            
+            entity.HasMany(e => e.AppBuilds)
+                  .WithOne(e => e.App)
+                  .HasForeignKey(e => e.AppId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            
+            entity.HasOne(e => e.LatestBuild)
+                  .WithOne()
+                  .HasForeignKey<App>(e => e.LatestBuildId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
         modelBuilder.Entity<AppBuild>()
             .Property(p => p.Name)
             .HasDefaultValue("build");

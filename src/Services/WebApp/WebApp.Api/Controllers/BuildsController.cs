@@ -220,37 +220,37 @@ public class BuildsController(
         return new EmptyResult();
     }
 
-    [HttpPut("{*key}")]
+    [HttpPut("{buildId:guid}/artifacts/{*key}")]
     [Consumes("multipart/form-data")]
-    public async Task<IActionResult> PutObject(int appId, string key, [FromForm]IFormFile file)
+    [DisableRequestSizeLimit]
+    //[Authorize("M2M")]
+    public async Task<IActionResult> PutObject(int appId, Guid buildId, string key, [FromForm]IFormFile ffile)
     {
-        await using var stream = file.OpenReadStream();
+        var build = await appDbContext.AppBuildJobs
+            .SingleAsync(b => b.AppId == appId && b.Id == buildId);
+
+        await using var stream = ffile.OpenReadStream();
         await using var memoryStream = new MemoryStream();
         await stream.CopyToAsync(memoryStream);
         var content = memoryStream.ToArray();
-        
-        // var app = await appDbContext.Apps
-        //         .Include(app => app.Objects)
-        //         .SingleAsync(app => app.Id == appId)
-        //     ;
+    
+        var file = appDbContext.AppBuildArtifacts.SingleOrDefault(f => f.BuildId == build.Id && f.Path == key);
 
-        // var obj = app.Objects.SingleOrDefault(obj => obj.Key == key);
+        if (file is null)
+        {
+            file = new AppBuildArtifact
+            {
+                Build = build,
+                Path = key,
+                Content = content
+            };
+        }
+        else
+        {
+            file.Content = content;
+        }
 
-        // if (obj is null)
-        // {
-        //     obj = new Domain.Entities.Object
-        //     {
-        //         Key = key,
-        //         Content = content
-        //     };
-        //     app.Objects.Add(obj);
-        // }
-        // else
-        // {
-        //     obj.Content = content;
-        // }
-
-        // await appDbContext.SaveChangesAsync();
+        await appDbContext.SaveChangesAsync();
 
         return Ok();
     }
