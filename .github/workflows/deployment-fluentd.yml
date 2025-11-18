@@ -50,7 +50,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-push-image
     if: ${{ github.ref == 'refs/heads/main' }}
-    
+    env:
+      WORK_DIR: "/opt/mycrocloud/Services/WebApp/deployment"
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -63,5 +64,5 @@ jobs:
           ssh-host: ${{ vars.SSH_HOST}}
           ssh-username: ${{ vars.SSH_USERNAME }}
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          work-dir: app/deployment
+          work-dir: ${{ env.WORK_DIR }}
           service: fluentd
