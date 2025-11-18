@@ -4,7 +4,6 @@
   become: yes
   vars:
     service: all
-    deploy_path: /opt/mycrocloud
 
   tasks:
     - name: Show target service(s)
