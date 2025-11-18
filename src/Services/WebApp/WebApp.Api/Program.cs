@@ -71,7 +71,10 @@ builder.Services.AddAuthentication("MultiAuthSchemes")
     .AddScheme<ApiTokenAuthenticationOptions, ApiTokenAuthenticationHandler>(ApiTokenDefaults.AuthenticationScheme, options => { })
     .AddPolicyScheme("MultiAuthSchemes", displayName: null, options =>
     {
-        options.ForwardDefaultSelector = ctx => ctx.Request.Host.Host.StartsWith("api") ? ApiTokenDefaults.AuthenticationScheme : JwtBearerDefaults.AuthenticationScheme;
+        //TODO: re-think
+        options.ForwardDefaultSelector = ctx => ctx.Request.Host.Host.StartsWith("api") && ctx.Request.Headers["X-Grant-Type"] != "client-credentials"
+            ? ApiTokenDefaults.AuthenticationScheme
+            : JwtBearerDefaults.AuthenticationScheme;
     });
 
 builder.Services.AddAuthorization();
