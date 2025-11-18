@@ -71,8 +71,8 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, l *flue
 	var buildMsg BuildMessage
 	err := json.Unmarshal([]byte(jsonString), &buildMsg)
 	failOnError(err, "Failed to unmarshal JSON")
-	log.Printf("Processing... Id: %s, RepoFullName: %s", buildMsg.JobId, buildMsg.RepoFullName)
-	logFluentd(l, "Processing", buildMsg.JobId)
+	log.Printf("Processing... Id: %s, RepoFullName: %s", buildMsg.BuildId, buildMsg.RepoFullName)
+	logFluentd(l, "Processing", buildMsg.BuildId)
 
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -82,7 +82,7 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, l *flue
 	log.Printf("Creating container")
 	builderImage := os.Getenv("BUILDER_IMAGE")
 
-	jobID := buildMsg.JobId
+	jobID := buildMsg.BuildId
 	baseOut := getOutputBaseDir()
 	jobOut := filepath.Join(baseOut, jobID)
 
@@ -119,7 +119,7 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, l *flue
 				Source: socketPath,
 				Target: socketPath,
 			})
-			log.Printf("[builder:%s] Configured fluentd socket mount %s", buildMsg.JobId, socketPath)
+			log.Printf("[builder:%s] Configured fluentd socket mount %s", buildMsg.BuildId, socketPath)
 		}
 	}
 
@@ -136,7 +136,7 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, l *flue
 				"INSTALL_CMD=" + buildMsg.InstallCommand,
 				"BUILD_CMD=" + buildMsg.BuildCommand,
 			},
-			Labels: map[string]string{"build_id": buildMsg.JobId},
+			Labels: map[string]string{"build_id": buildMsg.BuildId},
 		},
 		&container.HostConfig{
 			Mounts:     mounts,
@@ -151,8 +151,8 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, l *flue
 	err = cli.ContainerStart(ctx, resp.ID, container.StartOptions{})
 	failOnError(err, "Failed to start container")
 
-	publishJobStatusChangedEventMessage(ch, JobStatusChangedEventMessage{
-		JobId:       buildMsg.JobId,
+	publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
+		BuildId:     buildMsg.BuildId,
 		Status:      Started,
 		ContainerId: resp.ID,
 	})
@@ -162,9 +162,9 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, l *flue
 	select {
 	case err := <-errCh:
 		failOnError(err, "Failed to wait for container")
-		publishJobStatusChangedEventMessage(ch, JobStatusChangedEventMessage{
-			JobId:  buildMsg.JobId,
-			Status: Failed,
+		publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
+			BuildId: buildMsg.BuildId,
+			Status:  Failed,
 		})
 
 	case status := <-statusCh:
@@ -176,17 +176,17 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, l *flue
 	shouldUploadArtifacts := os.Getenv("UPLOAD_ARTIFACTS") != "false"
 
 	if shouldUploadArtifacts {
-		UploadArtifacts(jobOut, strings.TrimSuffix(buildMsg.ArtifactsUploadUrl, "/"))
+		UploadArtifacts(jobOut, strings.TrimSuffix(buildMsg.ArtifactsUploadUrl, "/"), buildMsg.BuildId)
 	}
 
 	// publish completion message
-	publishJobStatusChangedEventMessage(ch, JobStatusChangedEventMessage{
-		JobId:  buildMsg.JobId,
-		Status: Done,
+	publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
+		BuildId: buildMsg.BuildId,
+		Status:  Done,
 	})
 
-	log.Printf("Finished processing. Id: %s", buildMsg.JobId)
-	logFluentd(l, "Finished processing", buildMsg.JobId)
+	log.Printf("Finished processing. Id: %s", buildMsg.BuildId)
+	logFluentd(l, "Finished processing", buildMsg.BuildId)
 }
 
 func getOutputBaseDir() string {
@@ -198,10 +198,10 @@ func getOutputBaseDir() string {
 }
 
 // UploadArtifacts uploads all files from a directory (recursively) to the upload URL
-func UploadArtifacts(dir string, uploadUrl string) error {
+func UploadArtifacts(dir string, uploadUrl string, buildId string) error {
 	accessToken := GetAccessToken()
 	log.Printf("Uploading %s to %s", dir, uploadUrl)
-	return uploadArtifactsRecursive(dir, uploadUrl, "", accessToken)
+	return uploadArtifactsRecursive(dir, uploadUrl, buildId, accessToken)
 }
 
 func uploadArtifactsRecursive(dir string, uploadUrl string, prefix string, accessToken string) error {

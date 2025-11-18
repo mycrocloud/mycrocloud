@@ -4,8 +4,8 @@ namespace WebApp.Api.Models;
 
 public class AppBuildMessage
 {
-    [JsonPropertyName("job_id")]
-    public string JobId { get; set; }
+    [JsonPropertyName("build_id")]
+    public string BuildId { get; set; }
     
     [JsonPropertyName("repo_full_name")]
     public string RepoFullName { get; set; }

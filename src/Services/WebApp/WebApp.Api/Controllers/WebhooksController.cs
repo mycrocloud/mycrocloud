@@ -67,7 +67,7 @@ public class WebhooksController(GitHubAppService gitHubAppService,
             
             var message = new AppBuildMessage
             {
-                JobId = job.Id.ToString(),
+                BuildId = job.Id.ToString(),
                 RepoFullName = repoFullName,
                 CloneUrl = cloneUrl.Replace("https://", "https://x-access-token:" + token + "@"),
                 Branch = config.Branch,

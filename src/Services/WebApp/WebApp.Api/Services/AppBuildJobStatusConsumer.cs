@@ -50,17 +50,17 @@ public class AppBuildJobStatusConsumer(
 
     private async Task ProcessMessage(string message)
     {
-        var eventMessage = JsonSerializer.Deserialize<JobStatusChangedEventMessage>(message)!;
+        var eventMessage = JsonSerializer.Deserialize<BuildStatusChangedEventMessage>(message)!;
 
         switch (eventMessage.Status)
         {
-            case JobStatus.Started:
+            case BuildStatus.Started:
                 await ProcessStartedMessage(eventMessage);
                 break;
-            case JobStatus.Done:
+            case BuildStatus.Done:
                 await ProcessDoneMessage(eventMessage);
                 break;
-            case JobStatus.Failed:
+            case BuildStatus.Failed:
                 await ProcessFailedMessage(eventMessage);
                 break;
             default:
@@ -70,74 +70,74 @@ public class AppBuildJobStatusConsumer(
         await PostProcess(eventMessage);
     }
 
-    private async Task ProcessFailedMessage(JobStatusChangedEventMessage message)
+    private async Task ProcessFailedMessage(BuildStatusChangedEventMessage message)
     {
         using var scope = serviceProvider.CreateScope();
         var appDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var job = await appDbContext.AppBuildJobs.FindAsync(message.JobId);
-        if (job == null)
+        var build = await appDbContext.AppBuildJobs.FindAsync(message.BuildId);
+        if (build == null)
         {
-            logger.LogWarning("Job with id {Id} not found", message.JobId);
+            logger.LogWarning("Job with id {Id} not found", message.BuildId);
             return;
         }
 
-        job.Status = "failed";
-        job.UpdatedAt = DateTime.UtcNow;
+        build.Status = "failed";
+        build.UpdatedAt = DateTime.UtcNow;
         await appDbContext.SaveChangesAsync();
     }
 
-    private async Task ProcessDoneMessage(JobStatusChangedEventMessage message)
+    private async Task ProcessDoneMessage(BuildStatusChangedEventMessage message)
     {
         using var scope = serviceProvider.CreateScope();
         var appDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var job = await appDbContext.AppBuildJobs.FindAsync(message.JobId);
-        if (job == null)
+        var build = await appDbContext.AppBuildJobs.FindAsync(message.BuildId);
+        if (build == null)
         {
-            logger.LogWarning("Job with id {Id} not found", message.JobId);
+            logger.LogWarning("Job with id {Id} not found", message.BuildId);
             return;
         }
 
-        var app = await appDbContext.Apps.FindAsync(job.AppId);
+        var app = await appDbContext.Apps.FindAsync(build.AppId);
         if (app == null)
         {
-            logger.LogWarning("App with id {AppId} not found", job.AppId);
+            logger.LogWarning("App with id {AppId} not found", build.AppId);
             return;
         }
 
         // Update the job status
-        logger.LogInformation("Updating job status. Id: {Id}, Status: {Status}", message.JobId, message.Status);
+        logger.LogInformation("Updating job status. Id: {Id}, Status: {Status}", message.BuildId, message.Status);
 
-        job.Status = "done";
-        job.UpdatedAt = DateTime.UtcNow;
+        build.Status = "done";
+        build.UpdatedAt = DateTime.UtcNow;
         
         await appDbContext.SaveChangesAsync();
     }
 
-    private async Task ProcessStartedMessage(JobStatusChangedEventMessage message)
+    private async Task ProcessStartedMessage(BuildStatusChangedEventMessage message)
     {
         using var scope = serviceProvider.CreateScope();
         var appDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var job = await appDbContext.AppBuildJobs.FindAsync(message.JobId);
-        if (job == null)
+        var build = await appDbContext.AppBuildJobs.FindAsync(message.BuildId);
+        if (build == null)
         {
-            logger.LogWarning("Job with id {Id} not found", message.JobId);
+            logger.LogWarning("Job with id {Id} not found", message.BuildId);
             return;
         }
 
-        job.Status = "started";
-        job.UpdatedAt = DateTime.UtcNow;
-        job.ContainerId = message.ContainerId;
+        build.Status = "started";
+        build.UpdatedAt = DateTime.UtcNow;
+        build.ContainerId = message.ContainerId;
         await appDbContext.SaveChangesAsync();
     }
 
-    private async Task PostProcess(JobStatusChangedEventMessage message)
+    private async Task PostProcess(BuildStatusChangedEventMessage message)
     {
         using var scope = serviceProvider.CreateScope();
         var appDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var job = await appDbContext.AppBuildJobs.FindAsync(message.JobId);
+        var job = await appDbContext.AppBuildJobs.FindAsync(message.BuildId);
         if (job == null)
         {
-            logger.LogWarning("Job with id {Id} not found", message.JobId);
+            logger.LogWarning("Job with id {Id} not found", message.BuildId);
             return;
         }
         

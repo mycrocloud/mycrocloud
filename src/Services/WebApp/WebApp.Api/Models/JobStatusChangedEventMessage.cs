@@ -2,19 +2,20 @@ using System.Text.Json.Serialization;
 
 namespace WebApp.Api.Models;
 
-public enum JobStatus
+public enum BuildStatus
 {
     Started,
     Done,
     Failed,
 }
-public class JobStatusChangedEventMessage
+
+public class BuildStatusChangedEventMessage
 {
-    [JsonPropertyName("job_id")]
-    public required Guid JobId { get; set; }
+    [JsonPropertyName("build_id")]
+    public required Guid BuildId { get; set; }
     
     [JsonPropertyName("status")]
-    public JobStatus Status { get; set; }
+    public BuildStatus Status { get; set; }
     
     [JsonPropertyName("container_id")]
     public string? ContainerId { get; set; }

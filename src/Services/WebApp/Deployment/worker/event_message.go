@@ -1,7 +1,7 @@
 package main
 
 type BuildMessage struct {
-	JobId              string `json:"job_id"`
+	BuildId            string `json:"build_id"`
 	RepoFullName       string `json:"repo_full_name"`
 	CloneUrl           string `json:"clone_url"`
 	Directory          string `json:"directory"`
@@ -10,16 +10,16 @@ type BuildMessage struct {
 	BuildCommand       string `json:"build_command"`
 	ArtifactsUploadUrl string `json:"artifacts_upload_url"`
 }
-type JobStatus int
+type BuildStatus int
 
 const (
-	Started JobStatus = iota
+	Started BuildStatus = iota
 	Done
 	Failed
 )
 
-type JobStatusChangedEventMessage struct {
-	JobId       string    `json:"job_id"`
-	Status      JobStatus `json:"status"`
-	ContainerId string    `json:"container_id,omitempty"`
+type BuildStatusChangedEventMessage struct {
+	BuildId     string      `json:"build_id"`
+	Status      BuildStatus `json:"status"`
+	ContainerId string      `json:"container_id,omitempty"`
 }
