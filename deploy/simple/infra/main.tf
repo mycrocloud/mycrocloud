@@ -46,6 +46,10 @@ locals {
   project_name = "mycrocloud"
 }
 
+locals {
+  domain = "mycrocloud.info"
+}
+
 data "aws_ami" "ubuntu" {
   most_recent = true
   owners      = ["099720109477"] // Canonical
@@ -191,7 +195,7 @@ resource "cloudflare_dns_record" "editor" {
   type    = "CNAME"
   ttl     = 1
   proxied = true
-  content = "mycrocloud.info"
+  content = local.domain
 }
 
 resource "cloudflare_dns_record" "wildcard" {
@@ -200,7 +204,7 @@ resource "cloudflare_dns_record" "wildcard" {
   type    = "CNAME"
   ttl     = 1
   proxied = true
-  content = "mycrocloud.info"
+  content = local.domain
 }
 
 resource "cloudflare_dns_record" "api" {
@@ -218,5 +222,5 @@ resource "cloudflare_dns_record" "slack_integration_api" {
   type    = "CNAME"
   ttl     = 1
   proxied = true
-  content = "mycrocloud.info"
+  content = local.domain
 }
