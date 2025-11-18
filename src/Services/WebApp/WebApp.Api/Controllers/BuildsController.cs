@@ -8,6 +8,7 @@ using RabbitMQ.Client.Events;
 using WebApp.Api.Filters;
 using WebApp.Api.Models.Builds;
 using WebApp.Api.Services;
+using WebApp.Domain.Entities;
 using WebApp.Infrastructure;
 
 namespace WebApp.Api.Controllers;
@@ -68,12 +69,12 @@ public class BuildsController(
         var app = await appDbContext.Apps
             .SingleAsync(a => a.Id == appId);
 
-        app.BuildConfigs = new Dictionary<string, string>
+        app.BuildConfigs = new AppBuildConfigs()
         {
-            { nameof(config.Branch), config.Branch },
-            { nameof(config.Directory), config.Directory },
-            { nameof(config.BuildCommand), config.BuildCommand },
-            { nameof(config.OutDir), config.OutDir }
+            Branch = config.Branch,
+            Directory = config.Directory,
+            BuildCommand = config.BuildCommand,
+            OutDir = config.OutDir,
         };
 
         await appDbContext.SaveChangesAsync();

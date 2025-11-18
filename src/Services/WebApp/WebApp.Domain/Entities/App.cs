@@ -29,7 +29,7 @@ public class App : BaseEntity
 
     public AppLink Link { get; set; }
 
-    public Dictionary<string, string> BuildConfigs { get; set; }
+    public AppBuildConfigs BuildConfigs { get; set; } = new();
 }
 
 public class AppLink : BaseEntity
@@ -44,4 +44,13 @@ public class AppLink : BaseEntity
     
     // Navigation properties
     public GitHubInstallation GitHubInstallation  { get; set; }
+}
+
+public class AppBuildConfigs
+{
+    public string Branch { get; set; }
+    public string Directory { get; set; }
+    public string OutDir { get; set; }
+    public string InstallCommand { get; set; }
+    public string BuildCommand { get; set; }
 }

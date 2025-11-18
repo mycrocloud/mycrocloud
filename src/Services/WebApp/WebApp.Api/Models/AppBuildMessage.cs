@@ -13,6 +13,9 @@ public class AppBuildMessage
     [JsonPropertyName("clone_url")]
     public string CloneUrl { get; set; }
     
+    [JsonPropertyName("branch")]
+    public string Branch { get; set; }
+    
     [JsonPropertyName("directory")]
     public string Directory { get; set; }
     

@@ -70,10 +70,11 @@ public class WebhooksController(GitHubAppService gitHubAppService,
                 JobId = job.Id.ToString(),
                 RepoFullName = repoFullName,
                 CloneUrl = cloneUrl.Replace("https://", "https://x-access-token:" + token + "@"),
-                Directory = config["Directory"],
-                OutDir = config["OutDir"],
-                InstallCommand = config["InstallCommand"],
-                BuildCommand = config["BuildCommand"],
+                Branch = config.Branch,
+                Directory = config.Directory,
+                OutDir = config.OutDir,
+                InstallCommand = config.InstallCommand,
+                BuildCommand = config.BuildCommand,
                 ArtifactsUploadUrl = linkGenerator.GetUriByAction(HttpContext, nameof(ObjectsController.PutObject), ObjectsController.Controller, new { appId = app.Id })!
             };
 

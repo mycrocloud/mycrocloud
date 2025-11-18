@@ -142,6 +142,16 @@ if (!app.Environment.IsDevelopment())
     app.UsePathBase("/api");
 }
 
+var behindProxy = builder.Configuration.GetValue<bool>("ASPNETCORE_BEHIND_PROXY");
+
+if (behindProxy)
+{
+    app.UseForwardedHeaders(new ForwardedHeadersOptions
+    {
+        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+    });
+}
+
 app.UseHttpLogging();
 app.UseCors();
 app.UseAuthentication();

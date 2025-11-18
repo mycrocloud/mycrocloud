@@ -32,6 +32,7 @@ public class AppOwnerActionFilter(AppDbContext appDbContext,
         
         if (IsInternalService(context.HttpContext.User))
         {
+            logger.LogDebug("Is internal service call");
             return true;
         }
         
