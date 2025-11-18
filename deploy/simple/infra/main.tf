@@ -167,8 +167,6 @@ resource "aws_instance" "server" {
   subnet_id                   = aws_subnet.subnet.id
   vpc_security_group_ids      = [aws_security_group.sg.id]
 
-  user_data = file("user_data.sh")
-
   tags = {
     Name = "${local.project_name}-server"
   }
