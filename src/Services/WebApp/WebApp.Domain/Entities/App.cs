@@ -29,7 +29,7 @@ public class App : BaseEntity
 
     public AppLink Link { get; set; }
 
-    public AppBuildConfigs BuildConfigs { get; set; } = new();
+    public AppBuildConfigs BuildConfigs { get; set; }
 }
 
 public class AppLink : BaseEntity
