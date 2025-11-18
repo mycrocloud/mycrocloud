@@ -43,10 +43,10 @@ public class WebhooksController(GitHubAppService gitHubAppService,
         var token = await gitHubAppService.GetInstallationAccessToken(installation.InstallationId);
         
         var apps = await appDbContext.Apps
-            .Include(a => a.Integration)
-            .Where(a => a.Integration != null &&
-                        a.Integration.InstallationId == installationId &&
-                        a.Integration.RepoId == repoId)
+            .Include(a => a.Link)
+            .Where(a => a.Link != null &&
+                        a.Link.InstallationId == installationId &&
+                        a.Link.RepoId == repoId)
             .ToListAsync();
         
         foreach (var app in apps)
@@ -62,15 +62,17 @@ public class WebhooksController(GitHubAppService gitHubAppService,
 
             appDbContext.AppBuildJobs.Add(job);
 
+            var config = app.BuildConfigs;
+            
             var message = new AppBuildMessage
             {
                 JobId = job.Id.ToString(),
                 RepoFullName = repoFullName,
                 CloneUrl = cloneUrl.Replace("https://", "https://x-access-token:" + token + "@"),
-                Directory = app.Integration?.Directory ?? ".",
-                OutDir = app.Integration?.OutDir ?? "dist",
-                InstallCommand = app.Integration?.InstallCommand ?? "npm install",
-                BuildCommand = app.Integration?.BuildCommand ?? "npm run build"
+                Directory = config["Directory"],
+                OutDir = config["OutDir"],
+                InstallCommand = config["InstallCommand"],
+                BuildCommand = config["BuildCommand"]
             };
 
             rabbitMqService.PublishMessage(JsonSerializer.Serialize(message));

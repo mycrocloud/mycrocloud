@@ -8,7 +8,6 @@ using RabbitMQ.Client.Events;
 using WebApp.Api.Filters;
 using WebApp.Api.Models.Builds;
 using WebApp.Api.Services;
-using WebApp.Domain.Entities;
 using WebApp.Infrastructure;
 
 namespace WebApp.Api.Controllers;
@@ -64,32 +63,18 @@ public class BuildsController(
     }
 
     [HttpPost("config")]
-    [NonAction] //NOTE: not ready for production
-    public async Task<IActionResult> Config(int appId, BuildConfigRequest buildConfigRequest)
+    public async Task<IActionResult> Config(int appId, BuildConfigRequest config)
     {
         var app = await appDbContext.Apps
-            .Include(a => a.Integration)
             .SingleAsync(a => a.Id == appId);
 
-        if (app.Integration is null)
+        app.BuildConfigs = new Dictionary<string, string>
         {
-            app.Integration = new AppIntegration
-            {
-                //Branch = buildConfigRequest.Branch,
-                Directory = buildConfigRequest.Directory,
-                BuildCommand = buildConfigRequest.BuildCommand,
-                OutDir = buildConfigRequest.OutDir,
-                CreatedAt = DateTime.UtcNow
-            };
-        }
-        else
-        {
-            app.Integration.Branch = buildConfigRequest.Branch;
-            app.Integration.Directory = buildConfigRequest.Directory;
-            app.Integration.BuildCommand = buildConfigRequest.BuildCommand;
-            app.Integration.OutDir = buildConfigRequest.OutDir;
-            app.Integration.UpdatedAt = DateTime.UtcNow;
-        }
+            { nameof(config.Branch), config.Branch },
+            { nameof(config.Directory), config.Directory },
+            { nameof(config.BuildCommand), config.BuildCommand },
+            { nameof(config.OutDir), config.OutDir }
+        };
 
         await appDbContext.SaveChangesAsync();
         
@@ -100,23 +85,9 @@ public class BuildsController(
     public async Task<IActionResult> Config(int appId)
     {
         var app = await appDbContext.Apps
-            .Include(a => a.Integration)
             .SingleAsync(a => a.Id == appId);
 
-        if (app.Integration is null)
-        {
-            return NotFound();
-        }
-
-        return Ok(new
-        {
-            app.Integration.Branch,
-            app.Integration.Directory,
-            app.Integration.BuildCommand,
-            app.Integration.OutDir,
-            app.Integration.CreatedAt,
-            app.Integration.UpdatedAt
-        });
+        return Ok(app.BuildConfigs);
     }
 
     [HttpGet("{jobId:guid}/logs")]

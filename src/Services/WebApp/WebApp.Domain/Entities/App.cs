@@ -27,10 +27,12 @@ public class App : BaseEntity
 
     public ICollection<Object> Objects { get; set; }
 
-    public AppIntegration Integration { get; set; }
+    public AppLink Link { get; set; }
+
+    public Dictionary<string, string> BuildConfigs { get; set; }
 }
 
-public class AppIntegration : BaseEntity
+public class AppLink : BaseEntity
 {
     public int AppId { get; set; }
     
@@ -39,12 +41,7 @@ public class AppIntegration : BaseEntity
     public long RepoId { get; set; }
 
     public string RepoName { get; set; }
-    public GitHubInstallation GitHubInstallation  { get; set; }
     
-    //TODO: JSON column maybe better
-    public string Branch { get; set; }
-    public string Directory { get; set; }
-    public string BuildCommand { get; set; }
-    public string OutDir { get; set; }
-    public string InstallCommand { get; set; }
+    // Navigation properties
+    public GitHubInstallation GitHubInstallation  { get; set; }
 }

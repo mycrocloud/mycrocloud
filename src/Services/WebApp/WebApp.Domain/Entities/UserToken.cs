@@ -19,7 +19,6 @@ public class UserToken
 
 public enum UserTokenPurpose
 {
-    AppIntegration,
     ApiToken
 }
 

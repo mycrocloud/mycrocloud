@@ -17,9 +17,6 @@ public class AppsController(
     IAppService appService,
     IAppRepository appRepository,
     AppDbContext appDbContext,
-    IConfiguration configuration,
-    IHttpClientFactory httpClientFactory,
-    LinkGenerator linkGenerator,
     GitHubAppService githubAppService
 ) : BaseController
 {
@@ -27,6 +24,7 @@ public class AppsController(
     public async Task<IActionResult> Index(string? q)
     {
         var apps = await appRepository.ListByUserId(User.GetUserId(), q, "");
+        
         return Ok(apps.Select(app => new
         {
             app.Id,
@@ -42,7 +40,9 @@ public class AppsController(
     public async Task<IActionResult> Create(AppCreateRequest appCreateRequest)
     {
         var app = appCreateRequest.ToEntity();
+        
         await appService.Create(User.GetUserId(), app);
+        
         return Created(app.Id.ToString(), new
         {
             app.Id,
@@ -55,20 +55,15 @@ public class AppsController(
     public async Task<IActionResult> Get(int id)
     {
         var app = await appRepository.GetByAppId(id);
+        
         Response.Headers.Append(ETagHeader, app.Version.ToString());
+        
         return Ok(new
         {
             app.Id,
             app.Name,
             app.Description,
             Status = app.Status.ToString(),
-            Integration = app.Integration != null
-                ? new
-                {
-                    app.Integration.InstallationId,
-                    app.Integration.RepoId,
-                }
-                : null,
             app.CreatedAt,
             app.UpdatedAt,
             app.Version
@@ -127,11 +122,11 @@ public class AppsController(
     public async Task<IActionResult> Link(int id)
     {
         var app = await appDbContext.Apps
-            .Include(a => a.Integration)
+            .Include(a => a.Link)
             .ThenInclude(i => i.GitHubInstallation)
             .SingleAsync(a => a.Id == id && a.UserId == User.GetUserId());
 
-        if (app.Integration is not { } integration)
+        if (app.Link is not { } link)
         {
             return NotFound();
         }
@@ -139,9 +134,9 @@ public class AppsController(
         return Ok(new
         {
             Type = "GitHub", //TODO: 
-            Org = integration.GitHubInstallation.AccountLogin, 
-            integration.RepoId,
-            Repo = integration.RepoName
+            Org = link.GitHubInstallation.AccountLogin, 
+            link.RepoId,
+            Repo = link.RepoName
         });
     }
 
@@ -157,19 +152,14 @@ public class AppsController(
         var repo = repos.Single(r => r.Id == request.RepoId);
 
         var app = await appDbContext.Apps
-            .Include(a => a.Integration)
+            .Include(a => a.Link)
             .SingleAsync(a => a.Id == id);
         
-        app.Integration = new AppIntegration
+        app.Link = new AppLink
         {
             InstallationId = installation.InstallationId,
             RepoId = repo.Id,
-            RepoName = repo.Name,
-            Branch = "main",
-            Directory = "/",
-            BuildCommand = "npm install && npm run build",
-            OutDir = "dist",
-            InstallCommand = "npm install"
+            RepoName = repo.Name
         };
         
         await appDbContext.SaveChangesAsync();
@@ -181,10 +171,10 @@ public class AppsController(
     public async Task<IActionResult> DisconnectGitHubRepo(int id)
     {
         var app = await appDbContext.Apps
-            .Include(app => app.Integration)
+            .Include(app => app.Link)
             .SingleAsync(a => a.Id == id);
 
-        appDbContext.Remove(app.Integration);
+        appDbContext.Remove(app.Link);
 
         await appDbContext.SaveChangesAsync();
         
