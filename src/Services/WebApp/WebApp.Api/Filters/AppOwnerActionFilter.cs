@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using WebApp.Infrastructure;
@@ -28,6 +29,12 @@ public class AppOwnerActionFilter(AppDbContext appDbContext,
             logger.LogDebug("User is not authenticated");
             return true;
         }
+        
+        if (IsInternalService(context.HttpContext.User))
+        {
+            return true;
+        }
+        
         var userId = context.HttpContext.User.GetUserId();
         logger.LogDebug("UserId: {UserId}", userId);
         
@@ -74,5 +81,18 @@ public class AppOwnerActionFilter(AppDbContext appDbContext,
         
         return false;
     }
+    
+    /// <summary>
+    /// e.g. deployment worker
+    /// </summary>
+    private bool IsInternalService(ClaimsPrincipal user)
+    {
+        var sub = user.FindFirst("sub")?.Value;
 
+        if (string.IsNullOrEmpty(sub)) return true;
+        
+        if (!sub.StartsWith("auth0|")) return true;
+
+        return false;
+    }
 }

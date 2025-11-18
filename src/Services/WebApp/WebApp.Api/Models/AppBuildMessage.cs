@@ -24,4 +24,7 @@ public class AppBuildMessage
     
     [JsonPropertyName("build_command")]
     public string BuildCommand { get; set; }
+    
+    [JsonPropertyName("artifacts_upload_url")]
+    public string ArtifactsUploadUrl { get; set; }
 }

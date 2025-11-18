@@ -16,6 +16,7 @@ public class WebhooksController(GitHubAppService gitHubAppService,
     AppDbContext appDbContext, 
     RabbitMqService rabbitMqService,
     IAppBuildPublisher publisher,
+    LinkGenerator linkGenerator,
     ILogger<WebhooksController> logger) : ControllerBase
 {
     [HttpPost("github/postreceive")]
@@ -72,7 +73,8 @@ public class WebhooksController(GitHubAppService gitHubAppService,
                 Directory = config["Directory"],
                 OutDir = config["OutDir"],
                 InstallCommand = config["InstallCommand"],
-                BuildCommand = config["BuildCommand"]
+                BuildCommand = config["BuildCommand"],
+                ArtifactsUploadUrl = linkGenerator.GetUriByAction(HttpContext, nameof(ObjectsController.PutObject), ObjectsController.Controller, new { appId = app.Id })!
             };
 
             rabbitMqService.PublishMessage(JsonSerializer.Serialize(message));

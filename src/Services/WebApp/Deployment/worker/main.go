@@ -176,14 +176,13 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, l *flue
 	shouldUploadArtifacts := os.Getenv("UPLOAD_ARTIFACTS") != "false"
 
 	if shouldUploadArtifacts {
-		RecursiveUpload(jobOut)
+		UploadArtifacts(jobOut, buildMsg.ArtifactsUploadUrl)
 	}
 
 	// publish completion message
 	publishJobStatusChangedEventMessage(ch, JobStatusChangedEventMessage{
-		JobId:              buildMsg.JobId,
-		Status:             Done,
-		ArtifactsKeyPrefix: "output/" + buildMsg.JobId,
+		JobId:  buildMsg.JobId,
+		Status: Done,
 	})
 
 	log.Printf("Finished processing. Id: %s", buildMsg.JobId)
@@ -198,17 +197,17 @@ func getOutputBaseDir() string {
 	return dir
 }
 
-func RecursiveUpload(dir string) {
+func UploadArtifacts(dir string, uploadUrl string) {
 	files, err := os.ReadDir(dir)
 	failOnError(err, "Failed to read directory")
 	access_token := GetAccessToken()
 
 	for _, file := range files {
 		if file.IsDir() {
-			RecursiveUpload(dir + "/" + file.Name())
+			UploadArtifacts(dir+"/"+file.Name(), uploadUrl)
 		} else {
 			key := dir + "/" + file.Name()
-			url := os.Getenv("UPLOAD_URL") + "/" + key
+			url := uploadUrl + "/" + key
 			fileName := file.Name()
 			log.Printf("Uploading file: %s", key)
 			err = UploadFile(url, key, fileName, access_token)
