@@ -22,22 +22,22 @@ public class StaticFilesMiddleware2(RequestDelegate next)
                 path = "/index.html";
             }
 
-            var obj = await appDbContext.Objects.SingleOrDefaultAsync(obj => obj.Type == ObjectType.BuildArtifact &&
-                                                                             obj.AppId == app.Id &&
-                                                                             obj.Key == path);
-            if (obj is not null)
-            {
-                var provider = new FileExtensionContentTypeProvider();
-                if (!provider.TryGetContentType(obj.Key, out var contentType))
-                {
-                    contentType = "application/octet-stream";
-                }
+            // var obj = await appDbContext.Objects.SingleOrDefaultAsync(obj => obj.Type == ObjectType.BuildArtifact &&
+            //                                                                  obj.AppId == app.Id &&
+            //                                                                  obj.Key == path);
+            // if (obj is not null)
+            // {
+            //     var provider = new FileExtensionContentTypeProvider();
+            //     if (!provider.TryGetContentType(obj.Key, out var contentType))
+            //     {
+            //         contentType = "application/octet-stream";
+            //     }
 
-                context.Response.ContentType = contentType;
-                await context.Response.Body.WriteAsync(obj.Content);
-                await context.Response.CompleteAsync();
-                return;
-            }
+            //     context.Response.ContentType = contentType;
+            //     await context.Response.Body.WriteAsync(obj.Content);
+            //     await context.Response.CompleteAsync();
+            //     return;
+            // }
         }
         
         await next(context);

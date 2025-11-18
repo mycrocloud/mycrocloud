@@ -25,6 +25,8 @@ public class BuildsController(
     IAppBuildPublisher publisher,
     ILogger<BuildsController> logger): BaseController
 {
+    public const string Controller = "Builds";
+
     [HttpGet]
     public async Task<IActionResult> List(int appId)
     {
@@ -216,5 +218,40 @@ public class BuildsController(
         }
 
         return new EmptyResult();
+    }
+
+    [HttpPut("{*key}")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> PutObject(int appId, string key, [FromForm]IFormFile file)
+    {
+        await using var stream = file.OpenReadStream();
+        await using var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream);
+        var content = memoryStream.ToArray();
+        
+        // var app = await appDbContext.Apps
+        //         .Include(app => app.Objects)
+        //         .SingleAsync(app => app.Id == appId)
+        //     ;
+
+        // var obj = app.Objects.SingleOrDefault(obj => obj.Key == key);
+
+        // if (obj is null)
+        // {
+        //     obj = new Domain.Entities.Object
+        //     {
+        //         Key = key,
+        //         Content = content
+        //     };
+        //     app.Objects.Add(obj);
+        // }
+        // else
+        // {
+        //     obj.Content = content;
+        // }
+
+        // await appDbContext.SaveChangesAsync();
+
+        return Ok();
     }
 }

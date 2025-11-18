@@ -25,8 +25,6 @@ public class App : BaseEntity
     public ICollection<TextStorage> TextStorages { get; set; }
     public ICollection<Variable> Variables { get; set; }
 
-    public ICollection<Object> Objects { get; set; }
-
     public AppLink Link { get; set; }
 
     public AppBuildConfigs BuildConfigs { get; set; }

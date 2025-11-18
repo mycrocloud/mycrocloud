@@ -52,7 +52,7 @@ public class WebhooksController(GitHubAppService gitHubAppService,
         
         foreach (var app in apps)
         {
-            var job = new AppBuildJob
+            var build = new AppBuildJob
             {
                 Id = Guid.NewGuid(),
                 App = app,
@@ -61,13 +61,13 @@ public class WebhooksController(GitHubAppService gitHubAppService,
                 CreatedAt = DateTime.UtcNow
             };
 
-            appDbContext.AppBuildJobs.Add(job);
+            appDbContext.AppBuildJobs.Add(build);
 
             var config = app.BuildConfigs;
             
             var message = new AppBuildMessage
             {
-                BuildId = job.Id.ToString(),
+                BuildId = build.Id.ToString(),
                 RepoFullName = repoFullName,
                 CloneUrl = cloneUrl.Replace("https://", "https://x-access-token:" + token + "@"),
                 Branch = config.Branch,
@@ -75,12 +75,12 @@ public class WebhooksController(GitHubAppService gitHubAppService,
                 OutDir = config.OutDir,
                 InstallCommand = config.InstallCommand,
                 BuildCommand = config.BuildCommand,
-                ArtifactsUploadUrl = linkGenerator.GetUriByAction(HttpContext, nameof(ObjectsController.PutObject), ObjectsController.Controller, new { appId = app.Id })!
+                ArtifactsUploadUrl = linkGenerator.GetUriByAction(HttpContext, nameof(BuildsController.PutObject), BuildsController.Controller, new { appId = app.Id, buildId = build.Id })!
             };
 
             rabbitMqService.PublishMessage(JsonSerializer.Serialize(message));
             
-            publisher.Publish(app.Id, job.Status);
+            publisher.Publish(app.Id, build.Status);
 
             await appDbContext.SaveChangesAsync();
         }

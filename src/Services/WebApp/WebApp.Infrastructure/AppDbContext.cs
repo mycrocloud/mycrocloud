@@ -1,8 +1,6 @@
-﻿using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using WebApp.Domain.Entities;
 using File = WebApp.Domain.Entities.File;
-using Object = WebApp.Domain.Entities.Object;
 
 namespace WebApp.Infrastructure;
 
@@ -21,7 +19,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     public DbSet<Variable> Variables { get; set; }
     public DbSet<TextStorage> TextStorages { get; set; }
-    public DbSet<Object> Objects { get; set; }
 
     //TODO: re-design?
     public DbSet<UserToken> UserTokens { get; set; }
@@ -130,14 +127,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<Variable>()
             .HasOne(v => v.App)
             .WithMany(a => a.Variables)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<Object>()
-            .HasKey(bo => new { bo.AppId, bo.Key });
-
-        modelBuilder.Entity<Object>()
-            .HasOne(s => s.App)
-            .WithMany(a => a.Objects)
             .OnDelete(DeleteBehavior.Cascade);
 
         //TODO: re-design?
