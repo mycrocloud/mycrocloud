@@ -23,7 +23,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     //TODO: re-design?
     public DbSet<UserToken> UserTokens { get; set; }
 
-    public DbSet<AppBuildJob> AppBuildJobs { get; set; }
+    public DbSet<AppBuild> AppBuildJobs { get; set; }
+
+    public DbSet<AppBuildArtifact> AppBuildArtifacts { get; set; }
 
     public DbSet<SlackInstallation> SlackInstallations { get; set; }
 
@@ -133,9 +135,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<UserToken>()
             .HasKey(t => new { t.UserId, t.Provider, t.Purpose });
 
-        modelBuilder.Entity<AppBuildJob>()
+        modelBuilder.Entity<AppBuild>()
             .Property(p => p.Name)
             .HasDefaultValue("build");
+
+        modelBuilder.Entity<AppBuildArtifact>()
+            .HasKey(a => new { a.BuildId, a.Path });
 
         modelBuilder.Entity<SlackInstallation>()
             .HasIndex(x => x.TeamId)

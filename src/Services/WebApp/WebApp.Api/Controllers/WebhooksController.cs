@@ -52,7 +52,7 @@ public class WebhooksController(GitHubAppService gitHubAppService,
         
         foreach (var app in apps)
         {
-            var build = new AppBuildJob
+            var build = new AppBuild
             {
                 Id = Guid.NewGuid(),
                 App = app,
