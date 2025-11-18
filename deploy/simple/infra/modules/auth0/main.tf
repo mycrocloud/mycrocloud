@@ -53,3 +53,9 @@ resource "auth0_client" "build_worker" {
   name = "Build Worker"
   app_type = "non_interactive"
 }
+
+resource "auth0_client_grant" "build_worker_api_grant" {
+  client_id = auth0_client.build_worker.client_id
+  audience = auth0_resource_server.api.identifier
+  scopes = []
+}
