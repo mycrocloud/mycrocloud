@@ -64,32 +64,18 @@ public class BuildsController(
     }
 
     [HttpPost("config")]
-    [NonAction] //NOTE: not ready for production
-    public async Task<IActionResult> Config(int appId, BuildConfigRequest buildConfigRequest)
+    public async Task<IActionResult> Config(int appId, BuildConfigRequest config)
     {
         var app = await appDbContext.Apps
-            .Include(a => a.Integration)
             .SingleAsync(a => a.Id == appId);
 
-        if (app.Integration is null)
+        app.BuildConfigs = new AppBuildConfigs()
         {
-            app.Integration = new AppIntegration
-            {
-                //Branch = buildConfigRequest.Branch,
-                Directory = buildConfigRequest.Directory,
-                BuildCommand = buildConfigRequest.BuildCommand,
-                OutDir = buildConfigRequest.OutDir,
-                CreatedAt = DateTime.UtcNow
-            };
-        }
-        else
-        {
-            app.Integration.Branch = buildConfigRequest.Branch;
-            app.Integration.Directory = buildConfigRequest.Directory;
-            app.Integration.BuildCommand = buildConfigRequest.BuildCommand;
-            app.Integration.OutDir = buildConfigRequest.OutDir;
-            app.Integration.UpdatedAt = DateTime.UtcNow;
-        }
+            Branch = config.Branch,
+            Directory = config.Directory,
+            BuildCommand = config.BuildCommand,
+            OutDir = config.OutDir,
+        };
 
         await appDbContext.SaveChangesAsync();
         
@@ -100,23 +86,9 @@ public class BuildsController(
     public async Task<IActionResult> Config(int appId)
     {
         var app = await appDbContext.Apps
-            .Include(a => a.Integration)
             .SingleAsync(a => a.Id == appId);
 
-        if (app.Integration is null)
-        {
-            return NotFound();
-        }
-
-        return Ok(new
-        {
-            app.Integration.Branch,
-            app.Integration.Directory,
-            app.Integration.BuildCommand,
-            app.Integration.OutDir,
-            app.Integration.CreatedAt,
-            app.Integration.UpdatedAt
-        });
+        return Ok(app.BuildConfigs);
     }
 
     [HttpGet("{jobId:guid}/logs")]

@@ -176,14 +176,13 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, l *flue
 	shouldUploadArtifacts := os.Getenv("UPLOAD_ARTIFACTS") != "false"
 
 	if shouldUploadArtifacts {
-		RecursiveUpload(jobOut)
+		UploadArtifacts(jobOut, strings.TrimSuffix(buildMsg.ArtifactsUploadUrl, "/"))
 	}
 
 	// publish completion message
 	publishJobStatusChangedEventMessage(ch, JobStatusChangedEventMessage{
-		JobId:              buildMsg.JobId,
-		Status:             Done,
-		ArtifactsKeyPrefix: "output/" + buildMsg.JobId,
+		JobId:  buildMsg.JobId,
+		Status: Done,
 	})
 
 	log.Printf("Finished processing. Id: %s", buildMsg.JobId)
@@ -198,57 +197,97 @@ func getOutputBaseDir() string {
 	return dir
 }
 
-func RecursiveUpload(dir string) {
+// UploadArtifacts uploads all files from a directory (recursively) to the upload URL
+func UploadArtifacts(dir string, uploadUrl string) error {
+	accessToken := GetAccessToken()
+	log.Printf("Uploading %s to %s", dir, uploadUrl)
+	return uploadArtifactsRecursive(dir, uploadUrl, "", accessToken)
+}
+
+func uploadArtifactsRecursive(dir string, uploadUrl string, prefix string, accessToken string) error {
 	files, err := os.ReadDir(dir)
-	failOnError(err, "Failed to read directory")
-	access_token := GetAccessToken()
+	if err != nil {
+		return err
+	}
 
 	for _, file := range files {
+		fullPath := filepath.Join(dir, file.Name())
+		key := filepath.Join(prefix, file.Name())
+
 		if file.IsDir() {
-			RecursiveUpload(dir + "/" + file.Name())
+			// Recursively upload subdirectory
+			err = uploadArtifactsRecursive(fullPath, uploadUrl, key, accessToken)
+			if err != nil {
+				return err
+			}
 		} else {
-			key := dir + "/" + file.Name()
-			url := os.Getenv("UPLOAD_URL") + "/" + key
-			fileName := file.Name()
-			log.Printf("Uploading file: %s", key)
-			err = UploadFile(url, key, fileName, access_token)
-			failOnError(err, "Failed to upload file")
+			// Upload file with preserved path structure
+			url := uploadUrl + "/" + key
+			log.Printf("Uploading: %s -> %s", fullPath, url)
+
+			err = UploadFile(url, fullPath, accessToken)
+			if err != nil {
+				return err
+			}
 		}
 	}
+
+	return nil
 }
 
 // UploadFile uploads a file to the specified URL with the given field name
-func UploadFile(url string, fp string, fieldName string, access_token string) error {
-	method := "PUT"
+func UploadFile(url string, fp string, accessToken string) error {
+	file, err := os.Open(fp)
+	if err != nil {
+		return fmt.Errorf("failed to open file: %w", err)
+	}
+	defer file.Close()
 
 	payload := &bytes.Buffer{}
 	writer := multipart.NewWriter(payload)
-	file, errFile1 := os.Open(fp)
-	failOnError(errFile1, "Failed to open file")
 
-	defer file.Close()
-	part1,
-		errFile1 := writer.CreateFormFile("file", filepath.Base(fp))
-	failOnError(errFile1, "Failed to create form file")
-	_, errFile1 = io.Copy(part1, file)
-	failOnError(errFile1, "Failed to copy file content")
-	err := writer.Close()
-	failOnError(err, "Failed to close writer")
+	part, err := writer.CreateFormFile("file", filepath.Base(fp))
+	if err != nil {
+		return fmt.Errorf("failed to create form file: %w", err)
+	}
 
-	client := &http.Client{}
-	req, err := http.NewRequest(method, url, payload)
+	if _, err := io.Copy(part, file); err != nil {
+		return fmt.Errorf("failed to copy file content: %w", err)
+	}
 
-	failOnError(err, "Failed to create request")
-	req.Header.Add("Authorization", "Bearer "+access_token)
+	if err := writer.Close(); err != nil {
+		return fmt.Errorf("failed to close writer: %w", err)
+	}
 
+	req, err := http.NewRequest("PUT", url, payload)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("X-Upload-Source", "build-service") // Mark as internal upload
+
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+
 	res, err := client.Do(req)
-	failOnError(err, "Failed to send request")
+	if err != nil {
+		return fmt.Errorf("failed to send request: %w", err)
+	}
 	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
-	failOnError(err, "Failed to read response body")
-	fmt.Println(string(body))
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		return fmt.Errorf("upload failed with status %d: %s", res.StatusCode, string(body))
+	}
+
+	log.Printf("Upload successful: %s - Response: %s", url, string(body))
 	return nil
 }
 

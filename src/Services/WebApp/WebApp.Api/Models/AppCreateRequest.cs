@@ -22,6 +22,14 @@ public class AppCreateRequest
             Status = AppStatus.Active,
             CorsSettings = CorsSettings.Default,
             Settings = AppSettings.Default,
+            BuildConfigs = new AppBuildConfigs
+            {
+                Branch = null,
+                Directory = ".",
+                OutDir = "dist",
+                InstallCommand = "npm install",
+                BuildCommand = "npm run build"
+            },
             Version = Guid.NewGuid()
         };
     }

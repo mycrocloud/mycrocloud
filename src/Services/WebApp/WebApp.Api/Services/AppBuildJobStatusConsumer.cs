@@ -1,10 +1,8 @@
 using System.Text;
 using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using WebApp.Api.Models;
-using WebApp.Domain.Entities;
 using WebApp.Infrastructure;
 
 namespace WebApp.Api.Services;
@@ -106,55 +104,13 @@ public class AppBuildJobStatusConsumer(
             return;
         }
 
-        await using var trans = await appDbContext.Database.BeginTransactionAsync();
-        try
-        {
-            // Update the job status
-            logger.LogInformation("Updating job status. Id: {Id}, Status: {Status}, Prefix: {Prefix}", message.JobId,
-                message.Status, message.ArtifactsKeyPrefix);
+        // Update the job status
+        logger.LogInformation("Updating job status. Id: {Id}, Status: {Status}", message.JobId, message.Status);
 
-            job.Status = "done";
-            job.UpdatedAt = DateTime.UtcNow;
-            await appDbContext.SaveChangesAsync();
-
-            // Remove existing build artifacts
-            logger.LogInformation("Removing existing build artifacts. AppId: {AppId}", app.Id);
-            var deleteObjectCount = await appDbContext.Objects
-                .Where(obj => obj.AppId == app.Id && obj.Type == ObjectType.BuildArtifact)
-                .ExecuteDeleteAsync();
-
-            await appDbContext.SaveChangesAsync();
-            logger.LogInformation("Deleted {Count} build artifacts", deleteObjectCount);
-
-            // Insert new build artifacts
-            logger.LogInformation("Inserting new build artifacts. AppId: {AppId}", app.Id);
-            var objects = appDbContext.Objects
-                .Where(obj => obj.AppId == 0 && obj.Key.StartsWith(message.ArtifactsKeyPrefix!))
-                .ToList();
-
-            var newObjects = new List<Domain.Entities.Object>();
-            foreach (var obj in objects)
-            {
-                newObjects.Add(new Domain.Entities.Object
-                {
-                    AppId = app.Id,
-                    Key = obj.Key[message.ArtifactsKeyPrefix!.Length..],
-                    Content = obj.Content,
-                    Type = ObjectType.BuildArtifact,
-                    CreatedAt = DateTime.UtcNow,
-                });
-            }
-
-            await appDbContext.Objects.AddRangeAsync(newObjects);
-            await appDbContext.SaveChangesAsync();
-
-            await trans.CommitAsync();
-        }
-        catch (Exception)
-        {
-            await trans.RollbackAsync();
-            throw;
-        }
+        job.Status = "done";
+        job.UpdatedAt = DateTime.UtcNow;
+        
+        await appDbContext.SaveChangesAsync();
     }
 
     private async Task ProcessStartedMessage(JobStatusChangedEventMessage message)

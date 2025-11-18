@@ -9,6 +9,8 @@ namespace WebApp.Api.Controllers;
 [TypeFilter<AppOwnerActionFilter>(Arguments = ["appId"])]
 public class ObjectsController(AppDbContext appDbContext) : BaseController
 {
+    public const string Controller = "Objects";
+    
     [HttpGet]
     public async Task<IActionResult> ListObjects(int appId, string? prefix = null)
     {

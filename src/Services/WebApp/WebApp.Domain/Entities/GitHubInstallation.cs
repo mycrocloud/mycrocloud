@@ -10,7 +10,7 @@ public class GitHubInstallation : BaseEntity
     public string UserId { get; set; }
     
     // Navigation properties
-    public ICollection<AppIntegration> AppIntegrations { get; set; }
+    public ICollection<AppLink> AppLinks { get; set; }
 }
 
 public enum GitHubAccountType

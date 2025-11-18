@@ -18,7 +18,4 @@ public class JobStatusChangedEventMessage
     
     [JsonPropertyName("container_id")]
     public string? ContainerId { get; set; }
-    
-    [JsonPropertyName("artifacts_key_prefix")]
-    public string? ArtifactsKeyPrefix { get; set; }
 }

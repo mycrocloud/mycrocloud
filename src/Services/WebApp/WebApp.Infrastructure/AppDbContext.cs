@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using WebApp.Domain.Entities;
 using File = WebApp.Domain.Entities.File;
 using Object = WebApp.Domain.Entities.Object;
@@ -38,24 +39,27 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<App>()
-            .OwnsOne(app => app.Settings, ownedNavigationBuilder => { ownedNavigationBuilder.ToJson(); });
+            .OwnsOne(app => app.Settings, builder => { builder.ToJson(); });
         modelBuilder.Entity<App>()
-            .OwnsOne(app => app.CorsSettings, ownedNavigationBuilder => { ownedNavigationBuilder.ToJson(); });
+            .OwnsOne(app => app.CorsSettings, builder => { builder.ToJson(); });
         
         modelBuilder.Entity<App>()
-            .HasOne(a => a.Integration)
+            .HasOne(a => a.Link)
             .WithOne()
-            .HasForeignKey<AppIntegration>(ai => ai.AppId)
+            .HasForeignKey<AppLink>(ai => ai.AppId)
             .IsRequired(false);
 
-        modelBuilder.Entity<AppIntegration>()
+        modelBuilder.Entity<AppLink>()
             .HasKey(ai => ai.AppId);
         
-        modelBuilder.Entity<AppIntegration>()
+        modelBuilder.Entity<AppLink>()
             .HasOne(ai => ai.GitHubInstallation)
-            .WithMany(g => g.AppIntegrations)
+            .WithMany(g => g.AppLinks)
             .HasForeignKey(ai => ai.InstallationId)
             .IsRequired(false);
+
+        modelBuilder.Entity<App>()
+            .OwnsOne(app => app.BuildConfigs, builder => { builder.ToJson(); });
 
         modelBuilder.Entity<Route>().OwnsMany(route => route.ResponseHeaders,
             ownedNavigationBuilder => { ownedNavigationBuilder.ToJson(); });
@@ -170,7 +174,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .IsUnique();
 
         modelBuilder.Entity<GitHubInstallation>()
-            .HasIndex(x => x.UserId); // no need to be unique because one user can have multiple installations e.g for orgs
+            .HasIndex(x => x.UserId); // no need to be unique because one user can have multiple installations e.g. for orgs
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
