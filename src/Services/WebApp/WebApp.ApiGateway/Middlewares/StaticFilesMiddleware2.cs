@@ -13,31 +13,33 @@ public class StaticFilesMiddleware2(RequestDelegate next)
     {
         var app = (App)context.Items["_App"]!;
 
-        if (HttpMethods.IsGet(context.Request.Method))
+        if (app.LatestBuildId is not null && HttpMethods.IsGet(context.Request.Method))
         {
             var path = context.Request.Path.Value;
+            
             //todo: read from app settings
-            if (path == "/")
+            if (string.IsNullOrEmpty(path) || path == "/")
             {
                 path = "/index.html";
             }
 
-            // var obj = await appDbContext.Objects.SingleOrDefaultAsync(obj => obj.Type == ObjectType.BuildArtifact &&
-            //                                                                  obj.AppId == app.Id &&
-            //                                                                  obj.Key == path);
-            // if (obj is not null)
-            // {
-            //     var provider = new FileExtensionContentTypeProvider();
-            //     if (!provider.TryGetContentType(obj.Key, out var contentType))
-            //     {
-            //         contentType = "application/octet-stream";
-            //     }
+            var file = await appDbContext.AppBuildArtifacts.SingleOrDefaultAsync(obj =>
+                obj.BuildId == app.LatestBuildId &&
+                obj.Path == path);
+            
+            if (file is not null)
+            {
+                var provider = new FileExtensionContentTypeProvider();
+                if (!provider.TryGetContentType(file.Path, out var contentType))
+                {
+                    contentType = "application/octet-stream";
+                }
 
-            //     context.Response.ContentType = contentType;
-            //     await context.Response.Body.WriteAsync(obj.Content);
-            //     await context.Response.CompleteAsync();
-            //     return;
-            // }
+                context.Response.ContentType = contentType;
+                await context.Response.Body.WriteAsync(file.Content);
+                await context.Response.CompleteAsync();
+                return;
+            }
         }
         
         await next(context);
