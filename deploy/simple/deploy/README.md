@@ -1,4 +1,4 @@
-- Install Ansible
+- Install Ansible (run once)
 ```
 python3 -m venv .venv && \
 source .venv/bin/activate && \
@@ -6,6 +6,9 @@ pip install --upgrade pip && \
 pip install ansible boto3 botocore
 ```
 
+```
+source .venv/bin/activate
+```
 - (macOS only) Set environment variable to avoid fork safety issues
 ```
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
