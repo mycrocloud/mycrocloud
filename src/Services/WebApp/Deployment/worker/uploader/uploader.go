@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -14,6 +15,7 @@ import (
 
 // UploadFile uploads a single file to: PUT {fullURL} with form field "file"
 func UploadFile(url string, filePath string, accessToken string) error {
+	log.Printf("UploadFile. %s -> %s", filePath, url)
 	f, err := os.Open(filePath)
 	if err != nil {
 		return fmt.Errorf("open: %w", err)
