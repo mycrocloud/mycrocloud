@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace WebApp.Api.Models;
+namespace WebApp.Domain.Messages;
 
 public class AppBuildMessage
 {

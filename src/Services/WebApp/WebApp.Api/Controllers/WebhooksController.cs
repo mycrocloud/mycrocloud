@@ -6,6 +6,7 @@ using WebApp.Api.Filters;
 using WebApp.Api.Models;
 using WebApp.Api.Services;
 using WebApp.Domain.Entities;
+using WebApp.Domain.Messages;
 using WebApp.Infrastructure;
 
 namespace WebApp.Api.Controllers;
