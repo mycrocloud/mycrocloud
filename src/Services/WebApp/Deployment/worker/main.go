@@ -1,15 +1,12 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
-	"io"
 	"log"
-	"mime/multipart"
+	"mycrocloud/worker/api_client"
 	"mycrocloud/worker/logutil"
-	"net/http"
+	"mycrocloud/worker/uploader"
 	"os"
 	"path/filepath"
 	"strings"
@@ -173,7 +170,21 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, l *flue
 	shouldUploadArtifacts := os.Getenv("UPLOAD_ARTIFACTS") != "false"
 
 	if shouldUploadArtifacts {
-		UploadArtifacts(jobOut, strings.TrimSuffix(buildMsg.ArtifactsUploadUrl, "/"))
+		cfg := api_client.Config{
+			Domain:       os.Getenv("AUTH0_DOMAIN"),
+			ClientID:     os.Getenv("AUTH0_CLIENT_ID"),
+			ClientSecret: os.Getenv("AUTH0_SECRET"),
+			Audience:     os.Getenv("AUTH0_AUDIENCE"),
+		}
+
+		token, err := api_client.GetAccessToken(cfg)
+		if err != nil {
+			log.Fatalf("Failed to get token: %v", err)
+		}
+
+		if err := uploader.UploadArtifacts(strings.TrimSuffix(buildMsg.ArtifactsUploadUrl, "/"), jobOut, token); err != nil {
+			log.Fatalf("Upload failed: %v", err)
+		}
 	}
 
 	// publish completion message
@@ -194,137 +205,9 @@ func getOutputBaseDir() string {
 	return dir
 }
 
-// UploadArtifacts uploads all files from a directory (recursively) to the upload URL
-func UploadArtifacts(dir string, uploadUrl string) error {
-	accessToken := GetAccessToken()
-	log.Printf("Uploading %s to %s", dir, uploadUrl)
-	return uploadArtifactsRecursive(dir, uploadUrl, "", accessToken)
-}
-
-func uploadArtifactsRecursive(dir string, uploadUrl string, prefix string, accessToken string) error {
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		return err
-	}
-
-	for _, file := range files {
-		fullPath := filepath.Join(dir, file.Name())
-		key := filepath.Join(prefix, file.Name())
-
-		if file.IsDir() {
-			// Recursively upload subdirectory
-			err = uploadArtifactsRecursive(fullPath, uploadUrl, key, accessToken)
-			if err != nil {
-				return err
-			}
-		} else {
-			// Upload file with preserved path structure
-			url := uploadUrl + "/" + key
-			log.Printf("Uploading: %s -> %s", fullPath, url)
-
-			err = UploadFile(url, fullPath, accessToken)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-// UploadFile uploads a file to the specified URL with the given field name
-func UploadFile(url string, fp string, accessToken string) error {
-	file, err := os.Open(fp)
-	if err != nil {
-		return fmt.Errorf("failed to open file: %w", err)
-	}
-	defer file.Close()
-
-	payload := &bytes.Buffer{}
-	writer := multipart.NewWriter(payload)
-
-	part, err := writer.CreateFormFile("file", filepath.Base(fp))
-	if err != nil {
-		return fmt.Errorf("failed to create form file: %w", err)
-	}
-
-	if _, err := io.Copy(part, file); err != nil {
-		return fmt.Errorf("failed to copy file content: %w", err)
-	}
-
-	if err := writer.Close(); err != nil {
-		return fmt.Errorf("failed to close writer: %w", err)
-	}
-
-	req, err := http.NewRequest("PUT", url, payload)
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.Header.Set("Authorization", "Bearer "+accessToken)
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-
-	res, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to send request: %w", err)
-	}
-	defer res.Body.Close()
-
-	body, err := io.ReadAll(res.Body)
-	if err != nil {
-		return fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		return fmt.Errorf("upload failed with status %d: %s", res.StatusCode, string(body))
-	}
-
-	log.Printf("Upload successful: %s - Response: %s", url, string(body))
-	return nil
-}
-
-func GetAccessToken() string {
-	url := os.Getenv("AUTH0_DOMAIN") + "/oauth/token"
-	data := struct {
-		ClientId     string `json:"client_id"`
-		ClientSecret string `json:"client_secret"`
-		Audience     string `json:"audience"`
-		GrantType    string `json:"grant_type"`
-	}{
-		ClientId:     os.Getenv("AUTH0_CLIENT_ID"),
-		ClientSecret: os.Getenv("AUTH0_SECRET"),
-		Audience:     os.Getenv("AUTH0_AUDIENCE"),
-		GrantType:    "client_credentials",
-	}
-	jsonString, err := json.Marshal(data)
-	failOnError(err, "Failed to marshal data")
-	payload := strings.NewReader(string(jsonString))
-	req, _ := http.NewRequest("POST", url, payload)
-	req.Header.Add("content-type", "application/json")
-
-	res, err := http.DefaultClient.Do(req)
-	failOnError(err, "Failed to send request")
-
-	defer res.Body.Close()
-	body, err := io.ReadAll(res.Body)
-	failOnError(err, "Failed to read response body")
-
-	var response struct {
-		AccessToken string `json:"access_token"`
-		TokenType   string `json:"token_type"`
-	}
-	err = json.Unmarshal(body, &response)
-	failOnError(err, "Failed to unmarshal response")
-	return response.AccessToken
-}
-
 func main() {
 	if err := godotenv.Load(".conf"); err != nil && !os.IsNotExist(err) {
-		failOnError(err, "Failed to load .env file")
+		failOnError(err, "Failed to load .conf file")
 	}
 
 	inContainer := isInContainer()
