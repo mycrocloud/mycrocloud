@@ -182,7 +182,7 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, l *flue
 			log.Fatalf("Failed to get token: %v", err)
 		}
 
-		if err := uploader.UploadArtifacts(strings.TrimSuffix(buildMsg.ArtifactsUploadUrl, "/"), jobOut, token); err != nil {
+		if err := uploader.UploadArtifacts(strings.TrimSuffix(buildMsg.ArtifactsUploadUrl, "/"), jobOut, token, "deployment-worker"); err != nil {
 			log.Fatalf("Upload failed: %v", err)
 		}
 	}
