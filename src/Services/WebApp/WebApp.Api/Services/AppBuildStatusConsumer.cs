@@ -2,7 +2,7 @@ using System.Text;
 using System.Text.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using WebApp.Api.Models;
+using WebApp.Domain.Messages;
 using WebApp.Infrastructure;
 
 namespace WebApp.Api.Services;
@@ -50,7 +50,7 @@ public class AppBuildStatusConsumer(
 
     private async Task ProcessMessage(string message)
     {
-        var eventMessage = JsonSerializer.Deserialize<BuildStatusChangedEventMessage>(message)!;
+        var eventMessage = JsonSerializer.Deserialize<BuildStatusChangedMessage>(message)!;
 
         switch (eventMessage.Status)
         {
@@ -70,7 +70,7 @@ public class AppBuildStatusConsumer(
         await PostProcess(eventMessage);
     }
 
-    private async Task ProcessFailedMessage(BuildStatusChangedEventMessage message)
+    private async Task ProcessFailedMessage(BuildStatusChangedMessage message)
     {
         using var scope = serviceProvider.CreateScope();
         var appDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -86,7 +86,7 @@ public class AppBuildStatusConsumer(
         await appDbContext.SaveChangesAsync();
     }
 
-    private async Task ProcessDoneMessage(BuildStatusChangedEventMessage message)
+    private async Task ProcessDoneMessage(BuildStatusChangedMessage message)
     {
         using var scope = serviceProvider.CreateScope();
         var appDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -115,7 +115,7 @@ public class AppBuildStatusConsumer(
         await appDbContext.SaveChangesAsync();
     }
 
-    private async Task ProcessStartedMessage(BuildStatusChangedEventMessage message)
+    private async Task ProcessStartedMessage(BuildStatusChangedMessage message)
     {
         using var scope = serviceProvider.CreateScope();
         var appDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -132,7 +132,7 @@ public class AppBuildStatusConsumer(
         await appDbContext.SaveChangesAsync();
     }
 
-    private async Task PostProcess(BuildStatusChangedEventMessage message)
+    private async Task PostProcess(BuildStatusChangedMessage message)
     {
         using var scope = serviceProvider.CreateScope();
         var appDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();

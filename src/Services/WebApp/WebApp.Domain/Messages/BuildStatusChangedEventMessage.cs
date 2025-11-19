@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace WebApp.Api.Models;
+namespace WebApp.Domain.Messages;
 
 public enum BuildStatus
 {
@@ -9,7 +9,7 @@ public enum BuildStatus
     Failed,
 }
 
-public class BuildStatusChangedEventMessage
+public class BuildStatusChangedMessage
 {
     [JsonPropertyName("build_id")]
     public required Guid BuildId { get; set; }

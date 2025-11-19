@@ -1,9 +1,9 @@
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using WebApp.Domain.Messages;
 using WebApp.Infrastructure;
 
 namespace WebApp.SlackIntegrationApi.Services;
@@ -49,62 +49,43 @@ public class SubscribeService(IServiceScopeFactory serviceScopeFactory, IConfigu
     {
         logger.LogInformation(message);
         
-        var eventMessage = JsonSerializer.Deserialize<JobStatusChangedEventMessage>(message)!;
+        var eventMessage = JsonSerializer.Deserialize<BuildStatusChangedMessage>(message)!;
         
         using var scope = serviceScopeFactory.CreateScope();
         
         var slackAppService = scope.ServiceProvider.GetRequiredService<SlackAppService>();
         var appDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        logger.LogInformation("Processing job status change for Job ID: {JobId}, Status: {Status}", eventMessage.JobId, eventMessage.Status);
-        var buildJob = await appDbContext.AppBuildJobs
+        var build = await appDbContext.AppBuildJobs
             .Include(b => b.App)
-            .SingleAsync(b => b.Id == eventMessage.JobId);
+            .SingleAsync(b => b.Id == eventMessage.BuildId);
         
-        var subscriptions = await appDbContext.SlackAppSubscriptions.Where(s => s.AppId == buildJob.AppId)
+        var subscriptions = await appDbContext.SlackAppSubscriptions.Where(s => s.AppId == build.AppId)
             .ToListAsync();
 
         var emoji = eventMessage.Status switch
         {
-            JobStatus.Started => "🟡",
-            JobStatus.Done => "✅",
-            JobStatus.Failed => "❌",
+            BuildStatus.Started => "🟡",
+            BuildStatus.Done => "✅",
+            BuildStatus.Failed => "❌",
             _ => "ℹ️"
         };
 
         var text = eventMessage.Status switch
         {
-            JobStatus.Started => $"{emoji} *Build started* for *{buildJob.App.Name}* (Job #{buildJob.Id})",
-            JobStatus.Done => $"{emoji} *Build completed successfully!* 🎉\nApp: *{buildJob.App.Name}*  \nJob ID: `{buildJob.Id}`",
-            JobStatus.Failed => $"{emoji} *Build failed!* 💥\nApp: *{buildJob.App.Name}*  \nJob ID: `{buildJob.Id}`",
-            _ => $"{emoji} Build status changed for *{buildJob.App.Name}*"
+            BuildStatus.Started => $"{emoji} *Build started* for *{build.App.Name}* (Build #{build.Id})",
+            BuildStatus.Done => $"{emoji} *Build completed successfully!* 🎉\nApp: *{build.App.Name}*  \nBuild Id: `{build.Id}`",
+            BuildStatus.Failed => $"{emoji} *Build failed!* 💥\nApp: *{build.App.Name}*  \nBuild Id: `{build.Id}`",
+            _ => $"{emoji} Build status changed for *{build.App.Name}*"
         };
 
         var webOrigin = configuration.GetValue<string>("WebOrigin")!.TrimEnd('/');
-        var detailsUrl = $"{webOrigin}/apps/{buildJob.AppId}/integrations/builds/{buildJob.Id}";
+        var detailsUrl = $"{webOrigin}/apps/{build.AppId}/integrations/builds/{build.Id}";
         text += $"\n<{detailsUrl}|View build details>";
 
         foreach (var subscription in subscriptions)
         {
             await slackAppService.SendSlackMessage(subscription.TeamId, subscription.ChannelId, text);
         }
-
-        logger.LogInformation("Processed job status change for Job ID: {JobId}", eventMessage.JobId);
     }
-}
-
-public class JobStatusChangedEventMessage
-{
-    [JsonPropertyName("job_id")]
-    public required Guid JobId { get; set; }
-    
-    [JsonPropertyName("status")]
-    public JobStatus Status { get; set; }
-}
-
-public enum JobStatus
-{
-    Started,
-    Done,
-    Failed,
 }
