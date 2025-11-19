@@ -20,12 +20,12 @@ public class StaticFilesMiddleware2(RequestDelegate next)
             //todo: read from app settings
             if (string.IsNullOrEmpty(path) || path == "/")
             {
-                path = "/index.html";
+                path = "index.html";
             }
 
-            var file = await appDbContext.AppBuildArtifacts.SingleOrDefaultAsync(obj =>
-                obj.BuildId == app.LatestBuildId &&
-                obj.Path == path);
+            var file = await appDbContext.AppBuildArtifacts.SingleOrDefaultAsync(f =>
+                f.BuildId == app.LatestBuildId &&
+                f.Path == path);
             
             if (file is not null)
             {
