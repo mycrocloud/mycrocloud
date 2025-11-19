@@ -227,32 +227,32 @@ public class BuildsController(
     [DisableRequestSizeLimit]
     [DisableAppOwnerActionFilter]
     [Authorize(Policy = "M2M", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-    public async Task<IActionResult> PutObject(int appId, Guid buildId, string key, [FromForm]IFormFile ffile)
+    public async Task<IActionResult> PutObject(int appId, Guid buildId, string key, [FromForm]IFormFile file)
     {
         var build = await appDbContext.AppBuildJobs
             .SingleAsync(b => b.AppId == appId && b.Id == buildId);
 
-        await using var stream = ffile.OpenReadStream();
+        await using var stream = file.OpenReadStream();
         await using var memoryStream = new MemoryStream();
         await stream.CopyToAsync(memoryStream);
         var content = memoryStream.ToArray();
     
-        var file = appDbContext.AppBuildArtifacts.SingleOrDefault(f => f.BuildId == build.Id && f.Path == key);
+        var dbFile = appDbContext.AppBuildArtifacts.SingleOrDefault(f => f.BuildId == build.Id && f.Path == key);
 
-        if (file is null)
+        if (dbFile is null)
         {
-            file = new AppBuildArtifact
+            dbFile = new AppBuildArtifact
             {
                 Build = build,
                 Path = key,
                 Content = content
             };
             
-            appDbContext.AppBuildArtifacts.Add(file);
+            appDbContext.AppBuildArtifacts.Add(dbFile);
         }
         else
         {
-            file.Content = content;
+            dbFile.Content = content;
         }
 
         await appDbContext.SaveChangesAsync();
