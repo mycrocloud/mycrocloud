@@ -19,11 +19,8 @@ export default function AppLayout() {
     part3 == "authentications" && part4 === "schemes";
   const isMatchAuthenticationSettings =
     part3 == "authentications" && part4 === "settings";
-  // const isMatchAuthenticationApiKeys =
-  //   part3 == "authentications" && part4 === "apikeys";
 
   const isMatchFileStorages = part3 == "storages" && part4 === "files";
-  const isMatchObjectsStorages = part3 == "storages" && part4 === "objects";
   const isMatchTextStorages = part3 == "storages" && part4 === "textstorages";
   const isMatchVariables = part3 == "storages" && part4 === "variables";
 
@@ -78,14 +75,6 @@ export default function AppLayout() {
                 >
                   Schemes
                 </Link>
-                {/* <Link
-                  to="authentications/apikeys"
-                  className={`text-xs ${
-                    isMatchAuthenticationApiKeys ? "text-primary" : ""
-                  }`}
-                >
-                  API Keys
-                </Link> */}
                 <Link
                   to="authentications/settings"
                   className={`text-xs ${
@@ -106,14 +95,6 @@ export default function AppLayout() {
                   }`}
                 >
                   Files
-                </Link>
-                <Link
-                  to="storages/objects"
-                  className={`text-xs ${
-                    isMatchObjectsStorages ? "text-primary" : ""
-                  }`}
-                >
-                  Objects
                 </Link>
                 <Link
                   to="storages/textstorages"
