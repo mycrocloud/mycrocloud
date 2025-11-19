@@ -33,9 +33,6 @@ func failOnError(err error, msg string) {
 // MaxConcurrentJobs is the limit for concurrent jobs being processed
 const MaxConcurrentJobs = 3
 
-var LogIndex = os.Getenv("ES_BUILD_LOGS_INDEX")
-var ES_VERSION = os.Getenv("ES_VERSION")
-
 func logFluentd(l *fluent.Fluent, msg string, jobID string) {
 	data := map[string]string{
 		"log":      msg,
@@ -266,8 +263,6 @@ func UploadFile(url string, fp string, accessToken string) error {
 
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
-	req.Header.Set("X-Upload-Source", "build-service") // Mark as internal upload
-	req.Header.Set("X-Grant-Type", "client-credentials")
 
 	client := &http.Client{
 		Timeout: 30 * time.Second,
