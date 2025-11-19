@@ -173,7 +173,7 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, l *flue
 	shouldUploadArtifacts := os.Getenv("UPLOAD_ARTIFACTS") != "false"
 
 	if shouldUploadArtifacts {
-		UploadArtifacts(jobOut, strings.TrimSuffix(buildMsg.ArtifactsUploadUrl, "/"), buildMsg.BuildId)
+		UploadArtifacts(jobOut, strings.TrimSuffix(buildMsg.ArtifactsUploadUrl, "/"))
 	}
 
 	// publish completion message
@@ -195,10 +195,10 @@ func getOutputBaseDir() string {
 }
 
 // UploadArtifacts uploads all files from a directory (recursively) to the upload URL
-func UploadArtifacts(dir string, uploadUrl string, buildId string) error {
+func UploadArtifacts(dir string, uploadUrl string) error {
 	accessToken := GetAccessToken()
 	log.Printf("Uploading %s to %s", dir, uploadUrl)
-	return uploadArtifactsRecursive(dir, uploadUrl, buildId, accessToken)
+	return uploadArtifactsRecursive(dir, uploadUrl, "", accessToken)
 }
 
 func uploadArtifactsRecursive(dir string, uploadUrl string, prefix string, accessToken string) error {
@@ -323,7 +323,7 @@ func GetAccessToken() string {
 }
 
 func main() {
-	if err := godotenv.Load(); err != nil && !os.IsNotExist(err) {
+	if err := godotenv.Load(".conf"); err != nil && !os.IsNotExist(err) {
 		failOnError(err, "Failed to load .env file")
 	}
 
