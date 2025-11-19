@@ -2,52 +2,43 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build_api",
-            "command": "dotnet",
-            "type": "process",
+            "label": "Run Dev Tunnel",
+            "type": "shell",
+            "command": "sh",
             "args": [
-                "build",
-                "${workspaceFolder}/src/MockServer.ApiGateway/MockServer.ApiGateway.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
+                "${workspaceFolder}/.cloudflared/run-tunnel.sh"
             ],
-            "problemMatcher": "$msCompile"
+            "problemMatcher": [],
+            "isBackground": true,
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new",
+                "clear": false
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
         },
         {
-            "label": "build_web",
-            "command": "dotnet",
-            "type": "process",
+            "label": "Push sample-react-app repo",
+            "type": "shell",
+            "command": "sh",
             "args": [
-                "build",
-                "${workspaceFolder}/src/MockServer.Web/MockServer.Web.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
+                "${workspaceFolder}/../sample-react-app/push.sh"
             ],
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "label": "publish",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "publish",
-                "${workspaceFolder}/MockServer.Api/MockServer.Api.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
-            ],
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "label": "watch",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "watch",
-                "run",
-                "--project",
-                "${workspaceFolder}/MockServer.Api/MockServer.Api.csproj"
-            ],
-            "problemMatcher": "$msCompile"
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "clear": false
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/../sample-react-app"
+            }
         }
     ]
 }
