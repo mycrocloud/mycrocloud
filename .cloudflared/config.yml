@@ -1,0 +1,17 @@
+tunnel: office-dev-mycrocloud
+credentials-file: ~/.cloudflared/1c3264f3-8e66-4802-9bae-30e6c72548b8.json
+
+ingress:
+  - hostname: office-web.smashup1805.dpdns.org
+    service: http://mycrocloud.local:5173
+
+  - hostname: office-api.smashup1805.dpdns.org
+    service: http://localhost:8080
+
+  - hostname: office-apigateway.smashup1805.dpdns.org
+    service: http://localhost:8081
+
+  - hostname: office-slack-integration-api.smashup1805.dpdns.org
+    service: http://localhost:8082
+
+  - service: http_status:404
