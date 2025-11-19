@@ -1,5 +1,7 @@
 using System.Text;
 using Elastic.Clients.Elasticsearch;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Nest;
@@ -25,6 +27,8 @@ public class BuildsController(
     IAppBuildPublisher publisher,
     ILogger<BuildsController> logger): BaseController
 {
+    public const string Controller = "Builds";
+
     [HttpGet]
     public async Task<IActionResult> List(int appId)
     {
@@ -216,5 +220,43 @@ public class BuildsController(
         }
 
         return new EmptyResult();
+    }
+
+    [HttpPut("{buildId:guid}/artifacts/{*key}")]
+    [Consumes("multipart/form-data")]
+    [DisableRequestSizeLimit]
+    [DisableAppOwnerActionFilter]
+    [Authorize(Policy = "M2M", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    public async Task<IActionResult> PutObject(int appId, Guid buildId, string key, [FromForm]IFormFile ffile)
+    {
+        var build = await appDbContext.AppBuildJobs
+            .SingleAsync(b => b.AppId == appId && b.Id == buildId);
+
+        await using var stream = ffile.OpenReadStream();
+        await using var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream);
+        var content = memoryStream.ToArray();
+    
+        var file = appDbContext.AppBuildArtifacts.SingleOrDefault(f => f.BuildId == build.Id && f.Path == key);
+
+        if (file is null)
+        {
+            file = new AppBuildArtifact
+            {
+                Build = build,
+                Path = key,
+                Content = content
+            };
+            
+            appDbContext.AppBuildArtifacts.Add(file);
+        }
+        else
+        {
+            file.Content = content;
+        }
+
+        await appDbContext.SaveChangesAsync();
+
+        return Ok();
     }
 }

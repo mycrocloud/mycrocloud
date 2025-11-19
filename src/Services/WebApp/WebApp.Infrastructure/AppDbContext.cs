@@ -1,8 +1,6 @@
-﻿using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using WebApp.Domain.Entities;
 using File = WebApp.Domain.Entities.File;
-using Object = WebApp.Domain.Entities.Object;
 
 namespace WebApp.Infrastructure;
 
@@ -21,12 +19,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     public DbSet<Variable> Variables { get; set; }
     public DbSet<TextStorage> TextStorages { get; set; }
-    public DbSet<Object> Objects { get; set; }
 
     //TODO: re-design?
     public DbSet<UserToken> UserTokens { get; set; }
 
-    public DbSet<AppBuildJob> AppBuildJobs { get; set; }
+    public DbSet<AppBuild> AppBuildJobs { get; set; }
+
+    public DbSet<AppBuildArtifact> AppBuildArtifacts { get; set; }
 
     public DbSet<SlackInstallation> SlackInstallations { get; set; }
 
@@ -132,21 +131,30 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .WithMany(a => a.Variables)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder.Entity<Object>()
-            .HasKey(bo => new { bo.AppId, bo.Key });
-
-        modelBuilder.Entity<Object>()
-            .HasOne(s => s.App)
-            .WithMany(a => a.Objects)
-            .OnDelete(DeleteBehavior.Cascade);
-
         //TODO: re-design?
         modelBuilder.Entity<UserToken>()
             .HasKey(t => new { t.UserId, t.Provider, t.Purpose });
 
-        modelBuilder.Entity<AppBuildJob>()
+        modelBuilder.Entity<App>(entity =>
+        {            
+            entity.HasMany(e => e.AppBuilds)
+                  .WithOne(e => e.App)
+                  .HasForeignKey(e => e.AppId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            
+            entity.HasOne(e => e.LatestBuild)
+                  .WithOne()
+                  .HasForeignKey<App>(e => e.LatestBuildId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<AppBuild>()
             .Property(p => p.Name)
             .HasDefaultValue("build");
+
+        modelBuilder.Entity<AppBuildArtifact>()
+            .HasKey(a => new { a.BuildId, a.Path });
 
         modelBuilder.Entity<SlackInstallation>()
             .HasIndex(x => x.TeamId)

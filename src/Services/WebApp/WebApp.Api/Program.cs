@@ -72,12 +72,19 @@ builder.Services.AddAuthentication("MultiAuthSchemes")
     .AddPolicyScheme("MultiAuthSchemes", displayName: null, options =>
     {
         //TODO: re-think
-        options.ForwardDefaultSelector = ctx => ctx.Request.Host.Host.StartsWith("api") && ctx.Request.Headers["X-Grant-Type"] != "client-credentials"
+        options.ForwardDefaultSelector = ctx => ctx.Request.Host.Host.StartsWith("api")
             ? ApiTokenDefaults.AuthenticationScheme
             : JwtBearerDefaults.AuthenticationScheme;
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("M2M", policy =>
+    {
+        policy.RequireClaim("gty", "client-credentials");
+    });
+});
+
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
@@ -89,7 +96,7 @@ builder.Services.AddScoped<IRouteService, RouteService>();
 builder.Services.AddScoped<ILogRepository, LogRepository>();
 builder.Services.AddSingleton<RabbitMqService>();
 builder.Services.AddHttpClient();
-builder.Services.AddHostedService<AppBuildJobStatusConsumer>();
+builder.Services.AddHostedService<AppBuildStatusConsumer>();
 builder.Services.AddSingleton<IAppBuildPublisher, InMemoryAppBuildPublisher>();
 
 builder.Services.AddKeyedSingleton("AppBuildLogs_ES7", (_, _) =>

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using WebApp.Infrastructure;
@@ -12,9 +13,11 @@ using WebApp.Infrastructure;
 namespace WebApp.Migrations.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251118134418_DropObjects")]
+    partial class DropObjects
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -74,9 +77,6 @@ namespace WebApp.Migrations.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("LatestBuildId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Name")
                         .HasColumnType("text");
 
@@ -95,13 +95,10 @@ namespace WebApp.Migrations.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LatestBuildId")
-                        .IsUnique();
-
                     b.ToTable("Apps");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.AppBuild", b =>
+            modelBuilder.Entity("WebApp.Domain.Entities.AppBuildJob", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -127,41 +124,11 @@ namespace WebApp.Migrations.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
 
                     b.HasIndex("AppId");
 
                     b.ToTable("AppBuildJobs");
-                });
-
-            modelBuilder.Entity("WebApp.Domain.Entities.AppBuildArtifact", b =>
-                {
-                    b.Property<Guid>("BuildId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Path")
-                        .HasColumnType("text");
-
-                    b.Property<byte[]>("Content")
-                        .HasColumnType("bytea");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("Version")
-                        .IsConcurrencyToken()
-                        .HasColumnType("uuid");
-
-                    b.HasKey("BuildId", "Path");
-
-                    b.ToTable("AppBuildArtifacts");
                 });
 
             modelBuilder.Entity("WebApp.Domain.Entities.AppLink", b =>
@@ -780,11 +747,6 @@ namespace WebApp.Migrations.Migrations
 
             modelBuilder.Entity("WebApp.Domain.Entities.App", b =>
                 {
-                    b.HasOne("WebApp.Domain.Entities.AppBuild", "LatestBuild")
-                        .WithOne()
-                        .HasForeignKey("WebApp.Domain.Entities.App", "LatestBuildId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.OwnsOne("WebApp.Domain.Entities.AppBuildConfigs", "BuildConfigs", b1 =>
                         {
                             b1.Property<int>("AppId")
@@ -879,31 +841,18 @@ namespace WebApp.Migrations.Migrations
 
                     b.Navigation("CorsSettings");
 
-                    b.Navigation("LatestBuild");
-
                     b.Navigation("Settings");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.AppBuild", b =>
+            modelBuilder.Entity("WebApp.Domain.Entities.AppBuildJob", b =>
                 {
                     b.HasOne("WebApp.Domain.Entities.App", "App")
-                        .WithMany("AppBuilds")
+                        .WithMany()
                         .HasForeignKey("AppId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("App");
-                });
-
-            modelBuilder.Entity("WebApp.Domain.Entities.AppBuildArtifact", b =>
-                {
-                    b.HasOne("WebApp.Domain.Entities.AppBuild", "Build")
-                        .WithMany()
-                        .HasForeignKey("BuildId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Build");
                 });
 
             modelBuilder.Entity("WebApp.Domain.Entities.AppLink", b =>
@@ -1069,8 +1018,6 @@ namespace WebApp.Migrations.Migrations
             modelBuilder.Entity("WebApp.Domain.Entities.App", b =>
                 {
                     b.Navigation("ApiKeys");
-
-                    b.Navigation("AppBuilds");
 
                     b.Navigation("AuthenticationSchemes");
 

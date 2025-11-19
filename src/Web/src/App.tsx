@@ -36,8 +36,6 @@ import {
 
 import { FileList } from "./pages/storages/files";
 
-import { ObjectList } from "./pages/storages/Objects";
-
 import About from "./pages/About";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ApiKeyCreateUpdate, ApiKeyList } from "./pages/authentications/apikey";
@@ -124,9 +122,6 @@ function App() {
                       path=":storageId/logon"
                       Component={LogonTextStorage}
                     />
-                  </Route>
-                  <Route path="objects">
-                    <Route index Component={ObjectList} />
                   </Route>
                   <Route path="variables">
                     <Route index Component={VariableList} />

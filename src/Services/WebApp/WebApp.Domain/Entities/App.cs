@@ -25,11 +25,14 @@ public class App : BaseEntity
     public ICollection<TextStorage> TextStorages { get; set; }
     public ICollection<Variable> Variables { get; set; }
 
-    public ICollection<Object> Objects { get; set; }
-
     public AppLink Link { get; set; }
 
     public AppBuildConfigs BuildConfigs { get; set; }
+
+    public ICollection<AppBuild> AppBuilds { get; set; } = [];
+    public AppBuild LatestBuild { get; set; }
+
+    public Guid? LatestBuildId { get; set; }
 }
 
 public class AppLink : BaseEntity
