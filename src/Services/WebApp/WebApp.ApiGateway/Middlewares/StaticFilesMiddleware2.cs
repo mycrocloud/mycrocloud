@@ -20,8 +20,10 @@ public class StaticFilesMiddleware2(RequestDelegate next)
             //todo: read from app settings
             if (string.IsNullOrEmpty(path) || path == "/")
             {
-                path = "index.html";
+                path = "/index.html";
             }
+            
+            path = path.TrimStart('/'); // Note: Temp fix
 
             var file = await appDbContext.AppBuildArtifacts.SingleOrDefaultAsync(f =>
                 f.BuildId == app.LatestBuildId &&
