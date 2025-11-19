@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using WebApp.Infrastructure;
@@ -12,6 +11,16 @@ public class AppOwnerActionFilter(AppDbContext appDbContext,
 {
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
+        var hasDisableAttr = context.ActionDescriptor.EndpointMetadata
+            .OfType<DisableAppOwnerActionFilterAttribute>()
+            .Any();
+
+        if (hasDisableAttr)
+        {
+            await next();
+            return;
+        }
+        
         if (!await DoWork(context))
         {
             // short-circuit
@@ -27,12 +36,6 @@ public class AppOwnerActionFilter(AppDbContext appDbContext,
         if (context.HttpContext.User.Identity is null || !context.HttpContext.User.Identity.IsAuthenticated)
         {
             logger.LogDebug("User is not authenticated");
-            return true;
-        }
-        
-        if (IsInternalService(context.HttpContext.User))
-        {
-            logger.LogDebug("Is internal service call");
             return true;
         }
         
@@ -82,14 +85,9 @@ public class AppOwnerActionFilter(AppDbContext appDbContext,
         
         return false;
     }
-    
-    /// <summary>
-    /// e.g. deployment worker
-    /// </summary>
-    private bool IsInternalService(ClaimsPrincipal user)
-    {
-        var gty = user.FindFirst("gty")?.Value;
+}
 
-        return gty == "client-credentials";
-    }
+[AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]
+public class DisableAppOwnerActionFilterAttribute : Attribute
+{
 }

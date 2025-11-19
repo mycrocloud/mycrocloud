@@ -1,5 +1,7 @@
 using System.Text;
 using Elastic.Clients.Elasticsearch;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Nest;
@@ -223,7 +225,8 @@ public class BuildsController(
     [HttpPut("{buildId:guid}/artifacts/{*key}")]
     [Consumes("multipart/form-data")]
     [DisableRequestSizeLimit]
-    //[Authorize("M2M")]
+    [DisableAppOwnerActionFilter]
+    [Authorize(Policy = "M2M", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public async Task<IActionResult> PutObject(int appId, Guid buildId, string key, [FromForm]IFormFile ffile)
     {
         var build = await appDbContext.AppBuildJobs
@@ -244,6 +247,8 @@ public class BuildsController(
                 Path = key,
                 Content = content
             };
+            
+            appDbContext.AppBuildArtifacts.Add(file);
         }
         else
         {
