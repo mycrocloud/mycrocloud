@@ -1,5 +1,4 @@
 ﻿using Jint;
-using WebApp.FunctionShared;
 using WebApp.Infrastructure;
 
 namespace WebApp.ApiGateway.Middlewares;

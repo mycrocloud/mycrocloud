@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Cors.Infrastructure;
-using WebApp.FunctionShared;
+using WebApp.ApiGateway.Models;
 
 namespace WebApp.ApiGateway;
 
