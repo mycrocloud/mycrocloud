@@ -23,4 +23,22 @@ public static class HttpRequestExtensions
             Body = await new StreamReader(request.Body).ReadToEndAsync(),
         };
     }
+    public static string? Evaluate(this HttpRequest request, string expression)
+    {
+        var parts = expression.Split(':', 2);
+        if (parts.Length != 2) return null;
+
+        var source = parts[0];
+        var key = parts[1];
+
+        if (source.Equals("Header", StringComparison.OrdinalIgnoreCase))
+        {
+            if (request.Headers.TryGetValue(key, out var value))
+            {
+                return value.ToString();
+            }
+        }
+
+        return null;
+    }
 }
