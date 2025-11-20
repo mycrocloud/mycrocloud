@@ -1,4 +1,5 @@
 using Docker.DotNet;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using WebApp.Domain.Entities;
 using WebApp.Domain.Repositories;
@@ -49,6 +50,27 @@ builder.Services.AddSingleton(_ =>
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
+
+if (!app.Environment.IsDevelopment())
+{
+    var options = new ForwardedHeadersOptions
+    {
+        ForwardedHeaders = 
+            ForwardedHeaders.XForwardedFor | 
+            ForwardedHeaders.XForwardedHost |
+            ForwardedHeaders.XForwardedProto
+    };
+    
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+    
+    options.KnownNetworks.Add(app.Configuration["Proxy:Subnet"]!.ParseCidr());
+    
+    options.ForwardLimit = null;    //TODO: what is this?
+    options.RequireHeaderSymmetry = false; //TODO: what is this?
+    
+    app.UseForwardedHeaders(options);
+}
 app.UseRouting();
 app.UseHttpLogging();
 app.UseWhen(context => context.Request.Host.Host == builder.Configuration["Host"], config =>
