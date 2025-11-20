@@ -35,7 +35,7 @@ public class LoggingMiddleware(RequestDelegate next)
                 AdditionalLogMessage = functionExecutionResult?.AdditionalLogMessage,
                 FunctionExecutionEnvironment = functionExecutionEnvironment,
                 FunctionExecutionDuration = functionExecutionResult?.Duration,
-                RemoteAddress = context.Request.Headers[configuration["RemoteAddressHeader"]!].ToString(),
+                RemoteAddress = context.Connection.RemoteIpAddress?.ToString(),
                 RequestContentLength = context.Request.ContentLength,
                 RequestContentType = context.Request.ContentType,
                 RequestCookie = JsonSerializer.Serialize(context.Request.Cookies.ToDictionary()),

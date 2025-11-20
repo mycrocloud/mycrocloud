@@ -71,5 +71,13 @@ services:
   web-editor:
     image: ghcr.io/mycrocloud/mycrocloud-web-editor:main
 
+networks:
+  default:
+    name: mycrocloud
+    ipam:
+      config:
+        - subnet: 172.18.0.0/16 
+
+
 volumes:
   seq-data:
