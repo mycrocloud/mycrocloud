@@ -1,7 +1,4 @@
-﻿using Microsoft.AspNetCore.Cors.Infrastructure;
-using WebApp.FunctionShared;
-
-namespace WebApp.ApiGateway;
+﻿namespace WebApp.ApiGateway;
 
 public static class HttpResponseExtensions
 {
