@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
+using WebApp.ApiGateway.Models;
 using WebApp.Domain.Entities;
-using WebApp.Domain.Enums;
 using WebApp.Domain.Repositories;
 
 namespace WebApp.ApiGateway.Middlewares;
@@ -31,7 +31,7 @@ public class LoggingMiddleware(RequestDelegate next)
                 Method = context.Request.Method,
                 Path = context.Request.Path + context.Request.QueryString,
                 StatusCode = context.Response.StatusCode,
-                AdditionalLogMessage = functionExecutionResult?.AdditionalLogMessage,
+                AdditionalLogMessage = functionExecutionResult?.Log,
                 FunctionExecutionEnvironment = functionExecutionEnvironment,
                 FunctionExecutionDuration = functionExecutionResult?.Duration,
                 RemoteAddress = context.Connection.RemoteIpAddress?.ToString(),
@@ -43,15 +43,6 @@ public class LoggingMiddleware(RequestDelegate next)
                     : null,
                 RequestHeaders = JsonSerializer.Serialize(context.Request.Headers.ToDictionary()),
             });
-
-            if (functionExecutionResult?.Exception is { } e)
-            {
-                if (e is TimeoutException && route is not null)
-                {
-                    route.Status = RouteStatus.Blocked;
-                    await routeRepository.Update(route.Id, route);
-                }
-            }
         }
     }
 }

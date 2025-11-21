@@ -49,7 +49,7 @@ public class AuthenticationMiddleware(RequestDelegate next, ILogger<Authenticati
             return;
         }
         var cachedOpenIdConnectionSigningKeys = context.RequestServices.GetService<ICachedOpenIdConnectionSigningKeys>()!;
-        var signingKeys = await cachedOpenIdConnectionSigningKeys.Get(scheme.OpenIdConnectAuthority);
+        var signingKeys = await cachedOpenIdConnectionSigningKeys.Get(scheme.OpenIdConnectAuthority.TrimEnd('/'));
         if (!ValidateToken(token, scheme.OpenIdConnectAuthority,
                 scheme.OpenIdConnectAudience,
                 signingKeys, out var jwt))

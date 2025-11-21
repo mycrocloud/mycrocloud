@@ -37,7 +37,6 @@ builder.Services.AddStackExchangeRedisCache(options =>
 });
 builder.Services.AddSingleton<ICachedOpenIdConnectionSigningKeys, CachedOpenIdConnectionSigningKeys>();
 
-builder.Services.AddKeyedSingleton("InProcessFunctionExecutionManager", new ConcurrencyJobManager(100));
 builder.Services.AddKeyedSingleton("DockerContainerFunctionExecutionManager", new ConcurrencyJobManager(100));
 builder.Services.AddSingleton(_ =>
 {

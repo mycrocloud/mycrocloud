@@ -75,6 +75,11 @@ public class VariablesController(AppDbContext appDbContext) : BaseController
 
 public class CreateUpdateVariableRequest
 {
+    // if (string.IsNullOrEmpty(key)) continue;
+    // if (key.StartsWith("#")) continue;
+    // if (!System.Text.RegularExpressions.Regex.IsMatch(key, @"^[A-Za-z_][A-Za-z0-9_]*$"))
+    //     continue;
+    
     public string Name { get; set; }
     public string? StringValue { get; set; }
     

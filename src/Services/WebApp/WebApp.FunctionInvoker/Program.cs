@@ -1,22 +1,36 @@
 ﻿using System.Diagnostics;
 using System.Text.Json;
 using WebApp.FunctionInvoker;
-using FunctionSharedConstants = WebApp.FunctionInvoker.Constants;
 
-var runtime = JsonSerializer.Deserialize<Runtime>(File.ReadAllText(Path.Combine("data", FunctionSharedConstants.RuntimeFilePath)))!;
+var request = JsonSerializer.Deserialize<Request>(File.ReadAllText("data/request.json"))!;
 
-var request = JsonSerializer.Deserialize<Request>(File.ReadAllText(Path.Combine("data", FunctionSharedConstants.RequestFilePath)))!;
+var handler = File.ReadAllText("data/handler.js");
 
-var handler = File.ReadAllText(Path.Combine("data", FunctionSharedConstants.HandlerFilePath));
-
-var executor = new JintExecutor(runtime);
+var logger = new SafeLogger();
+var executor = new JintExecutor(logger);
+executor.Initialize();
 
 var startingTimestamp = Stopwatch.GetTimestamp();
-Result result;
+var result = new Result();
 TimeSpan duration;
+
 try
 {
-    result = executor.Execute(handler, request);
+    var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+    try
+    {
+        var task = Task.Run(() => executor.Execute(handler, request), cts.Token);
+        task.Wait(cts.Token);
+        result = task.Result;
+    }
+    catch (OperationCanceledException)
+    {
+        logger.Log("Execution timed out.");
+    }
+    catch (Exception ex)
+    {
+        logger.Log("Execution error: " + ex.Message);
+    }
 }
 finally
 {
@@ -27,4 +41,5 @@ result.Duration = duration;
 
 var resultJson = JsonSerializer.Serialize(result);
 
-await File.WriteAllTextAsync(Path.Combine("data", "result.json"), resultJson);
+logger.FlushToFile("data/log");
+await File.WriteAllTextAsync("data/result.json", resultJson);

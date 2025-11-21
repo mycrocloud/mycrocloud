@@ -1,24 +1,54 @@
+using System.Collections;
 using System.Globalization;
 using Jint;
 using Jint.Native;
 
 namespace WebApp.FunctionInvoker;
 
-public class JintExecutor
+public class JintExecutor(SafeLogger logger)
 {
-    private readonly Engine _engine;
+    private readonly Engine _engine = new();
 
-    public JintExecutor(Runtime runtime)
+    private readonly List<string> _reservedEnv = [];
+
+    public void Initialize()
     {
-        _engine = new Engine();
+        // Log
+        _engine.SetValue("console", new
+        {
+            log = new Action<object?>(logger.Log),
+            info = new Action<object?>(logger.Log),
+            warn = new Action<object?>(logger.Log),
+            error = new Action<object?>(logger.Log)
+        });
         
-        Initialize(runtime);
-    }
+        // Env
+        var env = new Dictionary<string, string>();
+        
+        foreach (DictionaryEntry de in Environment.GetEnvironmentVariables())
+        {
+            if (_reservedEnv.Contains(de.Key.ToString()!))
+            {
+                // ignore system reserved env
+                continue;
+            }
+            
+            env[de.Key.ToString()!] = de.Value?.ToString() ?? "";
+        }
+        
+        _engine.SetValue("env", env);
+        
+        // Scripts
+        var scripts = Directory.GetFiles("scripts")
+            .OrderBy(f => f)
+            .ToList();
 
-    private void Initialize(Runtime runtime)
-    {
-        _engine.SetEnvironmentVariables(runtime.Env);
-        _engine.SetHooks(runtime);
+        foreach (var script in scripts)
+        {
+            Console.WriteLine($"Loading script: {script}");
+            var code = File.ReadAllText(script);
+            _engine.Execute(code);
+        }
     }
 
     public Result Execute(string handler, Request request)

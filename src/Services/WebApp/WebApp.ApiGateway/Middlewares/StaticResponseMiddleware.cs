@@ -1,12 +1,14 @@
-﻿using Jint;
+﻿using WebApp.Domain.Entities;
+using WebApp.Domain.Repositories;
 using WebApp.Infrastructure;
 
 namespace WebApp.ApiGateway.Middlewares;
 
 public class StaticResponseMiddleware(RequestDelegate next)
 {
-    public async Task InvokeAsync(HttpContext context, AppDbContext dbContext, Scripts scripts)
+    public async Task InvokeAsync(HttpContext context, AppDbContext dbContext, Scripts scripts, IAppRepository appRepository, IConfiguration configuration)
     {
+        var app = (App)context.Items["_App"]!;
         var route = (Route)context.Items["_Route"]!;
         
         context.Response.StatusCode = route.ResponseStatusCode ??
@@ -20,14 +22,21 @@ public class StaticResponseMiddleware(RequestDelegate next)
         var body = route.Response;
         if (route.UseDynamicResponse)
         {
-            var engine = new Engine();
-            engine.SetRequestValue(await context.Request.Normalize());
-            body = engine
-                .SetValue("source", body)
-                .Execute(scripts.Handlebars)
-                .Execute("Handlebars.registerHelper('json', function(context) { return JSON.stringify(context); });")
-                .Evaluate("Handlebars.compile(source)({ request });")
-                .AsString();
+            var service = new Service();
+            
+            var handler = $$"""
+                            function (request) {
+                                return {
+                                    statusCode: {{route.ResponseStatusCode}},
+                                    headers: {},
+                                    body: Handlebars.compile(source)({ request });
+                                }
+                            }
+                            """;
+            
+            var result = await service.ExecuteJintInDocker(context, app, appRepository, handler, configuration);
+
+            body = result.Body;
         }
 
         await context.Response.WriteAsync(body);

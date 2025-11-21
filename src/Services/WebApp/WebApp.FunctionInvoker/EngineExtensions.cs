@@ -12,7 +12,7 @@ public static class EngineExtensions
             .SetValue("requestParams", request.Params)
             .SetValue("requestQuery", request.Query)
             .SetValue("requestHeaders", request.Headers)
-            .SetValue("bodyParser", "json")
+            .SetValue("bodyParser", "json") //TODO: make this dynamic?
             .SetValue("requestBody", request.Body)
             ;
 
@@ -33,28 +33,5 @@ public static class EngineExtensions
                             """;
 
         engine.Execute(code);
-    }
-
-    public static void SetEnvironmentVariables(this Engine engine, Dictionary<string, string> env)
-    {
-        engine.SetValue("env", env);
-    }
-
-    public static void SetHooks(this Engine engine, Runtime runtime)
-    {
-        if (runtime.Plugins.Count == 0)
-        {
-            return;
-        }
-
-        foreach (var plugin in runtime.Plugins)
-        {
-            switch (plugin)
-            {
-                case Logger.LogHookName:
-                    engine.UseConsole();
-                    break;
-            }
-        }
     }
 }

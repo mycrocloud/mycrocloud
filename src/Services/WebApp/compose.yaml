@@ -80,6 +80,14 @@ services:
       interval: 5s
       timeout: 10s
       retries: 5
+      
+  function-invoker:
+    image: mycrocloud-function-invoker
+    build:
+      context: .
+      dockerfile: WebApp.FunctionInvoker/Dockerfile
+    volumes:
+      - ./WebApp.FunctionInvoker/data:/app/data
 
 volumes:
   db_data:
