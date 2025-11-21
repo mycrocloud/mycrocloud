@@ -28,6 +28,8 @@ services:
       - OAuthApps__GitHub__ClientSecret=${OAuthApps__GitHub__ClientSecret}
     ports:
       - "8080:8080"
+    volumes:
+      - ./WebApp.Api/gha-mycrocloud.private-key.pem:/app/gha-mycrocloud.private-key.pem:ro
     depends_on:
       rabbitmq:
         condition: service_healthy
