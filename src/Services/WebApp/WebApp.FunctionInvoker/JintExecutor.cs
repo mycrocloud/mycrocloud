@@ -21,10 +21,10 @@ public class JintExecutor(SafeLogger logger)
             warn = new Action<object?>(logger.Log),
             error = new Action<object?>(logger.Log)
         });
-        
+
         // Env
         var env = new Dictionary<string, string>();
-        
+
         foreach (DictionaryEntry de in Environment.GetEnvironmentVariables())
         {
             if (_reservedEnv.Contains(de.Key.ToString()!))
@@ -32,12 +32,12 @@ public class JintExecutor(SafeLogger logger)
                 // ignore system reserved env
                 continue;
             }
-            
+
             env[de.Key.ToString()!] = de.Value?.ToString() ?? "";
         }
-        
+
         _engine.SetValue("env", env);
-        
+
         // Scripts
         var scripts = Directory.GetFiles("scripts")
             .OrderBy(f => f)
@@ -53,26 +53,52 @@ public class JintExecutor(SafeLogger logger)
 
     public Result Execute(string handler, Request request)
     {
-        _engine.SetRequestValue(request);
+        _engine
+            .SetValue("requestMethod", request.Method)
+            .SetValue("requestPath", request.Path)
+            .SetValue("requestParams", request.Params)
+            .SetValue("requestQuery", request.Query)
+            .SetValue("requestHeaders", request.Headers)
+            .SetValue("bodyParser", "json") //TODO: make this dynamic?
+            .SetValue("requestBody", request.Body)
+            ;
+
+        const string injectRequestCode =
+"""
+const request = {
+    method: requestMethod,
+    path: requestPath,
+    headers: requestHeaders,
+    query: requestQuery,
+    params: requestParams,
+};
+
+switch (bodyParser) {
+    case "json":
+    request.body = requestBody ? JSON.parse(requestBody) : null;
+    break;
+}
+""";
+        _engine.Execute(injectRequestCode);
 
         _engine.Execute(handler);
 
         var jsResult = _engine.Evaluate("(() => { return handler(request); })();");
 
-        return Map(jsResult);
+        return GetResult(jsResult);
     }
 
-    private static Result Map(JsValue jsResult)
+    private static Result GetResult(JsValue jsValue)
     {
         var result = new Result();
 
-        var statusCode = jsResult.Get("statusCode");
+        var statusCode = jsValue.Get("statusCode");
         if (statusCode.IsNumber())
         {
             result.StatusCode = (int)statusCode.AsNumber();
         }
 
-        var headers = jsResult.Get("headers");
+        var headers = jsValue.Get("headers");
         if (headers.IsObject())
         {
             var headersObject = headers.AsObject();
@@ -113,7 +139,7 @@ public class JintExecutor(SafeLogger logger)
             }
         }
 
-        var body = jsResult.Get("body");
+        var body = jsValue.Get("body");
         if (body.IsString())
         {
             result.Body = body.AsString();
