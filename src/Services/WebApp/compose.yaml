@@ -88,6 +88,12 @@ services:
       dockerfile: WebApp.FunctionInvoker/Dockerfile
     volumes:
       - ./WebApp.FunctionInvoker/data:/app/data
+    deploy: 
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 64M
+          pids: 100
 
 volumes:
   db_data:

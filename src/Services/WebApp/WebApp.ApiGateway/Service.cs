@@ -42,14 +42,17 @@ public class Service
                     HostConfig = new HostConfig
                     {
                         AutoRemove = true,
-                        Binds = [$"{hostDir}:{containerDataPath}"]
+                        Binds = [$"{hostDir}:{containerDataPath}"],
+                        Memory = 64 * 1024 * 1024, // 64 MB
+                        NanoCPUs = 250_000_000, // 0.25 CPU (NanoCPUs = 10^9 = 1 CPU)
+                        PidsLimit = 100         //  thread / process
                     },
                     Env = env
                 }, token);
 
                 await dockerClient.Containers.StartContainerAsync(container.ID, new ContainerStartParameters
                 {
-
+                    
                 }, token);
 
                 await dockerClient.Containers.WaitContainerAsync(container.ID, token);
