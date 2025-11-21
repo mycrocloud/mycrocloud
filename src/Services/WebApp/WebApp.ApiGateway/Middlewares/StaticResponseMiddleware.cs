@@ -6,40 +6,41 @@ namespace WebApp.ApiGateway.Middlewares;
 
 public class StaticResponseMiddleware(RequestDelegate next)
 {
-    public async Task InvokeAsync(HttpContext context, AppDbContext dbContext, Scripts scripts, IAppRepository appRepository, IConfiguration configuration)
+    public async Task InvokeAsync(HttpContext context, AppDbContext dbContext, IAppRepository appRepository, IConfiguration configuration)
     {
         var app = (App)context.Items["_App"]!;
         var route = (Route)context.Items["_Route"]!;
-        
-        context.Response.StatusCode = route.ResponseStatusCode ??
-                                      throw new InvalidOperationException("ResponseStatusCode is null");
-        
-        foreach (var header in route.ResponseHeaders ?? [])
+
+        if (!route.UseDynamicResponse)
         {
-            context.Response.Headers.Append(header.Name, header.Value);
-        }
-
-        var body = route.Response;
-        if (route.UseDynamicResponse)
-        {
-            var service = new Service();
+            context.Response.StatusCode = route.ResponseStatusCode ??
+                                          throw new InvalidOperationException("ResponseStatusCode is null");
+        
+            foreach (var header in route.ResponseHeaders ?? [])
+            {
+                context.Response.Headers.Append(header.Name, header.Value);
+            }
             
-            var handler = $$"""
-                            function (request) {
-                                return {
-                                    statusCode: {{route.ResponseStatusCode}},
-                                    headers: {},
-                                    body: Handlebars.compile(source)({ request });
-                                }
-                            }
-                            """;
+            await context.Response.WriteAsync(route.Response);
             
-            var result = await service.ExecuteJintInDocker(context, app, appRepository, handler, configuration);
-
-            body = result.Body;
+            return;
         }
+        
+        var service = new Service();
+        
+        const string handler = """
+                               function handler (request) {
+                                 return {
+                                     statusCode: responseStatusCode,
+                                     headers: responseHeaders,
+                                     body: Handlebars.compile(source)({ request })
+                                 }
+                               }
+                               """;
+            
+        var result = await service.ExecuteJintInDocker(context, app, appRepository, handler, configuration);
 
-        await context.Response.WriteAsync(body);
+        await context.Response.WriteFromFunctionResult(result);
     }
 }
 

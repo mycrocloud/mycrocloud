@@ -15,14 +15,7 @@ public class LoggingMiddleware(RequestDelegate next)
         if (context.Items["_App"] is App app && !context.Request.IsPreflightRequest())
         {
             var route = context.Items["_Route"] as Route;
-            var functionExecutionResult = context.Items["_FunctionExecutionResult"] as Result;
-            
-            FunctionExecutionEnvironment? functionExecutionEnvironment = null;
-            if (context.Items.TryGetValue("_FunctionExecutionEnvironment", out var value) &&
-                value is FunctionExecutionEnvironment env)
-            {
-                functionExecutionEnvironment = env;
-            }
+            var functionExecutionResult = context.Items["_FunctionExecutionResult"] as FunctionResult;
 
             await logRepository.Add(new Log
             {
@@ -32,7 +25,7 @@ public class LoggingMiddleware(RequestDelegate next)
                 Path = context.Request.Path + context.Request.QueryString,
                 StatusCode = context.Response.StatusCode,
                 AdditionalLogMessage = functionExecutionResult?.Log,
-                FunctionExecutionEnvironment = functionExecutionEnvironment,
+                FunctionExecutionEnvironment = route?.FunctionExecutionEnvironment,
                 FunctionExecutionDuration = functionExecutionResult?.Duration,
                 RemoteAddress = context.Connection.RemoteIpAddress?.ToString(),
                 RequestContentLength = context.Request.ContentLength,

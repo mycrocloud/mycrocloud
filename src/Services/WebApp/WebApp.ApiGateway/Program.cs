@@ -26,10 +26,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IAppRepository, AppRepository>();
 builder.Services.AddScoped<IRouteRepository, RouteRepository>();
 builder.Services.AddScoped<ILogRepository, LogRepository>();
-builder.Services.AddSingleton(new Scripts
-{
-    Handlebars = File.ReadAllText("Scripts/handlebars.min-v4.7.8.js"),
-});
 builder.Services.AddHttpClient("HttpDocumentRetriever");
 builder.Services.AddStackExchangeRedisCache(options =>
 {

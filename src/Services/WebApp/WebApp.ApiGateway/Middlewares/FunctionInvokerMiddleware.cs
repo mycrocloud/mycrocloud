@@ -7,13 +7,13 @@ namespace WebApp.ApiGateway.Middlewares;
 
 public class FunctionInvokerMiddleware(RequestDelegate next)
 {
-    public async Task InvokeAsync(HttpContext context, AppDbContext dbContext, Scripts scripts, IAppRepository appRepository, IConfiguration configuration)
+    public async Task InvokeAsync(HttpContext context, AppDbContext dbContext, IAppRepository appRepository, IConfiguration configuration)
     {
         var app = (App)context.Items["_App"]!;
         var route = (Route)context.Items["_Route"]!;
         var service = new Service();
 
-        Result result;
+        FunctionResult result;
         
         context.Items["_FunctionExecutionEnvironment"] = route.FunctionExecutionEnvironment;
         
@@ -31,14 +31,8 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
                 return;
         }
         
-        //Write response
-        context.Response.StatusCode = result.StatusCode ?? 200;
-        foreach (var (key, value) in result.Headers)
-        {
-            context.Response.Headers.Append(key, value);
-        }
-
-        await context.Response.WriteAsync(result.Body ?? "");
+        await context.Response.WriteFromFunctionResult(result);
+        
         context.Items["_FunctionExecutionResult"] = result;
     }
 }

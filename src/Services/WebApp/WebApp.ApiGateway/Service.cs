@@ -10,7 +10,7 @@ namespace WebApp.ApiGateway;
 
 public class Service
 {
-    public async Task<Result> ExecuteJintInDocker(HttpContext context, App app, IAppRepository appRepository, string handler, IConfiguration configuration)
+    public async Task<FunctionResult> ExecuteJintInDocker(HttpContext context, App app, IAppRepository appRepository, string handler, IConfiguration configuration)
     {
         var concurrencyJobManager = context.RequestServices.GetKeyedService<ConcurrencyJobManager>("DockerContainerFunctionExecutionManager")!;
 
@@ -24,7 +24,7 @@ public class Service
 
         await File.WriteAllTextAsync(Path.Combine(hostDir, "handler.js"), handler);
 
-        Result result;
+        FunctionResult result;
         
         try
         {
@@ -59,9 +59,9 @@ public class Service
 
                 var resultText = await File.ReadAllTextAsync(Path.Combine(hostDir, "result.json"), token);
 
-                var innerResult = JsonSerializer.Deserialize<Result>(resultText)!;
+                var innerResult = JsonSerializer.Deserialize<FunctionResult>(resultText)!;
                 
-                var logFilePath = Path.Combine(hostDir, "log.txt");
+                var logFilePath = Path.Combine(hostDir, "log");
                 
                 if (File.Exists(logFilePath))
                 {
@@ -75,7 +75,7 @@ public class Service
         }
         catch (TaskCanceledException)
         {
-            result = new Result
+            result = new FunctionResult
             {
                 StatusCode = 500,
                 Body = "Timeout",
