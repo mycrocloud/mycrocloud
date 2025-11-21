@@ -12,7 +12,7 @@ variable "client_secret" {
 }
 
 variable "web_origin" {
-  type = string
+  type = list(string)
 }
 
 variable "github_oauth_app_client_id" {

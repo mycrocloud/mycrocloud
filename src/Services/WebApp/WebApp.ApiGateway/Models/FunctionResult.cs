@@ -1,6 +1,6 @@
 namespace WebApp.ApiGateway.Models;
 
-public class Result
+public class FunctionResult
 {
     public int? StatusCode { get; set; }
     public Dictionary<string, string> Headers { get; set; } = [];
