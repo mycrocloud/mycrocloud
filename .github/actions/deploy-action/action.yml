@@ -20,6 +20,10 @@ inputs:
   service:
     description: 'Service name'
     required: true
+  
+  image:
+    description: 'Image'
+    default: ''
 
 runs:
   using: composite
@@ -34,10 +38,20 @@ runs:
       env:
         SSH_HOST: ${{ inputs.ssh-host }}
         SSH_PRIVATE_KEY: ${{ inputs.ssh-key }}
+    
+    - name: Pull image
+      shell: bash
+      if: ${{ inputs.image != '' }}
+      run: |
+        echo pulling image $IMAGE
+        docker image pull $IMAGE
 
-    # TODO: use Ansible
+      env:
+        IMAGE: ${{ inputs.image }}
+
     - name: Deploy
       shell: bash
+      if: ${{ inputs.image == '' }}
       run: |
         echo deploying $SERVICE
         ssh $SSH_USERNAME@$SSH_HOST "
