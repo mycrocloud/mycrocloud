@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(),
-      mkcert(),
+      env.VITE_DEV_HOST ? mkcert() : null,
       {
         name: "inject-config-tag",
         apply: "build",
