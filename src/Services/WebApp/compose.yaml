@@ -94,6 +94,13 @@ services:
           cpus: "0.25"
           memory: 64M
           pids: 100
+          
+  fluentd:
+    image: fluent/fluentd:v1.19.1-2.0
+    volumes:
+      - ./fluent.conf:/fluentd/etc/fluent.conf
+    ports:
+      - "24224:24224"
 
 volumes:
   db_data:

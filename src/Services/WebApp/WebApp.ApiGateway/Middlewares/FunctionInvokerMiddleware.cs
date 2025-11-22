@@ -21,7 +21,7 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
         {
             case FunctionExecutionEnvironment.JintInDocker:
             {
-                result = await service.ExecuteJintInDocker(context, app, appRepository, route.Response, configuration);
+                result = await service.ExecuteJintInDocker(context, app, appRepository, route.Response, configuration, null);
                 break;
             }
 

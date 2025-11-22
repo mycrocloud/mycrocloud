@@ -9,7 +9,15 @@ public class JintExecutor(SafeLogger logger)
 {
     private readonly Engine _engine = new();
 
-    private readonly List<string> _reservedEnv = [];
+    private readonly List<string> _reservedEnv = [
+        "HOSTNAME",
+        "HOME",
+        "DOTNET_RUNNING_IN_CONTAINER",
+        "PATH",
+        "DOTNET_VERSION",
+        "ASPNETCORE_HTTP_PORTS",
+        "APP_UID"
+    ];
 
     public void Initialize()
     {
@@ -30,9 +38,10 @@ public class JintExecutor(SafeLogger logger)
             if (_reservedEnv.Contains(de.Key.ToString()!))
             {
                 // ignore system reserved env
+                Console.WriteLine($"Environment variable '{de.Key}' is reserved.");
                 continue;
             }
-
+            Console.WriteLine($"Inject env. {de.Key} = {de.Value}");
             env[de.Key.ToString()!] = de.Value?.ToString() ?? "";
         }
 
@@ -48,6 +57,23 @@ public class JintExecutor(SafeLogger logger)
             Console.WriteLine($"Loading script: {script}");
             var code = File.ReadAllText(script);
             _engine.Execute(code);
+        }
+        
+        // String Values
+        if (Directory.Exists("data/string_values"))
+        {
+            var stringValues = Directory.GetFiles("data/string_values")
+                .OrderBy(f => f)
+                .ToList();
+        
+            foreach (var file in stringValues)
+            {
+                var name = Path.GetFileNameWithoutExtension(file);
+                var value = File.ReadAllText(file);
+                
+                Console.WriteLine($"Loading string: {name}");
+                _engine.SetValue(name, value);
+            }
         }
     }
 

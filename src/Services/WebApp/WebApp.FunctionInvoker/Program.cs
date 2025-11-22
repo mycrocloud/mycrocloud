@@ -2,7 +2,8 @@
 using System.Text.Json;
 using WebApp.FunctionInvoker;
 
-var request = JsonSerializer.Deserialize<Request>(File.ReadAllText("data/request.json"))!;
+var requestJson = File.ReadAllText("data/request.json");
+var request = JsonSerializer.Deserialize<Request>(requestJson)!;
 
 var handler = File.ReadAllText("data/handler.js");
 
@@ -35,11 +36,11 @@ try
 finally
 {
     duration = Stopwatch.GetElapsedTime(startingTimestamp);
+    logger.FlushToFile("data/log");
 }
 
 result.Duration = duration;
 
 var resultJson = JsonSerializer.Serialize(result);
 
-logger.FlushToFile("data/log");
 await File.WriteAllTextAsync("data/result.json", resultJson);

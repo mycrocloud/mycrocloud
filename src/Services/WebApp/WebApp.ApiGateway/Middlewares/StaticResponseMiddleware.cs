@@ -31,14 +31,31 @@ public class StaticResponseMiddleware(RequestDelegate next)
         const string handler = """
                                function handler (request) {
                                  return {
-                                     statusCode: responseStatusCode,
-                                     headers: responseHeaders,
-                                     body: Handlebars.compile(source)({ request })
+                                     statusCode: 200, //mc_responseStatusCode,
+                                     headers: {}, //mc_responseHeaders,
+                                     body: Handlebars.compile(mc_responseBody)({ request })
                                  }
                                }
                                """;
+
+        var stringValues = new Dictionary<string, string>
+        {
+            { "mc_responseBody", route.Response }
+        };
+
+        var numberValues = new Dictionary<string, long>
+        {
+            { "mc_responseStatusCode", route.ResponseStatusCode ?? 500 }
+        };
+
+        var dictValues = new Dictionary<string, Dictionary<string, string>>
+        {
+            {
+                "mc_responseHeaders", (route.ResponseHeaders ?? []).ToDictionary(k => k.Name, v => v.Value)
+            }
+        };
             
-        var result = await service.ExecuteJintInDocker(context, app, appRepository, handler, configuration);
+        var result = await service.ExecuteJintInDocker(context, app, appRepository, handler, configuration, stringValues);
 
         await context.Response.WriteFromFunctionResult(result);
     }
