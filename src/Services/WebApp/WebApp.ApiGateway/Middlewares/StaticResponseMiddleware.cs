@@ -1,4 +1,5 @@
-﻿using WebApp.Domain.Entities;
+﻿using System.Text.Json;
+using WebApp.Domain.Entities;
 using WebApp.Domain.Repositories;
 using WebApp.Infrastructure;
 
@@ -31,31 +32,21 @@ public class StaticResponseMiddleware(RequestDelegate next)
         const string handler = """
                                function handler (request) {
                                  return {
-                                     statusCode: 200, //mc_responseStatusCode,
-                                     headers: {}, //mc_responseHeaders,
+                                     statusCode: mc_responseStatusCode,
+                                     headers: mc_responseHeaders,
                                      body: Handlebars.compile(mc_responseBody)({ request })
                                  }
                                }
                                """;
-
-        var stringValues = new Dictionary<string, string>
+        
+        var values = new Dictionary<string, string>
         {
-            { "mc_responseBody", route.Response }
-        };
-
-        var numberValues = new Dictionary<string, long>
-        {
-            { "mc_responseStatusCode", route.ResponseStatusCode ?? 500 }
-        };
-
-        var dictValues = new Dictionary<string, Dictionary<string, string>>
-        {
-            {
-                "mc_responseHeaders", (route.ResponseHeaders ?? []).ToDictionary(k => k.Name, v => v.Value)
-            }
+            { "mc_responseStatusCode:number", (route.ResponseStatusCode ?? 500).ToString() },
+            { "mc_responseHeaders:json", JsonSerializer.Serialize((route.ResponseHeaders ?? []).ToDictionary(h => h.Name, h => h.Value)) },
+            { "mc_responseBody:string", route.Response }
         };
             
-        var result = await service.ExecuteJintInDocker(context, app, appRepository, handler, configuration, stringValues);
+        var result = await service.ExecuteJintInDocker(context, app, appRepository, handler, configuration, values);
 
         await context.Response.WriteFromFunctionResult(result);
     }

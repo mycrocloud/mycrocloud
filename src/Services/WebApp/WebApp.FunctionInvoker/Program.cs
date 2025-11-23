@@ -2,25 +2,18 @@
 using System.Text.Json;
 using WebApp.FunctionInvoker;
 
-var requestJson = File.ReadAllText("data/request.json");
-var request = JsonSerializer.Deserialize<Request>(requestJson)!;
-
-var handler = File.ReadAllText("data/handler.js");
-
-var logger = new SafeLogger();
-var executor = new JintExecutor(logger);
-executor.Initialize();
-
-var startingTimestamp = Stopwatch.GetTimestamp();
 var result = new Result();
-TimeSpan duration;
-
+var logger = new SafeLogger();
+var startingTimestamp = Stopwatch.GetTimestamp();
 try
 {
+    var executor = new JintExecutor(logger);
+    executor.Initialize();
+
     var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
     try
     {
-        var task = Task.Run(() => executor.Execute(handler, request), cts.Token);
+        var task = Task.Run(() => executor.Execute(), cts.Token);
         task.Wait(cts.Token);
         result = task.Result;
     }
@@ -35,12 +28,10 @@ try
 }
 finally
 {
-    duration = Stopwatch.GetElapsedTime(startingTimestamp);
-    logger.FlushToFile("data/log");
+    result.Duration = Stopwatch.GetElapsedTime(startingTimestamp);
 }
 
-result.Duration = duration;
+logger.FlushToFile("data/log");
 
 var resultJson = JsonSerializer.Serialize(result);
-
 await File.WriteAllTextAsync("data/result.json", resultJson);

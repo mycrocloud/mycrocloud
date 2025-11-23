@@ -11,7 +11,7 @@ namespace WebApp.ApiGateway;
 public class Service
 {
     public async Task<FunctionResult> ExecuteJintInDocker(HttpContext context, App app, IAppRepository appRepository,
-        string handler, IConfiguration configuration, Dictionary<string, string>? stringValues)
+        string handler, IConfiguration configuration, Dictionary<string, string>? values)
     {
         var concurrencyJobManager = context.RequestServices.GetKeyedService<ConcurrencyJobManager>("DockerContainerFunctionExecutionManager")!;
 
@@ -25,14 +25,10 @@ public class Service
 
         await File.WriteAllTextAsync(Path.Combine(hostDir, "handler.js"), handler);
 
-        if (stringValues is not null)
+        if (values is not null)
         {
-            Directory.CreateDirectory(Path.Combine(hostDir, "string_values"));
-            
-            foreach (var kv in stringValues)
-            {
-                await File.WriteAllTextAsync(Path.Combine(hostDir, "string_values", kv.Key), kv.Value);
-            }
+            var valuesJson = JsonSerializer.Serialize(values);
+            await File.WriteAllTextAsync(Path.Combine(hostDir, "values.json"), valuesJson);
         }
 
         FunctionResult result;
@@ -46,7 +42,11 @@ public class Service
                 var vars = await appRepository.GetVariables(app.Id);
 
                 var env = vars.Select(v => $"{v.Name}={v.StringValue}").ToList();
-
+                
+                var logConfig = configuration
+                    .GetSection("DockerFunctionExecution:LogConfig")
+                    .Get<LogConfig>();
+                
                 var container = await dockerClient.Containers.CreateContainerAsync(new CreateContainerParameters
                 {
                     Image = configuration["DockerFunctionExecution:Image"],
@@ -57,14 +57,7 @@ public class Service
                         Memory = 64 * 1024 * 1024, // 64 MB
                         NanoCPUs = 250_000_000, // 0.25 CPU (NanoCPUs = 10^9 = 1 CPU)
                         PidsLimit = 100,         //  thread / process
-                        LogConfig = new LogConfig
-                        {
-                           Type = "fluentd",
-                           Config = new Dictionary<string, string>
-                           {
-                               { "fluentd-address", "host.docker.internal:24224" }
-                           }
-                        }
+                        LogConfig = logConfig
                     },
                     Env = env
                 }, token);

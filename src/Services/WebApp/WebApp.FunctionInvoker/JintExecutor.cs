@@ -1,5 +1,5 @@
-using System.Collections;
 using System.Globalization;
+using System.Text.Json;
 using Jint;
 using Jint.Native;
 
@@ -9,16 +9,12 @@ public class JintExecutor(SafeLogger logger)
 {
     private readonly Engine _engine = new();
 
-    private readonly List<string> _reservedEnv = [
-        "HOSTNAME",
-        "HOME",
-        "DOTNET_RUNNING_IN_CONTAINER",
-        "PATH",
-        "DOTNET_VERSION",
-        "ASPNETCORE_HTTP_PORTS",
-        "APP_UID"
+    private readonly List<string> _scripts =
+    [
+        "scripts/handlebars.min.js",
+        "scripts/config.js"
     ];
-
+    
     public void Initialize()
     {
         // Log
@@ -31,28 +27,15 @@ public class JintExecutor(SafeLogger logger)
         });
 
         // Env
-        var env = new Dictionary<string, string>();
-
-        foreach (DictionaryEntry de in Environment.GetEnvironmentVariables())
+        if (File.Exists("data/env.json"))
         {
-            if (_reservedEnv.Contains(de.Key.ToString()!))
-            {
-                // ignore system reserved env
-                Console.WriteLine($"Environment variable '{de.Key}' is reserved.");
-                continue;
-            }
-            Console.WriteLine($"Inject env. {de.Key} = {de.Value}");
-            env[de.Key.ToString()!] = de.Value?.ToString() ?? "";
+            var envJson =  File.ReadAllText("data/env.json");
+            var env = JsonSerializer.Deserialize<Dictionary<string, string>>(envJson);
+            _engine.SetValue("env", env);
         }
 
-        _engine.SetValue("env", env);
-
         // Scripts
-        var scripts = Directory.GetFiles("scripts")
-            .OrderBy(f => f)
-            .ToList();
-
-        foreach (var script in scripts)
+        foreach (var script in _scripts)
         {
             Console.WriteLine($"Loading script: {script}");
             var code = File.ReadAllText(script);
@@ -60,25 +43,36 @@ public class JintExecutor(SafeLogger logger)
         }
         
         // String Values
-        if (Directory.Exists("data/string_values"))
+        if (File.Exists("data/values.json"))
         {
-            var stringValues = Directory.GetFiles("data/string_values")
-                .OrderBy(f => f)
-                .ToList();
-        
-            foreach (var file in stringValues)
+            var valuesJson = File.ReadAllText("data/values.json");
+            var values = JsonSerializer.Deserialize<Dictionary<string, string>>(valuesJson) ??
+                         new Dictionary<string, string>();
+
+            foreach (var (key, text) in values)
             {
-                var name = Path.GetFileNameWithoutExtension(file);
-                var value = File.ReadAllText(file);
-                
-                Console.WriteLine($"Loading string: {name}");
-                _engine.SetValue(name, value);
+                var name = key.Split(':')[0];
+                var type = key.Split(':')[1];
+
+                _engine.SetValue(name, text);
+
+                switch (type)
+                {
+                    case "string":
+                        break;
+                    case "number":
+                        _engine.Execute($"{name}=Number({name})");
+                        break;
+                    case "json":
+                        _engine.Execute($"{name}=JSON.parse({name})");
+                        break;
+                }
             }
         }
-    }
-
-    public Result Execute(string handler, Request request)
-    {
+        
+        var requestJson = File.ReadAllText("data/request.json");
+        var request = JsonSerializer.Deserialize<Request>(requestJson)!;
+        
         _engine
             .SetValue("requestMethod", request.Method)
             .SetValue("requestPath", request.Path)
@@ -90,25 +84,30 @@ public class JintExecutor(SafeLogger logger)
             ;
 
         const string injectRequestCode =
-"""
-const request = {
-    method: requestMethod,
-    path: requestPath,
-    headers: requestHeaders,
-    query: requestQuery,
-    params: requestParams,
-};
+            """
+            const request = {
+                method: requestMethod,
+                path: requestPath,
+                headers: requestHeaders,
+                query: requestQuery,
+                params: requestParams,
+            };
 
-switch (bodyParser) {
-    case "json":
-    request.body = requestBody ? JSON.parse(requestBody) : null;
-    break;
-}
-""";
+            switch (bodyParser) {
+                case "json":
+                    request.body = requestBody ? JSON.parse(requestBody) : null;
+                break;
+            }
+            """;
         _engine.Execute(injectRequestCode);
-
+        
+        var handler = File.ReadAllText("data/handler.js");
+            
         _engine.Execute(handler);
+    }
 
+    public Result Execute()
+    {
         var jsResult = _engine.Evaluate("(() => { return handler(request); })();");
 
         return GetResult(jsResult);
