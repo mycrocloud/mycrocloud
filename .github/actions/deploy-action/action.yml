@@ -44,7 +44,7 @@ runs:
       if: ${{ inputs.image != '' }}
       run: |
         echo pulling image $IMAGE
-        docker image pull $IMAGE
+        docker pull $IMAGE
 
       env:
         IMAGE: ${{ inputs.image }}
