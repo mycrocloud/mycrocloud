@@ -53,7 +53,5 @@ public enum ResponseType
 
 public enum FunctionExecutionEnvironment
 {
-    InProcess = 1,
-    OutOfProcess_DockerContainer = 2,
-    OutOfProcess_KVM = 3
+    JintInDocker = 2,
 }

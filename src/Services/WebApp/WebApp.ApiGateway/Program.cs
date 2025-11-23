@@ -26,10 +26,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IAppRepository, AppRepository>();
 builder.Services.AddScoped<IRouteRepository, RouteRepository>();
 builder.Services.AddScoped<ILogRepository, LogRepository>();
-builder.Services.AddSingleton(new Scripts
-{
-    Handlebars = File.ReadAllText("Scripts/handlebars.min-v4.7.8.js"),
-});
 builder.Services.AddHttpClient("HttpDocumentRetriever");
 builder.Services.AddStackExchangeRedisCache(options =>
 {
@@ -37,7 +33,6 @@ builder.Services.AddStackExchangeRedisCache(options =>
 });
 builder.Services.AddSingleton<ICachedOpenIdConnectionSigningKeys, CachedOpenIdConnectionSigningKeys>();
 
-builder.Services.AddKeyedSingleton("InProcessFunctionExecutionManager", new ConcurrencyJobManager(100));
 builder.Services.AddKeyedSingleton("DockerContainerFunctionExecutionManager", new ConcurrencyJobManager(100));
 builder.Services.AddSingleton(_ =>
 {

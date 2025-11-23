@@ -1,37 +1,54 @@
-﻿using Jint;
-using WebApp.FunctionShared;
+﻿using System.Text.Json;
+using WebApp.Domain.Entities;
+using WebApp.Domain.Repositories;
 using WebApp.Infrastructure;
 
 namespace WebApp.ApiGateway.Middlewares;
 
 public class StaticResponseMiddleware(RequestDelegate next)
 {
-    public async Task InvokeAsync(HttpContext context, AppDbContext dbContext, Scripts scripts)
+    public async Task InvokeAsync(HttpContext context, AppDbContext dbContext, IAppRepository appRepository, IConfiguration configuration)
     {
+        var app = (App)context.Items["_App"]!;
         var route = (Route)context.Items["_Route"]!;
-        
-        context.Response.StatusCode = route.ResponseStatusCode ??
-                                      throw new InvalidOperationException("ResponseStatusCode is null");
-        
-        foreach (var header in route.ResponseHeaders ?? [])
-        {
-            context.Response.Headers.Append(header.Name, header.Value);
-        }
 
-        var body = route.Response;
-        if (route.UseDynamicResponse)
+        if (!route.UseDynamicResponse)
         {
-            var engine = new Engine();
-            engine.SetRequestValue(await context.Request.Normalize());
-            body = engine
-                .SetValue("source", body)
-                .Execute(scripts.Handlebars)
-                .Execute("Handlebars.registerHelper('json', function(context) { return JSON.stringify(context); });")
-                .Evaluate("Handlebars.compile(source)({ request });")
-                .AsString();
+            context.Response.StatusCode = route.ResponseStatusCode ??
+                                          throw new InvalidOperationException("ResponseStatusCode is null");
+        
+            foreach (var header in route.ResponseHeaders ?? [])
+            {
+                context.Response.Headers.Append(header.Name, header.Value);
+            }
+            
+            await context.Response.WriteAsync(route.Response);
+            
+            return;
         }
+        
+        var service = new Service();
+        
+        const string handler = """
+                               function handler (request) {
+                                 return {
+                                     statusCode: mc_responseStatusCode,
+                                     headers: mc_responseHeaders,
+                                     body: Handlebars.compile(mc_responseBody)({ request })
+                                 }
+                               }
+                               """;
+        
+        var values = new Dictionary<string, string>
+        {
+            { "mc_responseStatusCode:number", (route.ResponseStatusCode ?? 500).ToString() },
+            { "mc_responseHeaders:json", JsonSerializer.Serialize((route.ResponseHeaders ?? []).ToDictionary(h => h.Name, h => h.Value)) },
+            { "mc_responseBody:string", route.Response }
+        };
+            
+        var result = await service.ExecuteJintInDocker(context, app, appRepository, handler, configuration, values);
 
-        await context.Response.WriteAsync(body);
+        await context.Response.WriteFromFunctionResult(result);
     }
 }
 

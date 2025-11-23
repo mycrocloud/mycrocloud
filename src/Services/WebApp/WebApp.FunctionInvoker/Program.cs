@@ -1,37 +1,37 @@
 ﻿using System.Diagnostics;
 using System.Text.Json;
-using WebApp.FunctionShared;
-using FunctionSharedConstants = WebApp.FunctionShared.Constants;
+using WebApp.FunctionInvoker;
 
-var runtime = JsonSerializer.Deserialize<Runtime>(File.ReadAllText(Path.Combine("data", FunctionSharedConstants.RuntimeFilePath)))!;
-
-runtime.AppId = int.Parse(Environment.GetEnvironmentVariable(FunctionSharedConstants.APP_ID)!);
-runtime.ConnectionString = Environment.GetEnvironmentVariable(FunctionSharedConstants.CONNECTION_STRING)!;
-runtime.LogAction = obj =>
-{
-    var logText = obj as string ?? JsonSerializer.Serialize(obj);
-    File.AppendAllText(Path.Combine("data", "log.txt"), logText + Environment.NewLine);
-};
-
-var request = JsonSerializer.Deserialize<Request>(File.ReadAllText(Path.Combine("data", FunctionSharedConstants.RequestFilePath)))!;
-var handler = File.ReadAllText(Path.Combine("data", FunctionSharedConstants.HandlerFilePath));
-
-var executor = new JintExecutor(runtime);
-
+var result = new Result();
+var logger = new SafeLogger();
 var startingTimestamp = Stopwatch.GetTimestamp();
-Result result;
-TimeSpan duration;
 try
 {
-    result = executor.Execute(handler, request);
+    var executor = new JintExecutor(logger);
+    executor.Initialize();
+
+    var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+    try
+    {
+        var task = Task.Run(() => executor.Execute(), cts.Token);
+        task.Wait(cts.Token);
+        result = task.Result;
+    }
+    catch (OperationCanceledException)
+    {
+        logger.Log("Execution timed out.");
+    }
+    catch (Exception ex)
+    {
+        logger.Log("Execution error: " + ex.Message);
+    }
 }
 finally
 {
-    duration = Stopwatch.GetElapsedTime(startingTimestamp);
+    result.Duration = Stopwatch.GetElapsedTime(startingTimestamp);
 }
 
-result.Duration = duration;
+logger.FlushToFile("data/log");
 
 var resultJson = JsonSerializer.Serialize(result);
-
-await File.WriteAllTextAsync(Path.Combine("data", "result.json"), resultJson);
+await File.WriteAllTextAsync("data/result.json", resultJson);

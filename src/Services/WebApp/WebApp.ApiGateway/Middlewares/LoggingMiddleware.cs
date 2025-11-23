@@ -1,8 +1,7 @@
 ﻿using System.Text.Json;
+using WebApp.ApiGateway.Models;
 using WebApp.Domain.Entities;
-using WebApp.Domain.Enums;
 using WebApp.Domain.Repositories;
-using WebApp.FunctionShared;
 
 namespace WebApp.ApiGateway.Middlewares;
 
@@ -16,14 +15,7 @@ public class LoggingMiddleware(RequestDelegate next)
         if (context.Items["_App"] is App app && !context.Request.IsPreflightRequest())
         {
             var route = context.Items["_Route"] as Route;
-            var functionExecutionResult = context.Items["_FunctionExecutionResult"] as Result;
-            
-            FunctionExecutionEnvironment? functionExecutionEnvironment = null;
-            if (context.Items.TryGetValue("_FunctionExecutionEnvironment", out var value) &&
-                value is FunctionExecutionEnvironment env)
-            {
-                functionExecutionEnvironment = env;
-            }
+            var functionExecutionResult = context.Items["_FunctionExecutionResult"] as FunctionResult;
 
             await logRepository.Add(new Log
             {
@@ -32,8 +24,8 @@ public class LoggingMiddleware(RequestDelegate next)
                 Method = context.Request.Method,
                 Path = context.Request.Path + context.Request.QueryString,
                 StatusCode = context.Response.StatusCode,
-                AdditionalLogMessage = functionExecutionResult?.AdditionalLogMessage,
-                FunctionExecutionEnvironment = functionExecutionEnvironment,
+                AdditionalLogMessage = functionExecutionResult?.Log,
+                FunctionExecutionEnvironment = route?.FunctionExecutionEnvironment,
                 FunctionExecutionDuration = functionExecutionResult?.Duration,
                 RemoteAddress = context.Connection.RemoteIpAddress?.ToString(),
                 RequestContentLength = context.Request.ContentLength,
@@ -44,15 +36,6 @@ public class LoggingMiddleware(RequestDelegate next)
                     : null,
                 RequestHeaders = JsonSerializer.Serialize(context.Request.Headers.ToDictionary()),
             });
-
-            if (functionExecutionResult?.Exception is { } e)
-            {
-                if (e is TimeoutException && route is not null)
-                {
-                    route.Status = RouteStatus.Blocked;
-                    await routeRepository.Update(route.Id, route);
-                }
-            }
         }
     }
 }

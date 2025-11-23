@@ -52,7 +52,7 @@ public class RouteCreateUpdateRequest
             RequireAuthorization = RequireAuthorization,
             FileId = FileId,
             Enabled = Enabled,
-            FunctionExecutionEnvironment = ResponseType == ResponseType.Function ? FunctionExecutionEnvironment.OutOfProcess_DockerContainer : null
+            FunctionExecutionEnvironment = ResponseType == ResponseType.Function ? FunctionExecutionEnvironment.JintInDocker : null
         };
     }
 

@@ -20,7 +20,7 @@ public class CachedOpenIdConnectionSigningKeys(IDistributedCache cache, IHttpCli
         
         if (keys is null)
         {
-            var address = $"{issuer.TrimEnd('/')}/.well-known/openid-configuration";
+            var address = $"{issuer}/.well-known/openid-configuration";
             var httpClient = httpClientFactory.CreateClient("HttpDocumentRetriever");
             var retriever = new HttpDocumentRetriever(httpClient);
             var doc = await retriever.GetDocumentAsync(address, default);
