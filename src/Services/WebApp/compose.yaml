@@ -51,6 +51,11 @@ services:
     image: mycrocloud-apigateway
     build:
       dockerfile: WebApp.ApiGateway/Dockerfile
+    environment:
+      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/function-data:/tmp/function-data
     ports:
       - "8081:8080"
 
