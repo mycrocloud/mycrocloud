@@ -8,7 +8,7 @@ export default function List() {
   const { get } = useApiClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [apps, setApps] = useState<IApp[]>([]);
-  
+
   const filteredApps = useMemo(() => {
     if (!searchTerm) {
       return apps;
@@ -38,43 +38,48 @@ export default function List() {
           New
         </Button>
       </div>
-      <form className="mt-2"> 
+      <form className="mt-2">
         <TextInput
           id="search-input"
-          onChange={(e) => { setSearchTerm(e.target.value);}}
+          onChange={(e) => { setSearchTerm(e.target.value); }}
           placeholder="Search..."
         />
       </form>
-      <ul className="mt-3 divide-y">
-        {filteredApps.map((app) => {
-          return (
-            <li key={app.id}>
-              <div className="mb-2">
-                <h4>
-                  <Link
-                    to={`${app.id}`}
-                    className="font-semibold text-slate-900"
-                  >
-                    {app.name}
-                  </Link>
-                  <small
-                    className={`ms-1 ${
-                      app.status === "Active"
-                        ? "text-green-500"
-                        : "text-red-500"
-                    }`}
-                  >
-                    {app.status}
-                  </small>
-                </h4>
-                <p className="text-sm text-slate-600">{app.description}</p>
-                <small className="text-sm text-slate-600">
+      <ul className="mt-4 space-y-4">
+        {filteredApps.map((app) => (
+          <li
+            key={app.id}
+            className="p-4 border rounded-xl hover:shadow-sm transition bg-white dark:bg-slate-800"
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <Link
+                  to={`${app.id}`}
+                  className="font-semibold text-lg text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400"
+                >
+                  {app.name}
+                </Link>
+
+                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                  {app.description}
+                </p>
+
+                <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                   Created: {new Date(app.createdAt).toDateString()}
-                </small>
+                </div>
               </div>
-            </li>
-          );
-        })}
+
+              <span
+                className={`text-sm font-medium px-2 py-1 rounded-full ${app.status === "Active"
+                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                    : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                  }`}
+              >
+                {app.status}
+              </span>
+            </div>
+          </li>
+        ))}
       </ul>
     </div>
   );
