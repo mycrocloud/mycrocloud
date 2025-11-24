@@ -1,70 +1,45 @@
 import { useEffect, useRef, useState } from "react";
 import { useApp } from ".";
-import { useForm } from "react-hook-form";
 import { useAuth0 } from "@auth0/auth0-react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { getAppDomain } from "./service";
-import { PlayCircleIcon, StopCircleIcon } from "@heroicons/react/24/solid";
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
-import * as yup from "yup";
-import { yupResolver } from "@hookform/resolvers/yup";
 import Ajv, { JSONSchemaType } from "ajv";
-import TextCopyButton from "../../components/ui/TextCopyButton";
 import { Spinner } from "flowbite-react";
+import { default as AppOverviewComponent } from "./components/AppOverview"
+import RenameSection from "./components/RenameSection";
 
 export default function AppOverview() {
-  const { app } = useApp();
+  const { app, setApp } = useApp();
+  const { getAccessTokenSilently } = useAuth0();
   if (!app) return <Spinner aria-label="Loading..." />
 
   const domain = getAppDomain(app.id);
 
+  const handleRename = async (newName: string) => {
+    const accessToken = await getAccessTokenSilently();
+    const res = await fetch(`/api/apps/${app.id}/rename`, {
+      method: "PATCH",
+      headers: {
+        "content-type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+        "If-Match": app.version,
+      },
+      body: JSON.stringify({ name: newName }),
+    });
+    if (res.ok) {
+      setApp({ ...app, name: newName });
+      toast("Renamed app");
+    }
+  };
+
   return (
     <div className="p-2">
-      <h2 className="font-bold">Overview</h2>
-      <table className="mt-1">
-        <tbody>
-          <tr>
-            <td>Name</td>
-            <td>{app.name}</td>
-          </tr>
-          <tr>
-            <td>Description</td>
-            <td>{app.description}</td>
-          </tr>
-          <tr>
-            <td>Status</td>
-            <td className="inline-flex">
-              {app.status === "Active" ? (
-                <PlayCircleIcon className="h-4 w-4 text-green-500" />
-              ) : (
-                <StopCircleIcon className="h-4 w-4 text-red-500" />
-              )}
-              {app.status}
-            </td>
-          </tr>
-          <tr>
-            <td>Created at</td>
-            <td>{new Date(app.createdAt).toDateString()}</td>
-          </tr>
-          <tr>
-            <td>Updated at</td>
-            <td>
-              {app.updatedAt ? new Date(app.updatedAt!).toDateString() : "-"}
-            </td>
-          </tr>
-          <tr>
-            <td>Domain</td>
-            <td className="flex">
-              <p className="text-blue-500 hover:underline">{domain}</p>
-              <TextCopyButton text={domain} />
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <AppOverviewComponent app={app} domain={domain} />
       <hr className="mt-2" />
       <div className="mt-2">
-        <RenameSection />
+        <RenameSection defaultName={app.name} onRename={handleRename}/>
       </div>
       <hr className="mt-2" />
       <div className="mt-2">
@@ -203,66 +178,6 @@ function CorsSettingsSection() {
           Save
         </button>
       </div>
-    </>
-  );
-}
-type RenameFormInput = { name: string };
-function RenameSection() {
-  const { app } = useApp();
-  if (!app) return <Spinner aria-label="Loading..." />
-
-  const { getAccessTokenSilently } = useAuth0();
-  const schema = yup.object({ name: yup.string().required() });
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<RenameFormInput>({
-    resolver: yupResolver(schema),
-    defaultValues: { name: app.name },
-  });
-  const onSubmit = async (input: RenameFormInput) => {
-    const accessToken = await getAccessTokenSilently();
-    const res = await fetch(`/api/apps/${app.id}/rename`, {
-      method: "PATCH",
-      headers: {
-        "content-type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-        "If-Match": app.version,
-      },
-      body: JSON.stringify(input),
-    });
-    if (res.ok) {
-      toast("Renamed app");
-    }
-  };
-
-  return (
-    <>
-      <h3 className="font-semibold">App name</h3>
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-1">
-        <div className="flex">
-          <div>
-            <input
-              type="text"
-              {...register("name")}
-              className="block border px-2 py-0.5"
-              autoComplete="off"
-            />
-            {errors.name && (
-              <span className="text-red-500">{errors.name.message}</span>
-            )}
-          </div>
-          <div className="relative ms-1">
-            <button
-              type="submit"
-              className="absolute top-0 my-auto bg-primary px-2 py-0.5 text-white"
-            >
-              Rename
-            </button>
-          </div>
-        </div>
-      </form>
     </>
   );
 }
