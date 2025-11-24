@@ -12,6 +12,7 @@ import {
   DropdownDivider,
   Avatar,
   Button,
+  Spinner,
 } from "flowbite-react";
 
 export default function Header() {
@@ -45,7 +46,7 @@ export default function Header() {
         </NavbarLink>
 
         {isLoading && (
-          <span className="text-sm text-gray-500">Loading...</span>
+          <Spinner aria-label="Loading.." />
         )}
 
         {!isLoading && !isAuthenticated && (
