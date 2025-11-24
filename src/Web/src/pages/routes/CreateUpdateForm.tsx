@@ -7,7 +7,7 @@ import {
   useFormContext,
 } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { AppContext } from "../apps";
+import { useApp } from "../apps";
 import IRoute from "./Route";
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 import { bodyLanguages, methods } from "./constants";
@@ -16,7 +16,7 @@ import {
   routeCreateUpdateInputsSchema,
 } from "./CreateUpdateFormInputs";
 import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/16/solid";
-import { Modal } from "flowbite-react";
+import { Modal, Spinner } from "flowbite-react";
 import {
   default as FileFolderItem,
   FolderPathItem,
@@ -41,8 +41,9 @@ export default function RouteCreateUpdate({
   route?: IRoute;
   onSubmit: (data: RouteCreateUpdateInputs) => void;
 }) {
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
+  const { app } = useApp();
+  if (!app) return <Spinner aria-label="Loading..." />
+  
   const appDomain = apiGatewayDomain.replace("__app_id__", app.id.toString());
 
   const forms = useForm<RouteCreateUpdateInputs>({
@@ -558,8 +559,9 @@ interface IFile {
 }
 
 function StaticFile({ file }: { file?: IFile }) {
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
+  const { app } = useApp();
+  if (!app) return <Spinner aria-label="Loading..." />
+  
   const { getAccessTokenSilently } = useAuth0();
   const {
     control,

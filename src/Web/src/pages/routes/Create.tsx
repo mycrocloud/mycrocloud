@@ -1,17 +1,19 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import RouteCreateUpdate from "./CreateUpdateForm";
 import { RouteCreateUpdateInputs } from "./CreateUpdateFormInputs";
-import { useContext } from "react";
-import { AppContext } from "../apps";
+import { useApp } from "../apps";
 import { toast } from "react-toastify";
 import IRoute from "./Route";
 import { useRoutesContext } from "./Context";
 import { useNavigate, useParams } from "react-router-dom";
+import { Spinner } from "flowbite-react";
 
 export default function RouteCreate() {
+  const { app } = useApp();
+  if (!app) return <Spinner aria-label="Loading..." />
+  
   const navigate = useNavigate();
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
+  
   const { dispatch } = useRoutesContext();
 
   const folderId = useParams()["folderId"];

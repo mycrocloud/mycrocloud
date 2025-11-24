@@ -1,20 +1,20 @@
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import IScheme from "./IScheme";
-import { AppContext } from "../apps";
+import { useApp } from "../apps";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { DndContext, DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/solid";
-import { Alert } from "flowbite-react";
+import { Alert, Spinner } from "flowbite-react";
 
 type Inputs = {
   schemes: IScheme[];
 };
 export default function AuthenticationSettings() {
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
+  const { app } = useApp();
+  if (!app) return <Spinner aria-label="Loading..." />
   const { getAccessTokenSilently } = useAuth0();
   const [schemes, setSchemes] = useState<IScheme[]>([]);
 

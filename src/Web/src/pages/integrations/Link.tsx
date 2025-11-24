@@ -1,8 +1,8 @@
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { IAppIntegration } from "../apps/App";
 import { Spinner } from "flowbite-react";
 import { useApiClient } from "@/hooks";
-import { AppContext } from "../apps";
+import { useApp } from "../apps";
 import { NotFoundError } from "@/errors";
 import { getConfig } from "@/config";
 
@@ -25,8 +25,8 @@ interface GitHubRepo {
 
 export default function Link() {
   const { get, post, del } = useApiClient();
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
+  const { app } = useApp();
+  if (!app) return <Spinner aria-label="Loading..." />
 
   const [loading, setLoading] = useState(true);
 

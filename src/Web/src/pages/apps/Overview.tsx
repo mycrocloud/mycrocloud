@@ -1,5 +1,5 @@
-import { useContext, useEffect, useRef, useState } from "react";
-import { AppContext } from ".";
+import { useEffect, useRef, useState } from "react";
+import { useApp } from ".";
 import { useForm } from "react-hook-form";
 import { useAuth0 } from "@auth0/auth0-react";
 import { toast } from "react-toastify";
@@ -11,10 +11,12 @@ import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import Ajv, { JSONSchemaType } from "ajv";
 import TextCopyButton from "../../components/ui/TextCopyButton";
+import { Spinner } from "flowbite-react";
 
 export default function AppOverview() {
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
+  const { app } = useApp();
+  if (!app) return <Spinner aria-label="Loading..." />
+
   const domain = getAppDomain(app.id);
 
   return (
@@ -113,8 +115,9 @@ const corsSettingsSchema: JSONSchemaType<CorsSettings> = {
 };
 
 function CorsSettingsSection() {
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
+  const { app } = useApp();
+  if (!app) return <Spinner aria-label="Loading..." />
+
   const { getAccessTokenSilently } = useAuth0();
 
   const editorElRef = useRef(null);
@@ -205,8 +208,9 @@ function CorsSettingsSection() {
 }
 type RenameFormInput = { name: string };
 function RenameSection() {
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
+  const { app } = useApp();
+  if (!app) return <Spinner aria-label="Loading..." />
+
   const { getAccessTokenSilently } = useAuth0();
   const schema = yup.object({ name: yup.string().required() });
   const {
@@ -264,8 +268,9 @@ function RenameSection() {
 }
 
 function DeleteSection() {
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
+  const { app } = useApp();
+  if (!app) return <Spinner aria-label="Loading..." />
+
   const { getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
   const handleDeleteClick = async () => {
@@ -296,8 +301,9 @@ function DeleteSection() {
 }
 
 function ChangeStateSection() {
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
+  const { app } = useApp();
+  if (!app) return <Spinner aria-label="Loading..." />
+
   const { getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
   const handleChangeStatusClick = async () => {

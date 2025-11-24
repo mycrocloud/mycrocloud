@@ -1,8 +1,9 @@
 import { useApiClient } from "@/hooks";
-import { useCallback, useContext, useEffect, useState } from "react";
-import { AppContext } from "../apps";
+import { useCallback, useEffect, useState } from "react";
+import { useApp } from "../apps";
 import { useAuth0 } from "@auth0/auth0-react";
 import BuildLogs from "./BuildLogs";
+import { Spinner } from "flowbite-react";
 
 interface IBuild {
     id: string;
@@ -13,8 +14,8 @@ interface IBuild {
 }
 
 export default function Builds() {
-    const { app } = useContext(AppContext)!;
-    if (!app) throw new Error();
+    const { app } = useApp();
+  if (!app) return <Spinner aria-label="Loading..." />
 
     const { get } = useApiClient();
     const { getAccessTokenSilently } = useAuth0();

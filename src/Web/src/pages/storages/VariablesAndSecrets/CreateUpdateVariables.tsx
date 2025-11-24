@@ -1,11 +1,12 @@
-import { useContext, useEffect } from "react";
+import { useEffect } from "react";
 import IVariable from "./Variable";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useAuth0 } from "@auth0/auth0-react";
-import { AppContext } from "../../apps";
+import { useApp } from "../../apps";
+import { Spinner } from "flowbite-react";
 
 type Inputs = {
   name: string;
@@ -24,8 +25,8 @@ const schema = yup.object({
 export default function AddUpdateVariables() {
   const { getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
+  const { app } = useApp();
+  if (!app) return <Spinner aria-label="Loading..." />
   const variableId = useParams()["variableId"];
   const isEditMode = variableId !== undefined;
 

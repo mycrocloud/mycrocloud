@@ -1,10 +1,10 @@
 import { DocumentIcon, FolderIcon } from "@heroicons/react/24/solid";
-import React, { useContext, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Item, { FolderPathItem } from "./Item";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
-import { AppContext } from "../../apps";
-import { Modal } from "flowbite-react";
+import { useApp } from "../../apps";
+import { Modal, Spinner } from "flowbite-react";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 
@@ -16,8 +16,8 @@ interface PageData {
 type CreateRenameFolderFormInputs = { name: string };
 
 export default function List() {
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
+  const { app } = useApp();
+    if (!app) return <Spinner aria-label="Loading..." />
   const { getAccessTokenSilently } = useAuth0();
 
   const [{ items, folderPathItems }, setPageData] = useState<PageData>({

@@ -1,16 +1,16 @@
 import { useApiClient } from "@/hooks";
-import { useContext, useEffect } from "react";
-import { AppContext } from "../apps";
+import { useEffect } from "react";
+import { useApp } from "../apps";
 import { toast } from "react-toastify";
 import { useForm } from "react-hook-form";
-import { Alert, Tooltip } from "flowbite-react"
+import { Alert, Spinner, Tooltip } from "flowbite-react"
 import InfoIcon from "@/components/ui/InfoIcon";
 
 
 export default function BuildSettings() {
     const { get, post } = useApiClient();
-    const { app } = useContext(AppContext)!;
-    if (!app) throw new Error();
+    const { app } = useApp();
+    if (!app) return <Spinner aria-label="Loading..." />
 
     const {
         register,
