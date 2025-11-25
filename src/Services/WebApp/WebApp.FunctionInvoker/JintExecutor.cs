@@ -20,10 +20,10 @@ public class JintExecutor(SafeLogger logger)
         // Log
         _engine.SetValue("console", new
         {
-            log = new Action<object?>(logger.Log),
-            info = new Action<object?>(logger.Log),
-            warn = new Action<object?>(logger.Log),
-            error = new Action<object?>(logger.Log)
+            log = new Action<object?>(logger.Info),
+            info = new Action<object?>(logger.Info),
+            warn = new Action<object?>(logger.Warn),
+            error = new Action<object?>(logger.Error)
         });
 
         // Env

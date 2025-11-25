@@ -19,19 +19,17 @@ try
     }
     catch (OperationCanceledException)
     {
-        logger.Log("Execution timed out.");
+        logger.Error("Execution timed out.");
     }
     catch (Exception ex)
     {
-        logger.Log("Execution error: " + ex.Message);
+        logger.Error("Execution error: " + ex.Message);
     }
 }
 finally
 {
     result.Duration = Stopwatch.GetElapsedTime(startingTimestamp);
 }
-
-logger.FlushToFile("data/log");
 
 var resultJson = JsonSerializer.Serialize(result);
 await File.WriteAllTextAsync("data/result.json", resultJson);
