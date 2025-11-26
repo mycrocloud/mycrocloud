@@ -3,49 +3,15 @@ import { useApp } from ".";
 import { useAuth0 } from "@auth0/auth0-react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import { getAppDomain } from "./service";
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 import Ajv, { JSONSchemaType } from "ajv";
 import { Spinner } from "flowbite-react";
 import { default as AppOverviewComponent } from "./components/AppOverview"
-import RenameSection from "./components/RenameSection";
 
 export default function AppOverview() {
-  const { app, setApp } = useApp();
-  const { getAccessTokenSilently } = useAuth0();
-  if (!app) return <Spinner aria-label="Loading..." />
-
-  const domain = getAppDomain(app.id);
-
-  const handleRename = async (newName: string) => {
-    const accessToken = await getAccessTokenSilently();
-    const res = await fetch(`/api/apps/${app.id}/rename`, {
-      method: "PATCH",
-      headers: {
-        "content-type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-        "If-Match": app.version,
-      },
-      body: JSON.stringify({ name: newName }),
-    });
-    if (res.ok) {
-      setApp({ ...app, name: newName });
-      toast("Renamed app");
-    }
-  };
-
   return (
     <div className="p-2">
-      <AppOverviewComponent app={app} domain={domain} />
-      <hr className="mt-2" />
-      <div className="mt-2">
-        <RenameSection defaultName={app.name} onRename={handleRename}/>
-      </div>
-      <hr className="mt-2" />
-      <div className="mt-2">
-        <ChangeStateSection />
-      </div>
-      <hr className="mt-2" />
+      <AppOverviewComponent />
       <div className="mt-2">
         <CorsSettingsSection />
       </div>
@@ -212,58 +178,5 @@ function DeleteSection() {
         Delete
       </button>
     </>
-  );
-}
-
-function ChangeStateSection() {
-  const { app } = useApp();
-  if (!app) return <Spinner aria-label="Loading..." />
-
-  const { getAccessTokenSilently } = useAuth0();
-  const navigate = useNavigate();
-  const handleChangeStatusClick = async () => {
-    if (
-      app.status === "Active" &&
-      !confirm("Are you sure want to deactivate the app?")
-    ) {
-      return;
-    }
-    const accessToken = await getAccessTokenSilently();
-    const status = app.status === "Active" ? "Inactive" : "Active";
-    const res = await fetch(`/api/apps/${app.id}/status?status=${status}`, {
-      method: "PATCH",
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    if (res.ok) {
-      //TODO: update app status in context
-      app.status = status;
-      toast("Status changed");
-      navigate(".");
-    }
-  };
-  function getChangeStatusButtonClass(status: string) {
-    switch (status) {
-      case "Active":
-        return "text-red-500";
-      case "Inactive":
-        return "text-green-500";
-      case "Blocked":
-        return "text-gray-500";
-      default:
-        return "";
-    }
-  }
-  return (
-    <div>
-      <h2 className="font-semibold">Change status</h2>
-      <button
-        type="button"
-        className={`${getChangeStatusButtonClass(app.status)} border px-2 py-1`}
-        disabled={app.status === "Blocked"}
-        onClick={handleChangeStatusClick}
-      >
-        {app.status === "Active" ? "Deactivate" : "Activate"}
-      </button>
-    </div>
   );
 }
