@@ -13,6 +13,7 @@ import {
   Avatar,
   Button,
   Spinner,
+  DarkThemeToggle,
 } from "flowbite-react";
 
 export default function Header() {
@@ -44,7 +45,7 @@ export default function Header() {
         >
           Docs
         </NavbarLink>
-
+        <DarkThemeToggle />
         {isLoading && (
           <Spinner aria-label="Loading.." />
         )}

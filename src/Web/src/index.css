@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @plugin "flowbite-react/plugin/tailwindcss";
 @source "../.flowbite-react/class-list.json";
-
+@custom-variant dark (&:where(.dark, .dark *));
 body {
     @apply antialiased bg-white text-gray-600 dark:bg-gray-900 dark:text-gray-400
 }
