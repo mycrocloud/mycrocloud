@@ -43,10 +43,6 @@ public class Service
 
                 var env = vars.Select(v => $"{v.Name}={v.StringValue}").ToList();
                 
-                var logConfig = configuration
-                    .GetSection("DockerFunctionExecution:LogConfig")
-                    .Get<LogConfig>();
-                
                 var container = await dockerClient.Containers.CreateContainerAsync(new CreateContainerParameters
                 {
                     Image = configuration["DockerFunctionExecution:Image"],
@@ -57,7 +53,6 @@ public class Service
                         Memory = 64 * 1024 * 1024, // 64 MB
                         NanoCPUs = 250_000_000, // 0.25 CPU (NanoCPUs = 10^9 = 1 CPU)
                         PidsLimit = 100,         //  thread / process
-                        LogConfig = logConfig
                     },
                     Env = env
                 }, token);
@@ -73,11 +68,12 @@ public class Service
 
                 var innerResult = JsonSerializer.Deserialize<FunctionResult>(resultText)!;
                 
-                var logFilePath = Path.Combine(hostDir, "log");
+                var logFilePath = Path.Combine(hostDir, "log.json");
                 
                 if (File.Exists(logFilePath))
                 {
-                    innerResult.Log = await File.ReadAllTextAsync(logFilePath, token);
+                    var logJson = await File.ReadAllTextAsync(logFilePath, token);
+                    innerResult.Logs = JsonSerializer.Deserialize<List<LogEntry>>(logJson)!;
                 }
 
                 Directory.Delete(hostDir, true);

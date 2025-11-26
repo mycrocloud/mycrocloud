@@ -3,7 +3,7 @@ using System.Text.Json;
 using WebApp.FunctionInvoker;
 
 var result = new Result();
-var logger = new SafeLogger();
+using var logger = new SafeLogger("data/log.json");
 var startingTimestamp = Stopwatch.GetTimestamp();
 try
 {

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace WebApp.FunctionInvoker;
 
 public class Result

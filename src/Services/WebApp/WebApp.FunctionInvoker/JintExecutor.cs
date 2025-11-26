@@ -29,9 +29,10 @@ public class JintExecutor(SafeLogger logger)
         // Env
         if (File.Exists("data/env.json"))
         {
-            var envJson =  File.ReadAllText("data/env.json");
-            var env = JsonSerializer.Deserialize<Dictionary<string, string>>(envJson);
-            _engine.SetValue("env", env);
+            const string env = "env";
+            var envJson =  File.ReadAllText($"data/{env}.json");
+            _engine.SetValue(env, envJson);
+            _engine.Execute($"{env}=JSON.parse({env})");
         }
 
         // Scripts
