@@ -31,12 +31,6 @@ export default function RouteLogs() {
   };
 
   const [log, setLog] = useState<string>();
-  const handleViewClick = async (e: React.MouseEvent<HTMLSpanElement>, log?: string) => {
-    e.stopPropagation();
-    if (log) {
-      setLog(log);
-    }
-  }
   return (
     <div className="p-2 relative">
       {log && (
@@ -76,7 +70,6 @@ export default function RouteLogs() {
             <th className="text-start">Status Code</th>
             <th className="text-start">Function Execution Environment</th>
             <th className="text-start">Function Execution Duration</th>
-            <th className="text-start">Logs</th>
           </tr>
         </thead>
         <tbody>
@@ -88,20 +81,6 @@ export default function RouteLogs() {
               <td>{l.statusCode}</td>
               <td>{l.functionExecutionEnvironment ? functionExecutionEnvironmentMap.get(l.functionExecutionEnvironment) : "-"}</td>
               <td>{l.functionExecutionDuration}</td>
-              <td>
-                {l.additionalLogMessage ? (
-                  <span title={l.additionalLogMessage}>
-                    {l.additionalLogMessage.length > 20
-                      ? l.additionalLogMessage.slice(0, 20) + "..."
-                      : l.additionalLogMessage}
-                  </span>
-                ) : (
-                  "-"
-                )}
-                <span onClick={(e) => handleViewClick(e, l.additionalLogMessage)} className="text-blue-500 underline cursor-pointer">
-                  {l.additionalLogMessage ? "View" : ""}
-                </span>
-              </td>
             </tr>
           ))}
         </tbody>

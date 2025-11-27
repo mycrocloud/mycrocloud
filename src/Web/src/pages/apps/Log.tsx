@@ -3,10 +3,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { AppContext } from ".";
 import { IRouteLog } from "../routes";
-import { Link } from "react-router-dom";
 import moment from "moment";
-import { functionExecutionEnvironmentMap } from "../routes/constants";
-import { LockClosedIcon } from "@heroicons/react/24/solid";
 import { XMarkIcon } from "@heroicons/react/20/solid";
 
 type Inputs = {
@@ -179,63 +176,61 @@ export default function AppLogs() {
           Download displaying logs as JSON
         </button>
       </div>
-      <div className="flex">
-        <table className="flex-1">
-          <thead className="border">
-            <tr>
-              <th className="min-w-16 text-start p-2">Time</th>
-              <th className="text-start">Method</th>
-              <th className="text-start">Path</th>
-              <th className="text-start">Status Code</th>
-              {/* <th className="text-start">Function Execution Environment</th> */}
+      <table className="flex-1">
+        <thead className="border">
+          <tr>
+            <th className="min-w-16 text-start p-2">Time</th>
+            <th className="text-start">Method</th>
+            <th className="text-start">Path</th>
+            <th className="text-start">Status Code</th>
+            {/* <th className="text-start">Function Execution Environment</th> */}
+          </tr>
+        </thead>
+        <tbody>
+          {logs.map((log) => (
+            <tr
+              onClick={() => {
+                console.log("click");
+                setLog(log);
+              }}
+              key={log.id}
+              className="cursor-pointer border hover:bg-gray-100"
+            >
+              <td className="py-1.5">
+                {new Date(log.timestamp).toLocaleString()}
+              </td>
+              <td className="py-1.5">
+                {log.method}
+              </td>
+              <td className="py-1.5">
+                {log.path}
+              </td>
+              <td className="py-1.5">
+                {log.statusCode}
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {logs.map((log) => (
-              <tr
-                onClick={() => {
-                  console.log("click");
-                  setLog(log);
-                }}
-                key={log.id}
-                className="cursor-pointer border hover:bg-gray-100"
-              >
-                <td className="py-1.5">
-                  {new Date(log.timestamp).toLocaleString()}
-                </td>
-                <td className="py-1.5">
-                  {log.method}
-                </td>
-                <td className="py-1.5">
-                  {log.path}
-                </td>
-                <td className="py-1.5">
-                  {log.statusCode}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className="w-80 border p-2">
-          {!log ? (
-            <div className="text-gray-500">Click log to view details</div>
-          ) : (
-            <div className="">
-              <div className="flex items-center">
-                <p className="border p-0.5 rounded">{log.method}</p>
-                <p className="ps-2">{log.path}</p>
-                <button className="ms-auto" onClick={() => setLog(null)}>
-                  <XMarkIcon width={20} />
-                </button>
-              </div>
-              <div className="mt-2">
-                <p className="font-semibold text-slate-800">Logs</p>
-                <p>{log.additionalLogMessage}</p>
-              </div>
-            </div>
-          )}
+          ))}
+        </tbody>
+      </table>
+      {!log ? (
+        <div className="text-gray-500">Click log to view details</div>
+      ) : (
+        <div className="">
+          <div className="flex items-center">
+            <p className="border p-0.5 rounded">{log.method}</p>
+            <p className="ps-2">{log.path}</p>
+            <button className="ms-auto" onClick={() => setLog(null)}>
+              <XMarkIcon width={20} />
+            </button>
+          </div>
+          <div className="mt-2">
+            <p className="font-semibold text-slate-800">Logs</p>
+            {log.functionLogs?.map((fl) => {
+              return <p>[{fl.type}]{fl.message}</p>
+            })}
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 }
