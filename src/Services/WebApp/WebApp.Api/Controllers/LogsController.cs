@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using WebApp.Api.Filters;
 using WebApp.Domain.Repositories;
 
@@ -22,7 +23,8 @@ public class LogsController(ILogRepository logRepository) : BaseController
         logs = logs
             .OrderByDescending(l => l.CreatedAt)
             .Skip((page - 1) * pageSize)
-            .Take(pageSize);
+            .Take(pageSize)
+            .AsNoTracking();
         // add page info to the header
         
         Response.Headers.Append("X-Total-Count", logs.Count().ToString());
@@ -41,7 +43,7 @@ public class LogsController(ILogRepository logRepository) : BaseController
             l.StatusCode,
             l.FunctionExecutionEnvironment,
             l.FunctionExecutionDuration,
-            l.AdditionalLogMessage,
+            l.FunctionLogs,
             l.RequestContentLength,
             l.RequestContentType,
             l.RequestCookie,
