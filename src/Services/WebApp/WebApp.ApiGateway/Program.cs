@@ -7,7 +7,6 @@ using WebApp.Infrastructure;
 using WebApp.Infrastructure.Repositories;
 using WebApp.ApiGateway;
 using WebApp.ApiGateway.Middlewares;
-using File = System.IO.File;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddLogging(options =>

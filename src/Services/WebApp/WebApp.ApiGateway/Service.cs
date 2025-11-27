@@ -73,7 +73,7 @@ public class Service
                 if (File.Exists(logFilePath))
                 {
                     var logJson = await File.ReadAllTextAsync(logFilePath, token);
-                    innerResult.Logs = JsonSerializer.Deserialize<List<LogEntry>>(logJson)!;
+                    innerResult.Logs = JsonSerializer.Deserialize<List<FunctionLogEntry>>(logJson)!;
                 }
 
                 Directory.Delete(hostDir, true);
