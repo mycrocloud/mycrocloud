@@ -27,7 +27,7 @@
     "react-hook-form": "^7.66.0",
     "react-router-dom": "^7.6.2",
     "react-toastify": "^11.0.5",
-    "uuid": "^11.1.0",
+    "uuid": "^13.0.0",
     "yup": "^1.7.1"
   },
   "devDependencies": {
