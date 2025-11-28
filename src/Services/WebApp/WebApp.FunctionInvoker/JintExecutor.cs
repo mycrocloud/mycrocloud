@@ -20,18 +20,19 @@ public class JintExecutor(SafeLogger logger)
         // Log
         _engine.SetValue("console", new
         {
-            log = new Action<object?>(logger.Log),
-            info = new Action<object?>(logger.Log),
-            warn = new Action<object?>(logger.Log),
-            error = new Action<object?>(logger.Log)
+            log = new Action<object?>(logger.Info),
+            info = new Action<object?>(logger.Info),
+            warn = new Action<object?>(logger.Warn),
+            error = new Action<object?>(logger.Error)
         });
 
         // Env
         if (File.Exists("data/env.json"))
         {
-            var envJson =  File.ReadAllText("data/env.json");
-            var env = JsonSerializer.Deserialize<Dictionary<string, string>>(envJson);
-            _engine.SetValue("env", env);
+            const string env = "env";
+            var envJson =  File.ReadAllText($"data/{env}.json");
+            _engine.SetValue(env, envJson);
+            _engine.Execute($"{env}=JSON.parse({env})");
         }
 
         // Scripts

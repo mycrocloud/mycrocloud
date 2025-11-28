@@ -24,7 +24,7 @@ public class LoggingMiddleware(RequestDelegate next)
                 Method = context.Request.Method,
                 Path = context.Request.Path + context.Request.QueryString,
                 StatusCode = context.Response.StatusCode,
-                AdditionalLogMessage = functionExecutionResult?.Log,
+                FunctionLogs = functionExecutionResult?.Logs,
                 FunctionExecutionEnvironment = route?.FunctionExecutionEnvironment,
                 FunctionExecutionDuration = functionExecutionResult?.Duration,
                 RemoteAddress = context.Connection.RemoteIpAddress?.ToString(),

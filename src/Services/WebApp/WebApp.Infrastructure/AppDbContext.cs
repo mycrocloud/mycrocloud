@@ -110,6 +110,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasOne(r => r.Route)
             .WithMany(a => a.Logs)
             .OnDelete(DeleteBehavior.Cascade);
+        
+        modelBuilder.Entity<Log>()
+            .OwnsMany(app => app.FunctionLogs, builder => { builder.ToJson(); });
 
         modelBuilder.Entity<RouteFolder>()
             .HasOne(f => f.App)
