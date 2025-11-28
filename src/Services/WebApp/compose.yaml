@@ -82,8 +82,8 @@ services:
       - "15672:15672"
     healthcheck:
       test: [ "CMD", "rabbitmq-diagnostics", "-q", "check_running" ]
-      interval: 5s
-      timeout: 10s
+      interval: 1s
+      timeout: 2s
       retries: 5
       
   function-invoker:
