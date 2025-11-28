@@ -1,3 +1,5 @@
+using WebApp.Domain.Entities;
+
 namespace WebApp.ApiGateway.Models;
 
 public class FunctionResult
@@ -6,5 +8,5 @@ public class FunctionResult
     public Dictionary<string, string> Headers { get; set; } = [];
     public string? Body { get; set; }
     public TimeSpan Duration { get; set; }
-    public string Log { get; set; }
+    public ICollection<FunctionLogEntry> Logs { get; set; }
 }

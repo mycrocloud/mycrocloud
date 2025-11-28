@@ -1,7 +1,6 @@
 ﻿<Solution>
   <Folder Name="/Solution Items/">
     <File Path="compose.yaml" />
-    <File Path="fluent.conf" />
   </Folder>
   <Project Path="WebApp.Admin\WebApp.Admin.csproj" Type="Classic C#" />
   <Project Path="WebApp.ApiGateway\WebApp.ApiGateway.csproj" Type="Classic C#" />

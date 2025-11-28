@@ -1,0 +1,12 @@
+services:
+  web:
+    build: Web
+    image: mycrocloud-web
+    ports:
+      - "5173:80"
+
+  web-editor:
+    build: WebEditor
+    image: mycrocloud-web-editor
+    ports:
+      - "5174:80"

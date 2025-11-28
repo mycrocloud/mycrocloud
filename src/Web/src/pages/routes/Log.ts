@@ -8,7 +8,7 @@ export default interface ILog {
   method: string;
   path: string;
   statusCode: number;
-  additionalLogMessage?: string;
+  functionLogs: null | IFunctionLog[];
   functionExecutionEnvironment?: number;
   functionExecutionDuration?: number;
   requestContentLength?: number;
@@ -16,4 +16,10 @@ export default interface ILog {
   requestCookie?: string;
   requestFormContent?: string;
   requestHeaders?: string;
+}
+
+interface IFunctionLog {
+  message: string;
+  timestamp: string;
+  type: string
 }
