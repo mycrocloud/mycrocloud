@@ -1,13 +1,14 @@
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import IVariable from "./Variable";
 import { Link } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
-import { AppContext } from "../../apps";
+import { useApp } from "../../apps";
 import { toast } from "react-toastify";
+import { Spinner } from "flowbite-react";
 
 export default function AppVariables() {
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
+  const { app } = useApp();
+  if (!app) return <Spinner aria-label="Loading..." />
   const [variables, setVariables] = useState<IVariable[]>([]);
   const { getAccessTokenSilently } = useAuth0();
 

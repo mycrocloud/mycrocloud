@@ -1,16 +1,18 @@
 import { Link, useParams } from "react-router-dom";
 import RouteCreateUpdate from "./CreateUpdateForm";
 import { useAuth0 } from "@auth0/auth0-react";
-import { useContext, useEffect, useState } from "react";
-import { AppContext } from "../apps";
+import { useEffect, useState } from "react";
+import { useApp } from "../apps";
 import { toast } from "react-toastify";
 import IRoute from "./Route";
 import { RouteCreateUpdateInputs } from "./CreateUpdateFormInputs";
 import { useRoutesContext } from "./Context";
+import { Spinner } from "flowbite-react";
 
 export default function RouteEdit() {
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
+  const { app } = useApp();
+  if (!app) return <Spinner aria-label="Loading..." />
+  
   const {
     state: { routes },
     dispatch,

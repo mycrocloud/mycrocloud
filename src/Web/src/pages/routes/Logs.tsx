@@ -1,13 +1,14 @@
-import { useContext, useEffect, useState } from "react";
-import { AppContext } from "../apps";
+import { useEffect, useState } from "react";
+import { useApp } from "../apps";
 import { useAuth0 } from "@auth0/auth0-react";
 import { Link, useParams } from "react-router-dom";
 import { IRouteLog } from ".";
 import { functionExecutionEnvironmentMap } from "./constants";
+import { Spinner } from "flowbite-react";
 
 export default function RouteLogs() {
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
+  const { app } = useApp();
+  if (!app) return <Spinner aria-label="Loading..." />
   const { getAccessTokenSilently } = useAuth0();
   const [logs, setLogs] = useState<IRouteLog[]>([]);
   const routeId = parseInt(useParams()["routeId"]!);

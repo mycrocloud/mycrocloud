@@ -6,8 +6,9 @@ import type { ObjectSchema } from "yup";
 import { generateApiKey } from "./helper";
 import { useAuth0 } from "@auth0/auth0-react";
 import { toast } from "react-toastify";
-import { useContext, useEffect } from "react";
-import { AppContext } from "../../apps";
+import { useEffect } from "react";
+import { useApp } from "../../apps";
+import { Spinner } from "flowbite-react";
 
 type Inputs = {
   name: string;
@@ -23,8 +24,8 @@ const schema: ObjectSchema<Inputs> = yup.object({
 export default function CreateUpdate() {
   const { getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
+  const { app } = useApp();
+    if (!app) return <Spinner aria-label="Loading..." />
 
   const editKeyId = useParams()["keyId"]
     ? parseInt(useParams()["keyId"]!.toString())

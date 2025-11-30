@@ -36,7 +36,6 @@ import {
 
 import { FileList } from "./pages/storages/files";
 
-import About from "./pages/About";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ApiKeyCreateUpdate, ApiKeyList } from "./pages/authentications/apikey";
 
@@ -146,10 +145,6 @@ function App() {
               />
               <Route path="slack/link" Component={IntegrationsSlackLink} />
             </Route>
-            <Route
-              path="_about"
-              element={<ProtectedPage children={<About />} />}
-            />
             <Route path="*" Component={NotFoundPage} />
           </Routes>
         </div>

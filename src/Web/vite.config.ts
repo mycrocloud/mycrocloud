@@ -2,6 +2,8 @@ import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import mkcert from "vite-plugin-mkcert";
+import tailwindcss from '@tailwindcss/vite'
+import flowbiteReact from "flowbite-react/plugin/vite";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -9,6 +11,8 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(),
+      tailwindcss(),
+      flowbiteReact(),
       env.VITE_DEV_HOST ? mkcert() : null,
       {
         name: "inject-config-tag",

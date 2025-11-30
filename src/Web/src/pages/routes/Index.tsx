@@ -1,13 +1,12 @@
 import { Outlet, useNavigate, useParams, useMatch } from "react-router-dom";
 import React, {
-  useContext,
   useEffect,
   useMemo,
   useReducer,
   useRef,
   useState,
 } from "react";
-import { AppContext } from "../apps";
+import { useApp } from "../apps";
 import { useAuth0 } from "@auth0/auth0-react";
 import {
   RoutesContext,
@@ -23,6 +22,7 @@ import { useForm } from "react-hook-form";
 import { ensureSuccess } from "../../hooks/useApiClient";
 import IRouteFolderRouteItem, { calculateLevel } from "./IRouteFolderRouteItem";
 import IRoute from "./Route";
+import { Spinner } from "flowbite-react";
 //import { toast } from "react-toastify";
 
 interface IExplorerItem extends IRouteFolderRouteItem {
@@ -72,8 +72,9 @@ function RouteExplorer() {
   const params = useParams();
   const routeId = params["routeId"] ? parseInt(params["routeId"]) : undefined;
 
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
+  const { app } = useApp();
+  if (!app) return <Spinner aria-label="Loading..." />
+  
   const [explorerItems, setExplorerItems] = useState<IExplorerItem[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const filteredItems = useMemo(

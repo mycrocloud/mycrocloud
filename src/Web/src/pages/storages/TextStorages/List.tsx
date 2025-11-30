@@ -1,13 +1,14 @@
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import ITextStorage from "./ITextStorage";
 import { useAuth0 } from "@auth0/auth0-react";
-import { AppContext } from "../../apps";
+import { useApp } from "../../apps";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
+import { Spinner } from "flowbite-react";
 
 export default function List() {
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
+  const { app } = useApp();
+  if (!app) return <Spinner aria-label="Loading..." />
   const { getAccessTokenSilently } = useAuth0();
 
   const [storages, setStorages] = useState<ITextStorage[]>([]);

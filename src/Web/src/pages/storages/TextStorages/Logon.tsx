@@ -1,16 +1,16 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import { Link, useParams } from "react-router-dom";
-import { AppContext } from "../../apps";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useApp } from "../../apps";
+import { useEffect, useRef, useState } from "react";
 import ITextStorage from "./ITextStorage";
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
-import { Modal } from "flowbite-react";
+import { Modal, Spinner } from "flowbite-react";
 import { toast } from "react-toastify";
 
 export default function Logon() {
   const { getAccessTokenSilently } = useAuth0();
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
+  const { app } = useApp();
+  if (!app) return <Spinner aria-label="Loading..." />
   const storageId = useParams()["storageId"]!;
   const [storage, setStorage] = useState<ITextStorage>();
 

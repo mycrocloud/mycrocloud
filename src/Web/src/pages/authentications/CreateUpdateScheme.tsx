@@ -1,5 +1,5 @@
-import { useContext, useEffect } from "react";
-import { AppContext } from "../apps";
+import { useEffect } from "react";
+import { useApp } from "../apps";
 import IScheme from "./IScheme";
 import { useAuth0 } from "@auth0/auth0-react";
 import {
@@ -12,6 +12,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { toast } from "react-toastify";
+import { Spinner } from "flowbite-react";
 
 type Inputs = {
   name: string;
@@ -45,8 +46,8 @@ const schema = yup.object({
 export default function CreateUpdateScheme() {
   const schemeId = useParams()["schemeId"];
   const editMode = schemeId !== undefined;
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
+  const { app } = useApp();
+  if (!app) return <Spinner aria-label="Loading..." />
   const { getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
 

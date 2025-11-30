@@ -1,15 +1,16 @@
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import IApiKey from "./IApiKey";
-import { AppContext } from "../../apps";
+import { useApp } from "../../apps";
 import { useAuth0 } from "@auth0/auth0-react";
 import { toast } from "react-toastify";
+import { Spinner } from "flowbite-react";
 
 export default function List() {
   const { getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
+  const { app } = useApp();
+  if (!app) return <Spinner aria-label="Loading..." />
   const [keys, setKeys] = useState<IApiKey[]>([]);
   const [showingKeys, setShowingKeys] = useState<number[]>([]);
 

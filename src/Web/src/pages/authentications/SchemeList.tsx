@@ -1,12 +1,13 @@
-import { useContext, useEffect, useState } from "react";
-import { AppContext } from "../apps";
+import { useEffect, useState } from "react";
+import { useApp } from "../apps";
 import IScheme from "./IScheme";
 import { useAuth0 } from "@auth0/auth0-react";
 import { Link } from "react-router-dom";
+import { Spinner } from "flowbite-react";
 
 export default function SchemeList() {
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
+  const { app } = useApp();
+  if (!app) return <Spinner aria-label="Loading..." />
   const [schemes, setSchemes] = useState<IScheme[]>([]);
   const { getAccessTokenSilently } = useAuth0();
   const getSchemes = async () => {

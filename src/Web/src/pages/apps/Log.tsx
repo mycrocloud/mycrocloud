@@ -1,10 +1,11 @@
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { SubmitHandler, useForm } from "react-hook-form";
-import { AppContext } from ".";
+import { useApp } from ".";
 import { IRouteLog } from "../routes";
 import moment from "moment";
 import { XMarkIcon } from "@heroicons/react/20/solid";
+import { Spinner } from "flowbite-react";
 
 type Inputs = {
   accessDateFrom?: string;
@@ -13,8 +14,8 @@ type Inputs = {
 };
 
 export default function AppLogs() {
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
+  const { app } = useApp();
+    if (!app) return <Spinner aria-label="Loading..." />
 
   const { getAccessTokenSilently } = useAuth0();
   const [logs, setLogs] = useState<IRouteLog[]>([]);

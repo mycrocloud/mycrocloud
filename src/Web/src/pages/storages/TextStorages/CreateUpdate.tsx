@@ -2,10 +2,11 @@ import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useAuth0 } from "@auth0/auth0-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { AppContext } from "../../apps";
-import { useContext, useEffect } from "react";
+import { useApp } from "../../apps";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import ITextStorage from "./ITextStorage";
+import { Spinner } from "flowbite-react";
 
 type Inputs = {
   name: string;
@@ -20,8 +21,8 @@ const schema = yup.object({
 export default function CreateUpdate() {
   const { getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
+  const { app } = useApp();
+  if (!app) return <Spinner aria-label="Loading..." />
   const storageId = useParams()["storageId"];
   const isEditMode = storageId !== undefined;
 
