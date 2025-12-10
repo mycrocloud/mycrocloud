@@ -2,7 +2,6 @@
   <Folder Name="/Solution Items/">
     <File Path="compose.yaml" />
   </Folder>
-  <Project Path="WebApp.Admin\WebApp.Admin.csproj" Type="Classic C#" />
   <Project Path="WebApp.ApiGateway\WebApp.ApiGateway.csproj" Type="Classic C#" />
   <Project Path="WebApp.Api\WebApp.Api.csproj" Type="Classic C#" />
   <Project Path="WebApp.Domain\WebApp.Domain.csproj" Type="Classic C#" />
