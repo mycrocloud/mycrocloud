@@ -99,8 +99,8 @@ app.UseValidationMiddleware();
 app.UseWhen(context => ((Route)context.Items["_Route"]!).ResponseType == ResponseType.Static,
     appBuilder => appBuilder.UseStaticResponseMiddleware());
 
-app.UseWhen(context => ((Route)context.Items["_Route"]!).ResponseType == ResponseType.StaticFile,
-    appBuilder => appBuilder.UseStaticFilesMiddleware());
+// app.UseWhen(context => ((Route)context.Items["_Route"]!).ResponseType == ResponseType.StaticFile,
+//     appBuilder => appBuilder.UseStaticFilesMiddleware());
 
 app.UseWhen(context => ((Route)context.Items["_Route"]!).ResponseType == ResponseType.Function,
     appBuilder => appBuilder.UseFunctionInvokerMiddleware());

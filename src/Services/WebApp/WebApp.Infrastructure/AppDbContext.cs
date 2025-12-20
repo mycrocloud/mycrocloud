@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using WebApp.Domain.Entities;
-using File = WebApp.Domain.Entities.File;
 
 namespace WebApp.Infrastructure;
 
@@ -10,15 +9,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     public DbSet<RouteFolder> RouteFolders { get; set; }
     public DbSet<Route> Routes { get; set; }
-    public DbSet<Folder> Folders { get; set; }
-    public DbSet<File> Files { get; set; }
     public DbSet<Log> Logs { get; set; }
     public DbSet<AuthenticationScheme> AuthenticationSchemes { get; set; }
 
     public DbSet<ApiKey> ApiKeys { get; set; }
 
     public DbSet<Variable> Variables { get; set; }
-    public DbSet<TextStorage> TextStorages { get; set; }
 
     //TODO: re-design?
     public DbSet<UserToken> UserTokens { get; set; }
@@ -64,11 +60,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             ownedNavigationBuilder => { ownedNavigationBuilder.ToJson(); });
 
         modelBuilder.Entity<Route>()
-            .HasOne(route => route.File)
-            .WithMany()
-            .OnDelete(DeleteBehavior.SetNull);
-
-        modelBuilder.Entity<Route>()
             .Property(r => r.Enabled)
             .HasDefaultValue(true);
 
@@ -89,16 +80,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<AuthenticationScheme>()
             .HasOne(r => r.App)
             .WithMany(a => a.AuthenticationSchemes)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<Folder>()
-            .HasOne(r => r.App)
-            .WithMany(a => a.Folders)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<Folder>()
-            .HasMany(f => f.Files)
-            .WithOne(f => f.Folder)
             .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<Log>()
@@ -122,11 +103,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<RouteFolder>()
             .HasMany(f => f.Routes)
             .WithOne(f => f.Folder)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<TextStorage>()
-            .HasOne(s => s.App)
-            .WithMany(a => a.TextStorages)
             .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<Variable>()
