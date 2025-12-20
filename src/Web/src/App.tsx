@@ -23,19 +23,6 @@ import {
   AuthenticationSchemeSettings,
 } from "./pages/authentications";
 
-import {
-  VariableList,
-  VariableCreateUpdate,
-} from "./pages/storages/VariablesAndSecrets";
-
-import {
-  CreateUpdateTextStorage,
-  LogonTextStorage,
-  TextStorageList,
-} from "./pages/storages/TextStorages";
-
-import { FileList } from "./pages/storages/files";
-
 import About from "./pages/About";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ApiKeyCreateUpdate, ApiKeyList } from "./pages/authentications/apikey";
@@ -107,31 +94,6 @@ function App() {
                   </Route>
                 </Route>
                 <Route path="logs" Component={AppLog} />
-                <Route path="storages">
-                  <Route path="files">
-                    <Route index Component={FileList} />
-                  </Route>
-                  <Route path="textstorages">
-                    <Route index Component={TextStorageList} />
-                    <Route path="new" Component={CreateUpdateTextStorage} />
-                    <Route
-                      path=":storageId"
-                      Component={CreateUpdateTextStorage}
-                    />
-                    <Route
-                      path=":storageId/logon"
-                      Component={LogonTextStorage}
-                    />
-                  </Route>
-                  <Route path="variables">
-                    <Route index Component={VariableList} />
-                    <Route path="new" Component={VariableCreateUpdate} />
-                    <Route
-                      path=":variableId/edit"
-                      Component={VariableCreateUpdate}
-                    />
-                  </Route>
-                </Route>
                 <Route path="integrations" Component={Integrations}></Route>
               </Route>
             </Route>
