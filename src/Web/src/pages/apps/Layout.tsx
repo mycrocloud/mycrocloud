@@ -20,10 +20,6 @@ export default function AppLayout() {
   const isMatchAuthenticationSettings =
     part3 == "authentications" && part4 === "settings";
 
-  const isMatchFileStorages = part3 == "storages" && part4 === "files";
-  const isMatchTextStorages = part3 == "storages" && part4 === "textstorages";
-  const isMatchVariables = part3 == "storages" && part4 === "variables";
-
   const isMatchLogs = part3 == "logs";
   const isMatchIntegrations = part3 == "integrations";
 
@@ -82,35 +78,6 @@ export default function AppLayout() {
                   }`}
                 >
                   Settings
-                </Link>
-              </div>
-            </div>
-            <div className="text-xs">
-              Storages
-              <div className="flex flex-col px-1">
-                <Link
-                  to="storages/files"
-                  className={`text-xs ${
-                    isMatchFileStorages ? "text-primary" : ""
-                  }`}
-                >
-                  Files
-                </Link>
-                <Link
-                  to="storages/textstorages"
-                  className={`text-xs ${
-                    isMatchTextStorages ? "text-primary" : ""
-                  }`}
-                >
-                  Text Storages
-                </Link>
-                <Link
-                  to="storages/variables"
-                  className={`text-xs ${
-                    isMatchVariables ? "text-primary" : ""
-                  }`}
-                >
-                  Variables
                 </Link>
               </div>
             </div>
