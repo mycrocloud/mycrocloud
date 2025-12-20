@@ -24,8 +24,6 @@ public class Route : BaseEntity
     public bool RequireAuthorization { get; set; }
     public RouteStatus Status { get; set; } = RouteStatus.Active;
     public bool UseDynamicResponse { get; set; }
-    public int? FileId { get; set; }
-    public File File { get; set; }
 
     public int? FolderId { get; set; }
     public RouteFolder Folder { get; set; }

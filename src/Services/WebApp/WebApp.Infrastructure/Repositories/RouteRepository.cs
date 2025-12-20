@@ -24,7 +24,6 @@ public class RouteRepository(AppDbContext dbContext) : IRouteRepository
     public async Task<Route> GetById(int id)
     {
         return await dbContext.Routes
-                .Include(r => r.File)
                 .FirstAsync(r => r.Id == id);
     }
 

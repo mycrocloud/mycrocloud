@@ -50,7 +50,6 @@ public class RouteCreateUpdateRequest
             UseDynamicResponse = UseDynamicResponse,
             FunctionHandlerDependencies = FunctionHandlerDependencies,
             RequireAuthorization = RequireAuthorization,
-            FileId = FileId,
             Enabled = Enabled,
             FunctionExecutionEnvironment = ResponseType == ResponseType.Function ? FunctionExecutionEnvironment.JintInDocker : null
         };
@@ -72,7 +71,6 @@ public class RouteCreateUpdateRequest
         route.UseDynamicResponse = UseDynamicResponse;
         route.FunctionHandlerDependencies = FunctionHandlerDependencies;
         route.RequireAuthorization = RequireAuthorization;
-        route.FileId = FileId;
         route.Enabled = Enabled;
     }
 }
