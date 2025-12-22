@@ -1,0 +1,18 @@
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+        
+  db-migrator:
+    build:
+      dockerfile: Storages.DbMigrations/Dockerfile
+    depends_on:
+      - db
+
+  api:
+    build: Storages.Api
+    depends_on:
+      - db-migrator
