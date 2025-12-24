@@ -1,7 +1,7 @@
 using Jint;
 using Jint.Native;
 
-namespace WebApp.FunctionInvoker.Hooks.Fetch;
+namespace WebApp.FunctionInvoker.Apis.Fetch;
 
 public static class Mapper
 {
@@ -20,6 +20,7 @@ public static class Mapper
         if (init is not null)
         {
             var method = init.Get("method").AsString();
+            request.Method = HttpMethod.Parse(method);
         }
 
         return request;

@@ -2,13 +2,15 @@ using System.Globalization;
 using System.Text.Json;
 using Jint;
 using Jint.Native;
-using WebApp.FunctionInvoker.Hooks.Fetch;
+using WebApp.FunctionInvoker.Apis.Fetch;
+using Console = WebApp.FunctionInvoker.Apis.Console.Console;
 
 namespace WebApp.FunctionInvoker;
 
-public class JintExecutor(SafeLogger logger)
+public class JintExecutor
 {
     private readonly Engine _engine = new();
+    public Console Console { get; set; }
 
     private readonly List<string> _scripts =
     [
@@ -18,7 +20,7 @@ public class JintExecutor(SafeLogger logger)
     
     public void Initialize()
     {
-        InjectApis();
+        InstallApis();
 
         // Env
         if (File.Exists("data/env.json"))
@@ -32,7 +34,7 @@ public class JintExecutor(SafeLogger logger)
         // Scripts
         foreach (var script in _scripts)
         {
-            Console.WriteLine($"Loading script: {script}");
+            System.Console.WriteLine($"Loading script: {script}");
             var code = File.ReadAllText(script);
             _engine.Execute(code);
         }
@@ -101,15 +103,16 @@ public class JintExecutor(SafeLogger logger)
         _engine.Execute(handler);
     }
 
-    private void InjectApis()
+    private void InstallApis()
     {
         // Log
+        Console = new Console("data/log.json");
         _engine.SetValue("console", new
         {
-            log = new Action<object?>(logger.Info),
-            info = new Action<object?>(logger.Info),
-            warn = new Action<object?>(logger.Warn),
-            error = new Action<object?>(logger.Error)
+            log = new Action<object?>(Console.Info),
+            info = new Action<object?>(Console.Info),
+            warn = new Action<object?>(Console.Warn),
+            error = new Action<object?>(Console.Error)
         });
         
         // Fetch
