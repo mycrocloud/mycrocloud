@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using Jint;
 using Jint.Native;
+using WebApp.FunctionInvoker.Hooks.Fetch;
 
 namespace WebApp.FunctionInvoker;
 
@@ -12,19 +13,12 @@ public class JintExecutor(SafeLogger logger)
     private readonly List<string> _scripts =
     [
         "scripts/handlebars.min.js",
-        "scripts/config.js"
+        "scripts/init.js"
     ];
     
     public void Initialize()
     {
-        // Log
-        _engine.SetValue("console", new
-        {
-            log = new Action<object?>(logger.Info),
-            info = new Action<object?>(logger.Info),
-            warn = new Action<object?>(logger.Warn),
-            error = new Action<object?>(logger.Error)
-        });
+        InjectApis();
 
         // Env
         if (File.Exists("data/env.json"))
@@ -105,6 +99,29 @@ public class JintExecutor(SafeLogger logger)
         var handler = File.ReadAllText("data/handler.js");
             
         _engine.Execute(handler);
+    }
+
+    private void InjectApis()
+    {
+        // Log
+        _engine.SetValue("console", new
+        {
+            log = new Action<object?>(logger.Info),
+            info = new Action<object?>(logger.Info),
+            warn = new Action<object?>(logger.Warn),
+            error = new Action<object?>(logger.Error)
+        });
+        
+        // Fetch
+        var proxyFetch = new FetchProxy(50);
+        _engine.SetValue("fetch", new Func<JsValue, JsValue?, JsValue>((input, init) =>
+        {
+            var request = Mapper.MapRequest(input, init);
+            
+            var response = proxyFetch.Fetch(request).Result;
+            
+            return Mapper.MapResponse(response);
+        }));
     }
 
     public Result Execute()
