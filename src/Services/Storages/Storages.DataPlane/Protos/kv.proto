@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option csharp_namespace = "Storages.DataPlane";
+
+package kv;
+
+service KvService {
+  rpc Read(ReadRequest) returns (ReadReply);
+}
+
+message ReadRequest {
+  int32 instance_id = 1;
+  string key = 2;
+}
+
+message ReadReply {
+  string value = 1;
+}

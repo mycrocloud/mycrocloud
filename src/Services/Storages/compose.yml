@@ -15,4 +15,9 @@ services:
   api:
     build: Storages.Api
     depends_on:
-      - db-migrator
+      - db-migrator  storages.dataplane:
+    image: storages.dataplane
+    build:
+      context: .
+      dockerfile: Storages.DataPlane/Dockerfile
+
