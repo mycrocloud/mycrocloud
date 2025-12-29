@@ -11,6 +11,7 @@ import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import Ajv, { JSONSchemaType } from "ajv";
 import TextCopyButton from "../../components/ui/TextCopyButton";
+import { Button, HelperText, TextInput } from "flowbite-react";
 
 export default function AppOverview() {
   const { app } = useContext(AppContext)!;
@@ -190,15 +191,12 @@ function CorsSettingsSection() {
     <>
       <h3 className="font-semibold">CORS Settings</h3>
       <div className="mt-1">
-        <div className="h-[160px] w-full" ref={editorElRef}></div>
-        {error && <span className="text-red-500">{error}</span>}
-        <button
+        <div className="h-40 w-full" ref={editorElRef}></div>
+        {error && <HelperText color="failure">{error}</HelperText>}
+        <Button
           type="button"
-          onClick={handleSaveClick}
-          className="ms-auto bg-primary px-2 py-1 text-white"
-        >
-          Save
-        </button>
+          onClick={handleSaveClick}>
+          Save</Button>
       </div>
     </>
   );
@@ -237,26 +235,12 @@ function RenameSection() {
     <>
       <h3 className="font-semibold">App name</h3>
       <form onSubmit={handleSubmit(onSubmit)} className="mt-1">
-        <div className="flex">
-          <div>
-            <input
-              type="text"
-              {...register("name")}
-              className="block border px-2 py-0.5"
-              autoComplete="off"
-            />
-            {errors.name && (
-              <span className="text-red-500">{errors.name.message}</span>
-            )}
+        <div className="flex gap-1">
+          <div className="flex-1">
+            <TextInput {...register("name")} />
+            {errors.name && <HelperText color="failure">{errors.name.message}</HelperText>}
           </div>
-          <div className="relative ms-1">
-            <button
-              type="submit"
-              className="absolute top-0 my-auto bg-primary px-2 py-0.5 text-white"
-            >
-              Rename
-            </button>
-          </div>
+          <Button type="submit">Rename</Button>
         </div>
       </form>
     </>
@@ -284,13 +268,10 @@ function DeleteSection() {
   return (
     <>
       <h3 className="font-semibold">Delete the app</h3>
-      <button
-        type="button"
-        className="bg-red-500 px-2 py-1 text-white"
+      <Button type="button"
         onClick={handleDeleteClick}
-      >
-        Delete
-      </button>
+        color={"red"}
+      >Delete</Button>
     </>
   );
 }
@@ -320,29 +301,17 @@ function ChangeStateSection() {
       navigate(".");
     }
   };
-  function getChangeStatusButtonClass(status: string) {
-    switch (status) {
-      case "Active":
-        return "text-red-500";
-      case "Inactive":
-        return "text-green-500";
-      case "Blocked":
-        return "text-gray-500";
-      default:
-        return "";
-    }
-  }
   return (
     <div>
       <h2 className="font-semibold">Change status</h2>
-      <button
+      <Button
         type="button"
-        className={`${getChangeStatusButtonClass(app.status)} border px-2 py-1`}
         disabled={app.status === "Blocked"}
         onClick={handleChangeStatusClick}
+        color={app.status == "Active" ? "red" : "default"}
       >
         {app.status === "Active" ? "Deactivate" : "Activate"}
-      </button>
+      </Button>
     </div>
   );
 }
