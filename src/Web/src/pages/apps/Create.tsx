@@ -40,34 +40,49 @@ function AppCreate() {
     }
   };
   return (
-    <form className="mx-auto mt-5 max-w-4xl" onSubmit={handleSubmit(onSubmit)}>
-      <h1 className="font-semibold">Create app</h1>
-      <div className="mb-5 mt-3">
-        <Label>Name</Label>
+    <form
+      className="mx-auto mt-6 max-w-4xl space-y-6"
+      onSubmit={handleSubmit(onSubmit)}
+    >
+      <h1 className="text-lg font-semibold">Create app</h1>
+
+      <div className="space-y-1">
+        <Label htmlFor="name">Name</Label>
         <TextInput
+          id="name"
           {...register("name")}
         />
-        {errors.name && <HelperText>{errors.name.message}</HelperText>}
+        {errors.name && (
+          <HelperText color="failure">
+            {errors.name.message}
+          </HelperText>
+        )}
       </div>
-      <div className="mb-5 mt-3">
-        <Label>Description</Label>
+
+      <div className="space-y-1">
+        <Label htmlFor="description">Description</Label>
         <Textarea
+          id="description"
+          rows={4}
           {...register("description")}
         />
-        {errors.description && <HelperText>{errors.description.message}</HelperText>}
+        {errors.description && (
+          <HelperText color="failure">
+            {errors.description.message}
+          </HelperText>
+        )}
       </div>
-      <div className="flex">
+
+      <div className="flex justify-end gap-2 pt-4">
         <Button
-          onClick={() => navigate("/apps")}
+          type="button"
           outline
-          className="ms-auto"
+          onClick={() => navigate("/apps")}
         >
           Cancel
         </Button>
-        <Button
-          type="submit"
-          className="ms-2"
-        >
+
+        <Button type="submit">
           Save
         </Button>
       </div>
