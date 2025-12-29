@@ -1,5 +1,5 @@
 import { useApiClient } from "@/hooks";
-import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { AppContext } from "../apps";
 import { useAuth0 } from "@auth0/auth0-react";
 import BuildLogs from "./BuildLogs";
