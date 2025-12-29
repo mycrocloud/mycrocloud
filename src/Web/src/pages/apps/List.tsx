@@ -47,7 +47,7 @@ export default function List() {
       </form>
 
       {/* List */}
-      <ul className="divide-y rounded-xl border border-slate-200">
+      <ul className="divide-y rounded-xl border border-slate-200 divide-slate-100">
         {filteredApps.map(app => (
           <li key={app.id} className="px-6 py-5">
             <div className="space-y-1">
