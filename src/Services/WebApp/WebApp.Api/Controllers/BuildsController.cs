@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using Elastic.Clients.Elasticsearch;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -11,6 +12,7 @@ using WebApp.Api.Filters;
 using WebApp.Api.Models.Builds;
 using WebApp.Api.Services;
 using WebApp.Domain.Entities;
+using WebApp.Domain.Messages;
 using WebApp.Infrastructure;
 
 namespace WebApp.Api.Controllers;
@@ -25,6 +27,9 @@ public class BuildsController(
     [FromKeyedServices("AppBuildLogs_ES8")]
     ElasticsearchClient elasticsearchClient,
     IAppBuildPublisher publisher,
+    RabbitMqService rabbitMqService,
+    LinkGenerator linkGenerator,
+    GitHubAppService gitHubAppService,
     ILogger<BuildsController> logger): BaseController
 {
     public const string Controller = "Builds";
@@ -45,6 +50,59 @@ public class BuildsController(
             job.CreatedAt,
             job.UpdatedAt,
         }));
+    }
+    
+    [HttpPost("build")]
+    public async Task<IActionResult> Build(int appId, BuildRequest request)
+    {
+        var app = await appDbContext.Apps
+            .Include(a => a.Link)
+            .SingleAsync(a => a.Id == appId);
+
+        if (app.Link is null)
+            return BadRequest();
+
+        var installationAccessToken = await gitHubAppService.GetInstallationAccessToken(app.Link.InstallationId);
+
+        var repos = await gitHubAppService.GetAccessibleRepos(app.Link.InstallationId, installationAccessToken);
+        
+        var repo = repos.SingleOrDefault(r => r.Id == app.Link.RepoId);
+        if (repo is null)
+            return BadRequest();
+        
+        var build = new AppBuild
+        {
+            Id = Guid.NewGuid(),
+            App = app,
+            Name = request.Name,
+            Status = "Queued",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        appDbContext.AppBuildJobs.Add(build);
+
+        var config = app.BuildConfigs;
+        
+        var message = new AppBuildMessage
+        {
+            BuildId = build.Id.ToString(),
+            RepoFullName = repo.FullName,
+            CloneUrl = $"https://x-access-token:{installationAccessToken}@github.com/{repo.FullName}",
+            Branch = config.Branch,
+            Directory = config.Directory,
+            OutDir = config.OutDir,
+            InstallCommand = config.InstallCommand,
+            BuildCommand = config.BuildCommand,
+            ArtifactsUploadUrl = linkGenerator.GetUriByAction(HttpContext, nameof(BuildsController.PutObject), BuildsController.Controller, new { appId = app.Id, buildId = build.Id })!
+        };
+
+        rabbitMqService.PublishMessage(JsonSerializer.Serialize(message));
+            
+        publisher.Publish(app.Id, build.Status);
+
+        await appDbContext.SaveChangesAsync();
+        
+        return NoContent();
     }
     
     [HttpGet("stream")]

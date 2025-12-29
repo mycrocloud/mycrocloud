@@ -4,6 +4,8 @@ import { useApp } from "../apps";
 import { useAuth0 } from "@auth0/auth0-react";
 import BuildLogs from "./BuildLogs";
 import { Spinner } from "flowbite-react";
+import { Button, Label, Modal, ModalBody, ModalFooter, ModalHeader, TextInput } from "flowbite-react";
+import { useForm } from "react-hook-form";
 
 interface IBuild {
     id: string;
@@ -13,11 +15,15 @@ interface IBuild {
     finishedAt: string;
 }
 
+type BuildInputs = {
+    name?: string
+}
+
 export default function Builds() {
     const { app } = useApp();
   if (!app) return <Spinner aria-label="Loading..." />
 
-    const { get } = useApiClient();
+    const { get, post } = useApiClient();
     const { getAccessTokenSilently } = useAuth0();
 
     const [builds, setBuilds] = useState<IBuild[]>([]);
@@ -78,9 +84,28 @@ export default function Builds() {
         }
     }
 
+    const [showBuildModal, setShowBuildModal] = useState(false);
+    const { register, formState: { errors }, handleSubmit, reset } = useForm<BuildInputs>()
+    const onSubmit = async (inputs: BuildInputs) => {
+        try {
+            await post(`/api/apps/${app.id}/builds/build`, inputs)
+            setShowBuildModal(false)
+        } catch {
+            alert("Something went wrong...")
+        }
+    }
+    useEffect(() => {
+        if (showBuildModal) {
+            reset()
+        }
+    }, [showBuildModal, reset])
+
     return <section>
         <div className="mt-4 flex items-center">
             <h2 className="font-semibold">Builds</h2>
+        </div>
+        <div>
+            <Button onClick={() => setShowBuildModal(true)} size={'sm'}>Build</Button>
         </div>
         <div className="flex">
             <div className="overflow-y-auto">
@@ -120,5 +145,21 @@ export default function Builds() {
                 )}
             </div>
         </div>
+        <Modal show={showBuildModal} onClose={() => setShowBuildModal(false)}>
+            <ModalHeader>
+                <h1>Build</h1>
+            </ModalHeader>
+            <ModalBody>
+                <form id="build-form" onSubmit={handleSubmit(onSubmit)}>
+                    <Label>Build Name</Label>
+                    <TextInput {...register("name")} className="mt-2" placeholder="Build name" />
+                    { errors.name && <span className="text-red-500">{errors.name.message}</span>}
+                </form>
+            </ModalBody>
+            <ModalFooter>
+                <Button type="submit" form="build-form" className="ms-auto">Build</Button>
+                <Button outline onClick={() => setShowBuildModal(false)}>Cancel</Button>
+            </ModalFooter>
+        </Modal>
     </section>
 }

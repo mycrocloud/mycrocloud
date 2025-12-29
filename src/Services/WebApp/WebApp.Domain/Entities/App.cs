@@ -17,12 +17,10 @@ public class App : BaseEntity
 
     public ICollection<ApiKey> ApiKeys { get; set; }
     public ICollection<AuthenticationScheme> AuthenticationSchemes { get; set; }
-    public ICollection<Folder> Folders { get; set; }
 
     public ICollection<RouteFolder> RouteFolders { get; set; }
     public ICollection<Route> Routes { get; set; }
     public ICollection<Log> Logs { get; set; }
-    public ICollection<TextStorage> TextStorages { get; set; }
     public ICollection<Variable> Variables { get; set; }
 
     public AppLink Link { get; set; }

@@ -18,17 +18,8 @@ import {
 import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/16/solid";
 import { Modal, Spinner } from "flowbite-react";
 import {
-  default as FileFolderItem,
-  FolderPathItem,
-} from "../storages/files/Item";
-import {
   ArrowTopRightOnSquareIcon,
-  DocumentIcon,
-  FolderIcon,
 } from "@heroicons/react/24/solid";
-import { Link } from "react-router-dom";
-import { useAuth0 } from "@auth0/auth0-react";
-import React from "react";
 import { getConfig } from "@/config";
 const { WEBAPP_APIGATEWAY_DOMAIN } = getConfig();
 const apiGatewayDomain = WEBAPP_APIGATEWAY_DOMAIN;
@@ -60,8 +51,8 @@ export default function RouteCreateUpdate({
       responseStatusCode: route?.responseStatusCode || 200,
       responseHeaders: route?.responseHeaders
         ? route.responseHeaders.map((value) => {
-            return { name: value.name, value: value.value };
-          })
+          return { name: value.name, value: value.value };
+        })
         : [],
       response: route?.response,
       responseBodyLanguage: route?.responseBodyLanguage || "plaintext",
@@ -205,19 +196,6 @@ export default function RouteCreateUpdate({
 
             <div className="mt-1">
               {responseType === "Static" && <StaticResponse />}
-              {responseType === "StaticFile" && (
-                <StaticFile
-                  file={
-                    route?.fileId
-                      ? {
-                          id: route.fileId!,
-                          name: route.fileName!,
-                          folderId: route.fileFolderId!,
-                        }
-                      : undefined
-                  }
-                />
-              )}
               {responseType === "Function" && <FunctionHandler />}
               {errors.response && (
                 <p className="text-red-500">{errors.response.message}</p>
@@ -544,253 +522,6 @@ function StaticResponse() {
         </div>
       </div>
     </>
-  );
-}
-
-interface PageData {
-  items: FileFolderItem[];
-  folderPathItems: FolderPathItem[];
-}
-
-interface IFile {
-  id: number;
-  name: string;
-  folderId: number;
-}
-
-function StaticFile({ file }: { file?: IFile }) {
-  const { app } = useApp();
-  if (!app) return <Spinner aria-label="Loading..." />
-  
-  const { getAccessTokenSilently } = useAuth0();
-  const {
-    control,
-    register,
-    formState: { errors },
-    setValue,
-  } = useFormContext<RouteCreateUpdateInputs>();
-
-  const {
-    fields: responseHeaders,
-    append: addResponseHeaders,
-    remove: removeResponseHeader,
-  } = useFieldArray({ control, name: "responseHeaders" });
-  const selectedFile = useRef<IFile | undefined>(file);
-  const [modalSelectedFile, setModalSelectedFile] = useState<IFile | undefined>(
-    file,
-  );
-  const [folderId, setFolderId] = useState<number | undefined>(file?.folderId);
-  const [showModal, setShowModal] = useState(false);
-  const handleChooseFileClick = () => {
-    setModalSelectedFile(selectedFile.current);
-    setShowModal(true);
-  };
-  const [{ items, folderPathItems }, setPageData] = useState<PageData>({
-    items: [],
-    folderPathItems: [],
-  });
-
-  const handleFolderClick = (
-    e: React.MouseEvent<HTMLAnchorElement>,
-    folderId: number,
-  ) => {
-    e.preventDefault();
-    setFolderId(folderId);
-  };
-
-  const fetchItems = async () => {
-    let url = `/api/apps/${app.id}/files`;
-    if (folderId) {
-      url += `?folderId=${folderId}`;
-    }
-    const accessToken = await getAccessTokenSilently();
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    const items = (await res.json()) as FileFolderItem[];
-    const folderPathItems = JSON.parse(
-      res.headers.get("Path-Items")!,
-    ) as FolderPathItem[];
-    setPageData({ items: items, folderPathItems: folderPathItems });
-  };
-
-  useEffect(() => {
-    if (showModal) {
-      fetchItems();
-    }
-  }, [showModal, folderId]);
-
-  const handleFileSelect = (file: FileFolderItem) => {
-    setModalSelectedFile({
-      id: file.id,
-      name: file.name,
-      folderId: file.parentId,
-    });
-  };
-  const handleChooseClick = () => {
-    selectedFile.current = modalSelectedFile;
-    setValue("fileId", selectedFile.current?.id);
-    setShowModal(false);
-  };
-  return (
-    <div>
-      <div className="mt-2">
-        <label htmlFor="header">Headers</label>
-        <div className="flex flex-col space-y-0.5">
-          {responseHeaders.map((header, index) => (
-            <div key={header.id} className="flex space-x-1">
-              <input
-                id={`responseHeaders[${index}].name`}
-                type="text"
-                {...register(`responseHeaders.${index}.name` as const)}
-                autoComplete="none"
-                className="border border-gray-200 px-2 py-1"
-              />
-              <input
-                id={`responseHeaders[${index}].value`}
-                type="text"
-                {...register(`responseHeaders.${index}.value` as const)}
-                autoComplete="none"
-                className="border border-gray-200 px-2 py-1"
-              />
-              <button
-                type="button"
-                onClick={() => removeResponseHeader(index)}
-                className="text-red-600"
-              >
-                Remove
-              </button>
-            </div>
-          ))}
-        </div>
-        <div className="flex flex-wrap space-x-2">
-          {quickAddResponseHeaderButtons.map((button, index) => (
-            <button
-              key={index}
-              type="button"
-              onClick={() =>
-                addResponseHeaders({ name: button.key, value: button.value })
-              }
-              className="mt-1 text-blue-600 hover:underline"
-            >
-              {button.text}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="mt-2">
-        <div>File</div>
-        {selectedFile.current ? (
-          <Link
-            to={`/apps/${app.id}/storages/files?folderId=${selectedFile.current!.folderId}`}
-            className="block text-blue-500 hover:underline"
-          >
-            {selectedFile.current!.name}
-          </Link>
-        ) : (
-          <p>Choose a file</p>
-        )}
-        <input type="hidden" {...register("fileId")} />
-        {errors.fileId && (
-          <span className="text-red-500">{errors.fileId.message}</span>
-        )}
-        <button
-          type="button"
-          onClick={handleChooseFileClick}
-          className="mt-1 bg-blue-500 px-2 py-1 text-white"
-        >
-          Choose
-        </button>
-        <Modal show={showModal} onClose={() => setShowModal(false)}>
-          <div className="p-2">
-            <h3 className="font-semibold">Choose a file</h3>
-            <hr className="my-1" />
-            <div className="min-h-56">
-              <div className="mt-2 flex space-x-1">
-                {folderPathItems.map((item, index) => (
-                  <React.Fragment key={item.id}>
-                    <Link
-                      to={``}
-                      className={item.id === folderId ? "font-semibold" : ""}
-                      onClick={(e) => handleFolderClick(e, item.id)}
-                    >
-                      {item.name}
-                    </Link>
-                    {index < folderPathItems.length - 1 && <span>{">"}</span>}
-                  </React.Fragment>
-                ))}
-              </div>
-              <table className="w-full">
-                <thead>
-                  <tr>
-                    <td></td>
-                    <td></td>
-                    <td>Name</td>
-                    <td>Size (B)</td>
-                    <td>Created At</td>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((item) => (
-                    <tr key={item.type + item.id}>
-                      <td>
-                        <input
-                          type="radio"
-                          name="file"
-                          value={item.id}
-                          disabled={item.type === "Folder"}
-                          onChange={() => {
-                            handleFileSelect(item);
-                          }}
-                          checked={item.id === modalSelectedFile?.id}
-                        />
-                      </td>
-                      <td>
-                        {item.type === "File" ? (
-                          <DocumentIcon className="h-4 w-4 text-blue-500" />
-                        ) : (
-                          <FolderIcon className="h-4 w-4 text-yellow-500" />
-                        )}
-                      </td>
-                      <td>
-                        {item.type === "File" ? (
-                          <>{item.name}</>
-                        ) : (
-                          <Link
-                            to={""}
-                            onClick={(e) => handleFolderClick(e, item.id)}
-                          >
-                            {item.name}
-                          </Link>
-                        )}
-                      </td>
-                      <td>{item.size || "-"}</td>
-                      <td>{new Date(item.createdAt).toDateString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <hr className="my-1" />
-            <div className="mt-1 flex justify-end space-x-1">
-              <button
-                onClick={handleChooseClick}
-                className="bg-primary px-2 py-1 text-white disabled:opacity-50"
-                disabled={selectedFile === undefined}
-              >
-                Choose
-              </button>
-              <button
-                onClick={() => setShowModal(false)}
-                className="bg-gray-500 px-2 py-1 text-white"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </Modal>
-      </div>
-    </div>
   );
 }
 

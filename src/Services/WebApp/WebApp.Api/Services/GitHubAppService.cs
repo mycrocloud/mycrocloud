@@ -72,9 +72,9 @@ public class GitHubAppService(HttpClient httpClient, IOptions<GitHubAppOptions> 
         return doc.RootElement.GetProperty("token").GetString()!;
     }
 
-    public async Task<List<GitHubRepo>> GetAccessibleRepos(long installationId)
+    public async Task<List<GitHubRepo>> GetAccessibleRepos(long installationId, string? token = null)
     {
-        var token = await GetInstallationAccessToken(installationId);
+        token ??= await GetInstallationAccessToken(installationId);
 
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 

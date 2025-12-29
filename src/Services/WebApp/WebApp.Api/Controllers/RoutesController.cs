@@ -62,7 +62,6 @@ public class RoutesController(
     public async Task<IActionResult> Get(int id)
     {
         var route = await appDbContext.Routes
-            .Include(r => r.File)
             .SingleAsync(r => r.App == App && r.Id == id);
 
         return Ok(RouteDetails(route));
@@ -93,9 +92,6 @@ public class RoutesController(
             route.FunctionHandlerDependencies,
             route.RequireAuthorization,
             Status = route.Status.ToString(),
-            route.FileId,
-            FileName = route.File?.Name,
-            FileFolderId = route.File?.FolderId,
             route.Enabled,
             route.CreatedAt,
             route.UpdatedAt
@@ -137,7 +133,6 @@ public class RoutesController(
     public async Task<IActionResult> Edit(int id, RouteCreateUpdateRequest updateRequest)
     {
         var route = await appDbContext.Routes
-            .Include(r => r.File)
             .SingleAsync(r => r.App == App && r.Id == id);
 
         if (route.Status == RouteStatus.Blocked)

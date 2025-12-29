@@ -27,10 +27,6 @@ function AppLayoutInner() {
   const isMatchAuthenticationSettings =
     part3 == "authentications" && part4 === "settings";
 
-  const isMatchFileStorages = part3 == "storages" && part4 === "files";
-  const isMatchTextStorages = part3 == "storages" && part4 === "textstorages";
-  const isMatchVariables = part3 == "storages" && part4 === "variables";
-
   const isMatchLogs = part3 == "logs";
   const isMatchIntegrations = part3 == "integrations";
   
