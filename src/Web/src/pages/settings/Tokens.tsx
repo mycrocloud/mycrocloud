@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { toast } from "react-toastify";
 import TextCopyButton from "../../components/ui/TextCopyButton";
-import { Modal } from "flowbite-react";
+import { Modal, ModalBody, ModalFooter, ModalHeader } from "flowbite-react";
 import { useForm } from "react-hook-form";
 import { useApiClient } from "@/hooks";
 
@@ -100,8 +100,8 @@ export default function Tokens() {
                 show={showCreateModal}
                 onClose={() => setShowCreateModal(false)}
             >
-                <Modal.Header>Generate new token</Modal.Header>
-                <Modal.Body>
+                <ModalHeader>Generate new token</ModalHeader>
+                <ModalBody>
                     <form>
                         <input {...register("name", {
                             required: "Name is required", maxLength: {
@@ -111,8 +111,8 @@ export default function Tokens() {
                         })} placeholder="Token name" className="block w-full border border-gray-300 bg-gray-50 p-1.5  text-gray-900 focus:border-blue-500 focus:ring-blue-500" />
                         {errors.name && <span className="text-red-500">{errors.name.message}</span>}
                     </form>
-                </Modal.Body>
-                <Modal.Footer className="justify-end">
+                </ModalBody>
+                <ModalFooter className="justify-end">
                     <button
                         onClick={() => {
                             setShowCreateModal(false);
@@ -127,7 +127,7 @@ export default function Tokens() {
                     >
                         Create
                     </button>
-                </Modal.Footer>
+                </ModalFooter>
             </Modal>
         </section>
     )

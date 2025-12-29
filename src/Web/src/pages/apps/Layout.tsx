@@ -2,7 +2,7 @@ import { Link, Outlet, useLocation, useParams } from "react-router-dom";
 import { AppContext } from ".";
 import { useEffect, useState } from "react";
 import IApp from "./App";
-import { Breadcrumb } from "flowbite-react";
+import { Breadcrumb, BreadcrumbItem } from "flowbite-react";
 import { useApiClient } from "@/hooks";
 
 export default function AppLayout() {
@@ -38,13 +38,13 @@ export default function AppLayout() {
     <AppContext.Provider value={{ app, setApp }}>
       <div className="">
         <Breadcrumb className="p-1">
-          <Breadcrumb.Item>
+          <BreadcrumbItem>
             <Link to="/">Home</Link>
-          </Breadcrumb.Item>
-          <Breadcrumb.Item>
+          </BreadcrumbItem>
+          <BreadcrumbItem>
             <Link to="/apps">Apps</Link>
-          </Breadcrumb.Item>
-          <Breadcrumb.Item>{app.name}</Breadcrumb.Item>
+          </BreadcrumbItem>
+          <BreadcrumbItem>{app.name}</BreadcrumbItem>
         </Breadcrumb>
         <div className="flex min-h-screen border">
           <div className="flex w-28 flex-col space-y-0.5 border-r p-1">
