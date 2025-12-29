@@ -19,8 +19,6 @@ export default function List() {
   }, [apps, searchTerm]);
 
   useEffect(() => {
-    document.title = "Apps";
-
     const getApps = async () => {
       const apps = await get<IApp[]>("/api/apps");
       setApps(apps);
@@ -30,47 +28,48 @@ export default function List() {
   }, []);
 
   return (
-    <div className="mx-auto mt-2 max-w-4xl p-2">
-      <div className="flex items-center">
-        <h1 className="font-semibold">Apps</h1>
-        <Button as={Link} to={"new"} className="ms-auto">New</Button>
-      </div>
-      <form className="mt-2">
-        <TextInput id="search-input"
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-          }}
-          placeholder="Search..." />
+    <div className="mx-auto max-w-4xl space-y-4 p-4">
+      {/* Header */}
+      <header className="flex items-center justify-between">
+        <h1 className="text-lg font-semibold">Apps</h1>
+        <Button as={Link} to="new">
+          New
+        </Button>
+      </header>
+
+      {/* Search */}
+      <form role="search">
+        <TextInput
+          id="search-input"
+          placeholder="Search..."
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </form>
-      <ul className="mt-3 divide-y">
-        {filteredApps.map((app) => {
-          return (
-            <li key={app.id}>
-              <div className="mb-2">
-                <h4>
-                  <Link
-                    to={`${app.id}`}
-                    className="font-semibold text-slate-900"
-                  >
-                    {app.name}
-                  </Link>
-                  <small
-                    className={`ms-1 ${app.status === "Active"
-                      ? "text-green-500"
-                      : "text-red-500"
-                      }`}
-                  >
-                    {app.status}
-                  </small>
-                </h4>
-                <p className="text-sm text-slate-600">{app.description}</p>
-                <small className="text-sm text-slate-600">
-                  Created: {new Date(app.createdAt).toDateString()}
-                </small>
+
+      {/* List */}
+      <ul className="divide-y rounded-xl border border-slate-200">
+        {filteredApps.map(app => (
+          <li key={app.id} className="px-6 py-5">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Link
+                  to={`${app.id}`}
+                  className="text-lg font-semibold text-slate-900 hover:underline"
+                >
+                  {app.name}
+                </Link>
+
+                <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
+                  {app.status}
+                </span>
               </div>
-            </li>
-          );
-        })}
+
+              <time className="block text-xs text-slate-500">
+                Created: {new Date(app.createdAt).toDateString()}
+              </time>
+            </div>
+          </li>
+        ))}
       </ul>
     </div>
   );
