@@ -14,23 +14,26 @@ public class AppBuildStatusConsumer(
     IAppBuildPublisher publisher)
     : BackgroundService
 {
+    private IConnection? _connection;
+    private IModel? _channel;
+    
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var factory = new ConnectionFactory
         {
             Uri = new Uri(configuration.GetConnectionString("RabbitMq")!),
         };
-        var connection = factory.CreateConnection();
-        var channel = connection.CreateModel();
+        _connection = factory.CreateConnection();
+        _channel = _connection.CreateModel();
         
         const string exchange = "app.build.events";
         const string queue = "api." + exchange;
         
-        channel.ExchangeDeclare(exchange, ExchangeType.Fanout, durable: true);
-        channel.QueueDeclare(queue, durable: true, exclusive: false, autoDelete: false, arguments: null);
-        channel.QueueBind(queue, exchange, routingKey: "");
+        _channel.ExchangeDeclare(exchange, ExchangeType.Fanout, durable: true);
+        _channel.QueueDeclare(queue, durable: true, exclusive: false, autoDelete: false, arguments: null);
+        _channel.QueueBind(queue, exchange, routingKey: "");
         
-        var consumer = new EventingBasicConsumer(channel);
+        var consumer = new EventingBasicConsumer(_channel);
         
         //TODO: implement retry mechanism and dead-letter queue
         consumer.Received += async (_, ea) =>
@@ -40,12 +43,20 @@ public class AppBuildStatusConsumer(
 
             await ProcessMessage(message);
             
-            channel.BasicAck(ea.DeliveryTag, false);
+            _channel.BasicAck(ea.DeliveryTag, false);
         };
         
-        channel.BasicConsume(queue, autoAck: false, consumer: consumer);
+        _channel.BasicConsume(queue, autoAck: false, consumer: consumer);
         
         return Task.CompletedTask;
+    }
+
+    public override async Task StopAsync(CancellationToken cancellationToken)
+    {
+        _channel?.Close();
+        _connection?.Close();
+        
+         await base.StopAsync(cancellationToken);
     }
 
     private async Task ProcessMessage(string message)
