@@ -12,6 +12,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       tailwindcss(),
+      flowbiteReact(),
       env.VITE_DEV_HOST ? mkcert() : null,
       {
         name: "inject-config-tag",
