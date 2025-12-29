@@ -20,6 +20,7 @@ import {
   ArrowTopRightOnSquareIcon,
 } from "@heroicons/react/24/solid";
 import { getConfig } from "@/config";
+import { HelperText, Label, TextInput } from "flowbite-react";
 const { WEBAPP_APIGATEWAY_DOMAIN } = getConfig();
 const apiGatewayDomain = WEBAPP_APIGATEWAY_DOMAIN;
 const { EDITOR_ORIGIN } = getConfig();
@@ -85,17 +86,12 @@ export default function RouteCreateUpdate({
         )}
         <div className="overflow-y-auto">
           <div>
-            <label htmlFor="name">Name</label>
-            <input
+            <Label htmlFor="name">Name</Label>
+            <TextInput
               id="name"
-              type="text"
               {...register("name")}
-              autoComplete="none"
-              className="inline-block w-full border border-gray-200 px-2 py-1"
             />
-            {errors.name && (
-              <span className="text-red-500">{errors.name.message}</span>
-            )}
+            {errors.name && <HelperText color="failure">{errors.name.message}</HelperText>}
           </div>
           <div className="mt-1">
             <label htmlFor="enable" className="flex items-center">

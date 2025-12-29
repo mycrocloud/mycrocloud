@@ -23,6 +23,7 @@ import { useForm } from "react-hook-form";
 import { ensureSuccess } from "../../hooks/useApiClient";
 import IRouteFolderRouteItem, { calculateLevel } from "./IRouteFolderRouteItem";
 import IRoute from "./Route";
+import { Button, TextInput } from "flowbite-react";
 //import { toast } from "react-toastify";
 
 interface IExplorerItem extends IRouteFolderRouteItem {
@@ -461,32 +462,29 @@ function RouteExplorer() {
           />
         )}
       </div>
-      <div className="flex justify-center space-x-2">
-        <button
+      <div className="grid grid-cols-2 gap-2">
+        <Button
           type="button"
-          onClick={() => {
-            navigate("new");
-          }}
-          className="w-1/2 bg-primary px-2 py-1 text-white enabled:hover:bg-cyan-700 disabled:opacity-50"
+          size="sm"
+          onClick={() => navigate("new")}
         >
           New Route
-        </button>
-        <button
+        </Button>
+
+        <Button
           type="button"
+          size="sm"
           onClick={() => handleNewFolderClick(true)}
-          className="w-1/2 bg-primary px-2 py-1 text-white enabled:hover:bg-cyan-700 disabled:opacity-50"
         >
           New Folder
-        </button>
+        </Button>
       </div>
+
       <div className="mt-1">
-        <input
-          type="text"
+        <TextInput
           placeholder="Filter"
-          className="w-full border px-1 py-0.5"
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-          }}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          sizing="sm"
         />
       </div>
       <hr className="my-1" />
