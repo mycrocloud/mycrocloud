@@ -2,26 +2,13 @@ import { Link, Outlet, useLocation, useParams } from "react-router-dom";
 import { AppContext } from ".";
 import { useEffect, useState } from "react";
 import IApp from "./App";
-import { Breadcrumb, BreadcrumbItem } from "flowbite-react";
+import { Breadcrumb, BreadcrumbItem, Sidebar, SidebarCollapse, SidebarItem, SidebarItemGroup, SidebarItems, Spinner } from "flowbite-react";
 import { useApiClient } from "@/hooks";
 
 export default function AppLayout() {
   const { get } = useApiClient();
   const appId = parseInt(useParams()["appId"]!.toString());
   const [app, setApp] = useState<IApp>();
-  const { pathname } = useLocation();
-  const part3 = pathname.split("/")[3];
-  const part4 = pathname.split("/")[4];
-
-  const isMatch_Overview = part3 === undefined;
-  const isMatch_Routes = part3 === "routes";
-  const isMatchAuthenticationSchemes =
-    part3 == "authentications" && part4 === "schemes";
-  const isMatchAuthenticationSettings =
-    part3 == "authentications" && part4 === "settings";
-
-  const isMatchLogs = part3 == "logs";
-  const isMatchIntegrations = part3 == "integrations";
 
   useEffect(() => {
     const getApp = async () => {
@@ -32,8 +19,9 @@ export default function AppLayout() {
   }, []);
 
   if (!app) {
-    return <h1>Loading...</h1>;
+    return <Spinner />
   }
+
   return (
     <AppContext.Provider value={{ app, setApp }}>
       <div className="">
@@ -46,59 +34,56 @@ export default function AppLayout() {
           </BreadcrumbItem>
           <BreadcrumbItem>{app.name}</BreadcrumbItem>
         </Breadcrumb>
-        <div className="flex min-h-screen border">
-          <div className="flex w-28 flex-col space-y-0.5 border-r p-1">
-            <Link
-              to=""
-              className={`text-xs ${isMatch_Overview ? "text-primary" : ""}`}
-            >
-              Overview
-            </Link>
-            <Link
-              to="routes"
-              className={`text-xs ${isMatch_Routes ? "text-primary" : ""}`}
-            >
-              Routes
-            </Link>
-            <div className="text-xs">
-              Authentications
-              <div className="flex flex-col pl-1">
-                <Link
-                  to="authentications/schemes"
-                  className={`text-xs ${
-                    isMatchAuthenticationSchemes ? "text-primary" : ""
-                  }`}
-                >
-                  Schemes
-                </Link>
-                <Link
-                  to="authentications/settings"
-                  className={`text-xs ${
-                    isMatchAuthenticationSettings ? "text-primary" : ""
-                  }`}
-                >
-                  Settings
-                </Link>
-              </div>
-            </div>
-            <Link
-              to="integrations"
-              className={`text-xs ${isMatchIntegrations ? "text-primary" : ""}`}
-            >
-              Integrations
-            </Link>
-            <Link
-              to="logs"
-              className={`text-xs ${isMatchLogs ? "text-primary" : ""}`}
-            >
-              Logs
-            </Link>
-          </div>
-          <div className="flex-1">
+        <div className="flex min-h-screen">
+          <aside className="w-64 border-r border-slate-200 bg-white">
+            <Menu />
+          </aside>
+          <main className="flex-1 p-6 bg-slate-50">
             <Outlet />
-          </div>
+          </main>
         </div>
       </div>
     </AppContext.Provider>
   );
+}
+
+function Menu() {
+  const { pathname } = useLocation();
+  const parts = pathname.split("/")
+  const part3 = parts[3];
+  const part4 = parts[4];
+
+  const isMatch_Overview = part3 === undefined;
+  const isMatch_Routes = part3 === "routes";
+  const isMatchAuthenticationSchemes = part3 == "authentications" && part4 == "schemes";
+  const isMatchAuthenticationSettings = part3 == "authentications" && part4 == "settings";
+  const isMatchIntegrations = part3 == "integrations";
+  const isMatchLogs = part3 == "logs";
+
+  return <Sidebar>
+    <SidebarItems>
+      <SidebarItemGroup>
+        <SidebarItem active={isMatch_Overview}>
+          <Link to="." >Overview</Link>
+        </SidebarItem>
+        <SidebarItem active={isMatch_Routes}>
+          <Link to="routes">Routes</Link>
+        </SidebarItem>
+        <SidebarCollapse label="Authentications">
+          <SidebarItem active={isMatchAuthenticationSchemes}>
+            <Link to="authentications/schemes">Schemes</Link>
+          </SidebarItem>
+          <SidebarItem active={isMatchAuthenticationSettings}>
+            <Link to="authentications/settings">Settings</Link>
+          </SidebarItem>
+        </SidebarCollapse>
+        <SidebarItem active={isMatchIntegrations}>
+          <Link to="integrations">Integrations</Link>
+        </SidebarItem>
+        <SidebarItem active={isMatchLogs}>
+          <Link to="logs">Logs</Link>
+        </SidebarItem>
+      </SidebarItemGroup>
+    </SidebarItems>
+  </Sidebar>
 }
