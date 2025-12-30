@@ -24,21 +24,29 @@ export default function AppLayout() {
 
   return (
     <AppContext.Provider value={{ app, setApp }}>
-      <div className="">
-        <Breadcrumb className="p-1">
-          <BreadcrumbItem>
-            <Link to="/">Home</Link>
-          </BreadcrumbItem>
-          <BreadcrumbItem>
-            <Link to="/apps">Apps</Link>
-          </BreadcrumbItem>
-          <BreadcrumbItem>{app.name}</BreadcrumbItem>
-        </Breadcrumb>
-        <div className="flex min-h-screen">
-          <aside className="w-64 border-r border-slate-200 bg-white">
-            <Menu />
-          </aside>
-          <main className="flex-1 p-6 bg-slate-50">
+      <div className="flex min-h-screen bg-slate-50">
+        {/* Sidebar */}
+        <aside className="w-64 border-r border-slate-200 bg-white">
+          <Menu />
+        </aside>
+
+        {/* Content area */}
+        <div className="flex flex-1 flex-col">
+          {/* Breadcrumb */}
+          <header className="border-b border-slate-200 bg-white px-6 py-2">
+            <Breadcrumb>
+              <BreadcrumbItem>
+                <Link to="/">Home</Link>
+              </BreadcrumbItem>
+              <BreadcrumbItem>
+                <Link to="/apps">Apps</Link>
+              </BreadcrumbItem>
+              <BreadcrumbItem>{app.name}</BreadcrumbItem>
+            </Breadcrumb>
+          </header>
+
+          {/* Main content */}
+          <main className="flex-1 p-6">
             <Outlet />
           </main>
         </div>
@@ -47,40 +55,40 @@ export default function AppLayout() {
   );
 }
 
-function Menu() {
+const Menu = () => {
   const { pathname } = useLocation();
   const parts = pathname.split("/")
   const part3 = parts[3];
   const part4 = parts[4];
 
-  const isMatch_Overview = part3 === undefined;
-  const isMatch_Routes = part3 === "routes";
-  const isMatchAuthenticationSchemes = part3 == "authentications" && part4 == "schemes";
-  const isMatchAuthenticationSettings = part3 == "authentications" && part4 == "settings";
-  const isMatchIntegrations = part3 == "integrations";
-  const isMatchLogs = part3 == "logs";
+  const activeOverview = part3 === undefined;
+  const activeRoutes = part3 === "routes";
+  const activeAuthenticationSchemes = part3 == "authentications" && part4 == "schemes";
+  const activeAuthenticationSettings = part3 == "authentications" && part4 == "settings";
+  const activeIntegrations = part3 == "integrations";
+  const activeLogs = part3 == "logs";
 
   return <Sidebar>
     <SidebarItems>
       <SidebarItemGroup>
-        <SidebarItem active={isMatch_Overview}>
+        <SidebarItem active={activeOverview}>
           <Link to="." >Overview</Link>
         </SidebarItem>
-        <SidebarItem active={isMatch_Routes}>
+        <SidebarItem active={activeRoutes}>
           <Link to="routes">Routes</Link>
         </SidebarItem>
         <SidebarCollapse label="Authentications">
-          <SidebarItem active={isMatchAuthenticationSchemes}>
+          <SidebarItem active={activeAuthenticationSchemes}>
             <Link to="authentications/schemes">Schemes</Link>
           </SidebarItem>
-          <SidebarItem active={isMatchAuthenticationSettings}>
+          <SidebarItem active={activeAuthenticationSettings}>
             <Link to="authentications/settings">Settings</Link>
           </SidebarItem>
         </SidebarCollapse>
-        <SidebarItem active={isMatchIntegrations}>
+        <SidebarItem active={activeIntegrations}>
           <Link to="integrations">Integrations</Link>
         </SidebarItem>
-        <SidebarItem active={isMatchLogs}>
+        <SidebarItem active={activeLogs}>
           <Link to="logs">Logs</Link>
         </SidebarItem>
       </SidebarItemGroup>
