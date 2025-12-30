@@ -1,6 +1,5 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import {
-  FieldErrors,
   FormProvider,
   useFieldArray,
   useForm,
@@ -20,7 +19,7 @@ import {
   ArrowTopRightOnSquareIcon,
 } from "@heroicons/react/24/solid";
 import { getConfig } from "@/config";
-import { Checkbox, HelperText, Label, Select, TextInput } from "flowbite-react";
+import { Button, Checkbox, HelperText, Label, Select, TextInput } from "flowbite-react";
 import TextCopyButton from "@/components/ui/TextCopyButton";
 const { WEBAPP_APIGATEWAY_DOMAIN } = getConfig();
 const apiGatewayDomain = WEBAPP_APIGATEWAY_DOMAIN;
@@ -29,9 +28,11 @@ const { EDITOR_ORIGIN } = getConfig();
 export default function RouteCreateUpdate({
   route,
   onSubmit,
+  onCancel,
 }: {
   route?: IRoute;
   onSubmit: (data: RouteCreateUpdateInputs) => void;
+  onCancel: () => void
 }) {
   const { app } = useContext(AppContext)!;
   if (!app) throw new Error();
@@ -71,20 +72,9 @@ export default function RouteCreateUpdate({
 
   const responseType = watch("responseType");
   const url = appDomain + watch("path");
-  const onInvalid = (e: FieldErrors<RouteCreateUpdateInputs>) => {
-    console.error(e);
-  };
   return (
     <FormProvider {...forms}>
-      <form className="h-full p-2" onSubmit={handleSubmit(onSubmit, onInvalid)}>
-        {route?.status === "Blocked" && (
-          <div className="border border-red-200 bg-red-50 p-2 text-red-700">
-            <p>
-              This route is blocked because of some reason. Your route will be
-              reviewed by our team.
-            </p>
-          </div>
-        )}
+      <form className="p-2" onSubmit={handleSubmit(onSubmit)}>
         <div className="overflow-y-auto">
           <div>
             <Label htmlFor="name">Name</Label>
@@ -95,13 +85,7 @@ export default function RouteCreateUpdate({
             />
             {errors.name && <HelperText color="failure">{errors.name.message}</HelperText>}
           </div>
-          <div className="mt-1">
-            <Label className="flex items-center gap-2 cursor-pointer">
-              <Checkbox {...register("enabled")} />
-              <span>Enable</span>
-            </Label>
-            {errors.enabled && <HelperText color="failure">{errors.enabled.message}</HelperText>}
-          </div>
+          {/* Request */}
           <section>
             <div className="flex">
               <h3 className="mt-3 border-l-2 border-primary px-1 font-semibold">
@@ -211,14 +195,20 @@ export default function RouteCreateUpdate({
             </div>
           </section>
         </div>
-        <div className="sticky bottom-0 mt-2">
-          <button
+        <div className="sticky bottom-0 mt-2 flex justify-end border-t-2 border-slate-100 gap-2">
+          <Button
+            type="button"
+            outline
+            onClick={onCancel}
+          >
+            Cancel
+          </Button>
+          <Button
             type="submit"
-            className="border bg-primary px-3 py-1 text-center font-medium text-white enabled:hover:bg-cyan-700"
             disabled={route?.status === "Blocked"}
           >
             Save
-          </button>
+          </Button>
         </div>
       </form>
     </FormProvider>
