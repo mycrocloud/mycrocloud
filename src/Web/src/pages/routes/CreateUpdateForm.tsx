@@ -20,7 +20,8 @@ import {
   ArrowTopRightOnSquareIcon,
 } from "@heroicons/react/24/solid";
 import { getConfig } from "@/config";
-import { HelperText, Label, TextInput } from "flowbite-react";
+import { Checkbox, HelperText, Label, Select, TextInput } from "flowbite-react";
+import TextCopyButton from "@/components/ui/TextCopyButton";
 const { WEBAPP_APIGATEWAY_DOMAIN } = getConfig();
 const apiGatewayDomain = WEBAPP_APIGATEWAY_DOMAIN;
 const { EDITOR_ORIGIN } = getConfig();
@@ -90,17 +91,16 @@ export default function RouteCreateUpdate({
             <TextInput
               id="name"
               {...register("name")}
+              sizing="sm"
             />
             {errors.name && <HelperText color="failure">{errors.name.message}</HelperText>}
           </div>
           <div className="mt-1">
-            <label htmlFor="enable" className="flex items-center">
-              <input type="checkbox" {...register("enabled")} id="enable" />
-              Enable
-            </label>
-            {errors.enabled && (
-              <span className="text-red-500">{errors.enabled.message}</span>
-            )}
+            <Label className="flex items-center gap-2 cursor-pointer">
+              <Checkbox {...register("enabled")} />
+              <span>Enable</span>
+            </Label>
+            {errors.enabled && <HelperText color="failure">{errors.enabled.message}</HelperText>}
           </div>
           <section>
             <div className="flex">
@@ -108,51 +108,65 @@ export default function RouteCreateUpdate({
                 Request
               </h3>
             </div>
-            <div className="mt-2">
-              <label>Method and Path</label>
-              <div className="flex">
-                <select
-                  className="w-24 border border-gray-200"
+            <div className="space-y-2">
+              <Label>Method & Path</Label>
+
+              {/* Method + Path */}
+              <div className="flex gap-2">
+                <Select
                   {...register("method")}
+                  sizing="sm"
+                  className="w-28"
                 >
                   {methods.map((m) => (
                     <option key={m} value={m.toUpperCase()}>
                       {m.toUpperCase()}
                     </option>
                   ))}
-                </select>
-                <input
-                  autoComplete="none"
-                  type="text"
-                  className="inline-block flex-1 border border-gray-200 px-2 py-1"
+                </Select>
+
+                <TextInput
+                  sizing="sm"
                   {...register("path")}
+                  className="flex-1"
+                  placeholder="/api/v1/example"
                 />
               </div>
-              {errors.method && (
-                <span className="text-red-500">{errors.method.message}</span>
+
+              {/* Errors */}
+              {(errors.method || errors.path) && (
+                <div className="space-y-0.5">
+                  {errors.method && (
+                    <HelperText color="failure">
+                      {errors.method.message}
+                    </HelperText>
+                  )}
+                  {errors.path && (
+                    <HelperText color="failure">
+                      {errors.path.message}
+                    </HelperText>
+                  )}
+                </div>
               )}
-              {errors.path && (
-                <span className="text-red-500">{errors.path.message}</span>
-              )}
-              <div className="mt-1">
-                <small className="me-2">URL:</small>
+
+              {/* URL Preview */}
+              <div className="flex items-center gap-2 text-sm text-slate-600">
+                <span>URL:</span>
+
                 <a
-                  className="inline-flex text-blue-500 hover:underline"
                   href={url}
                   target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-blue-600 hover:underline"
                 >
-                  <small>{url}</small>
-                  <ArrowTopRightOnSquareIcon className="ms-0.5 h-4 w-4" />
+                  <span className="truncate max-w-xs">{url}</span>
+                  <ArrowTopRightOnSquareIcon className="h-4 w-4" />
                 </a>
-                <button
-                  type="button"
-                  onClick={() => navigator.clipboard.writeText(url)}
-                  className="ms-3 text-blue-500 hover:underline"
-                >
-                  <small>Copy</small>
-                </button>
+
+                <TextCopyButton text={url} />
               </div>
             </div>
+
             <div className="mt-1">
               <div className="p-1">
                 <input
