@@ -13,3 +13,14 @@ export async function downloadFile(
     a.click();
   }
 }
+
+export function tryParseDate(str: string | undefined) {
+  let date = null;
+  if (str) {
+    try {
+      date = new Date(str)
+    } catch {
+    }
+  }
+  return date;
+}

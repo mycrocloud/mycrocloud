@@ -1,10 +1,11 @@
 import { useContext, useEffect, useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { AppContext } from ".";
 import { IRouteLog } from "../routes";
 import moment from "moment";
-import { XMarkIcon } from "@heroicons/react/20/solid";
+import { Badge, Button, Card, Datepicker, Drawer, DrawerHeader, DrawerItems, Dropdown, DropdownItem, HelperText, Label, Pagination, Table, TableBody, TableCell, TableHead, TableHeadCell, TableRow, TextInput } from "flowbite-react";
+import { tryParseDate } from "@/utils";
 
 type Inputs = {
   accessDateFrom?: string;
@@ -18,10 +19,10 @@ export default function AppLogs() {
 
   const { getAccessTokenSilently } = useAuth0();
   const [logs, setLogs] = useState<IRouteLog[]>([]);
-  const { register, handleSubmit, setValue } = useForm<Inputs>();
+  const { register, handleSubmit, setValue, control } = useForm<Inputs>();
 
   function buildQuery(data: Inputs) {
-    let query = "";
+    let query = "pageSize=10";
     const conditions = [];
     if (data.accessDateFrom) {
       conditions.push(`accessDateFrom=${data.accessDateFrom}`);
@@ -67,31 +68,6 @@ export default function AppLogs() {
     }
   }, [routeIdsValue]);
 
-  const handleDownloadDisplayingAsCsvClick = () => {
-    const csv = logs
-      .map((l) => {
-        return `${new Date(l.timestamp).toLocaleString()},${l.remoteAddress || "-"},${l.routeId || "-"},${l.method},${l.path},${l.statusCode}`;
-      })
-      .join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `logs_${moment(new Date()).format("YYYYMMDDHHMMSS")}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleDownloadDisplayingAsJsonClick = () => {
-    const json = JSON.stringify(logs, null, 2);
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `logs_${moment(new Date()).format("YYYYMMDDHHMMSS")}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
   const onDownloadAsJson = async (data: Inputs) => {
     const logs = await searchLogs(data);
     const json = JSON.stringify(logs, null, 2);
@@ -121,116 +97,142 @@ export default function AppLogs() {
   };
 
   const [log, setLog] = useState<IRouteLog | null>();
-  console.log("rendering...", log);
+  const [drawerOpen, setDrawlerOpen] = useState(false);
+  const closeDetails = () => {
+    setDrawlerOpen(false)
+  }
   return (
-    <>
-      <form onSubmit={handleSubmit(onSubmit)} className="border p-2">
-        <div>
-          <label className="me-2">Access Date</label>
-          <input type="date" {...register("accessDateFrom")} />
-          <span>~</span>
-          <input type="date" {...register("accessDateTo")} />
+    <div>
+      <Card>
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-2">
+          <div>
+            <Label>Access Date</Label>
+            <div className="flex items-center gap-1">
+              <Controller
+                control={control}
+                name="accessDateFrom"
+                render={({ field: { value, onChange } }) => {
+                  return <Datepicker value={tryParseDate(value)} onChange={(val) => onChange(val?.toString())} />
+                }}
+              />
+              <span>~</span>
+              <Controller
+                control={control}
+                name="accessDateTo"
+                render={({ field: { value, onChange } }) => {
+                  return <Datepicker value={tryParseDate(value)} onChange={(val) => onChange(val?.toString())} />
+                }}
+              />
+            </div>
+          </div>
+          <div>
+            <Label>Route Ids</Label>
+            <TextInput
+              value={routeIdsValue}
+              onChange={(e) => setRouteIdsValue(e.target.value)}
+            />
+            <HelperText>Comma seperated route ids.</HelperText>
+          </div>
+          <div className="flex justify-end">
+            <Button type="submit">
+              Filter
+            </Button>
+          </div>
+        </form>
+      </Card>
+
+      <div>
+        <div className="flex justify-end">
+          <Dropdown label="Download" dismissOnClick={false}>
+            <DropdownItem onClick={handleSubmit(onDownloadAsCsv)}>CSV</DropdownItem>
+            <DropdownItem onClick={handleSubmit(onDownloadAsJson)}>JSON</DropdownItem>
+          </Dropdown>
         </div>
-        <div>
-          <label className="me-2">Route</label>
-          <input
-            type="text"
-            value={routeIdsValue}
-            onChange={(e) => setRouteIdsValue(e.target.value)}
-            className="border border-gray-200"
-          />
-        </div>
-        <div className="flex justify-end space-x-1">
-          <button type="submit" className="bg-primary px-2 py-0.5 text-white">
-            Filter
-          </button>
-        </div>
-      </form>
-      <div className="mt-2 flex justify-end space-x-1 p-2">
-        <button
-          type="button"
-          onClick={handleSubmit(onDownloadAsCsv)}
-          className="bg-primary px-2 py-0.5 text-white"
-        >
-          Download as CSV
-        </button>
-        <button
-          type="button"
-          onClick={handleSubmit(onDownloadAsJson)}
-          className="bg-primary px-2 py-0.5 text-white"
-        >
-          Download as JSON
-        </button>
-        <button
-          type="button"
-          onClick={handleDownloadDisplayingAsCsvClick}
-          className="bg-primary px-2 py-0.5 text-white"
-        >
-          Download displaying logs as CSV
-        </button>
-        <button
-          type="button"
-          onClick={handleDownloadDisplayingAsJsonClick}
-          className="bg-primary px-2 py-0.5 text-white"
-        >
-          Download displaying logs as JSON
-        </button>
+        <Table className="" hoverable>
+          <TableHead className="">
+            <TableRow>
+              <TableHeadCell>Time</TableHeadCell>
+              <TableHeadCell>Method</TableHeadCell>
+              <TableHeadCell>Path</TableHeadCell>
+              <TableHeadCell>Status Code</TableHeadCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {logs.map((log) => (
+              <TableRow
+                onClick={() => {
+                  setDrawlerOpen(true);
+                  setLog(log);
+                }}
+                className="cursor-pointer bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
+                key={log.id}
+                role="button"
+              >
+                <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
+                <TableCell>{log.method}</TableCell>
+                <TableCell>{log.path}</TableCell>
+                <TableCell>{log.statusCode}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
-      <table className="flex-1">
-        <thead className="border">
-          <tr>
-            <th className="min-w-16 text-start p-2">Time</th>
-            <th className="text-start">Method</th>
-            <th className="text-start">Path</th>
-            <th className="text-start">Status Code</th>
-            {/* <th className="text-start">Function Execution Environment</th> */}
-          </tr>
-        </thead>
-        <tbody>
-          {logs.map((log) => (
-            <tr
-              onClick={() => {
-                console.log("click");
-                setLog(log);
-              }}
-              key={log.id}
-              className="cursor-pointer border hover:bg-gray-100"
-            >
-              <td className="py-1.5">
-                {new Date(log.timestamp).toLocaleString()}
-              </td>
-              <td className="py-1.5">
-                {log.method}
-              </td>
-              <td className="py-1.5">
-                {log.path}
-              </td>
-              <td className="py-1.5">
-                {log.statusCode}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {!log ? (
-        <div className="text-gray-500">Click log to view details</div>
-      ) : (
-        <div className="">
+      <Drawer open={drawerOpen} onClose={closeDetails} position="right">
+        <DrawerHeader title="Details" />
+        {log && <DrawerItems>
           <div className="flex items-center">
-            <p className="border p-0.5 rounded">{log.method}</p>
+            <Badge>{log.method}</Badge>
             <p className="ps-2">{log.path}</p>
-            <button className="ms-auto" onClick={() => setLog(null)}>
-              <XMarkIcon width={20} />
-            </button>
           </div>
-          <div className="mt-2">
-            <p className="font-semibold text-slate-800">Logs</p>
-            {log.functionLogs?.map((fl) => {
-              return <p>[{fl.type}]{fl.message}</p>
-            })}
+          <div className="mt-3">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                Logs
+              </p>
+              <span className="text-xs text-slate-500">
+                {log.functionLogs?.length || 0} entries
+              </span>
+            </div>
+
+            <div className="max-h-64 space-y-1 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-2 font-mono text-xs dark:border-slate-700 dark:bg-slate-900">
+              {log.functionLogs?.length ? (
+                log.functionLogs.map((fl, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-start gap-2 rounded px-2 py-1 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  >
+                    {/* Type badge */}
+                    <span
+                      className={[
+                        "mt-0.5 inline-block min-w-13 rounded px-1.5 py-0.5 text-center text-[10px] font-semibold uppercase",
+                        fl.type === "error" &&
+                        "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
+                        fl.type === "warn" &&
+                        "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300",
+                        fl.type === "info" &&
+                        "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+                        fl.type === "debug" &&
+                        "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200",
+                      ].join(" ")}
+                    >
+                      {fl.type}
+                    </span>
+
+                    {/* Message */}
+                    <p className="whitespace-pre-wrap wrap-break-word text-slate-800 dark:text-slate-100">
+                      {fl.message}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <div className="py-6 text-center text-slate-400">
+                  No logs available
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
-    </>
+        </DrawerItems>}
+      </Drawer>
+    </div>
   );
 }

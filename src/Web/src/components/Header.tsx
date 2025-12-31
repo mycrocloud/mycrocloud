@@ -77,7 +77,7 @@ export default function Header() {
       <NavbarCollapse>
         {isAuthenticated && (
           <>
-            <NavbarLink as={Link} href="/apps">
+            <NavbarLink as={Link} to="/apps">
               Apps
             </NavbarLink>
           </>
