@@ -24,15 +24,15 @@ export default function AppLayout() {
 
   return (
     <AppContext.Provider value={{ app, setApp }}>
-      <div className="flex min-h-screen bg-slate-50">
-        {/* Sidebar */}
-        <aside className="w-64 border-r border-slate-200 bg-white">
+      <div className="flex h-screen bg-slate-50">
+        {/* Sidebar (fixed visually) */}
+        <aside className="w-64 shrink-0 border-r border-slate-200 bg-white">
           <Menu />
         </aside>
 
         {/* Content area */}
-        <div className="flex flex-1 flex-col">
-          {/* Breadcrumb */}
+        <div className="flex flex-1 flex-col overflow-hidden">
+          {/* Breadcrumb / Header */}
           <header className="border-b border-slate-200 bg-white px-6 py-2">
             <Breadcrumb>
               <BreadcrumbItem>
@@ -45,8 +45,8 @@ export default function AppLayout() {
             </Breadcrumb>
           </header>
 
-          {/* Main content */}
-          <main className="flex-1 p-6">
+          {/* Scrollable content */}
+          <main className="flex-1 overflow-y-auto p-6">
             <Outlet />
           </main>
         </div>
@@ -67,29 +67,61 @@ const Menu = () => {
   const activeAuthenticationSettings = part3 == "authentications" && part4 == "settings";
   const activeIntegrations = part3 == "integrations";
   const activeLogs = part3 == "logs";
+  const activeSettings = part3 == "settings";
 
   return <Sidebar>
     <SidebarItems>
       <SidebarItemGroup>
-        <SidebarItem active={activeOverview}>
-          <Link to="." >Overview</Link>
+        <SidebarItem
+          as={Link}
+          to="."
+          active={activeOverview}
+        >
+          Overview
         </SidebarItem>
-        <SidebarItem active={activeRoutes}>
-          <Link to="routes">Routes</Link>
+        <SidebarItem
+          as={Link}
+          to="routes"
+          active={activeRoutes}
+        >
+          Routes
         </SidebarItem>
         <SidebarCollapse label="Authentications">
-          <SidebarItem active={activeAuthenticationSchemes}>
-            <Link to="authentications/schemes">Schemes</Link>
+          <SidebarItem
+            as={Link}
+            to="authentications/schemes"
+            active={activeAuthenticationSchemes}
+          >
+            Schemes
           </SidebarItem>
-          <SidebarItem active={activeAuthenticationSettings}>
-            <Link to="authentications/settings">Settings</Link>
+          <SidebarItem
+            as={Link}
+            to="authentications/settings"
+            active={activeAuthenticationSettings}
+          >
+            Settings
           </SidebarItem>
         </SidebarCollapse>
-        <SidebarItem active={activeIntegrations}>
-          <Link to="integrations">Integrations</Link>
+        <SidebarItem
+          as={Link}
+          to="integrations"
+          active={activeIntegrations}
+        >
+          Integrations
         </SidebarItem>
-        <SidebarItem active={activeLogs}>
-          <Link to="logs">Logs</Link>
+        <SidebarItem
+          as={Link}
+          to="logs"
+          active={activeLogs}
+        >
+          Logs
+        </SidebarItem>
+        <SidebarItem
+          as={Link}
+          to="settings"
+          active={activeSettings}
+        >
+          Settings
         </SidebarItem>
       </SidebarItemGroup>
     </SidebarItems>

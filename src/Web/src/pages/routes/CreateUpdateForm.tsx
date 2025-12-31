@@ -19,7 +19,7 @@ import {
   ArrowTopRightOnSquareIcon,
 } from "@heroicons/react/24/solid";
 import { getConfig } from "@/config";
-import { Button, Checkbox, HelperText, Label, Select, TextInput } from "flowbite-react";
+import { Button, HelperText, Label, Select, TextInput } from "flowbite-react";
 import TextCopyButton from "@/components/ui/TextCopyButton";
 const { WEBAPP_APIGATEWAY_DOMAIN } = getConfig();
 const apiGatewayDomain = WEBAPP_APIGATEWAY_DOMAIN;
@@ -32,7 +32,7 @@ export default function RouteCreateUpdate({
 }: {
   route?: IRoute;
   onSubmit: (data: RouteCreateUpdateInputs) => void;
-  onCancel: () => void
+  onCancel?: () => void
 }) {
   const { app } = useContext(AppContext)!;
   if (!app) throw new Error();
@@ -355,7 +355,7 @@ function RequestValidation() {
             Body
           </button>
         </div>
-        <div ref={editorEl} className="mt-1 h-[200px] w-full"></div>
+        <div ref={editorEl} className="mt-1 h-50 w-full"></div>
         {errors.requestQuerySchema && (
           <span className="block text-red-500">
             {errors.requestQuerySchema.message}
