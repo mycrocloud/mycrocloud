@@ -9,12 +9,18 @@ export default function Connections() {
     const url = `https://slack.com/oauth/v2/authorize?client_id=${SLACK_CLIENT_ID}&scope=${scope}&redirect_uri=${redirect_uri}`;
 
     window.location.href = url;
-  };  
+  };
 
   return (
-    <section className="mt-4">
-      <h2 className="mt-4 font-semibold">Connections</h2>
-      <div className="flex space-x-2 items-center mt-2">
+    <section className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
+      <header>
+        <h2 className="text-base font-semibold">Connections</h2>
+        {/* <p className="text-sm text-slate-500">
+          Connect external services to your application
+        </p> */}
+      </header>
+
+      <div className="flex items-center gap-3">
         <button
           onClick={connectSlack}
         >

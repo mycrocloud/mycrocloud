@@ -23,7 +23,6 @@ import {
   AuthenticationSchemeSettings,
 } from "./pages/authentications";
 
-import About from "./pages/About";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ApiKeyCreateUpdate, ApiKeyList } from "./pages/authentications/apikey";
 
