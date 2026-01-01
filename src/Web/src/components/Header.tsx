@@ -23,7 +23,7 @@ export default function Header() {
   const navigate = useNavigate();
 
   return (
-    <Navbar fluid rounded>
+    <Navbar fluid className="border-b border-slate-200">
       <NavbarBrand as={Link} href="/">
         <img
           src="/cloud.svg"

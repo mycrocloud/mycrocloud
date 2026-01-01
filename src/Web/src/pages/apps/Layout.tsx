@@ -2,8 +2,9 @@ import { Link, Outlet, useLocation, useParams } from "react-router-dom";
 import { AppContext } from ".";
 import { useEffect, useState } from "react";
 import IApp from "./App";
-import { Breadcrumb, BreadcrumbItem, Sidebar, SidebarCollapse, SidebarItem, SidebarItemGroup, SidebarItems, Spinner } from "flowbite-react";
+import { Breadcrumb, BreadcrumbItem, Sidebar, SidebarCollapse, SidebarItem, SidebarItemGroup, SidebarItems, Spinner, theme } from "flowbite-react";
 import { useApiClient } from "@/hooks";
+import { twMerge } from "flowbite-react/helpers/tailwind-merge";
 
 export default function AppLayout() {
   const { get } = useApiClient();
@@ -24,13 +25,13 @@ export default function AppLayout() {
 
   return (
     <AppContext.Provider value={{ app, setApp }}>
-      <div className="flex h-screen">
-        <aside className="w-64 shrink-0 border-r border-slate-200">
+      <div className="flex h-screen overflow-hidden">
+        <aside>
           <Menu />
         </aside>
 
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <header className="border-b border-slate-200 px-6 py-2">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <header className="shrink-0 border-b border-slate-200 px-6 py-2">
             <Breadcrumb>
               <BreadcrumbItem>
                 <Link to="/">Home</Link>
@@ -42,7 +43,7 @@ export default function AppLayout() {
             </Breadcrumb>
           </header>
 
-          <main className="flex-1 overflow-y-auto p-6">
+          <main className="min-h-0 flex-1 overflow-hidden p-6">
             <Outlet />
           </main>
         </div>
@@ -65,7 +66,16 @@ const Menu = () => {
   const activeLogs = part3 == "logs";
   const activeSettings = part3 == "settings";
 
-  return <Sidebar>
+  return <Sidebar
+    theme={{
+      root: {
+        inner: twMerge(
+          theme.sidebar.root.inner,
+          "bg-white border-r border-slate-200"
+        ),
+      },
+    }}
+  >
     <SidebarItems>
       <SidebarItemGroup>
         <SidebarItem

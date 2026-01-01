@@ -74,8 +74,8 @@ export default function RouteCreateUpdate({
   const url = appDomain + watch("path");
   return (
     <FormProvider {...forms}>
-      <form className="p-2" onSubmit={handleSubmit(onSubmit)}>
-        <div className="overflow-y-auto">
+      <form className="mx-auto flex w-full max-w-4xl min-w-0 flex-col" onSubmit={handleSubmit(onSubmit)}>
+        <div className="space-y-4 pb-24">
           <div>
             <Label htmlFor="name">Name</Label>
             <TextInput
@@ -195,20 +195,23 @@ export default function RouteCreateUpdate({
             </div>
           </section>
         </div>
-        <div className="sticky bottom-0 mt-2 flex justify-end border-t-2 border-slate-100 gap-2">
-          <Button
-            type="button"
-            outline
-            onClick={onCancel}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={route?.status === "Blocked"}
-          >
-            Save
-          </Button>
+        <div className="sticky bottom-0 z-10 -mx-4 border-t border-slate-200 bg-white/90 px-4 py-3 backdrop-blur">
+          <div className="flex shrink-0 gap-2 justify-end">
+            <Button
+              type="button"
+              outline
+              onClick={onCancel}
+              color={"gray"}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={route?.status === "Blocked"}
+            >
+              Save
+            </Button>
+          </div>
         </div>
       </form>
     </FormProvider>

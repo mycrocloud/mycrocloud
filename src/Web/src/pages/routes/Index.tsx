@@ -12,7 +12,6 @@ import { useAuth0 } from "@auth0/auth0-react";
 import {
   RoutesContext,
   routesReducer,
-  //useRoutesContext,
 } from "./Context";
 import {
   ChevronDownIcon,
@@ -24,7 +23,6 @@ import { ensureSuccess } from "../../hooks/useApiClient";
 import IRouteFolderRouteItem, { calculateLevel } from "./IRouteFolderRouteItem";
 import IRoute from "./Route";
 import { Button, TextInput } from "flowbite-react";
-//import { toast } from "react-toastify";
 
 interface IExplorerItem extends IRouteFolderRouteItem {
   level: number;
@@ -42,25 +40,34 @@ export default function RouteIndex() {
 
   const newRouteActive = useMatch("/apps/:appId/routes/new/:folderId?");
   const editRouteActive = useMatch("/apps/:appId/routes/:routeId");
-  const logPageActive = useMatch("/apps/:appId/routes/:routeId/logs");
 
   return (
     <RoutesContext.Provider value={{ state, dispatch }}>
-      <div className="flex h-full">
-        <div className="w-64 border-r p-1">
-          <RouteExplorer />
-        </div>
-        <div className="flex-1">
-          {newRouteActive || editRouteActive || logPageActive ? (
-            <div className="">
-              <Outlet key={routeId} />
-            </div>
-          ) : (
-            <div className="flex h-screen items-center justify-center">
-              Click New button to create new route or click route to edit.
-            </div>
-          )}
-        </div>
+      <div className="flex h-full min-h-0 overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <aside className="w-72 shrink-0 border-r border-slate-200 bg-slate-50">
+          <div className="h-full min-h-0 overflow-y-auto p-2">
+            <RouteExplorer />
+          </div>
+        </aside>
+
+        <section className="flex min-w-0 flex-1 min-h-0 flex-col">
+          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4">
+            {newRouteActive || editRouteActive ? (
+              <div className="min-w-0">
+                <Outlet key={routeId} />
+              </div>
+            ) : (
+              <div className="flex min-h-full items-center justify-center">
+                <div className="w-full max-w-md rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+                  <p className="text-sm font-medium text-slate-800">No route selected</p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Click <span className="font-medium">New</span> to create a route, or select one from the left to edit.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
       </div>
     </RoutesContext.Provider>
   );

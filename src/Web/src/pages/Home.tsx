@@ -1,4 +1,5 @@
 import { useAuth0 } from "@auth0/auth0-react";
+import { Spinner } from "flowbite-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -14,15 +15,13 @@ function Home() {
   }, [isAuthenticated]);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <Spinner />
   }
 
   return (
-    <>
-      <div className="mt-5 text-center">
-        <p className="text-lg font-bold">Please log in to continue.</p>
-      </div>
-    </>
+    <div className="mt-5 text-center">
+      <p className="text-lg font-bold">Please log in to continue.</p>
+    </div>
   );
 }
 export default Home;
