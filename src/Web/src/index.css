@@ -3,3 +3,9 @@
 @source "../.flowbite-react/class-list.json";
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+    body {
+        @apply text-gray-600
+    }
+}
