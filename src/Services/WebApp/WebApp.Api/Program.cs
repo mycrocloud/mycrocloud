@@ -1,7 +1,6 @@
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
-using WebApp.Api;
 using WebApp.Domain.Services;
 using WebApp.Domain.Repositories;
 using WebApp.Api.Extensions;
@@ -24,7 +23,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add(typeof(GlobalExceptionFilter));
-    options.InputFormatters.Insert(options.InputFormatters.Count, new TextPlainInputFormatter());
 });
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -170,18 +168,14 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/healthz");
 app.Map("ping", () => "pong");
-app.Map("me", async (AppDbContext appDbContext, ClaimsPrincipal user) =>
+app.Map("me", (ClaimsPrincipal user) =>
     {
         var userId = user.GetUserId();
-        var tokens = await appDbContext.UserTokens
-            .Where(t => t.UserId == userId)
-            .ToListAsync();
 
-        return new
+        return Task.FromResult(new
         {
             userId,
-            connections = tokens.Select(t => new { t.Provider, t.Purpose, t.CreatedAt, t.UpdatedAt })
-        };
+        });
     })
     .RequireAuthorization();
 
