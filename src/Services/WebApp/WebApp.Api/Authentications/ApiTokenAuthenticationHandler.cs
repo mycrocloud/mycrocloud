@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using WebApp.Domain.Entities;
@@ -26,18 +25,17 @@ public class ApiTokenAuthenticationHandler: AuthenticationHandler<ApiTokenAuthen
     {
         var token = Context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
 
-        var userToken = await _dbContext.UserTokens
-            .SingleOrDefaultAsync(t =>
-                t.Token == token && t.Purpose == UserTokenPurpose.ApiToken && t.Status != TokenStatus.Revoked);
+        var apiToken = await _dbContext.ApiTokens
+            .SingleOrDefaultAsync(t => t.Token == token && t.Status == TokenStatus.Active);
 
-        if (userToken is null)
+        if (apiToken is null)
         {
             return AuthenticateResult.Fail("Invalid token");
         }
 
         var claims = new List<Claim>
         {
-            new(ClaimTypes.NameIdentifier, userToken.UserId)
+            new(ClaimTypes.NameIdentifier, apiToken.UserId)
         };
         
         var identity = new ClaimsIdentity(claims, Scheme.Name);

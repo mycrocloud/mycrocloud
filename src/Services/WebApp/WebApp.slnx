@@ -1,6 +1,8 @@
 ﻿<Solution>
   <Folder Name="/Solution Items/">
     <File Path="compose.yaml" />
+    <File Path="global.json" />
+    <File Path=".config\dotnet-tools.json" />
   </Folder>
   <Project Path="WebApp.ApiGateway\WebApp.ApiGateway.csproj" Type="Classic C#" />
   <Project Path="WebApp.Api\WebApp.Api.csproj" Type="Classic C#" />

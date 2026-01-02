@@ -17,7 +17,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Variable> Variables { get; set; }
 
     //TODO: re-design?
-    public DbSet<UserToken> UserTokens { get; set; }
+    public DbSet<ApiToken> ApiTokens { get; set; }
 
     public DbSet<AppBuild> AppBuildJobs { get; set; }
 
@@ -110,9 +110,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .WithMany(a => a.Variables)
             .OnDelete(DeleteBehavior.Cascade);
 
-        //TODO: re-design?
-        modelBuilder.Entity<UserToken>()
-            .HasKey(t => new { t.UserId, t.Provider, t.Purpose });
+        modelBuilder.Entity<ApiToken>()
+            .HasKey(t => new { t.Token });
 
         modelBuilder.Entity<App>(entity =>
         {            

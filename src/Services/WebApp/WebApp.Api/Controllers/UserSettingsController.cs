@@ -14,17 +14,15 @@ public class UserSettingsController(AppDbContext dbContext): BaseController
     [HttpPost("tokens")]
     public async Task<IActionResult> CreateToken(CreateApiTokenRequest request)
     {
-        var token = new UserToken
+        var token = new ApiToken
         {
             UserId = User.GetUserId(),
             Name = request.Name,
-            Provider = "MycroCloud",
-            Purpose = UserTokenPurpose.ApiToken,
             CreatedAt = DateTime.UtcNow,
             Token = TokenUtils.GenerateReadableToken("mc", 32)
         };
                 
-        await dbContext.UserTokens.AddAsync(token);
+        await dbContext.ApiTokens.AddAsync(token);
         await dbContext.SaveChangesAsync();
 
         return Ok(new
@@ -38,36 +36,23 @@ public class UserSettingsController(AppDbContext dbContext): BaseController
     [HttpGet("tokens")]
     public async Task<IActionResult> ListToken()
     {
-        var tokens = await dbContext.UserTokens
-            .Where(t => t.UserId == User.GetUserId() && t.Purpose == UserTokenPurpose.ApiToken)
+        var tokens = await dbContext.ApiTokens
+            .Where(t => t.UserId == User.GetUserId())
             .ToListAsync();
 
         return Ok(tokens.Select(t => new
         {
             t.Id,
             t.Name,
-            t.Token,
             Status = t.Status.ToString(),
             t.CreatedAt
         }));
     }
     
-    [HttpPost("tokens/{id:int}/revoke")]
-    public async Task<IActionResult> RevokeToken(int id)
-    {
-        var token = await dbContext.UserTokens.SingleAsync(t => t.UserId == User.GetUserId() && t.Id == id);
-
-        token.Status = TokenStatus.Revoked;
-
-        await dbContext.SaveChangesAsync();
-
-        return NoContent();
-    }
-    
     [HttpDelete("tokens/{id:int}")]
     public async Task<IActionResult> DeleteToken(int id)
     {
-        await dbContext.UserTokens
+        await dbContext.ApiTokens
             .Where(t => t.UserId == User.GetUserId() && t.Id == id)
             .ExecuteDeleteAsync();
         

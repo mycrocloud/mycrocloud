@@ -2,7 +2,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0.202 AS build
 WORKDIR /source
 
 # Install EF tools
-RUN dotnet tool install --global dotnet-ef --version 8.0.12 \
+RUN dotnet tool install --global dotnet-ef --version 8.0.22 \
     && echo 'export PATH="$PATH:/root/.dotnet/tools"' >> ~/.bashrc
 ENV PATH="/root/.dotnet/tools:${PATH}"
 
