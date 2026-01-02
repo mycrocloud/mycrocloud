@@ -10,48 +10,85 @@ export default function AppOverview() {
   const domain = getAppDomain(app.id);
 
   return (
-    <div className="p-2">
-      <h2 className="font-bold">Overview</h2>
-      <table className="mt-1">
-        <tbody>
-          <tr>
-            <td>Name</td>
-            <td>{app.name}</td>
-          </tr>
-          <tr>
-            <td>Description</td>
-            <td>{app.description}</td>
-          </tr>
-          <tr>
-            <td>Status</td>
-            <td className="inline-flex">
-              {app.status === "Active" ? (
-                <PlayCircleIcon className="h-4 w-4 text-green-500" />
-              ) : (
-                <StopCircleIcon className="h-4 w-4 text-red-500" />
-              )}
-              {app.status}
-            </td>
-          </tr>
-          <tr>
-            <td>Created at</td>
-            <td>{new Date(app.createdAt).toDateString()}</td>
-          </tr>
-          <tr>
-            <td>Updated at</td>
-            <td>
-              {app.updatedAt ? new Date(app.updatedAt!).toDateString() : "-"}
-            </td>
-          </tr>
-          <tr>
-            <td>Domain</td>
-            <td className="flex">
-              <p className="text-blue-500 hover:underline">{domain}</p>
-              <TextCopyButton text={domain} />
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div className="flex h-full min-h-0 gap-4">
+      {/* MAIN (Chart area) */}
+      <div className="min-w-0 flex-1">
+        {/* Page title */}
+        <div className="mb-3">
+          <h2 className="text-lg font-semibold text-slate-900">Overview</h2>
+          <p className="text-sm text-slate-500">
+            Metrics & usage insights for this app.
+          </p>
+        </div>
+
+        {/* Chart placeholder */}
+        <div className="rounded-xl border border-slate-200 bg-white">
+
+        </div>
+      </div>
+
+      {/* RIGHT (Info panel) */}
+      <aside className="hidden w-80 shrink-0 lg:block">
+        <div className="sticky top-0 rounded-xl border border-slate-200 bg-white">
+          <div className="border-b border-slate-200 px-4 py-3">
+            <p className="text-sm font-medium text-slate-800">App details</p>
+          </div>
+
+          <div className="space-y-3 p-4 text-sm">
+            <div className="grid grid-cols-3 gap-3">
+              <p className="col-span-1 text-slate-500">Name</p>
+              <p className="col-span-2 font-medium text-slate-900">{app?.name || "-"}</p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <p className="col-span-1 text-slate-500">Description</p>
+              <p className="col-span-2 text-slate-900">{app?.description || "-"}</p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <p className="col-span-1 text-slate-500">Status</p>
+              <div className="col-span-2 flex items-center gap-2">
+                <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                <p className="font-medium text-slate-900">{app?.status || "Active"}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <p className="col-span-1 text-slate-500">Created</p>
+              <p className="col-span-2 text-slate-900">{app?.createdAt || "-"}</p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <p className="col-span-1 text-slate-500">Updated</p>
+              <p className="col-span-2 text-slate-900">{app?.updatedAt || "-"}</p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <p className="col-span-1 text-slate-500">Domain</p>
+              <div className="col-span-2">
+                <div className="flex items-center gap-2">
+                  <a
+                    href={domain}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="truncate text-blue-600 hover:underline"
+                    title={domain}
+                  >
+                    {domain}
+                  </a>
+                  <button
+                    type="button"
+                    className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
+                    onClick={() => navigator.clipboard?.writeText(domain)}
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
     </div>
   );
 }
