@@ -1,10 +1,11 @@
-import { Link, Outlet, useLocation, useParams } from "react-router-dom";
+import { Link, Outlet, useMatch, useParams } from "react-router-dom";
 import { AppContext } from ".";
 import { useEffect, useState } from "react";
 import IApp from "./App";
 import { Breadcrumb, BreadcrumbItem, Sidebar, SidebarCollapse, SidebarItem, SidebarItemGroup, SidebarItems, Spinner, theme } from "flowbite-react";
 import { useApiClient } from "@/hooks";
 import { twMerge } from "flowbite-react/helpers/tailwind-merge";
+import { getAppDomain } from "./service";
 
 export default function AppLayout() {
   const { get } = useApiClient();
@@ -14,6 +15,7 @@ export default function AppLayout() {
   useEffect(() => {
     const getApp = async () => {
       const app = await get<IApp>(`/api/apps/${appId}`);
+      app.domain = getAppDomain(app.id);
       setApp(app);
     };
     getApp();
@@ -53,18 +55,13 @@ export default function AppLayout() {
 }
 
 const Menu = () => {
-  const { pathname } = useLocation();
-  const parts = pathname.split("/")
-  const part3 = parts[3];
-  const part4 = parts[4];
-
-  const activeOverview = part3 === undefined;
-  const activeRoutes = part3 === "routes";
-  const activeAuthenticationSchemes = part3 == "authentications" && part4 == "schemes";
-  const activeAuthenticationSettings = part3 == "authentications" && part4 == "settings";
-  const activeIntegrations = part3 == "integrations";
-  const activeLogs = part3 == "logs";
-  const activeSettings = part3 == "settings";
+  const activeOverview = useMatch("/apps/:appId");
+  const activeRoutes = useMatch("/apps/:appId/routes/*");
+  const activeAuthenticationSchemes = useMatch("/apps/:appId/authentications/schemes");
+  const activeAuthenticationSettings = useMatch("/apps/:appId/authentications/settings");
+  const activeDeployments = useMatch("/apps/:appId/deployments");
+  const activeLogs = useMatch("/apps/:appId/logs");
+  const activeSettings = useMatch("/apps/:appId/settings");
 
   return <Sidebar
     theme={{
@@ -110,10 +107,10 @@ const Menu = () => {
         </SidebarCollapse>
         <SidebarItem
           as={Link}
-          to="integrations"
-          active={activeIntegrations}
+          to="deployments"
+          active={activeDeployments}
         >
-          Integrations
+          Deployments
         </SidebarItem>
         <SidebarItem
           as={Link}

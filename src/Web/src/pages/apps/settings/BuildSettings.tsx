@@ -1,10 +1,10 @@
 import { useApiClient } from "@/hooks";
 import { useContext, useEffect } from "react";
-import { AppContext } from "../apps";
 import { toast } from "react-toastify";
 import { useForm } from "react-hook-form";
 import { Alert, Tooltip } from "flowbite-react"
 import InfoIcon from "@/components/ui/InfoIcon";
+import { AppContext } from "..";
 
 
 export default function BuildSettings() {

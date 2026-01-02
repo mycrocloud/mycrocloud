@@ -1,13 +1,11 @@
 import { useContext } from "react";
 import { AppContext } from ".";
-import { getAppDomain } from "./service";
 import { PlayCircleIcon, StopCircleIcon } from "@heroicons/react/24/solid";
 import TextCopyButton from "@/components/ui/TextCopyButton";
 
 export default function AppOverview() {
   const { app } = useContext(AppContext)!;
   if (!app) throw new Error();
-  const domain = getAppDomain(app.id);
 
   return (
     <div className="flex h-full min-h-0 gap-4">
@@ -68,18 +66,18 @@ export default function AppOverview() {
               <div className="col-span-2">
                 <div className="flex items-center gap-2">
                   <a
-                    href={domain}
+                    href={app.domain}
                     target="_blank"
                     rel="noreferrer"
                     className="truncate text-blue-600 hover:underline"
-                    title={domain}
+                    title={app.domain}
                   >
-                    {domain}
+                    {app.domain}
                   </a>
                   <button
                     type="button"
                     className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 hover:bg-slate-50"
-                    onClick={() => navigator.clipboard?.writeText(domain)}
+                    onClick={() => navigator.clipboard?.writeText(app.domain)}
                   >
                     Copy
                   </button>

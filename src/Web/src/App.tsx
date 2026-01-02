@@ -26,7 +26,7 @@ import {
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ApiKeyCreateUpdate, ApiKeyList } from "./pages/authentications/apikey";
 
-import { default as Integrations } from "./pages/integrations";
+import { default as AppBuilds } from "./pages/builds";
 import { default as IntegrationsGitHubCallback } from "./pages/settings/github_callback";
 import { default as IntegrationsSlackCallback } from "./pages/settings/slack_callback";
 import { default as IntegrationsSlackLink } from "./pages/settings/slack_link";
@@ -94,7 +94,7 @@ function App() {
                 </Route>
               </Route>
               <Route path="logs" Component={AppLog} />
-              <Route path="integrations" Component={Integrations}></Route>
+              <Route path="deployments" Component={AppBuilds}></Route>
               <Route path="settings" Component={AppSettings}></Route>
             </Route>
           </Route>

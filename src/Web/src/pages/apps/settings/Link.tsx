@@ -1,8 +1,8 @@
 import { useContext, useEffect, useState } from "react";
-import { IAppIntegration } from "../apps/App";
+import { IAppIntegration } from "../App";
 import { Spinner } from "flowbite-react";
 import { useApiClient } from "@/hooks";
-import { AppContext } from "../apps";
+import { AppContext } from "..";
 import { NotFoundError } from "@/errors";
 import { getConfig } from "@/config";
 
