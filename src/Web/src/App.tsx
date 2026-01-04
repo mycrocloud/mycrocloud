@@ -35,6 +35,7 @@ import Settings from "./pages/settings";
 import { getConfig } from "./config";
 import Home from "./pages/Home";
 import AppSettings from "./pages/apps/settings";
+import AppBuild from "./pages/builds/Build";
 const { AUTH0_DOMAIN, AUTH0_CLIENTID, AUTH0_AUDIENCE } = getConfig();
 
 function App() {
@@ -94,7 +95,10 @@ function App() {
                 </Route>
               </Route>
               <Route path="logs" Component={AppLog} />
-              <Route path="deployments" Component={AppBuilds}></Route>
+              <Route path="deployments">
+                <Route index Component={AppBuilds} />
+                <Route path="builds/:buildId" Component={AppBuild} />
+              </Route>
               <Route path="settings" Component={AppSettings}></Route>
             </Route>
           </Route>

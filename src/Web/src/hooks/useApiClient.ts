@@ -1,6 +1,7 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import { useCallback } from "react";
 import { NotFoundError} from "@/errors"
+import { PaginatedResponse, PaginationParams } from "@/models/Pagination";
 
 type RequestOptions = {
   headers?: Record<string, string>;
@@ -63,6 +64,18 @@ const useApiClient = () => {
     [send]
   );
 
+  const getPagination = useCallback(
+    async <T>(url: string, params: PaginationParams): Promise<PaginatedResponse<T>> => {
+      const query = new URLSearchParams({
+        page: String(params.page),
+        per_page: String(params.per_page),
+      }).toString();
+
+      return send<PaginatedResponse<T>>(`${url}?${query}`, { method: "GET" });
+    },
+    [send]
+  );
+
   const post = useCallback(
     async <T>(url: string, body?: any): Promise<T> => {
       return send<T>(url, { method: "POST", body });
@@ -84,7 +97,7 @@ const useApiClient = () => {
     [send]
   );
 
-  return { send, get, post, put, del };
+  return { send, get, getPagination, post, put, del };
 };
 
 export default useApiClient;

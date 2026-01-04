@@ -35,21 +35,42 @@ public class BuildsController(
     public const string Controller = "Builds";
 
     [HttpGet]
-    public async Task<IActionResult> List(int appId)
+    public async Task<IActionResult> List(int appId, [FromQuery] int page = 1, [FromQuery(Name = "per_page")] int perPage = 20)
     {
-        var jobs = await appDbContext.AppBuildJobs
-            .Where(j => j.AppId == appId)
+        if (page < 1) page = 1;
+        if (perPage < 1) perPage = 20;
+        if (perPage > 100) perPage = 100;
+
+        var query = appDbContext.AppBuildJobs
+            .Where(j => j.AppId == appId);
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
             .OrderByDescending(j => j.CreatedAt)
+            .Skip((page - 1) * perPage)
+            .Take(perPage)
+            .Select(job => new
+            {
+                job.Id,
+                job.Name,
+                job.Status,
+                job.CreatedAt,
+                job.UpdatedAt,
+            })
             .ToListAsync();
-        
-        return Ok(jobs.Select(job => new
+
+        return Ok(new
         {
-            job.Id,
-            job.Name,
-            job.Status,
-            job.CreatedAt,
-            job.UpdatedAt,
-        }));
+            data = items,
+            meta = new
+            {
+                count = items.Count,
+                page,
+                per_page = perPage,
+                total_count = totalCount
+            }
+        });
     }
     
     [HttpPost("build")]

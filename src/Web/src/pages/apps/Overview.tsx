@@ -1,7 +1,5 @@
 import { useContext } from "react";
 import { AppContext } from ".";
-import { PlayCircleIcon, StopCircleIcon } from "@heroicons/react/24/solid";
-import TextCopyButton from "@/components/ui/TextCopyButton";
 
 export default function AppOverview() {
   const { app } = useContext(AppContext)!;
@@ -35,30 +33,25 @@ export default function AppOverview() {
           <div className="space-y-3 p-4 text-sm">
             <div className="grid grid-cols-3 gap-3">
               <p className="col-span-1 text-slate-500">Name</p>
-              <p className="col-span-2 font-medium text-slate-900">{app?.name || "-"}</p>
+              <p className="col-span-2 font-medium text-slate-900">{app.name}</p>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
               <p className="col-span-1 text-slate-500">Description</p>
-              <p className="col-span-2 text-slate-900">{app?.description || "-"}</p>
+              <p className="col-span-2 text-slate-900">{app.description}</p>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
               <p className="col-span-1 text-slate-500">Status</p>
               <div className="col-span-2 flex items-center gap-2">
                 <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-                <p className="font-medium text-slate-900">{app?.status || "Active"}</p>
+                <p className="font-medium text-slate-900">{app.status}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
               <p className="col-span-1 text-slate-500">Created</p>
-              <p className="col-span-2 text-slate-900">{app?.createdAt || "-"}</p>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <p className="col-span-1 text-slate-500">Updated</p>
-              <p className="col-span-2 text-slate-900">{app?.updatedAt || "-"}</p>
+              <p className="col-span-2 text-slate-900">{new Date(app.createdAt).toLocaleDateString()}</p>
             </div>
 
             <div className="grid grid-cols-3 gap-3">

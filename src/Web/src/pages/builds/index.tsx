@@ -2,8 +2,10 @@ import { useApiClient } from "@/hooks";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { AppContext } from "../apps";
 import { useAuth0 } from "@auth0/auth0-react";
-import { Button, HelperText, Label, Modal, ModalBody, ModalFooter, ModalHeader, Table, TableBody, TableCell, TableHead, TableHeadCell, TableRow, TextInput } from "flowbite-react";
+import { Button, HelperText, Label, Modal, ModalBody, ModalFooter, ModalHeader, Pagination, Spinner, Table, TableBody, TableCell, TableHead, TableHeadCell, TableRow, TextInput } from "flowbite-react";
 import { useForm } from "react-hook-form";
+import { PaginatedResponse } from "@/models/Pagination";
+import { useNavigate } from "react-router-dom";
 
 interface IBuild {
     id: string;
@@ -21,15 +23,22 @@ export default function AppBuilds() {
     const { app } = useContext(AppContext)!;
     if (!app) throw new Error();
 
-    const { get, post } = useApiClient();
+    const { get, post, getPagination } = useApiClient();
     const { getAccessTokenSilently } = useAuth0();
+    const navigate = useNavigate()
 
-    const [builds, setBuilds] = useState<IBuild[]>([]);
+    const [data, setData] = useState<PaginatedResponse<IBuild> | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(5);
 
     const fetchBuilds = useCallback(async () => {
-        const builds = await get<IBuild[]>(`/api/apps/${app.id}/builds`);
-        setBuilds(builds);
-    }, [app.id]);
+        const data = await getPagination<IBuild>(`/api/apps/${app.id}/builds`, { page: currentPage, per_page: pageSize });
+        setData(data);
+    }, [app.id, currentPage, pageSize, getPagination]);
+
+    const onPageChange = (page: number) => {
+        setCurrentPage(page);
+    };
 
     // SSE subscription
     useEffect(() => {
@@ -84,7 +93,11 @@ export default function AppBuilds() {
         }
     }, [showBuildModal, reset]);
 
-    return <div>
+    if (!data?.data) {
+        return <Spinner />
+    }
+
+    return <div className="overflow-y-auto">
         <header>
             <div className="flex justify-between items-center">
                 <h3 className="font-semibold">Builds</h3>
@@ -100,21 +113,29 @@ export default function AppBuilds() {
                 </TableRow>
             </TableHead>
             <TableBody>
-                {builds.map((build) => (
+                {data?.data.map((build) => (
                     <TableRow
                         key={build.id}
                         className="cursor-pointer"
-                        role="Link"
+                        onClick={() => navigate(`builds/${build.id}`)}
                     >
                         <TableCell>{build.name}</TableCell>
                         <TableCell>
                             {build.status}
                         </TableCell>
-                        <TableCell>{build.createdAt}</TableCell>
+                        <TableCell>{new Date(build.createdAt).toLocaleString()}</TableCell>
                     </TableRow>
                 ))}
             </TableBody>
         </Table>
+        <div className="mt-4 flex overflow-x-auto sm:justify-center">
+            <Pagination
+                currentPage={currentPage}
+                totalPages={Math.ceil(data.meta.total_count / data.meta.per_page)}
+                onPageChange={onPageChange}
+                showIcons={true}
+            />
+        </div>
         <Modal show={showBuildModal} onClose={() => setShowBuildModal(false)}>
             <ModalHeader className="border-gray-200">Build</ModalHeader>
             <ModalBody>
