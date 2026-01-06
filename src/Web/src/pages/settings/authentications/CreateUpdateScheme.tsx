@@ -1,5 +1,4 @@
 import { useContext, useEffect } from "react";
-import { AppContext } from "../apps";
 import IScheme from "./IScheme";
 import { useAuth0 } from "@auth0/auth0-react";
 import {
@@ -12,6 +11,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { toast } from "react-toastify";
+import { AppContext } from "@/pages/apps";
 
 type Inputs = {
   name: string;

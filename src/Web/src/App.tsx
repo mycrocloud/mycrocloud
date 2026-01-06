@@ -15,16 +15,9 @@ import {
   AppLayout,
 } from "./pages/apps";
 
-import { RouteIndex, RouteLogs, RouteCreate, RouteEdit } from "./pages/routes";
-
-import {
-  AuthenticationSchemeCreateUpdate,
-  AuthenticationSchemeList,
-  AuthenticationSchemeSettings,
-} from "./pages/authentications";
+import { RouteIndex, RouteCreate, RouteEdit } from "./pages/routes";
 
 import { NotFoundPage } from "./pages/NotFoundPage";
-import { ApiKeyCreateUpdate, ApiKeyList } from "./pages/authentications/apikey";
 
 import { default as AppBuilds } from "./pages/builds";
 import { default as IntegrationsGitHubCallback } from "./pages/settings/github_callback";
@@ -73,18 +66,6 @@ function App() {
                 <Route path="routes" Component={RouteIndex}>
                   <Route path="new/:folderId?" Component={RouteCreate} />
                   <Route path=":routeId" Component={RouteEdit} />
-                  <Route path=":routeId/logs" Component={RouteLogs} />
-                </Route>
-                <Route path="authentications">
-                  <Route index path="schemes" Component={AuthenticationSchemeList} />
-                  <Route path="schemes/new" Component={AuthenticationSchemeCreateUpdate} />
-                  <Route path="schemes/:schemeId" Component={AuthenticationSchemeCreateUpdate} />
-                  <Route path="settings" Component={AuthenticationSchemeSettings} />
-                  <Route path="apikeys">
-                    <Route index Component={ApiKeyList} />
-                    <Route path="new" Component={ApiKeyCreateUpdate} />
-                    <Route path=":keyId/edit" Component={ApiKeyCreateUpdate} />
-                  </Route>
                 </Route>
                 <Route path="logs" Component={AppLog} />
                 <Route path="deployments">

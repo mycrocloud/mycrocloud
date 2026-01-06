@@ -2,7 +2,7 @@ import { Link, Outlet, useMatch, useParams } from "react-router-dom";
 import { AppContext } from ".";
 import { useEffect, useState } from "react";
 import IApp from "./App";
-import { Sidebar, SidebarCollapse, SidebarItem, SidebarItemGroup, SidebarItems, Spinner, theme } from "flowbite-react";
+import { Sidebar, SidebarItem, SidebarItemGroup, SidebarItems, Spinner, theme } from "flowbite-react";
 import { useApiClient } from "@/hooks";
 import { twMerge } from "flowbite-react/helpers/tailwind-merge";
 import { getAppDomain } from "./service";
@@ -47,8 +47,6 @@ export default function AppLayout() {
 const Menu = () => {
   const activeOverview = useMatch("/apps/:appId");
   const activeRoutes = useMatch("/apps/:appId/routes/*");
-  const activeAuthenticationSchemes = useMatch("/apps/:appId/authentications/schemes");
-  const activeAuthenticationSettings = useMatch("/apps/:appId/authentications/settings");
   const activeDeployments = useMatch("/apps/:appId/deployments");
   const activeLogs = useMatch("/apps/:appId/logs");
   const activeSettings = useMatch("/apps/:appId/settings");
@@ -79,22 +77,6 @@ const Menu = () => {
         >
           Routes
         </SidebarItem>
-        <SidebarCollapse label="Authentications">
-          <SidebarItem
-            as={Link}
-            to="authentications/schemes"
-            active={activeAuthenticationSchemes}
-          >
-            Schemes
-          </SidebarItem>
-          <SidebarItem
-            as={Link}
-            to="authentications/settings"
-            active={activeAuthenticationSettings}
-          >
-            Settings
-          </SidebarItem>
-        </SidebarCollapse>
         <SidebarItem
           as={Link}
           to="deployments"
