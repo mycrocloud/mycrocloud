@@ -117,7 +117,7 @@ export default function CorsSettingsSection() {
             {/* Section header */}
             <header>
                 <h3 className="text-base font-semibold">
-                    CORS Settings
+                    CORS
                 </h3>
             </header>
 

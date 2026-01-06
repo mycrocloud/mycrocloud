@@ -2,7 +2,7 @@ import { useApiClient } from "@/hooks";
 import { useContext, useEffect } from "react";
 import { toast } from "react-toastify";
 import { useForm } from "react-hook-form";
-import { Alert, Tooltip } from "flowbite-react"
+import { Alert, Button, HelperText, Label, TextInput, Tooltip } from "flowbite-react"
 import InfoIcon from "@/components/ui/InfoIcon";
 import { AppContext } from "..";
 
@@ -43,106 +43,103 @@ export default function BuildSettings() {
     };
 
     return <div className="mt-4">
-        <h2 className="font-semibold mb-3">Build Settings</h2>
+        <h6 className="font-semibold mb-3 text-sm">Build Settings</h6>
         <Alert color="warning" className="mb-4">
             Settings can’t be edited right now. Please try again shortly.
         </Alert>
         <form className="ps-2" onSubmit={handleSubmit(onSubmitConfig)}>
             <div className="flex items-start gap-4 py-2">
                 <div className="flex items-center gap-2 w-40 pt-1">
-                    <label className="text-sm font-medium text-gray-700">Branch</label>
+                    <Label>Branch</Label>
                     <Tooltip content="The Git branch used for deployment.">
                         <InfoIcon />
                     </Tooltip>
                 </div>
                 <div className="flex-1">
-                    <input
+                    <TextInput
+                        sizing="sm"
                         {...register("branch", { required: "branch is required" })}
-                        type="text"
-                        className="border rounded px-2 py-1.5 w-full"
                         readOnly
                     />
                     {errors.branch && (
-                        <p className="text-red-500 text-sm mt-1">
+                        <HelperText color="failure">
                             {errors.branch.message}
-                        </p>
+                        </HelperText>
                     )}
                 </div>
             </div>
             <div className="flex items-start gap-4 py-2">
                 <div className="flex items-center gap-2 w-40 pt-1">
-                    <label className="text-sm font-medium text-gray-700">Build Directory</label>
+                    <Label>Build Directory</Label>
                     <Tooltip content="Path relative to the root of the repository where the build
                     is to be run.">
                         <InfoIcon />
                     </Tooltip>
                 </div>
                 <div className="flex-1">
-                    <input
+                    <TextInput
                         {...register("directory", { required: "directory is required" })}
-                        type="text"
-                        className="border rounded px-2 py-1.5 w-full"
+                        sizing="sm"
                         readOnly
                     />
                     {errors.directory && (
-                        <p className="text-red-500 text-sm mt-1">
+                        <HelperText color="failure">
                             {errors.directory.message}
-                        </p>
+                        </HelperText>
                     )}
                 </div>
             </div>
             <div className="flex items-start gap-4 py-2">
                 <div className="flex items-center gap-2 w-40 pt-1">
-                    <label className="text-sm font-medium text-gray-700">Output Directory</label>
+                    <Label>Output Directory</Label>
                     <Tooltip content="Path relative to the root of the repository where the build
                     output is located.">
                         <InfoIcon />
                     </Tooltip>
                 </div>
                 <div className="flex-1">
-                    <input
+                    <TextInput
                         {...register("outDir", { required: "outDir is required" })}
-                        type="text"
-                        className="border rounded px-2 py-1.5 w-full"
+                        sizing="sm"
                         readOnly
                     />
                     {errors.outDir && (
-                        <p className="text-red-500 text-sm mt-1">
+                        <HelperText color="failure">
                             {errors.outDir.message}
-                        </p>
+                        </HelperText>
                     )}
                 </div>
             </div>
 
             <div className="flex items-start gap-4 py-2">
                 <div className="flex items-center gap-2 w-40 pt-1">
-                    <label className="text-sm font-medium text-gray-700">Build Command</label>
+                    <Label>Build Command</Label>
                     <Tooltip content="The command that runs your build process (e.g. npm run build).">
                         <InfoIcon />
                     </Tooltip>
                 </div>
                 <div className="flex-1">
-                    <input
+                    <TextInput
                         {...register("buildCommand", { required: "buildCommand is required" })}
-                        type="text"
-                        className="border rounded px-2 py-1.5 w-full"
+                        sizing="sm"
                         readOnly
                     />
                     {errors.buildCommand && (
-                        <p className="text-red-500 text-sm mt-1">
+                        <HelperText color="failure">
                             {errors.buildCommand.message}
-                        </p>
+                        </HelperText>
                     )}
                 </div>
             </div>
 
-            <button
-                type="submit"
-                className="mt-2 bg-primary px-4 py-1.5 text-white rounded"
-                disabled
-            >
-                Save
-            </button>
+            <div className="flex justify-end">
+                <Button
+                    type="submit"
+                    disabled
+                >
+                    Save
+                </Button>
+            </div>
         </form>
     </div>
 }
