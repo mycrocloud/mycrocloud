@@ -26,6 +26,8 @@ services:
       - ConnectionStrings__RabbitMq=${ConnectionStrings__RabbitMq}
       - OAuthApps__Slack__ClientSecret=${OAuthApps__Slack__ClientSecret}
       - OAuthApps__GitHub__ClientSecret=${OAuthApps__GitHub__ClientSecret}
+    volumes:
+      - ./WebApp.Api/gha-mycrocloud.private-key.pem:/app/gha-mycrocloud.private-key.pem
     ports:
       - "8080:8080"
     depends_on:
