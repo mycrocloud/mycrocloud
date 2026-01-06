@@ -4,8 +4,8 @@ import { Auth0Provider } from "@auth0/auth0-react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import Header from "./components/Header";
-import ProtectedPage from "./components/ProtectedPage";
+import PublicLayout from "./components/PublicLayout";
+import ProtectedLayout from "./components/ProtectedLayout";
 
 import {
   AppList,
@@ -36,6 +36,7 @@ import { getConfig } from "./config";
 import Home from "./pages/Home";
 import AppSettings from "./pages/apps/settings";
 import AppBuild from "./pages/builds/Build";
+
 const { AUTH0_DOMAIN, AUTH0_CLIENTID, AUTH0_AUDIENCE } = getConfig();
 
 function App() {
@@ -49,70 +50,53 @@ function App() {
       }}
     >
       <BrowserRouter>
-        <Header />
-
         <Routes>
-          <Route path="/" Component={Home} />
-          <Route path="settings" Component={Settings} />
-          <Route path="apps">
-            <Route index element={<ProtectedPage children={<AppList />} />} />
-            <Route
-              path="new"
-              element={<ProtectedPage children={<AppCreate />} />}
-            />
-            <Route
-              path=":appId"
-              element={<ProtectedPage children={<AppLayout />} />}
-            >
-              <Route index Component={AppOverview} />
-              <Route path="routes" Component={RouteIndex}>
-                <Route path="new/:folderId?" Component={RouteCreate} />
-                <Route path=":routeId" Component={RouteEdit} />
-                <Route path=":routeId/logs" Component={RouteLogs} />
-              </Route>
-              <Route path="authentications">
-                <Route
-                  index
-                  path="schemes"
-                  Component={AuthenticationSchemeList}
-                />
-                <Route
-                  path="schemes/new"
-                  Component={AuthenticationSchemeCreateUpdate}
-                />
-                <Route
-                  path="schemes/:schemeId"
-                  Component={AuthenticationSchemeCreateUpdate}
-                />
-                <Route
-                  path="settings"
-                  Component={AuthenticationSchemeSettings}
-                />
-                <Route path="apikeys">
-                  <Route index Component={ApiKeyList} />
-                  <Route path="new" Component={ApiKeyCreateUpdate} />
-                  <Route path=":keyId/edit" Component={ApiKeyCreateUpdate} />
-                </Route>
-              </Route>
-              <Route path="logs" Component={AppLog} />
-              <Route path="deployments">
-                <Route index Component={AppBuilds} />
-                <Route path="builds/:buildId" Component={AppBuild} />
-              </Route>
-              <Route path="settings" Component={AppSettings}></Route>
+          {/* Public Routes */}
+          <Route element={<PublicLayout />}>
+            <Route path="/" Component={Home} />
+            <Route path="integrations">
+              <Route path="callback/github" Component={IntegrationsGitHubCallback} />
+              <Route path="slack/oauth/callback" Component={IntegrationsSlackCallback} />
+              <Route path="slack/link" Component={IntegrationsSlackLink} />
             </Route>
           </Route>
-          <Route path="integrations">
-            <Route
-              path="callback/github"
-              Component={IntegrationsGitHubCallback}
-            />
-            <Route
-              path="slack/oauth/callback"
-              Component={IntegrationsSlackCallback}
-            />
-            <Route path="slack/link" Component={IntegrationsSlackLink} />
+
+          {/* Protected Routes */}
+          <Route element={<ProtectedLayout />}>
+            <Route path="settings" Component={Settings} />
+
+            <Route path="apps">
+              <Route index Component={AppList} />
+              <Route path="new" Component={AppCreate} />
+              <Route path=":appId" element={<AppLayout />}>
+                <Route index Component={AppOverview} />
+                <Route path="routes" Component={RouteIndex}>
+                  <Route path="new/:folderId?" Component={RouteCreate} />
+                  <Route path=":routeId" Component={RouteEdit} />
+                  <Route path=":routeId/logs" Component={RouteLogs} />
+                </Route>
+                <Route path="authentications">
+                  <Route index path="schemes" Component={AuthenticationSchemeList} />
+                  <Route path="schemes/new" Component={AuthenticationSchemeCreateUpdate} />
+                  <Route path="schemes/:schemeId" Component={AuthenticationSchemeCreateUpdate} />
+                  <Route path="settings" Component={AuthenticationSchemeSettings} />
+                  <Route path="apikeys">
+                    <Route index Component={ApiKeyList} />
+                    <Route path="new" Component={ApiKeyCreateUpdate} />
+                    <Route path=":keyId/edit" Component={ApiKeyCreateUpdate} />
+                  </Route>
+                </Route>
+                <Route path="logs" Component={AppLog} />
+                <Route path="deployments">
+                  <Route index Component={AppBuilds} />
+                  <Route path="builds/:buildId" Component={AppBuild} />
+                </Route>
+                <Route path="settings" Component={AppSettings} />
+              </Route>
+            </Route>
           </Route>
+
+          {/* 404 - Can be accessed by anyone */}
           <Route path="*" Component={NotFoundPage} />
         </Routes>
 
