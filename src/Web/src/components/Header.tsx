@@ -1,11 +1,8 @@
 import { useAuth0 } from "@auth0/auth0-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   Navbar,
   NavbarBrand,
-  NavbarCollapse,
-  NavbarToggle,
-  NavbarLink,
   Dropdown,
   DropdownHeader,
   DropdownItem,
@@ -21,10 +18,19 @@ export default function Header() {
     useAuth0();
 
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleLogout = () => {
+    logout({
+      logoutParams: {
+        returnTo: window.location.origin,
+      },
+    });
+  };
 
   return (
-    <Navbar fluid className="border-b border-slate-200">
-      <NavbarBrand as={Link} href="/">
+    <Navbar fluid className="border-b border-slate-200 dark:border-gray-700">
+      <NavbarBrand as={Link} to="/">
         <img
           src="/cloud.svg"
           className="mr-3 h-6 sm:h-9"
@@ -35,17 +41,33 @@ export default function Header() {
         </span>
       </NavbarBrand>
 
-      <div className="flex list-none items-center gap-4 md:order-2">
-        <NavbarLink
+      {/* Left-side navigation */}
+      {isAuthenticated && (
+        <div className="flex ml-6 gap-4">
+          <Link
+            to="/apps"
+            className={`py-2 ${
+              location.pathname.startsWith("/apps")
+                ? "text-blue-700 dark:text-blue-500 font-medium"
+                : "text-gray-700 dark:text-gray-400 hover:text-blue-700 dark:hover:text-blue-500"
+            }`}
+          >
+            Apps
+          </Link>
+        </div>
+      )}
+
+      <div className="flex ml-auto items-center gap-4">
+        <a
           href="https://docs.mycrocloud.info"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-600 dark:text-blue-400"
+          className="text-blue-600 dark:text-blue-400 hover:underline"
         >
           Docs
-        </NavbarLink>
+        </a>
         <DarkThemeToggle />
-        {isLoading && <Spinner aria-label="Loading.." />}
+        {isLoading && <Spinner aria-label="Loading..." size="sm" />}
 
         {!isLoading && !isAuthenticated && (
           <Button color="blue" onClick={() => loginWithRedirect()}>
@@ -69,20 +91,10 @@ export default function Header() {
               Settings
             </DropdownItem>
             <DropdownDivider />
-            <DropdownItem onClick={() => logout()}>Sign out</DropdownItem>
+            <DropdownItem onClick={handleLogout}>Sign out</DropdownItem>
           </Dropdown>
         )}
-        <NavbarToggle />
       </div>
-      <NavbarCollapse>
-        {isAuthenticated && (
-          <>
-            <NavbarLink as={Link} to="/apps">
-              Apps
-            </NavbarLink>
-          </>
-        )}
-      </NavbarCollapse>
     </Navbar>
   );
 }
