@@ -5,6 +5,11 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
+    html, body, #root {
+        height: 100%;
+        overflow: hidden;
+    }
+
     body {
         @apply text-gray-600
     }

@@ -2,7 +2,7 @@ import { Link, Outlet, useMatch, useParams } from "react-router-dom";
 import { AppContext } from ".";
 import { useEffect, useState } from "react";
 import IApp from "./App";
-import { Breadcrumb, BreadcrumbItem, Sidebar, SidebarCollapse, SidebarItem, SidebarItemGroup, SidebarItems, Spinner, theme } from "flowbite-react";
+import { Sidebar, SidebarCollapse, SidebarItem, SidebarItemGroup, SidebarItems, Spinner, theme } from "flowbite-react";
 import { useApiClient } from "@/hooks";
 import { twMerge } from "flowbite-react/helpers/tailwind-merge";
 import { getAppDomain } from "./service";
@@ -28,24 +28,14 @@ export default function AppLayout() {
   return (
     <AppContext.Provider value={{ app, setApp }}>
       <div className="flex h-screen overflow-hidden">
-        <aside>
-          <Menu />
+        <aside className="shrink-0 overflow-y-auto">
+          <div className="h-screen">
+            <Menu />
+          </div>
         </aside>
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <header className="shrink-0 border-b border-slate-200 px-6 py-2">
-            <Breadcrumb>
-              <BreadcrumbItem>
-                <Link to="/">Home</Link>
-              </BreadcrumbItem>
-              <BreadcrumbItem>
-                <Link to="/apps">Apps</Link>
-              </BreadcrumbItem>
-              <BreadcrumbItem>{app.name}</BreadcrumbItem>
-            </Breadcrumb>
-          </header>
-
-          <main className="min-h-0 flex-1 overflow-hidden p-6">
+        <div className="flex min-h-0 flex-1 flex-col">
+          <main className="min-h-0 flex-1 overflow-y-auto p-6">
             <Outlet />
           </main>
         </div>
