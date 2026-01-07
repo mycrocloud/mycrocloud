@@ -4,8 +4,10 @@ import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { AppContext } from ".";
 import { IRouteLog } from "../routes";
 import moment from "moment";
-import { Badge, Button, Card, Datepicker, Drawer, DrawerHeader, DrawerItems, Dropdown, DropdownItem, HelperText, Label, Pagination, Table, TableBody, TableCell, TableHead, TableHeadCell, TableRow, TextInput } from "flowbite-react";
+import { Badge, Button, Card, Datepicker, Drawer, DrawerHeader, DrawerItems, Dropdown, DropdownItem, HelperText, Label, Pagination, PaginationNavigation, Table, TableBody, TableCell, TableHead, TableHeadCell, TableRow, TextInput } from "flowbite-react";
 import { tryParseDate } from "@/utils";
+import { useApiClient } from "@/hooks";
+import { PaginatedResponse } from "@/models/Pagination";
 
 type Inputs = {
   accessDateFrom?: string;
@@ -17,9 +19,8 @@ export default function AppLogs() {
   const { app } = useContext(AppContext)!;
   if (!app) throw new Error();
 
-  const { getAccessTokenSilently } = useAuth0();
-  const [logs, setLogs] = useState<IRouteLog[]>([]);
-  const { register, handleSubmit, setValue, control } = useForm<Inputs>();
+  const { get, getPagination } = useApiClient();
+  const { handleSubmit, setValue, control, formState } = useForm<Inputs>();
 
   function buildQuery(data: Inputs) {
     let query = "pageSize=10";
@@ -41,28 +42,33 @@ export default function AppLogs() {
     return query;
   }
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [result, setResult] = useState<PaginatedResponse<IRouteLog> | null>(null);
+
+  const onPageChange = async (page: number) => {
+    setCurrentPage(page);
+  }
+
   const searchLogs = async (data: Inputs) => {
-    const accessToken = await getAccessTokenSilently();
-    const logs = (await (
-      await fetch(`/api/apps/${app.id}/logs?${buildQuery(data)}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-    ).json()) as IRouteLog[];
-    return logs;
+    return await get<IRouteLog[]>(`/api/apps/${app.id}/logs?${buildQuery(data)}`)
   };
+
   const onSubmit: SubmitHandler<Inputs> = async (data: Inputs) => {
-    const logs = await searchLogs(data);
-    setLogs(logs);
+    const response = await getPagination<IRouteLog>(`/api/apps/${app.id}/logs?${buildQuery(data)}`, { page: currentPage, per_page: pageSize })
+    setResult(response);
   };
+
   const [routeIdsValue, setRouteIdsValue] = useState("");
   useEffect(() => {
     if (routeIdsValue) {
-      setValue(
-        "routeIds",
-        routeIdsValue.split(",").map((id) => parseInt(id)),
-      );
+      try {
+        const routeIds = routeIdsValue.split(",").map((id) => parseInt(id)).filter((id) => !isNaN(id));
+        setValue("routeIds", routeIds);
+      } catch {
+        formState.errors.routeIds = { type: "manual", message: "Invalid route ids" };
+        setValue("routeIds", []);
+      }
     } else {
       setValue("routeIds", []);
     }
@@ -132,6 +138,11 @@ export default function AppLogs() {
               onChange={(e) => setRouteIdsValue(e.target.value)}
             />
             <HelperText>Comma seperated route ids.</HelperText>
+            {formState.errors.routeIds && (
+              <HelperText color="failure">
+                {formState.errors.routeIds.message}
+              </HelperText>
+            )}
           </div>
           <div className="flex justify-end">
             <Button type="submit">
@@ -141,15 +152,18 @@ export default function AppLogs() {
         </form>
       </Card>
 
-      <div>
+      {result && <div>
         <div className="flex justify-end">
           <Dropdown label="Download" dismissOnClick={false}>
             <DropdownItem onClick={handleSubmit(onDownloadAsCsv)}>CSV</DropdownItem>
             <DropdownItem onClick={handleSubmit(onDownloadAsJson)}>JSON</DropdownItem>
           </Dropdown>
         </div>
-        <Table className="" hoverable>
-          <TableHead className="">
+        <div className="flex overflow-x-auto sm:justify-center mb-2">
+          <Pagination currentPage={currentPage} totalPages={Math.ceil(result.meta.total_count / result.meta.per_page)} onPageChange={onPageChange} showIcons />
+        </div>
+        <Table hoverable>
+          <TableHead>
             <TableRow>
               <TableHeadCell>Time</TableHeadCell>
               <TableHeadCell>Method</TableHeadCell>
@@ -158,13 +172,12 @@ export default function AppLogs() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {logs.map((log) => (
+            {result.data.map((log) => (
               <TableRow
                 onClick={() => {
                   setDrawlerOpen(true);
                   setLog(log);
                 }}
-                className="cursor-pointer bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
                 key={log.id}
                 role="button"
               >
@@ -176,7 +189,7 @@ export default function AppLogs() {
             ))}
           </TableBody>
         </Table>
-      </div>
+      </div>}
       <Drawer open={drawerOpen} onClose={closeDetails} position="right">
         <DrawerHeader title="Details" />
         {log && <DrawerItems>

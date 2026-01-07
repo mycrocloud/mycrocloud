@@ -70,8 +70,12 @@ const useApiClient = () => {
         page: String(params.page),
         per_page: String(params.per_page),
       }).toString();
-
-      return send<PaginatedResponse<T>>(`${url}?${query}`, { method: "GET" });
+      if (url.includes("?")) {
+        url += "&" + query;
+      } else {
+        url += "?" + query;
+      }
+      return send<PaginatedResponse<T>>(url, { method: "GET" });
     },
     [send]
   );
