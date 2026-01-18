@@ -1,0 +1,6 @@
+all:
+  hosts:
+    server:
+      ansible_host: YOUR_SERVER_IP_HERE
+      ansible_user: ubuntu
+      aws_region: ap-northeast-1
