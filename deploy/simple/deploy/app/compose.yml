@@ -40,16 +40,6 @@ services:
       - ./Services/WebApp/WebApp.ApiGateway/appsettings.json:/app/appsettings.json:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - /srv/function-data:/srv/function-data
-  
-  slack-integration-api:
-    image: ghcr.io/mycrocloud/mycrocloud-slack-integration-api:main
-    environment:
-      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
-      - ConnectionStrings__RabbitMq=${ConnectionStrings__RabbitMq}
-      - Slack__SigningSecret=${Slack__SigningSecret}
-      - Slack__LinkSecret=${Slack__LinkSecret}
-    volumes:
-      - ./Services/WebApp/WebApp.SlackIntegrationApi/appsettings.json:/app/appsettings.json:ro
       
   lb:
     image: nginx:mainline-alpine3.18-perl
@@ -66,7 +56,6 @@ services:
     - web-editor
     - api
     - apigateway
-    - slack-integration-api
 
   web-editor:
     image: ghcr.io/mycrocloud/mycrocloud-web-editor:main
