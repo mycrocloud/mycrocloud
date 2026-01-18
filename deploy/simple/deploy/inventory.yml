@@ -1,4 +1,7 @@
 all:
+  vars:
+    aws_region: ap-northeast-1
+    aws_profile: default
   hosts:
     server:
       ansible_host: YOUR_SERVER_IP_HERE
