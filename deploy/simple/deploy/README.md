@@ -1,49 +1,162 @@
-- Install Ansible (run once)
+# MycroCloud Deployment Guide
 
-```
+This directory contains Ansible playbooks for deploying MycroCloud infrastructure and services to AWS.
+
+## Prerequisites
+
+- Python 3.x installed
+- AWS account with appropriate permissions
+- AWS credentials configured (via `~/.aws/credentials` or environment variables)
+- SSH access to target servers
+- Required secrets and certificates (see [Secrets Configuration](#secrets-configuration))
+
+## Installation
+
+### 1. Install Ansible (One-time Setup)
+
+Create a virtual environment and install dependencies:
+
+```bash
 python3 -m venv .venv && \
 source .venv/bin/activate && \
 pip install --upgrade pip && \
 pip install ansible boto3 botocore
 ```
 
-- Prepare
-```
-source .venv/bin/activate && \
-export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES && \
-export SERVER_IP=$(cd ../infra && tf output -raw instance_ip)
-```
+## Configuration
 
-- Update group_vars/\* files with your configuration
+### 2. Activate Environment
 
-- Setup
+Before running any playbooks, activate the virtual environment:
 
-```
-ansible-playbook setup.yml
+```bash
+source .venv/bin/activate
 ```
 
-- Create AWS secrets so that below secret files are created
+**macOS Users:** Set this environment variable to prevent fork safety issues:
 
-  - [ ] prod/mycrocloud/lb/certs/mycrocloud.info.pem
-  - [ ] prod/mycrocloud/Services/WebApp/deployment/.env
-  - [ ] prod/mycrocloud/.env
-  - [ ] prod/mycrocloud/Services/WebApp/WebApp.Api/gha-mycrocloud.pem
-
-- Sync
-
-```
-ansible-playbook sync.yml
+```bash
+export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 ```
 
-- Deploy
-  All (for first run)
+### 3. Configure Inventory
 
-```
-ansible-playbook deploy.yml
+Update [inventory.yml](inventory.yml) with your environment-specific configuration:
+
+- Server hostnames/IPs
+- SSH connection details
+- Environment variables
+- Service configurations
+
+### 4. Initial Setup
+
+Run the setup playbook to prepare the infrastructure:
+
+```bash
+ansible-playbook -i inventory.yml setup.yml
 ```
 
-Specific service
+This configures servers, installs dependencies, and prepares the deployment environment.
 
+## Secrets Configuration
+
+Before deployment, ensure the following secret files are created and populated:
+
+### Required Secret Files
+
+- [ ] `prod/mycrocloud/lb/certs/mycrocloud.info.pem` - SSL/TLS certificate for load balancer
+- [ ] `prod/mycrocloud/Services/WebApp/deployment/.env` - WebApp deployment environment variables
+- [ ] `prod/mycrocloud/.env` - Main environment configuration
+- [ ] `prod/mycrocloud/Services/WebApp/WebApp.Api/gha-mycrocloud.pem` - GitHub Actions authentication key
+
+### Creating Secrets
+
+1. **SSL Certificates**: Obtain from your certificate provider or use AWS Certificate Manager
+2. **Environment Files**: Create `.env` files with required variables for your environment
+3. **GitHub Actions Keys**: Generate or obtain from your GitHub repository settings
+
+Store these files securely using AWS Secrets Manager or your preferred secrets management solution.
+
+## Deployment
+
+### Full Deployment (First Run)
+
+Deploy all services:
+
+```bash
+ansible-playbook -i inventory.yml deploy.yml
 ```
-ansible-playbook deploy.yml -e "service=web"
+
+### Selective Deployment
+
+Deploy a specific service:
+
+```bash
+ansible-playbook -i inventory.yml deploy.yml -e "service=web"
+```
+
+Available service options:
+- `web` - Web application
+- (Add other service names as applicable)
+
+## Verification
+
+After deployment, verify the services are running:
+
+```bash
+# Check service status
+ansible all -i inventory.yml -m shell -a "docker ps"
+
+# Test web endpoint
+curl https://mycrocloud.info/health
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**Ansible connection errors:**
+- Verify SSH access to target servers
+- Check inventory.yml for correct hostnames/IPs
+- Ensure SSH keys are properly configured
+
+**Permission errors:**
+- Verify AWS credentials have necessary permissions
+- Check file permissions on secret files
+
+**macOS fork safety warnings:**
+- Ensure `OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES` is set
+
+### Logs
+
+Check Ansible verbose output for detailed error information:
+
+```bash
+ansible-playbook -i inventory.yml deploy.yml -vvv
+```
+
+## Rollback
+
+To rollback to a previous deployment:
+
+```bash
+# Specify the version/tag to rollback to
+ansible-playbook -i inventory.yml deploy.yml -e "version=<previous-version>"
+```
+
+## Maintenance
+
+### Updating Dependencies
+
+```bash
+source .venv/bin/activate
+pip install --upgrade ansible boto3 botocore
+```
+
+### Deactivating Environment
+
+When finished:
+
+```bash
+deactivate
 ```
