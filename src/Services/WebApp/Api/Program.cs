@@ -6,6 +6,7 @@ using WebApp.Domain.Repositories;
 using Api.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Reflection;
+using Api;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Transport;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -46,7 +47,7 @@ builder.Services.AddCors(options =>
 });
 
 // 1. Add Authentication Services
-builder.Services.AddAuthentication("MultiAuthSchemes")
+builder.Services.AddAuthentication()
     .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
     {
         options.Authority = builder.Configuration["Authentication:Schemes:Auth0JwtBearer:Authority"];
@@ -69,7 +70,7 @@ builder.Services.AddAuthentication("MultiAuthSchemes")
     })
     .AddScheme<ApiTokenAuthenticationOptions, ApiTokenAuthenticationHandler>(ApiTokenDefaults.AuthenticationScheme, options => { })
     .AddScheme<SlackAuthenticationOptions, SlackAuthenticationHandler>(SlackDefaults.AuthenticationScheme, _ => { })
-    .AddPolicyScheme("MultiAuthSchemes", displayName: null, options =>
+    .AddPolicyScheme(Constants.MultiAuthSchemes, displayName: null, options =>
     {
         //TODO: re-think
         options.ForwardDefaultSelector = ctx => ctx.Request.Host.Host.StartsWith("api")
@@ -170,6 +171,8 @@ app.UseCors();
 app.UseMiddleware<ReadSlackRequestBodyMiddleware>();
 app.UseSlackVerification();
 app.UseSlackCommandRewrite();
+
+app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();

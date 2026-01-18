@@ -16,6 +16,7 @@ public class SlackVerificationMiddleware(RequestDelegate next)
             
             if (!verifySlackRequest)
             {
+                await next(context);
                 return;
             }
         }
