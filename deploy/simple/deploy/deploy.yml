@@ -25,7 +25,7 @@
 
 - name: Deploy
   hosts: all
-  become: yes
+  become: no
   vars:
     src: app
     deploy_path: /opt/mycrocloud
@@ -36,6 +36,7 @@
         path: "{{ deploy_path }}"
         state: directory
         mode: "0755"
+      become: yes
 
     - name: Sync application files to server
       ansible.builtin.synchronize:
@@ -72,16 +73,12 @@
         dest: "{{ deploy_path }}/Web/.env"
         remote_src: true
 
-    - name: Pull latest images
-      community.docker.docker_compose_v2_pull:
-        project_src: "{{ deploy_path }}"
-        services: "{{ omit if service == 'all' else [service] }}"
-
-    - name: Deploy service(s)
+    - name: Pull and deploy services
       community.docker.docker_compose_v2:
         project_src: "{{ deploy_path }}"
         services: "{{ omit if service == 'all' else [service] }}"
         state: present
+        pull: always
 
     - name: Restart LB if dependencies require it
       community.docker.docker_compose_v2:
