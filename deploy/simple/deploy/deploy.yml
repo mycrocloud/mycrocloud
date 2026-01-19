@@ -82,9 +82,8 @@
         state: present
         pull: always
 
-    - name: Restart LB if dependencies require it
-      community.docker.docker_compose_v2:
-        project_src: "{{ deploy_path }}"
-        services: [lb]
-        state: restarted
+    - name: Reload nginx if dependencies require it
+      community.docker.docker_container_exec:
+        container: lb
+        command: nginx -s reload
       when: service in ['api', 'apigateway', 'web', 'web-editor']
