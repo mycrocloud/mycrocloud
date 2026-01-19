@@ -2,27 +2,25 @@
 - name: Fetch AWS secrets
   hosts: localhost
   gather_facts: no
-  collections:
-    - amazon.aws
+  vars:
+    aws_secrets:
+      secrets:
+        key: "prod/mycrocloud/.env"
+        json: true
+      lb_certs_mycrocloud_info_key:
+        key: "prod/mycrocloud/lb/certs/mycrocloud.info.key"
+        json: false
+      Services_WebApp_deployment_dotenv:
+        key: "prod/mycrocloud/Services/WebApp/deployment/.env"
+        json: true
+      Services_WebApp_WebApp_Api_gha_mycrocloud_pem:
+        key: "prod/mycrocloud/Services/WebApp/WebApp.Api/gha-mycrocloud.pem"
+        json: false
   tasks:
-    - name: Fetch secret from AWS Secrets Manager
+    - name: Fetch all secrets from AWS Secrets Manager
       set_fact:
-        secrets: "{{ lookup('amazon.aws.aws_secret', 'prod/mycrocloud/.env', region=aws_region, profile=aws_profile) | from_json }}"
-      no_log: true
-
-    - name: Fetch lb/certs/mycrocloud.info.key
-      set_fact:
-        lb_certs_mycrocloud_info_key: "{{ lookup('amazon.aws.aws_secret', 'prod/mycrocloud/lb/certs/mycrocloud.info.key', region=aws_region, profile=aws_profile) }}"
-      no_log: true
-
-    - name: Fetch Services/WebApp/deployment/.env
-      set_fact:
-        Services_WebApp_deployment_dotenv: "{{ lookup('amazon.aws.aws_secret', 'prod/mycrocloud/Services/WebApp/deployment/.env', region=aws_region, profile=aws_profile) | from_json }}"
-      no_log: true
-
-    - name: Fetch Services/WebApp/WebApp.Api/gha-mycrocloud.pem
-      set_fact:
-        Services_WebApp_WebApp_Api_gha_mycrocloud_pem: "{{ lookup('amazon.aws.aws_secret', 'prod/mycrocloud/Services/WebApp/WebApp.Api/gha-mycrocloud.pem', region=aws_region, profile=aws_profile) }}"
+        "{{ item.key }}": "{{ lookup('amazon.aws.aws_secret', item.value.key, region=aws_region, profile=aws_profile) | from_json if item.value.json else lookup('amazon.aws.aws_secret', item.value.key, region=aws_region, profile=aws_profile) }}"
+      loop: "{{ aws_secrets | dict2items }}"
       no_log: true
 
 - name: Deploy
@@ -46,66 +44,48 @@
         recursive: yes
         delete: yes
 
-    - name: Generate .env file from template
+    - name: Generate templated env files
       ansible.builtin.template:
-        src: "{{ src }}/.env.j2"
-        dest: "{{ deploy_path }}/.env"
+        src: "{{ src }}/{{ item.src }}"
+        dest: "{{ deploy_path }}/{{ item.dest }}"
         mode: "0600"
-        owner: ubuntu
-        group: ubuntu
       vars:
-        secrets: "{{ hostvars['localhost']['secrets'] }}"
+        secrets: "{{ hostvars['localhost'][item.secrets_var] }}"
+      loop:
+        - { src: ".env.j2", dest: ".env", secrets_var: "secrets" }
+        - { src: "Services/WebApp/deployment/.env.j2", dest: "Services/WebApp/deployment/.env", secrets_var: "Services_WebApp_deployment_dotenv" }
       no_log: true
 
-    - name: Write certificate key file
+    - name: Write secret files
       ansible.builtin.copy:
-        content: "{{ hostvars['localhost']['lb_certs_mycrocloud_info_key'] }}"
-        dest: "{{ deploy_path }}/lb/certs/mycrocloud.info.key"
+        content: "{{ hostvars['localhost'][item.content_var] }}"
+        dest: "{{ deploy_path }}/{{ item.dest }}"
         mode: "0600"
-        owner: ubuntu
-        group: ubuntu
+      loop:
+        - { dest: "lb/certs/mycrocloud.info.key", content_var: "lb_certs_mycrocloud_info_key" }
+        - { dest: "Services/WebApp/WebApp.Api/gha-mycrocloud.pem", content_var: "Services_WebApp_WebApp_Api_gha_mycrocloud_pem" }
       no_log: true
 
-    - name: Generate Services/WebApp/deployment/.env file from template
-      ansible.builtin.template:
-        src: "{{ src }}/Services/WebApp/deployment/.env.j2"
-        dest: "{{ deploy_path }}/Services/WebApp/deployment/.env"
-        mode: "0600"
-        owner: ubuntu
-        group: ubuntu
-      vars:
-        secrets: "{{ hostvars['localhost']['Services_WebApp_deployment_dotenv'] }}"
-      no_log: true
-
-    - name: Write Services/WebApp/WebApp.Api/gha-mycrocloud.pem file
-      ansible.builtin.copy:
-        content: "{{ hostvars['localhost']['Services_WebApp_WebApp_Api_gha_mycrocloud_pem'] }}"
-        dest: "{{ deploy_path }}/Services/WebApp/WebApp.Api/gha-mycrocloud.pem"
-        mode: "0600"
-        owner: ubuntu
-        group: ubuntu
-      no_log: true
-
-    - name: Rename Web/.env.example to Web/.env
+    - name: Copy Web/.env.example to Web/.env
       ansible.builtin.copy:
         src: "{{ deploy_path }}/Web/.env.example"
         dest: "{{ deploy_path }}/Web/.env"
         remote_src: true
 
     - name: Pull latest images
-      command: docker compose pull {{ service if service != 'all' else '' }}
-      args:
-        chdir: "{{ deploy_path }}"
-      register: pull_result
-      changed_when: "'Downloaded newer image' in pull_result.stdout"
+      community.docker.docker_compose_v2_pull:
+        project_src: "{{ deploy_path }}"
+        services: "{{ omit if service == 'all' else [service] }}"
 
     - name: Deploy service(s)
-      command: docker compose up -d {{ service if service != 'all' else '' }}
-      args:
-        chdir: "{{ deploy_path }}"
+      community.docker.docker_compose_v2:
+        project_src: "{{ deploy_path }}"
+        services: "{{ omit if service == 'all' else [service] }}"
+        state: present
 
     - name: Restart LB if dependencies require it
+      community.docker.docker_compose_v2:
+        project_src: "{{ deploy_path }}"
+        services: [lb]
+        state: restarted
       when: service in ['api', 'apigateway', 'web', 'web-editor']
-      command: docker compose restart lb
-      args:
-        chdir: "{{ deploy_path }}"
