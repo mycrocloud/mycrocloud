@@ -36,6 +36,8 @@
         path: "{{ deploy_path }}"
         state: directory
         mode: "0755"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
       become: yes
 
     - name: Sync application files to server
