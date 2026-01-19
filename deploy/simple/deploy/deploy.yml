@@ -83,7 +83,7 @@
         pull: always
 
     - name: Reload nginx if dependencies require it
-      community.docker.docker_container_exec:
-        container: lb
-        command: nginx -s reload
+      ansible.builtin.command:
+        cmd: docker compose exec lb nginx -s reload
+        chdir: "{{ deploy_path }}"
       when: service in ['api', 'apigateway', 'web', 'web-editor']
