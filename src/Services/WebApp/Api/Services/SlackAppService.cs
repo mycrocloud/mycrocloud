@@ -28,7 +28,7 @@ public class SlackAppService
     
     public string GenerateSignInUrl(string slackUserId, string slackTeamId, string channelId, HttpContext context)
     {
-        var secret = _configuration["Slack:LinkSecret"];
+        var secret = _configuration["OAuthApps:Slack:LinkSecret"];
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
