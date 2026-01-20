@@ -5,7 +5,7 @@ using Api.Extensions;
 namespace Api.Middlewares;
 public class SlackVerificationMiddleware(RequestDelegate next)
 {
-    public async Task Invoke(HttpContext context, IConfiguration configuration, IHostEnvironment environment)
+    public async Task Invoke(HttpContext context, IConfiguration configuration, IHostEnvironment environment, ILogger<SlackVerificationMiddleware> logger)
     {
         // Always check in production
         
@@ -34,6 +34,7 @@ public class SlackVerificationMiddleware(RequestDelegate next)
             var slackSigningSecret = configuration["OAuthApps:Slack:SigningSecret"];
             if (string.IsNullOrEmpty(slackSigningSecret))
             {
+                logger.LogError("Missing Slack signing secret");
                 context.Response.StatusCode = 500;
                 await context.Response.WriteAsync("Missing Slack signing secret");
                 return;
