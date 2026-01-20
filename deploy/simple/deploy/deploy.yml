@@ -19,7 +19,7 @@
   tasks:
     - name: Fetch all secrets from AWS Secrets Manager
       set_fact:
-        "{{ item.key }}": "{{ lookup('amazon.aws.aws_secret', item.value.key, region=aws_region, profile=aws_profile) | from_json if item.value.json else lookup('amazon.aws.aws_secret', item.value.key, region=aws_region, profile=aws_profile) }}"
+        "{{ item.key }}": "{{ lookup('amazon.aws.aws_secret', item.value.key, region=aws_region if aws_region else omit, profile=aws_profile if aws_profile else omit) | from_json if item.value.json else lookup('amazon.aws.aws_secret', item.value.key, region=aws_region if aws_region else omit, profile=aws_profile if aws_profile else omit) }}"
       loop: "{{ aws_secrets | dict2items }}"
       no_log: true
 
