@@ -63,6 +63,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build-and-push-image
+    permissions:
+      id-token: write
+      contents: read
     if: ${{ github.ref == 'refs/heads/main' }}
     env:
       WORK_DIR: "/opt/mycrocloud"
