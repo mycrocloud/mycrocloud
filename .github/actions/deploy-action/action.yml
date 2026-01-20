@@ -52,6 +52,7 @@ runs:
 
     - name: Deploy
       shell: bash
+      working-directory: deploy/simple/deploy
       run: |
         ansible-playbook -i inventory.yml deploy.yml -e "service=${{ inputs.service }}"
       env:
