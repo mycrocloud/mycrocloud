@@ -16,6 +16,9 @@
       Services_WebApp_WebApp_Api_gha_mycrocloud_pem:
         key: "prod/mycrocloud/Services/WebApp/WebApp.Api/gha-mycrocloud.pem"
         json: false
+      monitoring:
+        key: "prod/mycrocloud/monitoring"
+        json: true
   tasks:
     - name: Fetch all secrets from AWS Secrets Manager
       vars:
