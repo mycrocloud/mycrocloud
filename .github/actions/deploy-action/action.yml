@@ -17,13 +17,25 @@ inputs:
     description: 'Working directory'
     required: true
 
+  namespace:
+    description: 'Namespace (default or deployment)'
+    default: 'default'
+
   service:
-    description: 'Service name'
-    required: true
-  
+    description: 'Service name (optional, deploys all if not specified)'
+    default: ''
+
   image:
     description: 'Image'
     default: ''
+
+  aws-iam-role:
+    description: 'AWS IAM role ARN for GitHub Actions'
+    required: true
+
+  aws-region:
+    description: 'AWS region'
+    required: true
 
 runs:
   using: composite
@@ -32,45 +44,30 @@ runs:
       shell: bash
       run: |
         mkdir -p ~/.ssh
-        echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+        echo "${{ inputs.ssh-key }}" | tr -d '\r' > ~/.ssh/id_rsa
         chmod 400 ~/.ssh/id_rsa
-        ssh-keyscan -H $SSH_HOST > ~/.ssh/known_hosts
-      env:
-        SSH_HOST: ${{ inputs.ssh-host }}
-        SSH_PRIVATE_KEY: ${{ inputs.ssh-key }}
+        ssh-keyscan -H "${{ inputs.ssh-host }}" > ~/.ssh/known_hosts
     
-    - name: Pull image
-      shell: bash
-      if: ${{ inputs.image != '' }}
-      run: |
-        echo pulling image $IMAGE
-        docker pull $IMAGE
-
-      env:
-        IMAGE: ${{ inputs.image }}
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v5.1.1
+      with:
+        role-to-assume: ${{ inputs.aws-iam-role }}
+        aws-region: ${{ inputs.aws-region }}
 
     - name: Deploy
       shell: bash
-      if: ${{ inputs.image == '' }}
+      working-directory: deploy/simple/deploy
       run: |
-        echo deploying $SERVICE
-        ssh $SSH_USERNAME@$SSH_HOST "
-            cd $WORK_DIR \
-              && docker compose down $SERVICE \
-              && docker compose pull $SERVICE \
-              && docker compose up $SERVICE -d
-              
-            if [[ 'api apigateway web-editor web slack-integration-api' =~ (^|[[:space:]])$SERVICE($|[[:space:]]) ]]; then
-              docker compose exec lb nginx -s reload || docker compose restart lb
-            fi
-            "
+        pipx inject ansible-core boto3 botocore
+        ansible-playbook -i inventory.yml deploy.yml -e "namespace=${{ inputs.namespace }}" ${{ inputs.service && format('-e "service={0}"', inputs.service) || '' }}
       env:
-        SSH_HOST: ${{ inputs.ssh-host }}
-        SSH_USERNAME: ${{ inputs.ssh-username }}
-        WORK_DIR: ${{ inputs.work-dir }}
-        SERVICE: ${{ inputs.service }}
+        ANSIBLE_HOST: ${{ inputs.ssh-host }}
+        ANSIBLE_USER: ${{ inputs.ssh-username }}
+        ANSIBLE_SSH_PRIVATE_KEY_FILE: "~/.ssh/id_rsa"
+        AWS_REGION: ${{ inputs.aws-region }}
 
     - name: Cleanup
+      if: always()
       shell: bash
       run: |
         rm -r ~/.ssh

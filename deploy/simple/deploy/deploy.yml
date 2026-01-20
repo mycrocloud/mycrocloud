@@ -1,31 +1,97 @@
 ---
-- name: Deploy application via Docker Compose
-  hosts: mycrocloud
-  become: yes
+- name: Fetch AWS secrets
+  hosts: localhost
+  gather_facts: no
   vars:
-    service: all
-
+    aws_secrets:
+      secrets:
+        key: "prod/mycrocloud/.env"
+        json: true
+      lb_certs_mycrocloud_info_key:
+        key: "prod/mycrocloud/lb/certs/mycrocloud.info.key"
+        json: false
+      Services_WebApp_deployment_dotenv:
+        key: "prod/mycrocloud/Services/WebApp/deployment/.env"
+        json: true
+      Services_WebApp_WebApp_Api_gha_mycrocloud_pem:
+        key: "prod/mycrocloud/Services/WebApp/WebApp.Api/gha-mycrocloud.pem"
+        json: false
   tasks:
-    - name: Show target service(s)
-      debug:
-        msg: "Deploying service={{ service }}"
+    - name: Fetch all secrets from AWS Secrets Manager
+      vars:
+        secret_value: "{{ lookup('amazon.aws.aws_secret', item.value.key) }}"
+      set_fact:
+        "{{ item.key }}": "{{ secret_value | from_json if item.value.json else secret_value }}"
+      loop: "{{ aws_secrets | dict2items }}"
+      no_log: true
 
-    - name: Pull latest images (all or specific)
-      command: >
-        docker compose pull {{ service if service != 'all' else '' }}
-      args:
-        chdir: "{{ deploy_path }}"
-      register: pull_result
-      changed_when: "'Downloaded newer image' in pull_result.stdout"
+- name: Deploy
+  hosts: all
+  become: no
+  vars:
+    src: app
+    deploy_path: /opt/mycrocloud
+    namespace: default
+    service: all
+    namespaces:
+      default:
+        path: "{{ deploy_path }}"
+      deployment:
+        path: "{{ deploy_path }}/Services/WebApp/deployment"
+  tasks:
+    - name: Ensure deploy directory exists
+      ansible.builtin.file:
+        path: "{{ deploy_path }}"
+        state: directory
+        mode: "0755"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+      become: yes
 
-    - name: Deploy service(s)
-      command: >
-        docker compose up -d {{ service if service != 'all' else '' }}
-      args:
-        chdir: "{{ deploy_path }}"
+    - name: Sync application files to server
+      ansible.builtin.synchronize:
+        src: "{{ src }}/"
+        dest: "{{ deploy_path }}"
+        recursive: yes
+        delete: yes
 
-    - name: Restart LB if dependencies require it
-      when: service in ['api', 'apigateway', 'slack-integration-api', 'web', 'web-editor']
-      command: docker compose restart lb
-      args:
+    - name: Generate templated env files
+      ansible.builtin.template:
+        src: "{{ src }}/{{ item.src }}"
+        dest: "{{ deploy_path }}/{{ item.dest }}"
+        mode: "0600"
+      vars:
+        secrets: "{{ hostvars['localhost'][item.secrets_var] }}"
+      loop:
+        - { src: ".env.j2", dest: ".env", secrets_var: "secrets" }
+        - { src: "Services/WebApp/deployment/.env.j2", dest: "Services/WebApp/deployment/.env", secrets_var: "Services_WebApp_deployment_dotenv" }
+      no_log: true
+
+    - name: Write secret files
+      ansible.builtin.copy:
+        content: "{{ hostvars['localhost'][item.content_var] }}"
+        dest: "{{ deploy_path }}/{{ item.dest }}"
+        mode: "0600"
+      loop:
+        - { dest: "lb/certs/mycrocloud.info.key", content_var: "lb_certs_mycrocloud_info_key" }
+        - { dest: "Services/WebApp/WebApp.Api/gha-mycrocloud.pem", content_var: "Services_WebApp_WebApp_Api_gha_mycrocloud_pem" }
+      no_log: true
+
+    - name: Copy Web/.env.example to Web/.env
+      ansible.builtin.copy:
+        src: "{{ deploy_path }}/Web/.env.example"
+        dest: "{{ deploy_path }}/Web/.env"
+        remote_src: true
+
+    - name: Pull and deploy services
+      community.docker.docker_compose_v2:
+        project_src: "{{ namespaces[namespace].path }}"
+        services: "{{ omit if service == 'all' else [service] }}"
+        state: present
+        pull: always
+
+    - name: Reload nginx if dependencies require it
+      ansible.builtin.command:
+        cmd: docker compose exec lb nginx -s reload
         chdir: "{{ deploy_path }}"
+      when: service in ['api', 'apigateway', 'web', 'web-editor']

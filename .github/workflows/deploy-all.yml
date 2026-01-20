@@ -1,0 +1,34 @@
+name: Deploy all services
+on:
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    if: ${{ github.ref == 'refs/heads/main' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Deploy default namespace
+        uses: ./.github/actions/deploy-action
+        with:
+          ssh-host: ${{ vars.SSH_HOST }}
+          ssh-username: ${{ vars.SSH_USERNAME }}
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          work-dir: /opt/mycrocloud
+          aws-iam-role: ${{ vars.AWS_IAM_ROLE_GITHUB_ACTIONS_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Deploy deployment namespace
+        uses: ./.github/actions/deploy-action
+        with:
+          ssh-host: ${{ vars.SSH_HOST }}
+          ssh-username: ${{ vars.SSH_USERNAME }}
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          work-dir: /opt/mycrocloud
+          namespace: deployment
+          aws-iam-role: ${{ vars.AWS_IAM_ROLE_GITHUB_ACTIONS_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}

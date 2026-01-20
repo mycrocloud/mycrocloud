@@ -1,4 +1,0 @@
-ansible_host: "{{ lookup('env', 'SERVER_IP') }}"
-aws_region: ap-northeast-1
-src: app # TODO: rename 'src'
-deploy_path: /opt/mycrocloud
