@@ -1,9 +1,9 @@
 all:
   vars:
-    aws_region: ap-northeast-1
-    aws_profile: default
+    aws_region: "{{ lookup('env', 'AWS_REGION') }}"
+    aws_profile: "{{ lookup('env', 'AWS_PROFILE') }}"
   hosts:
     server:
-      ansible_host: YOUR_SERVER_IP_HERE
-      ansible_user: ubuntu
-      ansible_ssh_private_key_file: ~/.ssh/id
+      ansible_host: "{{ lookup('env', 'ANSIBLE_HOST') }}"
+      ansible_user: "{{ lookup('env', 'ANSIBLE_USER') }}"
+      ansible_ssh_private_key_file: "{{ lookup('env', 'ANSIBLE_SSH_PRIVATE_KEY_FILE') }}"
