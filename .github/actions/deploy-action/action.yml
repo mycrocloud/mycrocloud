@@ -54,7 +54,7 @@ runs:
       shell: bash
       working-directory: deploy/simple/deploy
       run: |
-        pip install boto3 botocore
+        pipx inject ansible-core boto3 botocore
         ansible-playbook -i inventory.yml deploy.yml -e "service=${{ inputs.service }}"
       env:
         ANSIBLE_HOST: ${{ inputs.ssh-host }}
