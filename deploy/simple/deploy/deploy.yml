@@ -31,7 +31,13 @@
   vars:
     src: app
     deploy_path: /opt/mycrocloud
+    namespace: default
     service: all
+    namespaces:
+      default:
+        path: "{{ deploy_path }}"
+      deployment:
+        path: "{{ deploy_path }}/Services/WebApp/deployment"
   tasks:
     - name: Ensure deploy directory exists
       ansible.builtin.file:
@@ -79,7 +85,7 @@
 
     - name: Pull and deploy services
       community.docker.docker_compose_v2:
-        project_src: "{{ deploy_path }}"
+        project_src: "{{ namespaces[namespace].path }}"
         services: "{{ omit if service == 'all' else [service] }}"
         state: present
         pull: always
