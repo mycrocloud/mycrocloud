@@ -12,7 +12,7 @@ services:
       - seq-data:/data
     environment:
       - ACCEPT_EULA=Y
-      - SEQ_FIRSTRUN_ADMINPASSWORDHASH=QP3ZwBGCUn+Ija3VuMpr3OAzeWmNgYRh/TxaA3V9hOWUQHiL5fA3g3SQjYi/Q7W6co8ui1CO3pZQh5TfxJU511iqGOQRxrKSCd+2kSJcddf9
+      - SEQ_FIRSTRUN_ADMINPASSWORD=admin
 
   web:
     image: ghcr.io/mycrocloud/mycrocloud-web:main
