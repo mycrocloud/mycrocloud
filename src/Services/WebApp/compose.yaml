@@ -20,29 +20,16 @@ services:
   api:
     image: mycrocloud-api
     build:
-      dockerfile: WebApp.Api/Dockerfile
+      dockerfile: Api/Dockerfile
     environment:
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
       - ConnectionStrings__RabbitMq=${ConnectionStrings__RabbitMq}
       - OAuthApps__Slack__ClientSecret=${OAuthApps__Slack__ClientSecret}
       - OAuthApps__GitHub__ClientSecret=${OAuthApps__GitHub__ClientSecret}
-    ports:
-      - "8080:8080"
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-  
-  slack-integration-api:
-    image: mycrocloud-slack-integration-api
-    build:
-      dockerfile: WebApp.SlackIntegrationApi/Dockerfile
-    environment:
-      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
-      - ConnectionStrings__RabbitMq=${ConnectionStrings__RabbitMq}
       - Slack__SigningSecret=${Slack__SigningSecret}
       - Slack__LinkSecret=${Slack__LinkSecret}
     ports:
-      - "8082:8080"
+      - "8080:8080"
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -93,12 +80,14 @@ services:
       dockerfile: WebApp.FunctionInvoker/Dockerfile
     volumes:
       - ./WebApp.FunctionInvoker/data:/app/data
-    deploy: 
+    deploy:
       resources:
         limits:
           cpus: "0.25"
           memory: 64M
           pids: 100
+    profiles:
+      - function-invoker
 
 volumes:
   db_data:

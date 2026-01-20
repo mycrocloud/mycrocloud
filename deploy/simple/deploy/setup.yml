@@ -1,6 +1,6 @@
 ---
 - name: Setup server (Docker, build-outputs)
-  hosts: mycrocloud
+  hosts: server
   become: yes
 
   tasks:
@@ -27,7 +27,7 @@
 
     - name: Add Docker repository
       apt_repository:
-        repo: "deb [arch={{ ansible_architecture }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename }} stable"
+        repo: "deb [arch={{ 'amd64' if ansible_architecture == 'x86_64' else 'arm64' }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename }} stable"
         filename: docker
         state: present
 
@@ -42,9 +42,9 @@
         state: present
         update_cache: yes
 
-    - name: Add ubuntu user to docker group
+    - name: Add user to docker group
       user:
-        name: ubuntu
+        name: "{{ ansible_user }}"
         groups: docker
         append: yes
 

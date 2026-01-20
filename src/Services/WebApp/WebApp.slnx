@@ -4,13 +4,12 @@
     <File Path="global.json" />
     <File Path=".config\dotnet-tools.json" />
   </Folder>
+  <Project Path="Api\Api.csproj" Type="Classic C#" />
   <Project Path="WebApp.ApiGateway\WebApp.ApiGateway.csproj" Type="Classic C#" />
-  <Project Path="WebApp.Api\WebApp.Api.csproj" Type="Classic C#" />
   <Project Path="WebApp.Domain\WebApp.Domain.csproj" Type="Classic C#" />
   <Project Path="WebApp.FunctionInvoker\WebApp.FunctionInvoker.csproj" Type="Classic C#" />
   <Project Path="WebApp.Infrastructure\WebApp.Infrastructure.csproj" Type="Classic C#" />
   <Project Path="WebApp.Migrations\WebApp.Migrations.csproj" Type="Classic C#" />
   <Project Path="WebApp.MigrationTest\WebApp.MigrationTest.csproj" Type="Classic C#" />
-  <Project Path="WebApp.SlackIntegrationApi\WebApp.SlackIntegrationApi.csproj" Type="Classic C#" />
   <Project Path="WebApp.UnitTest\WebApp.UnitTest.csproj" Type="Classic C#" />
 </Solution>

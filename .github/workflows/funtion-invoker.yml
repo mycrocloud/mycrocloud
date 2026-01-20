@@ -60,6 +60,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build-and-push-image
+    permissions:
+      id-token: write
+      contents: read
     if: ${{ github.ref == 'refs/heads/main' }}
     env:
       IMAGE: ${{ needs.build-and-push-image.outputs.full_image }}
@@ -78,3 +81,5 @@ jobs:
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
           service: 'none'
           image: ${{ env.IMAGE }}
+          aws-iam-role: ${{ vars.AWS_IAM_ROLE_GITHUB_ACTIONS_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}

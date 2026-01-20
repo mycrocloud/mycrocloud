@@ -1,0 +1,4 @@
+services:
+  seq:
+    ports:
+      - "5341:80"
