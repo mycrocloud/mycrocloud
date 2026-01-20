@@ -66,3 +66,5 @@ jobs:
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
           work-dir: ${{ env.WORK_DIR }}
           service: fluentd
+          aws-iam-role: ${{ vars.AWS_IAM_ROLE_GITHUB_ACTIONS_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}

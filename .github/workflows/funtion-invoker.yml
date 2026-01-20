@@ -78,3 +78,5 @@ jobs:
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
           service: 'none'
           image: ${{ env.IMAGE }}
+          aws-iam-role: ${{ vars.AWS_IAM_ROLE_GITHUB_ACTIONS_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}

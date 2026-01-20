@@ -25,6 +25,14 @@ inputs:
     description: 'Image'
     default: ''
 
+  aws-iam-role:
+    description: 'AWS IAM role ARN for GitHub Actions'
+    required: true
+
+  aws-region:
+    description: 'AWS region'
+    required: true
+
 runs:
   using: composite
   steps:
@@ -39,8 +47,8 @@ runs:
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v5.1.1
       with:
-        role-to-assume: ${{ vars.AWS_IAM_ROLE_GITHUB_ACTIONS_ARN }}
-        aws-region: ${{ vars.AWS_REGION }}
+        role-to-assume: ${{ inputs.aws-iam-role }}
+        aws-region: ${{ inputs.aws-region }}
 
     - name: Deploy
       shell: bash
@@ -50,7 +58,7 @@ runs:
         ANSIBLE_HOST: ${{ inputs.ssh-host }}
         ANSIBLE_USER: ${{ inputs.ssh-username }}
         ANSIBLE_SSH_PRIVATE_KEY_FILE: "~/.ssh/id_rsa"
-        AWS_REGION: ${{ vars.AWS_REGION }}
+        AWS_REGION: ${{ inputs.aws-region }}
 
     - name: Cleanup
       if: always()
