@@ -1,7 +1,4 @@
 all:
-  vars:
-    aws_region: "{{ lookup('env', 'AWS_REGION') }}"
-    aws_profile: "{{ lookup('env', 'AWS_PROFILE') }}"
   hosts:
     server:
       ansible_host: "{{ lookup('env', 'ANSIBLE_HOST') }}"
