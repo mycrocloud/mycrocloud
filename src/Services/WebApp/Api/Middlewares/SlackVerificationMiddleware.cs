@@ -31,7 +31,7 @@ public class SlackVerificationMiddleware(RequestDelegate next)
                 return;
             }
 
-            var slackSigningSecret = configuration["Slack:SigningSecret"];
+            var slackSigningSecret = configuration["OAuthApps:Slack:SigningSecret"];
             if (string.IsNullOrEmpty(slackSigningSecret))
             {
                 context.Response.StatusCode = 500;
