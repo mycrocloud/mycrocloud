@@ -14,7 +14,6 @@ using Nest;
 using Api.Authentications;
 using WebApp.Infrastructure;
 using WebApp.Infrastructure.Repositories;
-using Api.Filters;
 using Api.Middlewares;
 using Api.Services;
 
@@ -22,10 +21,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers(options =>
-{
-    options.Filters.Add(typeof(GlobalExceptionFilter));
-});
+builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -164,6 +161,8 @@ if (behindProxy)
         ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
     });
 }
+
+app.UseGlobalExceptionHandler();
 
 app.UseHttpLogging();
 app.UseCors();
