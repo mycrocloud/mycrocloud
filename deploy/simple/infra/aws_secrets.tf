@@ -1,24 +1,28 @@
+# =============================================================================
+# AWS Secrets Manager - Secret resources only (values managed via AWS Console)
+# =============================================================================
+
+resource "aws_secretsmanager_secret" "env" {
+  name        = "prod/mycrocloud/.env"
+  description = "Main environment variables for mycrocloud"
+}
+
+resource "aws_secretsmanager_secret" "lb_certs_key" {
+  name        = "prod/mycrocloud/lb/certs/mycrocloud.info.key"
+  description = "SSL private key for mycrocloud.info"
+}
+
+resource "aws_secretsmanager_secret" "webapp_deployment_env" {
+  name        = "prod/mycrocloud/Services/WebApp/deployment/.env"
+  description = "Environment variables for WebApp deployment"
+}
+
+resource "aws_secretsmanager_secret" "webapp_api_gha_pem" {
+  name        = "prod/mycrocloud/Services/WebApp/WebApp.Api/gha-mycrocloud.pem"
+  description = "GitHub App private key for WebApp API"
+}
+
 resource "aws_secretsmanager_secret" "grafana_cloud" {
   name        = "mycrocloud/monitoring/grafana-cloud"
   description = "Grafana Cloud credentials for Prometheus remote write"
-}
-
-resource "aws_secretsmanager_secret_version" "grafana_cloud" {
-  secret_id = aws_secretsmanager_secret.grafana_cloud.id
-  secret_string = jsonencode({
-    GRAFANA_CLOUD_USER_ID = var.grafana_cloud_user_id
-    GRAFANA_CLOUD_API_KEY = var.grafana_cloud_api_key
-  })
-}
-
-variable "grafana_cloud_user_id" {
-  description = "Grafana Cloud User ID for Prometheus remote write"
-  type        = string
-  sensitive   = true
-}
-
-variable "grafana_cloud_api_key" {
-  description = "Grafana Cloud API Key for Prometheus remote write"
-  type        = string
-  sensitive   = true
 }
