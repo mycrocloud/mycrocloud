@@ -1,7 +1,18 @@
 services:
+  seq:
+    image: datalust/seq
+    volumes:
+      - seq-data:/data
+    environment:
+      - ACCEPT_EULA=Y
+      - SEQ_FIRSTRUN_ADMINPASSWORDHASH=QAqKAm8HUhk57veOi0Xed3JkO1k/+YqE4lCQgshVuXOUhytxYKBNfRsWYjThLyN/YIbTDpXOJQS8yHnnmOTz1kKucbNx//2uAxfzTcmGYjj+
+    networks:
+      - mycrocloud
+
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
+    network_mode: "host"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
@@ -14,4 +25,9 @@ services:
     restart: unless-stopped
 
 volumes:
+  seq-data:
   prometheus_data:
+
+networks:
+  mycrocloud:
+    external: true

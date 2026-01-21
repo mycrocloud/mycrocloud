@@ -16,8 +16,8 @@
       Services_WebApp_WebApp_Api_gha_mycrocloud_pem:
         key: "prod/mycrocloud/Services/WebApp/WebApp.Api/gha-mycrocloud.pem"
         json: false
-      monitoring:
-        key: "prod/mycrocloud/monitoring"
+      grafana_cloud:
+        key: "mycrocloud/monitoring/grafana-cloud"
         json: true
   tasks:
     - name: Fetch all secrets from AWS Secrets Manager
@@ -68,6 +68,7 @@
       loop:
         - { src: ".env.j2", dest: ".env", secrets_var: "secrets" }
         - { src: "Services/WebApp/deployment/.env.j2", dest: "Services/WebApp/deployment/.env", secrets_var: "Services_WebApp_deployment_dotenv" }
+        - { src: "monitoring/prometheus.yml.j2", dest: "monitoring/prometheus.yml", secrets_var: "grafana_cloud" }
       no_log: true
 
     - name: Write secret files

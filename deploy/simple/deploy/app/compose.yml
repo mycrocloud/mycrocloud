@@ -6,14 +6,6 @@ services:
     volumes:
       - ./Services/WebApp/WebApp.Migrations/appsettings.json:/db-migrator/appsettings.json:ro
 
-  seq:
-    image: datalust/seq
-    volumes:
-      - seq-data:/data
-    environment:
-      - ACCEPT_EULA=Y
-      - SEQ_FIRSTRUN_ADMINPASSWORD=admin
-
   web:
     image: ghcr.io/mycrocloud/mycrocloud-web:main
     volumes:
@@ -68,7 +60,3 @@ networks:
     ipam:
       config:
         - subnet: 172.18.0.0/16 
-
-
-volumes:
-  seq-data:
