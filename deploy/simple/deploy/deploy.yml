@@ -62,13 +62,13 @@
       ansible.builtin.template:
         src: "{{ src }}/{{ item.src }}"
         dest: "{{ deploy_path }}/{{ item.dest }}"
-        mode: "0600"
+        mode: "{{ item.mode | default('0600') }}"
       vars:
         secrets: "{{ hostvars['localhost'][item.secrets_var] }}"
       loop:
         - { src: ".env.j2", dest: ".env", secrets_var: "secrets" }
         - { src: "Services/WebApp/deployment/.env.j2", dest: "Services/WebApp/deployment/.env", secrets_var: "Services_WebApp_deployment_dotenv" }
-        - { src: "monitoring/prometheus.yml.j2", dest: "monitoring/prometheus.yml", secrets_var: "grafana_cloud" }
+        - { src: "monitoring/prometheus.yml.j2", dest: "monitoring/prometheus.yml", secrets_var: "grafana_cloud", mode: "0644" }
       no_log: true
 
     - name: Write secret files
