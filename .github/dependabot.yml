@@ -3,7 +3,7 @@ updates:
   - package-ecosystem: "nuget"
     directories:
       - "src/Services/WebApp/WebApp.Admin"
-      - "src/Services/WebApp/WebApp.Api"
+      - "src/Services/WebApp/Api"
       - "src/Services/WebApp/WebApp.ApiGateway"
       - "src/Services/WebApp/WebApp.Domain"
       - "src/Services/WebApp/WebApp.FunctionInvoker"
@@ -27,4 +27,5 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
+
       interval: "daily"
