@@ -454,8 +454,6 @@ $RECYCLE.BIN/
 !.vscode/extensions.json
 
 .env
-.env.production
-appsettings.Production.json
-
 .key
 .envrc
+*.pem
