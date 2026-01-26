@@ -1,6 +1,15 @@
 import { useAuth0 } from "@auth0/auth0-react";
-import { Avatar, Button, Dropdown } from "flowbite-react";
 import { Link, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 const isDevMode = import.meta.env.DEV;
 
 function Header() {
@@ -50,33 +59,36 @@ function Header() {
           >
             Docs
           </a>
-          <Dropdown
-            arrowIcon={false}
-            inline
-            label={<Avatar alt="User settings" img={user?.picture} rounded />}
-          >
-            <Dropdown.Header>
-              <span className="block">{user?.name}</span>
-              <span className="block truncate font-medium">{user?.email}</span>
-            </Dropdown.Header>
-            <Dropdown.Item onClick={() => navigate("/settings")}>
-              Account Settings
-            </Dropdown.Item>
-            <Dropdown.Divider />
-            <Dropdown.Item onClick={() => logout()}>Log out</Dropdown.Item>
-            {isDevMode && (
-              <Dropdown.Item onClick={handleCopyAccessTokenClick}>
-                Copy access token
-              </Dropdown.Item>
-            )}
-          </Dropdown>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user?.picture} alt="User settings" />
+                  <AvatarFallback>{user?.name?.charAt(0) ?? "U"}</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>
+                <span className="block">{user?.name}</span>
+                <span className="block truncate text-sm font-normal text-muted-foreground">{user?.email}</span>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate("/settings")}>
+                Account Settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => logout()}>Log out</DropdownMenuItem>
+              {isDevMode && (
+                <DropdownMenuItem onClick={handleCopyAccessTokenClick}>
+                  Copy access token
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </>
       ) : (
-        <Button
-          className="ms-auto"
-          size="sm"
-          onClick={() => loginWithRedirect()}
-        >
+        <Button className="ms-auto" size="sm" onClick={() => loginWithRedirect()}>
           Log in
         </Button>
       )}

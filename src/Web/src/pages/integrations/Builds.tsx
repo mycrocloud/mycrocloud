@@ -3,8 +3,25 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import { AppContext } from "../apps";
 import { useAuth0 } from "@auth0/auth0-react";
 import BuildLogs from "./BuildLogs";
-import { Button, Label, Modal, ModalBody, ModalFooter, ModalHeader, TextInput } from "flowbite-react";
 import { useForm } from "react-hook-form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface IBuild {
     id: string;
@@ -103,62 +120,64 @@ export default function Builds() {
         <div className="mt-4 flex items-center">
             <h2 className="font-semibold">Builds</h2>
         </div>
-        <div>
-            <Button onClick={() => setShowBuildModal(true)} size={'sm'}>Build</Button>
+        <div className="mt-2">
+            <Button onClick={() => setShowBuildModal(true)} size="sm">Build</Button>
         </div>
-        <div className="flex">
+        <div className="flex mt-2">
             <div className="overflow-y-auto">
-                <table className="mt-2 table-fixed">
-                    <thead>
-                        <tr className="border">
-                            <th className="w-80 p-2 text-start">Name</th>
-                            <th className="w-20 text-start">Status</th>
-                            <th className="w-60 text-start">Started At</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-80">Name</TableHead>
+                            <TableHead className="w-20">Status</TableHead>
+                            <TableHead className="w-60">Started At</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
                         {builds.map((build) => (
-                            <tr
+                            <TableRow
                                 key={build.id}
                                 className={
-                                    "cursor-pointer border hover:bg-slate-100" +
-                                    (buildId === build.id ? " bg-slate-200" : "")
+                                    "cursor-pointer" +
+                                    (buildId === build.id ? " bg-muted" : "")
                                 }
                                 onClick={() => setBuildId(build.id)}
                             >
-                                <td className="p-2">{build.name}</td>
-                                <td className={statusClass(build.status)}>
+                                <TableCell>{build.name}</TableCell>
+                                <TableCell className={statusClass(build.status)}>
                                     {build.status}
-                                </td>
-                                <td>{build.createdAt}</td>
-                            </tr>
+                                </TableCell>
+                                <TableCell>{build.createdAt}</TableCell>
+                            </TableRow>
                         ))}
-                    </tbody>
-                </table>
+                    </TableBody>
+                </Table>
             </div>
             <div className="flex-1 overflow-hidden">
                 {buildId ? (
                     <BuildLogs appId={app.id} buildId={buildId} />
                 ) : (
-                    <div className="p-4 text-gray-400">Select a build to view logs</div>
+                    <div className="p-4 text-muted-foreground">Select a build to view logs</div>
                 )}
             </div>
         </div>
-        <Modal show={showBuildModal} onClose={() => setShowBuildModal(false)}>
-            <ModalHeader>
-                <h1>Build</h1>
-            </ModalHeader>
-            <ModalBody>
+        <Dialog open={showBuildModal} onOpenChange={setShowBuildModal}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Build</DialogTitle>
+                </DialogHeader>
                 <form id="build-form" onSubmit={handleSubmit(onSubmit)}>
-                    <Label>Build Name</Label>
-                    <TextInput {...register("name")} className="mt-2" placeholder="Build name" />
-                    { errors.name && <span className="text-red-500">{errors.name.message}</span>}
+                    <div className="space-y-2">
+                        <Label>Build Name</Label>
+                        <Input {...register("name")} placeholder="Build name" />
+                        {errors.name && <span className="text-red-500 text-sm">{errors.name.message}</span>}
+                    </div>
                 </form>
-            </ModalBody>
-            <ModalFooter>
-                <Button type="submit" form="build-form" className="ms-auto">Build</Button>
-                <Button outline onClick={() => setShowBuildModal(false)}>Cancel</Button>
-            </ModalFooter>
-        </Modal>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowBuildModal(false)}>Cancel</Button>
+                    <Button type="submit" form="build-form">Build</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </section>
 }

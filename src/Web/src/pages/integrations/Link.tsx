@@ -1,10 +1,18 @@
 import { useContext, useEffect, useState } from "react";
 import { IAppIntegration } from "../apps/App";
-import { Spinner } from "flowbite-react";
 import { useApiClient } from "@/hooks";
 import { AppContext } from "../apps";
 import { NotFoundError } from "@/errors";
 import { getConfig } from "@/config";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
 
 const { GITHUB_APP_NAME } = getConfig();
 
@@ -99,8 +107,8 @@ export default function Link() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 text-gray-600">
-        <Spinner />
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" />
         <span>Loading GitHub integrations...</span>
       </div>
     );
@@ -108,72 +116,68 @@ export default function Link() {
 
   return <div className="mt-2">
     {link ? (
-      <div className="flex items-center justify-between p-3 border rounded-lg text-slate-700 text-sm">
+      <div className="flex items-center justify-between p-3 border rounded-lg text-sm">
         <div>
           Connected to <strong>{link.org}/{link.repo}</strong>
         </div>
-
-        <button
-          onClick={onDisconnect}
-          className="text-red-600 hover:text-red-700 font-medium underline hover:no-underline"
-        >
+        <Button variant="link" onClick={onDisconnect} className="text-destructive p-0 h-auto">
           Disconnect
-        </button>
+        </Button>
       </div>
-
     ) : (
       <div>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted-foreground">
           Connect your app to GitHub to access your repositories.
         </p>
         <div className="flex items-center gap-3 mt-2">
-          <div className="flex flex-col">
-            <select
-              onChange={(e) => {
-                if (e.target.value === "") setInstallationId(null);
-                else setInstallationId(Number(e.target.value));
-              }}
-              value={installationId?.toString() ?? ""}
-              className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-            >
+          <Select
+            value={installationId?.toString() ?? ""}
+            onValueChange={(value) => {
+              if (value === "") setInstallationId(null);
+              else setInstallationId(Number(value));
+            }}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select organization" />
+            </SelectTrigger>
+            <SelectContent>
               {installations.map((inst) => (
-                <option key={inst.installationId} value={inst.installationId}>
+                <SelectItem key={inst.installationId} value={inst.installationId.toString()}>
                   {inst.accountLogin}
-                </option>
+                </SelectItem>
               ))}
-            </select>
-          </div>
-          <div className="flex flex-col">
-            <select
-              className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
-              value={repoId?.toString() ?? ""}
-              onChange={(e) => {
-                if (e.target.value === "") setRepoId(null);
-                else setRepoId(Number(e.target.value));
-              }}
-            >
+            </SelectContent>
+          </Select>
+          <Select
+            value={repoId?.toString() ?? ""}
+            onValueChange={(value) => {
+              if (value === "") setRepoId(null);
+              else setRepoId(Number(value));
+            }}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select repository" />
+            </SelectTrigger>
+            <SelectContent>
               {repos.map((repo) => (
-                <option key={repo.id} value={repo.id}>
+                <SelectItem key={repo.id} value={repo.id.toString()}>
                   {repo.name}
-                </option>
+                </SelectItem>
               ))}
-            </select>
-          </div>
+            </SelectContent>
+          </Select>
 
           {installationId && repoId && (
-            <button
-              className="self-end bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-              onClick={onConnect}
-            >
+            <Button onClick={onConnect}>
               Link
-            </button>
+            </Button>
           )}
         </div>
-        <p className="text-body text-sm text-gray-700 mt-2">
-          Missing some repositories?&nbsp;
+        <p className="text-sm text-muted-foreground mt-2">
+          Missing some repositories?{" "}
           <a
             href="#"
-            className="font-medium text-fg-brand underline hover:no-underline"
+            className="font-medium text-primary underline hover:no-underline"
             onClick={connectGitHub}
           >
             Manage GitHub access
