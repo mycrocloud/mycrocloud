@@ -7,7 +7,9 @@ import { DndContext, DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/solid";
-import { Alert } from "flowbite-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Info } from "lucide-react";
 
 type Inputs = {
   schemes: IScheme[];
@@ -89,11 +91,12 @@ export default function AuthenticationSettings() {
   return (
     <form className="p-2" onSubmit={handleSubmit(onSubmit)}>
       <h1 className="font-bold">Authentication Settings</h1>
-      <Alert color="info" className="mt-2">
-        <span className="font-medium">
+      <Alert className="mt-2">
+        <Info className="h-4 w-4" />
+        <AlertDescription>
           Drag from the right to the left to enable a scheme. Drag and drop to
           reorder the enabled schemes.
-        </span>
+        </AlertDescription>
       </Alert>
       <div className="mt-3 flex w-full">
         <div className="flex-1 border p-2">
@@ -137,12 +140,9 @@ export default function AuthenticationSettings() {
         )}
       </div>
       <div className="mt-2">
-        <button
-          type="submit"
-          className="border border-transparent bg-primary px-2 py-1 text-center font-medium text-white focus:z-10 focus:outline-none focus:ring-2 focus:ring-cyan-300 enabled:hover:bg-cyan-800"
-        >
+        <Button type="submit">
           Save
-        </button>
+        </Button>
       </div>
     </form>
   );

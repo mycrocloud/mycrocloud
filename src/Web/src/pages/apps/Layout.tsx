@@ -2,7 +2,14 @@ import { Link, Outlet, useLocation, useParams } from "react-router-dom";
 import { AppContext } from ".";
 import { useEffect, useState } from "react";
 import IApp from "./App";
-import { Breadcrumb } from "flowbite-react";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { useApiClient } from "@/hooks";
 
 export default function AppLayout() {
@@ -38,13 +45,23 @@ export default function AppLayout() {
     <AppContext.Provider value={{ app, setApp }}>
       <div className="">
         <Breadcrumb className="p-1">
-          <Breadcrumb.Item>
-            <Link to="/">Home</Link>
-          </Breadcrumb.Item>
-          <Breadcrumb.Item>
-            <Link to="/apps">Apps</Link>
-          </Breadcrumb.Item>
-          <Breadcrumb.Item>{app.name}</Breadcrumb.Item>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/">Home</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/apps">Apps</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{app.name}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
         </Breadcrumb>
         <div className="flex min-h-screen border">
           <div className="flex w-28 flex-col space-y-0.5 border-r p-1">

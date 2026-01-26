@@ -3,8 +3,18 @@ import { useContext, useEffect } from "react";
 import { AppContext } from "../apps";
 import { toast } from "react-toastify";
 import { useForm } from "react-hook-form";
-import { Alert, Tooltip } from "flowbite-react"
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import InfoIcon from "@/components/ui/InfoIcon";
+import { AlertTriangle } from "lucide-react";
 
 
 export default function BuildSettings() {
@@ -44,106 +54,121 @@ export default function BuildSettings() {
 
     return <div className="mt-4">
         <h2 className="font-semibold mb-3">Build Settings</h2>
-        <Alert color="warning" className="mb-4">
-            Settings can’t be edited right now. Please try again shortly.
+        <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+                Settings can't be edited right now. Please try again shortly.
+            </AlertDescription>
         </Alert>
-        <form className="ps-2" onSubmit={handleSubmit(onSubmitConfig)}>
-            <div className="flex items-start gap-4 py-2">
-                <div className="flex items-center gap-2 w-40 pt-1">
-                    <label className="text-sm font-medium text-gray-700">Branch</label>
-                    <Tooltip content="The Git branch used for deployment.">
-                        <InfoIcon />
-                    </Tooltip>
+        <TooltipProvider>
+            <form className="ps-2" onSubmit={handleSubmit(onSubmitConfig)}>
+                <div className="flex items-start gap-4 py-2">
+                    <div className="flex items-center gap-2 w-40 pt-1">
+                        <Label>Branch</Label>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span><InfoIcon /></span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>The Git branch used for deployment.</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </div>
+                    <div className="flex-1">
+                        <Input
+                            {...register("branch", { required: "branch is required" })}
+                            type="text"
+                            readOnly
+                        />
+                        {errors.branch && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.branch.message}
+                            </p>
+                        )}
+                    </div>
                 </div>
-                <div className="flex-1">
-                    <input
-                        {...register("branch", { required: "branch is required" })}
-                        type="text"
-                        className="border rounded px-2 py-1.5 w-full"
-                        readOnly
-                    />
-                    {errors.branch && (
-                        <p className="text-red-500 text-sm mt-1">
-                            {errors.branch.message}
-                        </p>
-                    )}
+                <div className="flex items-start gap-4 py-2">
+                    <div className="flex items-center gap-2 w-40 pt-1">
+                        <Label>Build Directory</Label>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span><InfoIcon /></span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Path relative to the root of the repository where the build is to be run.</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </div>
+                    <div className="flex-1">
+                        <Input
+                            {...register("directory", { required: "directory is required" })}
+                            type="text"
+                            readOnly
+                        />
+                        {errors.directory && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.directory.message}
+                            </p>
+                        )}
+                    </div>
                 </div>
-            </div>
-            <div className="flex items-start gap-4 py-2">
-                <div className="flex items-center gap-2 w-40 pt-1">
-                    <label className="text-sm font-medium text-gray-700">Build Directory</label>
-                    <Tooltip content="Path relative to the root of the repository where the build
-                    is to be run.">
-                        <InfoIcon />
-                    </Tooltip>
+                <div className="flex items-start gap-4 py-2">
+                    <div className="flex items-center gap-2 w-40 pt-1">
+                        <Label>Output Directory</Label>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span><InfoIcon /></span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Path relative to the root of the repository where the build output is located.</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </div>
+                    <div className="flex-1">
+                        <Input
+                            {...register("outDir", { required: "outDir is required" })}
+                            type="text"
+                            readOnly
+                        />
+                        {errors.outDir && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.outDir.message}
+                            </p>
+                        )}
+                    </div>
                 </div>
-                <div className="flex-1">
-                    <input
-                        {...register("directory", { required: "directory is required" })}
-                        type="text"
-                        className="border rounded px-2 py-1.5 w-full"
-                        readOnly
-                    />
-                    {errors.directory && (
-                        <p className="text-red-500 text-sm mt-1">
-                            {errors.directory.message}
-                        </p>
-                    )}
-                </div>
-            </div>
-            <div className="flex items-start gap-4 py-2">
-                <div className="flex items-center gap-2 w-40 pt-1">
-                    <label className="text-sm font-medium text-gray-700">Output Directory</label>
-                    <Tooltip content="Path relative to the root of the repository where the build
-                    output is located.">
-                        <InfoIcon />
-                    </Tooltip>
-                </div>
-                <div className="flex-1">
-                    <input
-                        {...register("outDir", { required: "outDir is required" })}
-                        type="text"
-                        className="border rounded px-2 py-1.5 w-full"
-                        readOnly
-                    />
-                    {errors.outDir && (
-                        <p className="text-red-500 text-sm mt-1">
-                            {errors.outDir.message}
-                        </p>
-                    )}
-                </div>
-            </div>
 
-            <div className="flex items-start gap-4 py-2">
-                <div className="flex items-center gap-2 w-40 pt-1">
-                    <label className="text-sm font-medium text-gray-700">Build Command</label>
-                    <Tooltip content="The command that runs your build process (e.g. npm run build).">
-                        <InfoIcon />
-                    </Tooltip>
+                <div className="flex items-start gap-4 py-2">
+                    <div className="flex items-center gap-2 w-40 pt-1">
+                        <Label>Build Command</Label>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span><InfoIcon /></span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>The command that runs your build process (e.g. npm run build).</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </div>
+                    <div className="flex-1">
+                        <Input
+                            {...register("buildCommand", { required: "buildCommand is required" })}
+                            type="text"
+                            readOnly
+                        />
+                        {errors.buildCommand && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.buildCommand.message}
+                            </p>
+                        )}
+                    </div>
                 </div>
-                <div className="flex-1">
-                    <input
-                        {...register("buildCommand", { required: "buildCommand is required" })}
-                        type="text"
-                        className="border rounded px-2 py-1.5 w-full"
-                        readOnly
-                    />
-                    {errors.buildCommand && (
-                        <p className="text-red-500 text-sm mt-1">
-                            {errors.buildCommand.message}
-                        </p>
-                    )}
-                </div>
-            </div>
 
-            <button
-                type="submit"
-                className="mt-2 bg-primary px-4 py-1.5 text-white rounded"
-                disabled
-            >
-                Save
-            </button>
-        </form>
+                <Button type="submit" className="mt-2" disabled>
+                    Save
+                </Button>
+            </form>
+        </TooltipProvider>
     </div>
 }
 

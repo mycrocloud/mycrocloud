@@ -5,6 +5,17 @@ import { AppContext } from ".";
 import { IRouteLog } from "../routes";
 import moment from "moment";
 import { XMarkIcon } from "@heroicons/react/20/solid";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type Inputs = {
   accessDateFrom?: string;
@@ -124,110 +135,113 @@ export default function AppLogs() {
   console.log("rendering...", log);
   return (
     <>
-      <form onSubmit={handleSubmit(onSubmit)} className="border p-2">
-        <div>
-          <label className="me-2">Access Date</label>
-          <input type="date" {...register("accessDateFrom")} />
+      <form onSubmit={handleSubmit(onSubmit)} className="rounded-lg border p-4 space-y-4">
+        <div className="flex items-center gap-2">
+          <Label className="min-w-24">Access Date</Label>
+          <Input type="date" {...register("accessDateFrom")} className="w-auto" />
           <span>~</span>
-          <input type="date" {...register("accessDateTo")} />
+          <Input type="date" {...register("accessDateTo")} className="w-auto" />
         </div>
-        <div>
-          <label className="me-2">Route</label>
-          <input
+        <div className="flex items-center gap-2">
+          <Label className="min-w-24">Route</Label>
+          <Input
             type="text"
             value={routeIdsValue}
             onChange={(e) => setRouteIdsValue(e.target.value)}
-            className="border border-gray-200"
+            className="w-auto"
           />
         </div>
-        <div className="flex justify-end space-x-1">
-          <button type="submit" className="bg-primary px-2 py-0.5 text-white">
+        <div className="flex justify-end">
+          <Button type="submit" size="sm">
             Filter
-          </button>
+          </Button>
         </div>
       </form>
-      <div className="mt-2 flex justify-end space-x-1 p-2">
-        <button
+      <div className="mt-4 flex justify-end gap-2">
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           onClick={handleSubmit(onDownloadAsCsv)}
-          className="bg-primary px-2 py-0.5 text-white"
         >
           Download as CSV
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           onClick={handleSubmit(onDownloadAsJson)}
-          className="bg-primary px-2 py-0.5 text-white"
         >
           Download as JSON
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           onClick={handleDownloadDisplayingAsCsvClick}
-          className="bg-primary px-2 py-0.5 text-white"
         >
           Download displaying logs as CSV
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           onClick={handleDownloadDisplayingAsJsonClick}
-          className="bg-primary px-2 py-0.5 text-white"
         >
           Download displaying logs as JSON
-        </button>
+        </Button>
       </div>
-      <table className="flex-1">
-        <thead className="border">
-          <tr>
-            <th className="min-w-16 text-start p-2">Time</th>
-            <th className="text-start">Method</th>
-            <th className="text-start">Path</th>
-            <th className="text-start">Status Code</th>
-            {/* <th className="text-start">Function Execution Environment</th> */}
-          </tr>
-        </thead>
-        <tbody>
+      <Table className="mt-4">
+        <TableHeader>
+          <TableRow>
+            <TableHead className="min-w-32">Time</TableHead>
+            <TableHead>Method</TableHead>
+            <TableHead>Path</TableHead>
+            <TableHead>Status Code</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {logs.map((log) => (
-            <tr
+            <TableRow
               onClick={() => {
                 console.log("click");
                 setLog(log);
               }}
               key={log.id}
-              className="cursor-pointer border hover:bg-gray-100"
+              className="cursor-pointer"
             >
-              <td className="py-1.5">
+              <TableCell>
                 {new Date(log.timestamp).toLocaleString()}
-              </td>
-              <td className="py-1.5">
+              </TableCell>
+              <TableCell>
                 {log.method}
-              </td>
-              <td className="py-1.5">
+              </TableCell>
+              <TableCell>
                 {log.path}
-              </td>
-              <td className="py-1.5">
+              </TableCell>
+              <TableCell>
                 {log.statusCode}
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
       {!log ? (
-        <div className="text-gray-500">Click log to view details</div>
+        <div className="mt-4 text-muted-foreground">Click a log to view details</div>
       ) : (
-        <div className="">
+        <div className="mt-4 rounded-lg border p-4">
           <div className="flex items-center">
-            <p className="border p-0.5 rounded">{log.method}</p>
-            <p className="ps-2">{log.path}</p>
-            <button className="ms-auto" onClick={() => setLog(null)}>
-              <XMarkIcon width={20} />
-            </button>
+            <span className="rounded border px-2 py-0.5 text-sm font-medium">{log.method}</span>
+            <span className="ps-2">{log.path}</span>
+            <Button variant="ghost" size="icon" className="ms-auto" onClick={() => setLog(null)}>
+              <XMarkIcon className="h-5 w-5" />
+            </Button>
           </div>
-          <div className="mt-2">
-            <p className="font-semibold text-slate-800">Logs</p>
-            {log.functionLogs?.map((fl) => {
-              return <p>[{fl.type}]{fl.message}</p>
-            })}
+          <div className="mt-4">
+            <p className="font-semibold text-foreground">Logs</p>
+            {log.functionLogs?.map((fl, i) => (
+              <p key={i} className="text-sm text-muted-foreground">[{fl.type}] {fl.message}</p>
+            ))}
           </div>
         </div>
       )}
