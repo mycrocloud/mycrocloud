@@ -41,6 +41,8 @@
         path: "{{ deploy_path }}"
       deployment:
         path: "{{ deploy_path }}/Services/WebApp/deployment"
+      monitoring:
+        path: "{{ deploy_path }}/monitoring"
   tasks:
     - name: Ensure deploy directory exists
       ansible.builtin.file:
