@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import IApp from "./App";
 import { useEffect, useMemo, useState } from "react";
 import { useApiClient } from "@/hooks";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function List() {
   const { get } = useApiClient();
@@ -29,56 +31,51 @@ export default function List() {
   }, []);
 
   return (
-    <div className="mx-auto mt-2 max-w-4xl p-2">
+    <div className="mx-auto mt-4 max-w-4xl space-y-4 p-4">
       <div className="flex items-center">
-        <h1 className="font-semibold">Apps</h1>
-        <Link to={"new"} className="ms-auto bg-primary px-2 py-1 text-white">
-          New
-        </Link>
+        <h1 className="text-2xl font-semibold">Apps</h1>
+        <Button asChild className="ms-auto">
+          <Link to={"new"}>New</Link>
+        </Button>
       </div>
-      <form className="mt-2">
-        <label
-          htmlFor="search-input"
-          className="sr-only mb-2 text-sm font-medium text-gray-900"
-        >
-          Search
-        </label>
-        <input
+      <div>
+        <Input
           type="text"
           id="search-input"
           onChange={(e) => {
             setSearchTerm(e.target.value);
           }}
           placeholder="Search..."
-          className="block w-full border border-gray-300 bg-gray-50 p-1.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500"
         />
-      </form>
-      <ul className="mt-3 divide-y">
+      </div>
+      <ul className="divide-y">
         {filteredApps.map((app) => {
           return (
-            <li key={app.id}>
-              <div className="mb-2">
-                <h4>
-                  <Link
-                    to={`${app.id}`}
-                    className="font-semibold text-slate-900"
-                  >
-                    {app.name}
-                  </Link>
-                  <small
-                    className={`ms-1 ${
-                      app.status === "Active"
-                        ? "text-green-500"
-                        : "text-red-500"
-                    }`}
-                  >
-                    {app.status}
-                  </small>
-                </h4>
-                <p className="text-sm text-slate-600">{app.description}</p>
-                <small className="text-sm text-slate-600">
-                  Created: {new Date(app.createdAt).toDateString()}
-                </small>
+            <li key={app.id} className="py-3">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to={`${app.id}`}
+                      className="font-medium hover:underline"
+                    >
+                      {app.name}
+                    </Link>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs ${
+                        app.status === "Active"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700"
+                      }`}
+                    >
+                      {app.status}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">{app.description}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Created: {new Date(app.createdAt).toDateString()}
+                  </p>
+                </div>
               </div>
             </li>
           );

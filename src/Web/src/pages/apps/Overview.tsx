@@ -11,6 +11,9 @@ import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import Ajv, { JSONSchemaType } from "ajv";
 import TextCopyButton from "../../components/ui/TextCopyButton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function AppOverview() {
   const { app } = useContext(AppContext)!;
@@ -18,64 +21,42 @@ export default function AppOverview() {
   const domain = getAppDomain(app.id);
 
   return (
-    <div className="p-2">
-      <h2 className="font-bold">Overview</h2>
-      <table className="mt-1">
-        <tbody>
-          <tr>
-            <td>Name</td>
-            <td>{app.name}</td>
-          </tr>
-          <tr>
-            <td>Description</td>
-            <td>{app.description}</td>
-          </tr>
-          <tr>
-            <td>Status</td>
-            <td className="inline-flex">
-              {app.status === "Active" ? (
-                <PlayCircleIcon className="h-4 w-4 text-green-500" />
-              ) : (
-                <StopCircleIcon className="h-4 w-4 text-red-500" />
-              )}
-              {app.status}
-            </td>
-          </tr>
-          <tr>
-            <td>Created at</td>
-            <td>{new Date(app.createdAt).toDateString()}</td>
-          </tr>
-          <tr>
-            <td>Updated at</td>
-            <td>
-              {app.updatedAt ? new Date(app.updatedAt!).toDateString() : "-"}
-            </td>
-          </tr>
-          <tr>
-            <td>Domain</td>
-            <td className="flex">
-              <p className="text-blue-500 hover:underline">{domain}</p>
-              <TextCopyButton text={domain} />
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <hr className="mt-2" />
-      <div className="mt-2">
-        <RenameSection />
+    <div className="space-y-6 p-4">
+      <div>
+        <h2 className="text-xl font-semibold">Overview</h2>
+        <div className="mt-4 grid grid-cols-[auto_1fr] gap-x-8 gap-y-2 text-sm">
+          <span className="text-muted-foreground">Name</span>
+          <span>{app.name}</span>
+          <span className="text-muted-foreground">Description</span>
+          <span>{app.description || "-"}</span>
+          <span className="text-muted-foreground">Status</span>
+          <span className="flex items-center gap-1">
+            {app.status === "Active" ? (
+              <PlayCircleIcon className="h-4 w-4 text-green-500" />
+            ) : (
+              <StopCircleIcon className="h-4 w-4 text-red-500" />
+            )}
+            {app.status}
+          </span>
+          <span className="text-muted-foreground">Created at</span>
+          <span>{new Date(app.createdAt).toDateString()}</span>
+          <span className="text-muted-foreground">Updated at</span>
+          <span>{app.updatedAt ? new Date(app.updatedAt!).toDateString() : "-"}</span>
+          <span className="text-muted-foreground">Domain</span>
+          <span className="flex items-center gap-1">
+            <span className="text-primary">{domain}</span>
+            <TextCopyButton text={domain} />
+          </span>
+        </div>
       </div>
-      <hr className="mt-2" />
-      <div className="mt-2">
-        <ChangeStateSection />
-      </div>
-      <hr className="mt-2" />
-      <div className="mt-2">
-        <CorsSettingsSection />
-      </div>
-      <hr className="mt-2" />
-      <div className="mt-2">
-        <DeleteSection />
-      </div>
+      <hr />
+      <RenameSection />
+      <hr />
+      <ChangeStateSection />
+      <hr />
+      <CorsSettingsSection />
+      <hr />
+      <DeleteSection />
     </div>
   );
 }
@@ -187,20 +168,12 @@ function CorsSettingsSection() {
     }
   };
   return (
-    <>
-      <h3 className="font-semibold">CORS Settings</h3>
-      <div className="mt-1">
-        <div className="h-[160px] w-full" ref={editorElRef}></div>
-        {error && <span className="text-red-500">{error}</span>}
-        <button
-          type="button"
-          onClick={handleSaveClick}
-          className="ms-auto bg-primary px-2 py-1 text-white"
-        >
-          Save
-        </button>
-      </div>
-    </>
+    <div className="space-y-2">
+      <Label className="text-base font-semibold">CORS Settings</Label>
+      <div className="h-[160px] w-full rounded-md border" ref={editorElRef}></div>
+      {error && <p className="text-sm text-destructive">{error}</p>}
+      <Button onClick={handleSaveClick}>Save</Button>
+    </div>
   );
 }
 type RenameFormInput = { name: string };
@@ -234,32 +207,23 @@ function RenameSection() {
   };
 
   return (
-    <>
-      <h3 className="font-semibold">App name</h3>
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-1">
-        <div className="flex">
-          <div>
-            <input
-              type="text"
-              {...register("name")}
-              className="block border px-2 py-0.5"
-              autoComplete="off"
-            />
-            {errors.name && (
-              <span className="text-red-500">{errors.name.message}</span>
-            )}
-          </div>
-          <div className="relative ms-1">
-            <button
-              type="submit"
-              className="absolute top-0 my-auto bg-primary px-2 py-0.5 text-white"
-            >
-              Rename
-            </button>
-          </div>
+    <div className="space-y-2">
+      <Label className="text-base font-semibold">App name</Label>
+      <form onSubmit={handleSubmit(onSubmit)} className="flex items-start gap-2">
+        <div className="space-y-1">
+          <Input
+            type="text"
+            {...register("name")}
+            autoComplete="off"
+            className="w-64"
+          />
+          {errors.name && (
+            <p className="text-sm text-destructive">{errors.name.message}</p>
+          )}
         </div>
+        <Button type="submit">Rename</Button>
       </form>
-    </>
+    </div>
   );
 }
 
@@ -282,16 +246,14 @@ function DeleteSection() {
     }
   };
   return (
-    <>
-      <h3 className="font-semibold">Delete the app</h3>
-      <button
-        type="button"
-        className="bg-red-500 px-2 py-1 text-white"
-        onClick={handleDeleteClick}
-      >
-        Delete
-      </button>
-    </>
+    <div className="space-y-2">
+      <Label className="text-base font-semibold">Delete the app</Label>
+      <div>
+        <Button variant="destructive" onClick={handleDeleteClick}>
+          Delete
+        </Button>
+      </div>
+    </div>
   );
 }
 
@@ -320,29 +282,18 @@ function ChangeStateSection() {
       navigate(".");
     }
   };
-  function getChangeStatusButtonClass(status: string) {
-    switch (status) {
-      case "Active":
-        return "text-red-500";
-      case "Inactive":
-        return "text-green-500";
-      case "Blocked":
-        return "text-gray-500";
-      default:
-        return "";
-    }
-  }
   return (
-    <div>
-      <h2 className="font-semibold">Change status</h2>
-      <button
-        type="button"
-        className={`${getChangeStatusButtonClass(app.status)} border px-2 py-1`}
-        disabled={app.status === "Blocked"}
-        onClick={handleChangeStatusClick}
-      >
-        {app.status === "Active" ? "Deactivate" : "Activate"}
-      </button>
+    <div className="space-y-2">
+      <Label className="text-base font-semibold">Change status</Label>
+      <div>
+        <Button
+          variant={app.status === "Active" ? "destructive" : "default"}
+          disabled={app.status === "Blocked"}
+          onClick={handleChangeStatusClick}
+        >
+          {app.status === "Active" ? "Deactivate" : "Activate"}
+        </Button>
+      </div>
     </div>
   );
 }
