@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useApiClient } from "@/hooks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PlusIcon } from "@heroicons/react/24/outline";
 
 export default function List() {
   const { get } = useApiClient();
@@ -31,56 +32,73 @@ export default function List() {
   }, []);
 
   return (
-    <div className="mx-auto mt-4 max-w-4xl space-y-4 p-4">
-      <div className="flex items-center">
-        <h1 className="text-2xl font-semibold">Apps</h1>
-        <Button asChild className="ms-auto">
-          <Link to={"new"}>New</Link>
+    <div className="mx-auto max-w-4xl p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Apps</h1>
+          <p className="text-sm text-muted-foreground">
+            Manage your applications
+          </p>
+        </div>
+        <Button asChild>
+          <Link to={"new"}>
+            <PlusIcon className="mr-1 h-4 w-4" />
+            New App
+          </Link>
         </Button>
       </div>
-      <div>
+
+      <div className="mt-6">
         <Input
           type="text"
-          id="search-input"
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-          }}
-          placeholder="Search..."
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search apps..."
+          className="max-w-sm"
         />
       </div>
-      <ul className="divide-y">
-        {filteredApps.map((app) => {
-          return (
-            <li key={app.id} className="py-3">
+
+      <div className="mt-6 grid gap-4">
+        {filteredApps.length === 0 ? (
+          <div className="rounded-lg border border-dashed p-8 text-center">
+            <p className="text-muted-foreground">No apps found</p>
+          </div>
+        ) : (
+          filteredApps.map((app) => (
+            <Link
+              key={app.id}
+              to={`${app.id}`}
+              className="group block rounded-lg border bg-background p-4 transition-colors hover:border-primary hover:bg-accent/50"
+            >
               <div className="flex items-start justify-between">
-                <div>
+                <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <Link
-                      to={`${app.id}`}
-                      className="font-medium hover:underline"
-                    >
+                    <h3 className="font-medium group-hover:text-primary">
                       {app.name}
-                    </Link>
+                    </h3>
                     <span
-                      className={`rounded-full px-2 py-0.5 text-xs ${
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                         app.status === "Active"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
+                          ? "bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20"
+                          : "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20"
                       }`}
                     >
                       {app.status}
                     </span>
                   </div>
-                  <p className="mt-1 text-sm text-muted-foreground">{app.description}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Created: {new Date(app.createdAt).toDateString()}
-                  </p>
+                  {app.description && (
+                    <p className="text-sm text-muted-foreground">
+                      {app.description}
+                    </p>
+                  )}
                 </div>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(app.createdAt).toLocaleDateString()}
+                </span>
               </div>
-            </li>
-          );
-        })}
-      </ul>
+            </Link>
+          ))
+        )}
+      </div>
     </div>
   );
 }
