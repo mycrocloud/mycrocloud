@@ -6,6 +6,10 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9100']
 
+  - job_name: nginx
+    static_configs:
+      - targets: ['localhost:9113']
+
 remote_write:
   - url: https://prometheus-prod-49-prod-ap-northeast-0.grafana.net/api/prom/push
     basic_auth:

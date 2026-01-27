@@ -24,6 +24,17 @@ services:
     network_mode: "host"
     restart: unless-stopped
 
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:latest
+    container_name: nginx_exporter
+    command:
+      - '--nginx.scrape-uri=http://lb:8080/stub_status'
+    ports:
+      - "9113:9113"
+    networks:
+      - mycrocloud
+    restart: unless-stopped
+
 volumes:
   seq-data:
   prometheus_data:
