@@ -19,7 +19,7 @@
     "ajv": "^8.17.1",
     "dotenv": "^16.5.0",
     "flowbite": "^3.1.2",
-    "flowbite-react": "^0.7.8",
+    "flowbite-react": "^0.12.16",
     "moment": "^2.30.1",
     "monaco-editor": "^0.52.2",
     "react": "^19.2.0",
