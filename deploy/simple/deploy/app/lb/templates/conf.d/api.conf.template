@@ -2,7 +2,7 @@ server {
 	listen 443 ssl;
 	listen [::]:443 ssl;
 
-	server_name api.mycrocloud.info;
+	server_name api.${CONTROL_PLANE_DOMAIN};
 
 	location / {
 		proxy_pass http://api:8080;

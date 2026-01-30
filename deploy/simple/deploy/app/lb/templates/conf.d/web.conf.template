@@ -2,7 +2,7 @@ server {
 	listen 443 ssl;
 	listen [::]:443 ssl;
 
-	server_name mycrocloud.info;
+	server_name ${CONTROL_PLANE_DOMAIN};
 
 	location / {
 		proxy_pass http://web;
@@ -47,7 +47,7 @@ server {
 	listen 443 ssl;
 	listen [::]:443 ssl;
 
-	server_name editor.mycrocloud.info;
+	server_name editor.${CONTROL_PLANE_DOMAIN};
 
 	location / {
 		proxy_pass http://web-editor;
