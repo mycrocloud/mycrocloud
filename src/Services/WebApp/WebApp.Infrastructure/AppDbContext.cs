@@ -114,18 +114,26 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasKey(t => new { t.Token });
 
         modelBuilder.Entity<App>(entity =>
-        {            
+        {
             entity.HasMany(e => e.AppBuilds)
                   .WithOne(e => e.App)
                   .HasForeignKey(e => e.AppId)
                   .OnDelete(DeleteBehavior.Cascade);
-            
+
             entity.HasOne(e => e.LatestBuild)
                   .WithOne()
                   .HasForeignKey<App>(e => e.LatestBuildId)
                   .IsRequired(false)
                   .OnDelete(DeleteBehavior.SetNull);
         });
+
+        modelBuilder.Entity<App>()
+            .HasIndex(x => x.Name)
+            .IsUnique();
+
+        modelBuilder.Entity<App>()
+            .Property(x => x.Name)
+            .HasMaxLength(50);
 
         modelBuilder.Entity<AppBuild>()
             .Property(p => p.Name)

@@ -7,21 +7,14 @@ public class AppResolverMiddleware(RequestDelegate next)
 {
     public async Task InvokeAsync(HttpContext context, IAppRepository appRepository, IConfiguration configuration)
     {
-        int? appId = null;
+        var appName = context.Request.Evaluate(configuration["AppNameSource"] ?? "Header:X-App-Name");
 
-        var strAppId = context.Request.Evaluate(configuration["AppIdSource"] ?? "Header:X-App-Id");
-
-        if (int.TryParse(strAppId, out var parsedAppId))
-        {
-            appId = parsedAppId;
-        }
-
-        if (appId is null)
+        if (string.IsNullOrEmpty(appName))
         {
             await context.Response.WriteNotFound("App not found");
             return;
         }
-        var app = await appRepository.FindByAppId(appId.Value);
+        var app = await appRepository.FindByName(appName);
         if (app is null)
         {
             await context.Response.WriteNotFound("App not found");
