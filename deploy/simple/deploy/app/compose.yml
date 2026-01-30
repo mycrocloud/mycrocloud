@@ -44,7 +44,7 @@ services:
       - CONTROL_PLANE_DOMAIN=${CONTROL_PLANE_DOMAIN:-mycrocloud.info}
       - DATA_PLANE_DOMAIN=${DATA_PLANE_DOMAIN:-mycrocloud.online}
     volumes:
-      - ./lb/templates:/etc/nginx/templates:ro
+      - ./lb/templates/conf.d:/etc/nginx/templates:ro
       - ./lb/certs:/etc/nginx/certs:ro
       - ./lb/includes:/etc/nginx/includes:ro
       - ./lb/nginx.conf:/etc/nginx/nginx.conf:ro
