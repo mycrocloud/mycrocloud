@@ -12,6 +12,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -50,36 +51,70 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeftIcon, ArrowRightIcon, PencilIcon, TrashIcon, PlusIcon } from "@heroicons/react/24/solid";
-import { AlertTriangle, Info, Loader2 } from "lucide-react";
+import {
+  Settings,
+  Globe,
+  FileCode,
+  Pencil,
+  Trash2,
+  Plus,
+  ArrowLeft,
+  ArrowRight,
+  AlertTriangle,
+  Info,
+  Loader2,
+  Shield,
+  Key,
+  GitBranch,
+  Github,
+  Power,
+  PowerOff,
+  GripVertical,
+  Link2,
+  Unlink,
+  CheckCircle2,
+} from "lucide-react";
 import { useApiClient } from "@/hooks";
 import { getConfig } from "@/config";
 import { NotFoundError } from "@/errors";
 import InfoIcon from "@/components/ui/InfoIcon";
 import { IAppIntegration } from "./App";
+import { cn } from "@/lib/utils";
 
 const { GITHUB_APP_NAME } = getConfig();
 
 export default function AppSettings() {
   return (
     <div className="p-4">
-      <h2 className="mb-6 text-xl font-semibold">Settings</h2>
+      <div className="mb-6 flex items-center gap-2">
+        <Settings className="h-5 w-5 text-muted-foreground" />
+        <h2 className="text-lg font-semibold">Settings</h2>
+      </div>
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-3">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="api">API</TabsTrigger>
-          <TabsTrigger value="pages">Pages</TabsTrigger>
+        <TabsList className="mb-6">
+          <TabsTrigger value="general" className="gap-2">
+            <Settings className="h-4 w-4" />
+            General
+          </TabsTrigger>
+          <TabsTrigger value="api" className="gap-2">
+            <Globe className="h-4 w-4" />
+            API
+          </TabsTrigger>
+          <TabsTrigger value="pages" className="gap-2">
+            <FileCode className="h-4 w-4" />
+            Pages
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="general" className="mt-6 space-y-6">
+        <TabsContent value="general" className="space-y-6">
           <GeneralTab />
         </TabsContent>
 
-        <TabsContent value="api" className="mt-6 space-y-6">
+        <TabsContent value="api" className="space-y-6">
           <ApiTab />
         </TabsContent>
 
-        <TabsContent value="pages" className="mt-6 space-y-6">
+        <TabsContent value="pages" className="space-y-6">
           <PagesTab />
         </TabsContent>
       </Tabs>
@@ -133,20 +168,24 @@ type CorsFormInputs = {
   maxAgeSeconds: string;
 };
 
-const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"];
+const HTTP_METHODS = [
+  "GET",
+  "POST",
+  "PUT",
+  "PATCH",
+  "DELETE",
+  "OPTIONS",
+  "HEAD",
+];
 
 function CorsSettingsSection() {
   const { app } = useContext(AppContext)!;
   if (!app) throw new Error();
   const { getAccessTokenSilently } = useAuth0();
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-  } = useForm<CorsFormInputs>({
+  const { register, handleSubmit, setValue, watch } = useForm<CorsFormInputs>({
     defaultValues: {
       allowedOrigins: "",
       allowedMethods: "",
@@ -157,7 +196,9 @@ function CorsSettingsSection() {
   });
 
   const watchMethods = watch("allowedMethods");
-  const selectedMethods = watchMethods ? watchMethods.split(",").filter(Boolean) : [];
+  const selectedMethods = watchMethods
+    ? watchMethods.split(",").filter(Boolean)
+    : [];
 
   useEffect(() => {
     const fetchCorsSettings = async () => {
@@ -177,27 +218,36 @@ function CorsSettingsSection() {
     };
 
     fetchCorsSettings();
-  }, []);
+  }, [app.id, getAccessTokenSilently, setValue]);
 
   const toggleMethod = (method: string) => {
     const current = selectedMethods;
     if (current.includes(method)) {
-      setValue("allowedMethods", current.filter((m) => m !== method).join(","));
+      setValue(
+        "allowedMethods",
+        current.filter((m) => m !== method).join(",")
+      );
     } else {
       setValue("allowedMethods", [...current, method].join(","));
     }
   };
 
   const onSubmit = async (data: CorsFormInputs) => {
+    setSaving(true);
     const parseArray = (str: string) =>
-      str.split(",").map((s) => s.trim()).filter(Boolean);
+      str
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
 
     const payload: CorsSettings = {
       allowedOrigins: parseArray(data.allowedOrigins),
       allowedMethods: parseArray(data.allowedMethods),
       allowedHeaders: parseArray(data.allowedHeaders),
       exposeHeaders: parseArray(data.exposeHeaders),
-      maxAgeSeconds: data.maxAgeSeconds ? parseInt(data.maxAgeSeconds) : undefined,
+      maxAgeSeconds: data.maxAgeSeconds
+        ? parseInt(data.maxAgeSeconds)
+        : undefined,
     };
 
     const accessToken = await getAccessTokenSilently();
@@ -209,6 +259,7 @@ function CorsSettingsSection() {
       },
       body: JSON.stringify(payload),
     });
+    setSaving(false);
     if (res.ok) {
       toast("CORS settings saved");
     }
@@ -218,10 +269,16 @@ function CorsSettingsSection() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>CORS Settings</CardTitle>
+          <div className="flex items-center gap-2">
+            <Globe className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-base">CORS Settings</CardTitle>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="text-muted-foreground">Loading...</div>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading...
+          </div>
         </CardContent>
       </Card>
     );
@@ -230,13 +287,16 @@ function CorsSettingsSection() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>CORS Settings</CardTitle>
+        <div className="flex items-center gap-2">
+          <Globe className="h-4 w-4 text-muted-foreground" />
+          <CardTitle className="text-base">CORS Settings</CardTitle>
+        </div>
         <CardDescription>
           Configure Cross-Origin Resource Sharing for your API
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="allowedOrigins">Allowed Origins</Label>
             <Input
@@ -245,7 +305,8 @@ function CorsSettingsSection() {
               placeholder="https://example.com, https://app.example.com"
             />
             <p className="text-xs text-muted-foreground">
-              Comma-separated list of allowed origins. Use * to allow all origins.
+              Comma-separated list of allowed origins. Use * to allow all
+              origins.
             </p>
           </div>
 
@@ -256,9 +317,12 @@ function CorsSettingsSection() {
                 <Button
                   key={method}
                   type="button"
-                  variant={selectedMethods.includes(method) ? "default" : "outline"}
+                  variant={
+                    selectedMethods.includes(method) ? "default" : "outline"
+                  }
                   size="sm"
                   onClick={() => toggleMethod(method)}
+                  className="font-mono text-xs"
                 >
                   {method}
                 </Button>
@@ -304,7 +368,10 @@ function CorsSettingsSection() {
             </p>
           </div>
 
-          <Button type="submit">Save Changes</Button>
+          <Button type="submit" disabled={saving}>
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save Changes
+          </Button>
         </form>
       </CardContent>
     </Card>
@@ -471,10 +538,16 @@ function AuthenticationSection() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Authentication Schemes</CardTitle>
+          <div className="flex items-center gap-2">
+            <Shield className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-base">Authentication Schemes</CardTitle>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="text-muted-foreground">Loading...</div>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading...
+          </div>
         </CardContent>
       </Card>
     );
@@ -485,26 +558,39 @@ function AuthenticationSection() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Authentication Schemes</CardTitle>
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-base">
+                Authentication Schemes
+              </CardTitle>
+            </div>
             <CardDescription>
               Manage authentication schemes for your API routes
             </CardDescription>
           </div>
           <Button size="sm" onClick={handleCreateClick}>
-            <PlusIcon className="mr-1 h-4 w-4" />
+            <Plus className="mr-1 h-4 w-4" />
             New Scheme
           </Button>
         </CardHeader>
         <CardContent>
           {schemes.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No authentication schemes configured.</p>
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <Key className="h-10 w-10 text-muted-foreground/50" />
+              <p className="mt-2 text-sm text-muted-foreground">
+                No authentication schemes configured
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Click "New Scheme" to add one
+              </p>
+            </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead>Enabled</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
@@ -513,13 +599,26 @@ function AuthenticationSection() {
                 {schemes.map((scheme) => (
                   <TableRow key={scheme.id}>
                     <TableCell className="font-medium">{scheme.name}</TableCell>
-                    <TableCell>{scheme.type}</TableCell>
                     <TableCell>
-                      <span className={scheme.enabled ? "text-green-600" : "text-muted-foreground"}>
-                        {scheme.enabled ? "Yes" : "No"}
-                      </span>
+                      <Badge variant="secondary" className="font-mono text-xs">
+                        {scheme.type}
+                      </Badge>
                     </TableCell>
-                    <TableCell>{new Date(scheme.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="secondary"
+                        className={cn(
+                          scheme.enabled
+                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                            : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                        )}
+                      >
+                        {scheme.enabled ? "Enabled" : "Disabled"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {new Date(scheme.createdAt).toLocaleDateString()}
+                    </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
                         <Button
@@ -527,7 +626,7 @@ function AuthenticationSection() {
                           size="icon"
                           onClick={() => handleEditClick(scheme)}
                         >
-                          <PencilIcon className="h-4 w-4" />
+                          <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -535,7 +634,14 @@ function AuthenticationSection() {
                           onClick={() => handleDeleteClick(scheme.id)}
                           disabled={scheme.enabled}
                         >
-                          <TrashIcon className={`h-4 w-4 ${scheme.enabled ? "text-muted" : "text-destructive"}`} />
+                          <Trash2
+                            className={cn(
+                              "h-4 w-4",
+                              scheme.enabled
+                                ? "text-muted"
+                                : "text-destructive"
+                            )}
+                          />
                         </Button>
                       </div>
                     </TableCell>
@@ -552,16 +658,24 @@ function AuthenticationSection() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingScheme ? "Edit Scheme" : "Create Scheme"}</DialogTitle>
+            <DialogTitle>
+              {editingScheme ? "Edit Scheme" : "Create Scheme"}
+            </DialogTitle>
             <DialogDescription>
-              {editingScheme ? "Update the authentication scheme settings." : "Add a new authentication scheme."}
+              {editingScheme
+                ? "Update the authentication scheme settings."
+                : "Add a new authentication scheme."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmitScheme)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
               <Input id="name" {...register("name")} />
-              {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+              {errors.name && (
+                <p className="text-sm text-destructive">
+                  {errors.name.message}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="type">Type</Label>
@@ -581,22 +695,38 @@ function AuthenticationSection() {
               <>
                 <div className="space-y-2">
                   <Label htmlFor="issuer">Issuer</Label>
-                  <Input id="issuer" {...register("openIdConnectIssuer")} placeholder="https://example.auth0.com/" />
+                  <Input
+                    id="issuer"
+                    {...register("openIdConnectIssuer")}
+                    placeholder="https://example.auth0.com/"
+                  />
                   {errors.openIdConnectIssuer && (
-                    <p className="text-sm text-destructive">{errors.openIdConnectIssuer.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.openIdConnectIssuer.message}
+                    </p>
                   )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="audience">Audience</Label>
-                  <Input id="audience" {...register("openIdConnectAudience")} placeholder="https://api.example.com" />
+                  <Input
+                    id="audience"
+                    {...register("openIdConnectAudience")}
+                    placeholder="https://api.example.com"
+                  />
                   {errors.openIdConnectAudience && (
-                    <p className="text-sm text-destructive">{errors.openIdConnectAudience.message}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.openIdConnectAudience.message}
+                    </p>
                   )}
                 </div>
               </>
             )}
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDialogOpen(false)}
+              >
                 Cancel
               </Button>
               <Button type="submit">Save</Button>
@@ -612,7 +742,13 @@ type AuthOrderInputs = {
   schemes: IScheme[];
 };
 
-function AuthOrderSection({ schemes, onUpdate }: { schemes: IScheme[]; onUpdate: () => void }) {
+function AuthOrderSection({
+  schemes,
+  onUpdate,
+}: {
+  schemes: IScheme[];
+  onUpdate: () => void;
+}) {
   const { app } = useContext(AppContext)!;
   if (!app) throw new Error();
   const { getAccessTokenSilently } = useAuth0();
@@ -630,20 +766,26 @@ function AuthOrderSection({ schemes, onUpdate }: { schemes: IScheme[]; onUpdate:
   );
 
   useEffect(() => {
-    setValue("schemes", schemes.filter((s) => s.enabled));
-  }, [schemes]);
+    setValue(
+      "schemes",
+      schemes.filter((s) => s.enabled)
+    );
+  }, [schemes, setValue]);
 
   const onSubmit = async (data: AuthOrderInputs) => {
     const schemeIds = data.schemes.map((s) => s.id);
     const accessToken = await getAccessTokenSilently();
-    const res = await fetch(`/api/apps/${app.id}/authentications/schemes/settings`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(schemeIds),
-    });
+    const res = await fetch(
+      `/api/apps/${app.id}/authentications/schemes/settings`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(schemeIds),
+      }
+    );
     if (res.ok) {
       toast("Authentication order saved");
       onUpdate();
@@ -675,7 +817,10 @@ function AuthOrderSection({ schemes, onUpdate }: { schemes: IScheme[]; onUpdate:
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Authentication Order</CardTitle>
+        <div className="flex items-center gap-2">
+          <Key className="h-4 w-4 text-muted-foreground" />
+          <CardTitle className="text-base">Authentication Order</CardTitle>
+        </div>
         <CardDescription>
           Enable/disable and reorder authentication schemes
         </CardDescription>
@@ -684,16 +829,20 @@ function AuthOrderSection({ schemes, onUpdate }: { schemes: IScheme[]; onUpdate:
         <Alert className="mb-4">
           <Info className="h-4 w-4" />
           <AlertDescription>
-            Drag schemes between panels to enable/disable. Drag within the left panel to reorder.
+            Use the arrows to enable/disable schemes. Drag to reorder enabled
+            schemes.
           </AlertDescription>
         </Alert>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="flex gap-4">
-            <div className="flex-1 rounded-lg border p-3">
-              <h3 className="mb-2 text-sm font-medium">Enabled Schemes</h3>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-lg border p-4">
+              <h3 className="mb-3 flex items-center gap-2 text-sm font-medium">
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                Enabled Schemes
+              </h3>
               <DndContext onDragEnd={handleDragEnd}>
                 <SortableContext items={fields}>
-                  <div className="min-h-[100px] space-y-1">
+                  <div className="min-h-[100px] space-y-2">
                     {fields.length ? (
                       fields.map((scheme) => (
                         <SortableSchemeItem
@@ -703,15 +852,19 @@ function AuthOrderSection({ schemes, onUpdate }: { schemes: IScheme[]; onUpdate:
                         />
                       ))
                     ) : (
-                      <p className="text-sm text-muted-foreground">No schemes enabled</p>
+                      <p className="py-4 text-center text-sm text-muted-foreground">
+                        No schemes enabled
+                      </p>
                     )}
                   </div>
                 </SortableContext>
               </DndContext>
             </div>
-            <div className="flex-1 rounded-lg border p-3">
-              <h3 className="mb-2 text-sm font-medium">Available Schemes</h3>
-              <div className="min-h-[100px] space-y-1">
+            <div className="rounded-lg border p-4">
+              <h3 className="mb-3 text-sm font-medium text-muted-foreground">
+                Available Schemes
+              </h3>
+              <div className="min-h-[100px] space-y-2">
                 {availableSchemes.length ? (
                   availableSchemes.map((s) => (
                     <AvailableSchemeItem
@@ -721,7 +874,9 @@ function AuthOrderSection({ schemes, onUpdate }: { schemes: IScheme[]; onUpdate:
                     />
                   ))
                 ) : (
-                  <p className="text-sm text-muted-foreground">No schemes available</p>
+                  <p className="py-4 text-center text-sm text-muted-foreground">
+                    All schemes enabled
+                  </p>
                 )}
               </div>
             </div>
@@ -742,9 +897,10 @@ function SortableSchemeItem({
   scheme: IScheme;
   onDisableClick: (id: number) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
-    id: scheme.id,
-  });
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({
+      id: scheme.id,
+    });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -755,17 +911,19 @@ function SortableSchemeItem({
         ref={setNodeRef}
         {...attributes}
         {...listeners}
-        className="flex-1 cursor-grab rounded border bg-muted/50 px-3 py-2 text-sm"
+        className="flex flex-1 cursor-grab items-center gap-2 rounded-md border bg-muted/50 px-3 py-2 text-sm"
       >
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
         {scheme.name}
       </div>
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="icon"
         onClick={() => onDisableClick(scheme.id)}
-        className="rounded p-1 hover:bg-muted"
       >
-        <ArrowRightIcon className="h-4 w-4 text-primary" />
-      </button>
+        <ArrowRight className="h-4 w-4" />
+      </Button>
     </div>
   );
 }
@@ -779,14 +937,17 @@ function AvailableSchemeItem({
 }) {
   return (
     <div className="flex items-center gap-2">
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="icon"
         onClick={() => onEnableClick(scheme.id)}
-        className="rounded p-1 hover:bg-muted"
       >
-        <ArrowLeftIcon className="h-4 w-4 text-primary" />
-      </button>
-      <div className="flex-1 rounded border px-3 py-2 text-sm">{scheme.name}</div>
+        <ArrowLeft className="h-4 w-4" />
+      </Button>
+      <div className="flex-1 rounded-md border px-3 py-2 text-sm">
+        {scheme.name}
+      </div>
     </div>
   );
 }
@@ -835,7 +996,7 @@ function GitHubLinkSection() {
 
       setLoading(false);
     })();
-  }, []);
+  }, [app.id, get]);
 
   useEffect(() => {
     if (!installationId) return;
@@ -850,7 +1011,7 @@ function GitHubLinkSection() {
         setRepoId(repos[0].id);
       }
     })();
-  }, [installationId]);
+  }, [installationId, get]);
 
   const connectGitHub = async () => {
     const githubAppUrl = `https://github.com/apps/${GITHUB_APP_NAME}/installations/new?state=foo`;
@@ -864,14 +1025,16 @@ function GitHubLinkSection() {
 
     setLink({
       type: "GitHub",
-      org: installations.find((i) => i.installationId === installationId)!.accountLogin,
+      org: installations.find((i) => i.installationId === installationId)!
+        .accountLogin,
       repoId: repoId,
       repo: repos.find((r) => r.id === repoId)!.name,
     });
   };
 
   const onDisconnect = async () => {
-    if (!confirm("Are you sure you want to disconnect this repository?")) return;
+    if (!confirm("Are you sure you want to disconnect this repository?"))
+      return;
 
     await del(`/api/apps/${app.id}/link`);
     setLink(null);
@@ -881,12 +1044,15 @@ function GitHubLinkSection() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>GitHub Integration</CardTitle>
+          <div className="flex items-center gap-2">
+            <Github className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-base">GitHub Integration</CardTitle>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Loading GitHub integrations...</span>
+            Loading GitHub integrations...
           </div>
         </CardContent>
       </Card>
@@ -896,31 +1062,39 @@ function GitHubLinkSection() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>GitHub Integration</CardTitle>
+        <div className="flex items-center gap-2">
+          <Github className="h-4 w-4 text-muted-foreground" />
+          <CardTitle className="text-base">GitHub Integration</CardTitle>
+        </div>
         <CardDescription>
           Connect your app to a GitHub repository for automatic deployments
         </CardDescription>
       </CardHeader>
       <CardContent>
         {link ? (
-          <div className="flex items-center justify-between rounded-lg border p-3 text-sm">
-            <div>
-              Connected to <strong>{link.org}/{link.repo}</strong>
+          <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-4">
+            <div className="flex items-center gap-3">
+              <Link2 className="h-5 w-5 text-green-500" />
+              <div>
+                <p className="text-sm font-medium">
+                  {link.org}/{link.repo}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Connected repository
+                </p>
+              </div>
             </div>
-            <Button
-              variant="link"
-              onClick={onDisconnect}
-              className="h-auto p-0 text-destructive"
-            >
+            <Button variant="ghost" size="sm" onClick={onDisconnect}>
+              <Unlink className="mr-2 h-4 w-4" />
               Disconnect
             </Button>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Connect your app to GitHub to access your repositories.
             </p>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <Select
                 value={installationId?.toString() ?? ""}
                 onValueChange={(value) => {
@@ -961,7 +1135,12 @@ function GitHubLinkSection() {
                 </SelectContent>
               </Select>
 
-              {installationId && repoId && <Button onClick={onConnect}>Link</Button>}
+              {installationId && repoId && (
+                <Button onClick={onConnect}>
+                  <Link2 className="mr-2 h-4 w-4" />
+                  Link
+                </Button>
+              )}
             </div>
             <p className="text-sm text-muted-foreground">
               Missing some repositories?{" "}
@@ -1008,14 +1187,16 @@ function BuildSettingsSection() {
 
   useEffect(() => {
     (async () => {
-      const config = await get<IBuildConfig>(`/api/apps/${app.id}/builds/config`);
+      const config = await get<IBuildConfig>(
+        `/api/apps/${app.id}/builds/config`
+      );
 
       setValue("branch", config.branch);
       setValue("directory", config.directory);
       setValue("buildCommand", config.buildCommand);
       setValue("outDir", config.outDir);
     })();
-  }, []);
+  }, [app.id, get, setValue]);
 
   const onSubmitConfig = async (data: IBuildConfig) => {
     await post(`/api/apps/${app.id}/builds/config`, data);
@@ -1025,7 +1206,10 @@ function BuildSettingsSection() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Build Settings</CardTitle>
+        <div className="flex items-center gap-2">
+          <GitBranch className="h-4 w-4 text-muted-foreground" />
+          <CardTitle className="text-base">Build Settings</CardTitle>
+        </div>
         <CardDescription>
           Configure how your application is built and deployed
         </CardDescription>
@@ -1039,96 +1223,116 @@ function BuildSettingsSection() {
         </Alert>
         <TooltipProvider>
           <form onSubmit={handleSubmit(onSubmitConfig)} className="space-y-4">
-            <div className="grid grid-cols-[140px_1fr] items-start gap-4">
-              <div className="flex items-center gap-2 pt-2">
-                <Label>Branch</Label>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span>
-                      <InfoIcon />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>The Git branch used for deployment.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <div>
-                <Input {...register("branch", { required: "Branch is required" })} readOnly />
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label>Branch</Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <InfoIcon />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>The Git branch used for deployment.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <Input
+                  {...register("branch", { required: "Branch is required" })}
+                  readOnly
+                  className="bg-muted"
+                />
                 {errors.branch && (
-                  <p className="mt-1 text-sm text-destructive">{errors.branch.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.branch.message}
+                  </p>
                 )}
               </div>
-            </div>
 
-            <div className="grid grid-cols-[140px_1fr] items-start gap-4">
-              <div className="flex items-center gap-2 pt-2">
-                <Label>Build Directory</Label>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span>
-                      <InfoIcon />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Path relative to the root where the build runs.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label>Build Directory</Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <InfoIcon />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Path relative to the root where the build runs.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <Input
-                  {...register("directory", { required: "Directory is required" })}
+                  {...register("directory", {
+                    required: "Directory is required",
+                  })}
                   readOnly
+                  className="bg-muted"
                 />
                 {errors.directory && (
-                  <p className="mt-1 text-sm text-destructive">{errors.directory.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.directory.message}
+                  </p>
                 )}
               </div>
-            </div>
 
-            <div className="grid grid-cols-[140px_1fr] items-start gap-4">
-              <div className="flex items-center gap-2 pt-2">
-                <Label>Output Directory</Label>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span>
-                      <InfoIcon />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Path where build output is located.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <div>
-                <Input {...register("outDir", { required: "Output dir is required" })} readOnly />
-                {errors.outDir && (
-                  <p className="mt-1 text-sm text-destructive">{errors.outDir.message}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-[140px_1fr] items-start gap-4">
-              <div className="flex items-center gap-2 pt-2">
-                <Label>Build Command</Label>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span>
-                      <InfoIcon />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>The command that runs your build (e.g. npm run build).</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label>Output Directory</Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <InfoIcon />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Path where build output is located.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
                 <Input
-                  {...register("buildCommand", { required: "Build command is required" })}
+                  {...register("outDir", {
+                    required: "Output dir is required",
+                  })}
                   readOnly
+                  className="bg-muted"
+                />
+                {errors.outDir && (
+                  <p className="text-sm text-destructive">
+                    {errors.outDir.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label>Build Command</Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <InfoIcon />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        The command that runs your build (e.g. npm run build).
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <Input
+                  {...register("buildCommand", {
+                    required: "Build command is required",
+                  })}
+                  readOnly
+                  className="bg-muted"
                 />
                 {errors.buildCommand && (
-                  <p className="mt-1 text-sm text-destructive">{errors.buildCommand.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.buildCommand.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -1151,6 +1355,7 @@ function RenameSection() {
   const { app } = useContext(AppContext)!;
   if (!app) throw new Error();
   const { getAccessTokenSilently } = useAuth0();
+  const [saving, setSaving] = useState(false);
   const schema = yup.object({ name: yup.string().required() });
   const {
     register,
@@ -1161,6 +1366,7 @@ function RenameSection() {
     defaultValues: { name: app.name },
   });
   const onSubmit = async (input: RenameFormInput) => {
+    setSaving(true);
     const accessToken = await getAccessTokenSilently();
     const res = await fetch(`/api/apps/${app.id}/rename`, {
       method: "PATCH",
@@ -1171,6 +1377,7 @@ function RenameSection() {
       },
       body: JSON.stringify(input),
     });
+    setSaving(false);
     if (res.ok) {
       toast("Renamed app");
     }
@@ -1179,11 +1386,17 @@ function RenameSection() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>App Name</CardTitle>
+        <div className="flex items-center gap-2">
+          <Pencil className="h-4 w-4 text-muted-foreground" />
+          <CardTitle className="text-base">App Name</CardTitle>
+        </div>
         <CardDescription>Change the display name of your app</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="flex items-start gap-3">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex items-start gap-3"
+        >
           <div className="space-y-1">
             <Input
               type="text"
@@ -1195,7 +1408,10 @@ function RenameSection() {
               <p className="text-sm text-destructive">{errors.name.message}</p>
             )}
           </div>
-          <Button type="submit">Rename</Button>
+          <Button type="submit" disabled={saving}>
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Rename
+          </Button>
         </form>
       </CardContent>
     </Card>
@@ -1207,13 +1423,17 @@ function DeleteSection() {
   if (!app) throw new Error();
   const { getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
+  const [deleting, setDeleting] = useState(false);
+
   const handleDeleteClick = async () => {
     if (confirm("Are you sure want to delete this app?")) {
+      setDeleting(true);
       const accessToken = await getAccessTokenSilently();
       const res = await fetch(`/api/apps/${app.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${accessToken}` },
       });
+      setDeleting(false);
       if (res.ok) {
         toast("Deleted app");
         navigate("/apps");
@@ -1224,13 +1444,23 @@ function DeleteSection() {
   return (
     <Card className="border-destructive/50">
       <CardHeader>
-        <CardTitle className="text-destructive">Danger Zone</CardTitle>
+        <div className="flex items-center gap-2">
+          <Trash2 className="h-4 w-4 text-destructive" />
+          <CardTitle className="text-base text-destructive">
+            Danger Zone
+          </CardTitle>
+        </div>
         <CardDescription>
           Permanently delete this app and all its data
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Button variant="destructive" onClick={handleDeleteClick}>
+        <Button
+          variant="destructive"
+          onClick={handleDeleteClick}
+          disabled={deleting}
+        >
+          {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Delete App
         </Button>
       </CardContent>
@@ -1243,6 +1473,8 @@ function ChangeStateSection() {
   if (!app) throw new Error();
   const { getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
+  const [changing, setChanging] = useState(false);
+
   const handleChangeStatusClick = async () => {
     if (
       app.status === "Active" &&
@@ -1250,12 +1482,14 @@ function ChangeStateSection() {
     ) {
       return;
     }
+    setChanging(true);
     const accessToken = await getAccessTokenSilently();
     const status = app.status === "Active" ? "Inactive" : "Active";
     const res = await fetch(`/api/apps/${app.id}/status?status=${status}`, {
       method: "PATCH",
       headers: { Authorization: `Bearer ${accessToken}` },
     });
+    setChanging(false);
     if (res.ok) {
       app.status = status;
       toast("Status changed");
@@ -1266,7 +1500,14 @@ function ChangeStateSection() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>App Status</CardTitle>
+        <div className="flex items-center gap-2">
+          {app.status === "Active" ? (
+            <Power className="h-4 w-4 text-green-500" />
+          ) : (
+            <PowerOff className="h-4 w-4 text-muted-foreground" />
+          )}
+          <CardTitle className="text-base">App Status</CardTitle>
+        </div>
         <CardDescription>
           {app.status === "Active"
             ? "Your app is currently active and receiving traffic"
@@ -1274,13 +1515,36 @@ function ChangeStateSection() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Button
-          variant={app.status === "Active" ? "outline" : "default"}
-          disabled={app.status === "Blocked"}
-          onClick={handleChangeStatusClick}
-        >
-          {app.status === "Active" ? "Deactivate App" : "Activate App"}
-        </Button>
+        <div className="flex items-center gap-4">
+          <Badge
+            variant="secondary"
+            className={cn(
+              app.status === "Active"
+                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+            )}
+          >
+            {app.status}
+          </Badge>
+          <Button
+            variant={app.status === "Active" ? "outline" : "default"}
+            disabled={app.status === "Blocked" || changing}
+            onClick={handleChangeStatusClick}
+          >
+            {changing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {app.status === "Active" ? (
+              <>
+                <PowerOff className="mr-2 h-4 w-4" />
+                Deactivate
+              </>
+            ) : (
+              <>
+                <Power className="mr-2 h-4 w-4" />
+                Activate
+              </>
+            )}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
