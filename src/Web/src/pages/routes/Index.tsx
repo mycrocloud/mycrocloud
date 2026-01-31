@@ -4,7 +4,6 @@ import React, {
   useEffect,
   useMemo,
   useReducer,
-  useRef,
   useState,
 } from "react";
 import { AppContext } from "../apps";
@@ -12,18 +11,34 @@ import { useAuth0 } from "@auth0/auth0-react";
 import {
   RoutesContext,
   routesReducer,
-  //useRoutesContext,
 } from "./Context";
-import {
-  ChevronDownIcon,
-  ChevronRightIcon,
-  EllipsisVerticalIcon,
-} from "@heroicons/react/24/solid";
 import { useForm } from "react-hook-form";
 import { ensureSuccess } from "../../hooks/useApiClient";
 import IRouteFolderRouteItem, { calculateLevel } from "./IRouteFolderRouteItem";
 import IRoute from "./Route";
-//import { toast } from "react-toastify";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  ChevronRight,
+  ChevronDown,
+  MoreVertical,
+  Plus,
+  FolderPlus,
+  Search,
+  File,
+  Folder,
+  Copy,
+  Pencil,
+  Trash2,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface IExplorerItem extends IRouteFolderRouteItem {
   level: number;
@@ -46,17 +61,18 @@ export default function RouteIndex() {
   return (
     <RoutesContext.Provider value={{ state, dispatch }}>
       <div className="flex h-full">
-        <div className="w-64 border-r p-1">
+        <div className="w-72 border-r bg-muted/20">
           <RouteExplorer />
         </div>
-        <div className="flex-1">
+        <div className="flex-1 overflow-auto">
           {newRouteActive || editRouteActive || logPageActive ? (
-            <div className="">
-              <Outlet key={routeId} />
-            </div>
+            <Outlet key={routeId} />
           ) : (
-            <div className="flex h-screen items-center justify-center">
-              Click New button to create new route or click route to edit.
+            <div className="flex h-full items-center justify-center text-muted-foreground">
+              <div className="text-center">
+                <File className="mx-auto h-12 w-12 text-muted-foreground/50" />
+                <p className="mt-2">Select a route to edit or create a new one</p>
+              </div>
             </div>
           )}
         </div>
@@ -153,49 +169,19 @@ function RouteExplorer() {
         });
     };
     getRoutes();
-  }, [routeId]); //todo: force update when routeId changes after creating new route. someday need better solution.
+  }, [routeId]);
 
-  //#region Action Menu
-  const [showActionMenu, setShowActionMenu] = useState(false);
-  const actionMenuItemRef = useRef<IExplorerItem | null>(null);
-  const actionMenuRef = useRef<HTMLDivElement>(null);
-  const actionMenuClientXRef = useRef<number | null>(null);
-  const actionMenuClientYRef = useRef<number | null>(null);
-
-  function calculateActionMenuTop() {
-    if (!actionMenuRef.current || !actionMenuClientYRef.current) {
-      return undefined;
+  const handleNewRouteClick = async (folderId: number | null = null, level: number = 0) => {
+    if (folderId) {
+      navigate(`new/${folderId}`);
+    } else {
+      navigate("new");
     }
-    return actionMenuClientYRef.current - actionMenuRef.current.offsetTop;
-  }
-  function calculateActionMenuRight() {
-    if (!actionMenuClientXRef.current) {
-      return undefined;
-    }
-    return 20;
-  }
-
-  const handleActionMenuClick = (
-    item: IExplorerItem,
-    clientX: number,
-    clientY: number,
-  ) => {
-    actionMenuClientXRef.current = clientX;
-    actionMenuClientYRef.current = clientY;
-    actionMenuItemRef.current = item;
-    setShowActionMenu(true);
-  };
-
-  //#endregion
-
-  const handleNewRouteClick = async () => {
-    const { id, level } = actionMenuItemRef.current!;
-    navigate(`new/${id}`);
     setExplorerItems((items) => {
       const newRoute: IExplorerItem = {
         type: "Route",
         id: -1,
-        parentId: id,
+        parentId: folderId,
         route: {
           name: "New Route",
           method: "GET",
@@ -204,25 +190,22 @@ function RouteExplorer() {
         },
         folder: null,
         collapsed: false,
-        level: level + 1,
+        level: level,
       };
       return [...items, newRoute];
     });
   };
 
-  const handleNewFolderClick = async (atRoot: boolean = false) => {
-    const { id, level } = atRoot
-      ? { id: null, level: 0 }
-      : actionMenuItemRef.current!;
+  const handleNewFolderClick = async (parentId: number | null = null, level: number = 0) => {
     setExplorerItems((items) => {
       const newFolder: IExplorerItem = {
         type: "Folder",
         id: -1,
-        parentId: id,
+        parentId: parentId,
         route: null,
         folder: { name: "new folder" },
         isEditing: true,
-        level: atRoot ? 0 : level + 1,
+        level: level,
       };
       return [...items, newFolder];
     });
@@ -292,8 +275,8 @@ function RouteExplorer() {
     }
   };
 
-  const handleDuplicateClick = async () => {
-    const { type, id, parentId, level } = actionMenuItemRef.current!;
+  const handleDuplicateClick = async (item: IExplorerItem) => {
+    const { type, id, parentId, level } = item;
     const accessToken = await getAccessTokenSilently();
     const url =
       type === "Route"
@@ -309,18 +292,18 @@ function RouteExplorer() {
       const newItems = (await res.json()) as IRouteFolderRouteItem[];
       setExplorerItems((items) => {
         return items.concat(
-          newItems.map((item) => {
+          newItems.map((newItem) => {
             return {
-              ...item,
-              level: calculateLevel(item, newItems, parentId, level),
+              ...newItem,
+              level: calculateLevel(newItem, newItems, parentId, level),
             };
           }),
         );
       });
     } else {
       const newRoute = (await res.json()) as IRoute;
-      var originalRoute = explorerItems.find(
-        (item) => type === "Route" && item.id === id,
+      const originalRoute = explorerItems.find(
+        (i) => i.type === "Route" && i.id === id,
       )!;
       setExplorerItems((items) => {
         return items.concat({
@@ -332,9 +315,9 @@ function RouteExplorer() {
     }
   };
 
-  const handleDeleteClick = async () => {
-    const { type, id } = actionMenuItemRef.current!;
-    if (confirm(`Are you sure want to delete this ${type.toLowerCase()}?`)) {
+  const handleDeleteClick = async (item: IExplorerItem) => {
+    const { type, id } = item;
+    if (confirm(`Are you sure you want to delete this ${type.toLowerCase()}?`)) {
       const accessToken = await getAccessTokenSilently();
       const url =
         type === "Route"
@@ -349,16 +332,16 @@ function RouteExplorer() {
 
       if (type === "Folder") {
         setExplorerItems((nodes) => {
-          let deleteItems = getFolderItems(actionMenuItemRef.current!);
+          let deleteItems = getFolderItems(item);
           return nodes.filter((node) => {
-            return !deleteItems.some((item) => item.id === node.id);
+            return !deleteItems.some((i) => i.id === node.id);
           });
 
           function getFolderItems(folder: IExplorerItem) {
             var items = nodes.filter((node) => node.parentId === folder.id);
-            for (const item of items) {
-              if (item.type === "Folder") {
-                items = items.concat(getFolderItems(item));
+            for (const i of items) {
+              if (i.type === "Folder") {
+                items = items.concat(getFolderItems(i));
               }
             }
             return items.concat(folder);
@@ -366,16 +349,7 @@ function RouteExplorer() {
         });
       } else {
         setExplorerItems((items) => {
-          let remainingItems: IExplorerItem[] = [];
-
-          for (const item of items) {
-            const isDeletedRoute = item.type === "Route" && item.id === id;
-            if (!isDeletedRoute) {
-              remainingItems.push(item);
-            }
-          }
-
-          return remainingItems;
+          return items.filter((i) => !(i.type === "Route" && i.id === id));
         });
       }
     }
@@ -407,25 +381,30 @@ function RouteExplorer() {
       <>
         {isRoot ? null : (
           <div
-            style={{ paddingLeft: node.level * 8 }}
-            className={`hover:bg-slate-100 ${isCurrentRoute ? "bg-slate-100" : ""}`}
+            style={{ paddingLeft: node.level * 12 }}
+            className={cn(
+              "group",
+              isCurrentRoute && "bg-accent"
+            )}
           >
             {node.type === "Folder" ? (
               <FolderItem
                 item={node}
                 onClick={() => handleFolderClick(node)}
-                onActionMenuClick={(clientX, clientY) =>
-                  handleActionMenuClick(node, clientX, clientY)
-                }
+                onNewRoute={() => handleNewRouteClick(node.id, node.level + 1)}
+                onNewFolder={() => handleNewFolderClick(node.id, node.level + 1)}
+                onRename={() => handleFolderRenameClick(node)}
+                onDuplicate={() => handleDuplicateClick(node)}
+                onDelete={() => handleDeleteClick(node)}
                 onNameSubmit={(name) => handleFolderNameSubmit(node, name)}
               />
             ) : (
               <RouteItem
                 item={node}
+                isActive={isCurrentRoute}
                 onClick={() => handleRouteClick(node)}
-                onActionMenuClick={(clientX, clientY) =>
-                  handleActionMenuClick(node, clientX, clientY)
-                }
+                onDuplicate={() => handleDuplicateClick(node)}
+                onDelete={() => handleDeleteClick(node)}
               />
             )}
           </div>
@@ -441,138 +420,147 @@ function RouteExplorer() {
   };
 
   return (
-    <div>
-      <div ref={actionMenuRef} className="relative">
-        {showActionMenu && (
-          <ActionMenu
-            top={calculateActionMenuTop()!}
-            right={calculateActionMenuRight()!}
-            node={actionMenuItemRef.current!}
-            onNewRouteClick={handleNewRouteClick}
-            onNewFolderClick={() => handleNewFolderClick(false)}
-            onFolderRenameClick={() =>
-              handleFolderRenameClick(actionMenuItemRef.current!)
-            }
-            onDuplicateClick={handleDuplicateClick}
-            onDeleteClick={handleDeleteClick}
-            onOutSideClick={() => {
-              setShowActionMenu(false);
-            }}
+    <div className="flex h-full flex-col">
+      {/* Header */}
+      <div className="border-b p-3">
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            onClick={() => handleNewRouteClick(null, 0)}
+            className="flex-1"
+          >
+            <Plus className="mr-1 h-4 w-4" />
+            Route
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleNewFolderClick(null, 0)}
+            className="flex-1"
+          >
+            <FolderPlus className="mr-1 h-4 w-4" />
+            Folder
+          </Button>
+        </div>
+        <div className="relative mt-3">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search routes..."
+            className="pl-8"
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
+        </div>
+      </div>
+
+      {/* Tree */}
+      <div className="flex-1 overflow-auto p-2">
+        {filteredItems.length === 0 ? (
+          <div className="py-8 text-center text-sm text-muted-foreground">
+            {searchTerm ? "No routes found" : "No routes yet"}
+          </div>
+        ) : (
+          renderNode(null, filteredItems)
         )}
       </div>
-      <div className="flex justify-center space-x-2">
-        <button
-          type="button"
-          onClick={() => {
-            navigate("new");
-          }}
-          className="w-1/2 bg-primary px-2 py-1 text-white enabled:hover:bg-cyan-700 disabled:opacity-50"
-        >
-          New Route
-        </button>
-        <button
-          type="button"
-          onClick={() => handleNewFolderClick(true)}
-          className="w-1/2 bg-primary px-2 py-1 text-white enabled:hover:bg-cyan-700 disabled:opacity-50"
-        >
-          New Folder
-        </button>
-      </div>
-      <div className="mt-1">
-        <input
-          type="text"
-          placeholder="Filter"
-          className="w-full border px-1 py-0.5"
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-          }}
-        />
-      </div>
-      <hr className="my-1" />
-      {renderNode(null, filteredItems)}
     </div>
   );
 }
 
+const methodColors: Record<string, string> = {
+  GET: "text-sky-600 bg-sky-50",
+  POST: "text-orange-600 bg-orange-50",
+  PUT: "text-emerald-600 bg-emerald-50",
+  DELETE: "text-red-600 bg-red-50",
+  PATCH: "text-amber-600 bg-amber-50",
+};
+
 function RouteItem({
   item: { route },
+  isActive,
   onClick,
-  onActionMenuClick,
+  onDuplicate,
+  onDelete,
 }: {
   item: IExplorerItem;
-  onActionMenuClick: (buttonLeft: number, buttonTop: number) => void;
+  isActive: boolean;
   onClick: () => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
 }) {
-  if (!route) {
-    return null;
-  }
+  if (!route) return null;
 
-  const methodTextColors = new Map<string, string>([
-    ["GET", "text-sky-500"],
-    ["POST", "text-orange-500"],
-    ["PUT", "text-green-500"],
-    ["DELETE", "text-red-500"],
-    ["PATCH", "text-yellow-500"],
-  ]);
-
-  const handleActionMenuClick = (
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
-  ) => {
-    e.stopPropagation();
-    onActionMenuClick(e.currentTarget.offsetLeft, e.currentTarget.offsetTop);
-  };
+  const methodClass = methodColors[route.method.toUpperCase()] || "text-gray-600 bg-gray-50";
 
   return (
     <div
-      className="group flex items-center p-0.5"
-      style={{ cursor: "pointer" }}
+      className={cn(
+        "flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer transition-colors",
+        isActive ? "bg-accent" : "hover:bg-muted"
+      )}
       onClick={onClick}
     >
       <span
-        className={`me-1 font-semibold ${methodTextColors.get(
-          route.method.toUpperCase(),
-        )}`}
-        style={{ fontSize: "0.65rem" }}
+        className={cn(
+          "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold",
+          methodClass
+        )}
       >
         {route.method}
       </span>
-      <span className="overflow-hidden text-ellipsis whitespace-nowrap text-sm">
-        {route.name}
-      </span>
-      <button
-        type="button"
-        onClick={(e) => handleActionMenuClick(e)}
-        className="ms-auto hidden group-hover:block"
-      >
-        <EllipsisVerticalIcon className="h-4 w-4 text-gray-600" />
-      </button>
+      <span className="flex-1 truncate text-sm">{route.name}</span>
       {route.status === "Blocked" && (
-        <small className="ms-auto text-sm text-red-600">Blocked</small>
+        <span className="shrink-0 text-xs text-destructive">Blocked</span>
       )}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100"
+          >
+            <MoreVertical className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDuplicate(); }}>
+            <Copy className="mr-2 h-4 w-4" />
+            Duplicate
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="text-destructive focus:text-destructive"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
 
 function FolderItem({
   item: { folder, collapsed, isEditing },
-  onActionMenuClick,
   onClick,
+  onNewRoute,
+  onNewFolder,
+  onRename,
+  onDuplicate,
+  onDelete,
   onNameSubmit,
 }: {
   item: IExplorerItem;
-  onActionMenuClick: (buttonLeft: number, buttonTop: number) => void;
   onClick: () => void;
+  onNewRoute: () => void;
+  onNewFolder: () => void;
+  onRename: () => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
   onNameSubmit: (name: string) => void;
 }) {
-  if (!folder) {
-    return null;
-  }
-
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-    e.stopPropagation();
-    onActionMenuClick(e.currentTarget.offsetLeft, e.currentTarget.offsetTop);
-  };
+  if (!folder) return null;
 
   const {
     register,
@@ -583,137 +571,76 @@ function FolderItem({
   const onSubmit = (data: { name: string }) => {
     onNameSubmit(data.name);
   };
-  return !isEditing ? (
+
+  if (isEditing) {
+    return (
+      <div className="flex items-center gap-2 px-2 py-1">
+        <Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <form onSubmit={handleSubmit(onSubmit)} className="flex-1">
+          <Input
+            {...register("name", { required: "Name is required" })}
+            defaultValue={folder.name}
+            autoFocus
+            className="h-7 text-sm"
+          />
+          {errors.name && (
+            <span className="text-xs text-destructive">{errors.name.message}</span>
+          )}
+        </form>
+      </div>
+    );
+  }
+
+  return (
     <div
-      className="group flex items-center p-0.5"
-      style={{ cursor: "pointer" }}
+      className="flex items-center gap-1 rounded-md px-2 py-1.5 cursor-pointer hover:bg-muted transition-colors"
       onClick={onClick}
     >
       {collapsed ? (
-        <ChevronRightIcon className="me-1 h-4 w-4" />
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
       ) : (
-        <ChevronDownIcon className="me-1 h-4 w-4" />
+        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
       )}
-      <span className="overflow-hidden text-ellipsis whitespace-nowrap text-sm">
-        {folder.name}
-      </span>
-      <button
-        type="button"
-        onClick={(e) => handleClick(e)}
-        className="ms-auto hidden group-hover:block"
-      >
-        <EllipsisVerticalIcon className="h-4 w-4 text-gray-600" />
-      </button>
-    </div>
-  ) : (
-    <div className="flex items-center p-0.5">
-      <form onSubmit={handleSubmit(onSubmit)} className="w-full">
-        <input
-          type="text"
-          {...register("name", { required: "Name is required" })}
-          className="w-full border"
-          defaultValue={folder.name}
-        />
-        {errors.name && (
-          <span className="text-red-500">{errors.name.message}</span>
-        )}
-      </form>
-    </div>
-  );
-}
-
-function ActionMenu({
-  node,
-  top,
-  right,
-  onNewRouteClick,
-  onNewFolderClick,
-  onDuplicateClick,
-  onOutSideClick,
-  onDeleteClick,
-  onFolderRenameClick,
-}: {
-  node: IRouteFolderRouteItem;
-  top: number;
-  right: number;
-  onNewRouteClick(): void;
-  onNewFolderClick(): void;
-  onDuplicateClick(): void;
-  onDeleteClick(): void;
-  onOutSideClick(): void;
-  onFolderRenameClick(): void;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const windowClickHandler = () => {
-    onOutSideClick();
-  };
-  useEffect(() => {
-    window.addEventListener("click", windowClickHandler);
-
-    return () => {
-      window.removeEventListener("click", windowClickHandler);
-    };
-  }, []);
-  return (
-    <div
-      style={{ top: `${top}px`, right: `${right}px` }}
-      ref={ref}
-      className="absolute w-36 border bg-white p-2 shadow"
-    >
-      <ul className="">
-        {node.type === "Folder" && (
-          <>
-            <li className="p-1 hover:bg-gray-100">
-              <button
-                type="button"
-                onClick={onNewRouteClick}
-                className="w-full text-left"
-              >
-                New Route
-              </button>
-            </li>
-            <li className="p-1 hover:bg-gray-100">
-              <button
-                type="button"
-                onClick={onNewFolderClick}
-                className="w-full text-left"
-              >
-                New Folder
-              </button>
-            </li>
-          </>
-        )}
-        <li className="p-1 hover:bg-gray-100">
-          <button
-            type="button"
-            onClick={onDuplicateClick}
-            className="w-full text-left"
+      <Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <span className="flex-1 truncate text-sm">{folder.name}</span>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100"
           >
+            <MoreVertical className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onNewRoute(); }}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Route
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onNewFolder(); }}>
+            <FolderPlus className="mr-2 h-4 w-4" />
+            New Folder
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDuplicate(); }}>
+            <Copy className="mr-2 h-4 w-4" />
             Duplicate
-          </button>
-        </li>
-        {node.type === "Folder" && (
-          <li className="p-1 hover:bg-gray-100">
-            <button
-              type="button"
-              onClick={onFolderRenameClick}
-              className="w-full text-left"
-            >
-              Rename
-            </button>
-          </li>
-        )}
-        <hr className="my-1" />
-        <li className="p-1 hover:bg-gray-100">
-          <button
-            type="button"
-            className="w-full text-left text-red-500"
-            onClick={onDeleteClick}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRename(); }}>
+            <Pencil className="mr-2 h-4 w-4" />
+            Rename
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="text-destructive focus:text-destructive"
           >
+            <Trash2 className="mr-2 h-4 w-4" />
             Delete
-          </button>
-        </li>
-      </ul>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
