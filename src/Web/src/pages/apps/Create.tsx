@@ -57,7 +57,7 @@ function AppCreate() {
     }
   };
   return (
-    <form className="mx-auto mt-8 max-w-2xl space-y-6" onSubmit={handleSubmit(onSubmit)}>
+    <form className="mx-auto mt-8 max-w-2xl px-4 space-y-6" onSubmit={handleSubmit(onSubmit)}>
       <h1 className="text-2xl font-semibold">Create app</h1>
       <div className="space-y-2">
         <Label htmlFor="name">Name</Label>

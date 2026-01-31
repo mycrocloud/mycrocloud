@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import IApp from "./App";
 import { useApiClient } from "@/hooks";
 import { cn } from "@/lib/utils";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Loader2 } from "lucide-react";
 
 interface NavItemProps {
   to: string;
@@ -67,8 +67,8 @@ export default function AppLayout() {
 
   if (!app) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-muted-foreground">Loading...</div>
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
