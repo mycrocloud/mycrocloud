@@ -18,18 +18,12 @@ export default function AppLayout() {
   const [app, setApp] = useState<IApp>();
   const { pathname } = useLocation();
   const part3 = pathname.split("/")[3];
-  const part4 = pathname.split("/")[4];
 
   const isMatch_Overview = part3 === undefined;
   const isMatch_Routes = part3 === "routes";
-  const isMatchAuthenticationSchemes =
-    part3 == "authentications" && part4 === "schemes";
-  const isMatchAuthenticationSettings =
-    part3 == "authentications" && part4 === "settings";
-
-  const isMatchLogs = part3 == "logs";
-  const isMatchIntegrations = part3 == "integrations";
-  const isMatchSettings = part3 == "settings";
+  const isMatchLogs = part3 === "logs";
+  const isMatchBuilds = part3 === "builds";
+  const isMatchSettings = part3 === "settings";
 
   useEffect(() => {
     const getApp = async () => {
@@ -72,48 +66,33 @@ export default function AppLayout() {
             >
               Overview
             </Link>
-            <Link
-              to="routes"
-              className={`text-xs ${isMatch_Routes ? "text-primary" : ""}`}
-            >
-              Routes
-            </Link>
-            <div className="text-xs">
-              Authentications
-              <div className="flex flex-col pl-1">
-                <Link
-                  to="authentications/schemes"
-                  className={`text-xs ${
-                    isMatchAuthenticationSchemes ? "text-primary" : ""
-                  }`}
-                >
-                  Schemes
-                </Link>
-                <Link
-                  to="authentications/settings"
-                  className={`text-xs ${
-                    isMatchAuthenticationSettings ? "text-primary" : ""
-                  }`}
-                >
-                  Settings
-                </Link>
-              </div>
+            <div className="text-xs text-muted-foreground pt-2">API</div>
+            <div className="flex flex-col space-y-0.5 pl-2">
+              <Link
+                to="routes"
+                className={`text-xs ${isMatch_Routes ? "text-primary" : ""}`}
+              >
+                Routes
+              </Link>
+              <Link
+                to="logs"
+                className={`text-xs ${isMatchLogs ? "text-primary" : ""}`}
+              >
+                Logs
+              </Link>
+            </div>
+            <div className="text-xs text-muted-foreground pt-2">Pages</div>
+            <div className="flex flex-col space-y-0.5 pl-2">
+              <Link
+                to="builds"
+                className={`text-xs ${isMatchBuilds ? "text-primary" : ""}`}
+              >
+                Builds
+              </Link>
             </div>
             <Link
-              to="integrations"
-              className={`text-xs ${isMatchIntegrations ? "text-primary" : ""}`}
-            >
-              Integrations
-            </Link>
-            <Link
-              to="logs"
-              className={`text-xs ${isMatchLogs ? "text-primary" : ""}`}
-            >
-              Logs
-            </Link>
-            <Link
               to="settings"
-              className={`text-xs ${isMatchSettings ? "text-primary" : ""}`}
+              className={`text-xs pt-2 ${isMatchSettings ? "text-primary" : ""}`}
             >
               Settings
             </Link>

@@ -12,22 +12,15 @@ import {
   AppOverview,
   AppCreate,
   AppLog,
+  AppBuilds,
   AppLayout,
 } from "./pages/apps";
 
 import { RouteIndex, RouteLogs, RouteCreate, RouteEdit } from "./pages/routes";
 
-import {
-  AuthenticationSchemeCreateUpdate,
-  AuthenticationSchemeList,
-  AuthenticationSchemeSettings,
-} from "./pages/authentications";
-
 import About from "./pages/About";
 import { NotFoundPage } from "./pages/NotFoundPage";
-import { ApiKeyCreateUpdate, ApiKeyList } from "./pages/authentications/apikey";
 
-import { default as Integrations } from "./pages/integrations";
 import { default as IntegrationsGitHubCallback } from "./pages/settings/github_callback";
 import { default as IntegrationsSlackCallback } from "./pages/settings/slack_callback";
 import { default as IntegrationsSlackLink } from "./pages/settings/slack_link";
@@ -70,32 +63,8 @@ function App() {
                   <Route path=":routeId" Component={RouteEdit} />
                   <Route path=":routeId/logs" Component={RouteLogs} />
                 </Route>
-                <Route path="authentications">
-                  <Route
-                    index
-                    path="schemes"
-                    Component={AuthenticationSchemeList}
-                  />
-                  <Route
-                    path="schemes/new"
-                    Component={AuthenticationSchemeCreateUpdate}
-                  />
-                  <Route
-                    path="schemes/:schemeId"
-                    Component={AuthenticationSchemeCreateUpdate}
-                  />
-                  <Route
-                    path="settings"
-                    Component={AuthenticationSchemeSettings}
-                  />
-                  <Route path="apikeys">
-                    <Route index Component={ApiKeyList} />
-                    <Route path="new" Component={ApiKeyCreateUpdate} />
-                    <Route path=":keyId/edit" Component={ApiKeyCreateUpdate} />
-                  </Route>
-                </Route>
                 <Route path="logs" Component={AppLog} />
-                <Route path="integrations" Component={Integrations}></Route>
+                <Route path="builds" Component={AppBuilds} />
                 <Route path="settings" Component={AppSettings}></Route>
               </Route>
             </Route>
