@@ -240,7 +240,7 @@ function RouteExplorer() {
       ensureSuccess(res);
       setExplorerItems((items) => {
         return items.map((item) => {
-          if (item.id === folder.id) {
+          if (item.type === "Folder" && item.id === folder.id) {
             return {
               ...item,
               id: parseInt(res.headers.get("Location")!),
@@ -266,7 +266,7 @@ function RouteExplorer() {
       ensureSuccess(res);
       setExplorerItems((items) => {
         return items.map((item) => {
-          if (item.id === folder.id) {
+          if (item.type === "Folder" && item.id === folder.id) {
             return { ...item, folder: { name: name }, isEditing: false };
           }
           return item;
@@ -334,7 +334,7 @@ function RouteExplorer() {
         setExplorerItems((nodes) => {
           let deleteItems = getFolderItems(item);
           return nodes.filter((node) => {
-            return !deleteItems.some((i) => i.id === node.id);
+            return !deleteItems.some((i) => i.id === node.id && i.type === node.type);
           });
 
           function getFolderItems(folder: IExplorerItem) {
@@ -374,7 +374,9 @@ function RouteExplorer() {
     const isRoot = node === null;
     const children = isRoot
       ? items.filter((i) => i.parentId === null)
-      : items.filter((i) => i.parentId === node.id);
+      : node.type === "Folder"
+        ? items.filter((i) => i.parentId === node.id)
+        : [];
 
     const isCurrentRoute = node?.type === "Route" && node.id === routeId;
     return (
