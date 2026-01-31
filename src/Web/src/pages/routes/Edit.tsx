@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import RouteCreateUpdate from "./CreateUpdateForm";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useContext, useEffect, useState } from "react";
@@ -60,15 +60,6 @@ export default function RouteEdit() {
   }
   return (
     <>
-      <div className="mb-1 border-b border-gray-200">
-        <div className="flex items-end justify-end space-x-1 px-2">
-          <Link to={"logs"}>Logs</Link>
-          {/* <button className="border px-3 py-0.5">Test</button> */}
-          {/* <button className="border px-3 py-0.5">Share</button>
-                    <button className="border px-3 py-0.5">History</button>
-                    <button className="border px-3 py-0.5">Settings</button> */}
-        </div>
-      </div>
       <RouteCreateUpdate key={routeId} route={route} onSubmit={onSubmit} />
     </>
   );

@@ -12,29 +12,26 @@ import {
   AppOverview,
   AppCreate,
   AppLog,
+  AppBuilds,
   AppLayout,
 } from "./pages/apps";
 
 import { RouteIndex, RouteLogs, RouteCreate, RouteEdit } from "./pages/routes";
 
-import {
-  AuthenticationSchemeCreateUpdate,
-  AuthenticationSchemeList,
-  AuthenticationSchemeSettings,
-} from "./pages/authentications";
-
-import About from "./pages/About";
 import { NotFoundPage } from "./pages/NotFoundPage";
-import { ApiKeyCreateUpdate, ApiKeyList } from "./pages/authentications/apikey";
 
-import { default as Integrations } from "./pages/integrations";
 import { default as IntegrationsGitHubCallback } from "./pages/settings/github_callback";
 import { default as IntegrationsSlackCallback } from "./pages/settings/slack_callback";
 import { default as IntegrationsSlackLink } from "./pages/settings/slack_link";
 
 import Settings from "./pages/settings";
+import Connections from "./pages/settings/Connections";
+import Tokens from "./pages/settings/Tokens";
+import TokenCreate from "./pages/settings/TokenCreate";
+import TokenEdit from "./pages/settings/TokenEdit";
 import { getConfig } from "./config";
 import Home from "./pages/Home";
+import AppSettings from "./pages/apps/Settings";
 const { AUTH0_DOMAIN, AUTH0_CLIENTID, AUTH0_AUDIENCE } = getConfig();
 
 function App() {
@@ -48,72 +45,61 @@ function App() {
       }}
     >
       <BrowserRouter>
-        <Header />
-        <div className="container mx-auto min-h-screen p-2">
-          <Routes>
-            <Route path="/" Component={Home} />
-            <Route path="settings" Component={Settings} />
-            <Route path="apps">
-              <Route index element={<ProtectedPage children={<AppList />} />} />
+        <div className="flex min-h-screen flex-col">
+          <Header />
+          <main className="flex-1">
+            <Routes>
+              <Route path="/" element={<Home />} />
               <Route
-                path="new"
-                element={<ProtectedPage children={<AppCreate />} />}
-              />
-              <Route
-                path=":appId"
-                element={<ProtectedPage children={<AppLayout />} />}
+                path="settings"
+                element={<ProtectedPage><Settings /></ProtectedPage>}
               >
-                <Route index Component={AppOverview} />
-                <Route path="routes" Component={RouteIndex}>
-                  <Route path="new/:folderId?" Component={RouteCreate} />
-                  <Route path=":routeId" Component={RouteEdit} />
-                  <Route path=":routeId/logs" Component={RouteLogs} />
+                <Route path="connections" element={<Connections />} />
+                <Route path="tokens" element={<Tokens />}>
+                  <Route path="new" element={<TokenCreate />} />
+                  <Route path=":id/edit" element={<TokenEdit />} />
                 </Route>
-                <Route path="authentications">
-                  <Route
-                    index
-                    path="schemes"
-                    Component={AuthenticationSchemeList}
-                  />
-                  <Route
-                    path="schemes/new"
-                    Component={AuthenticationSchemeCreateUpdate}
-                  />
-                  <Route
-                    path="schemes/:schemeId"
-                    Component={AuthenticationSchemeCreateUpdate}
-                  />
-                  <Route
-                    path="settings"
-                    Component={AuthenticationSchemeSettings}
-                  />
-                  <Route path="apikeys">
-                    <Route index Component={ApiKeyList} />
-                    <Route path="new" Component={ApiKeyCreateUpdate} />
-                    <Route path=":keyId/edit" Component={ApiKeyCreateUpdate} />
-                  </Route>
-                </Route>
-                <Route path="logs" Component={AppLog} />
-                <Route path="integrations" Component={Integrations}></Route>
               </Route>
-            </Route>
-            <Route path="integrations">
-              <Route
-                path="callback/github"
-                Component={IntegrationsGitHubCallback}
-              />
-              <Route
-                path="slack/oauth/callback"
-                Component={IntegrationsSlackCallback}
-              />
-              <Route path="slack/link" Component={IntegrationsSlackLink} />
-            </Route>
-            <Route
-              path="_about"
-              element={<ProtectedPage children={<About />} />}
-            />
-            <Route path="*" Component={NotFoundPage} />
-          </Routes>
+              <Route path="apps">
+                <Route
+                  index
+                  element={<ProtectedPage><AppList /></ProtectedPage>}
+                />
+                <Route
+                  path="new"
+                  element={<ProtectedPage><AppCreate /></ProtectedPage>}
+                />
+                <Route
+                  path=":appId"
+                  element={<ProtectedPage><AppLayout /></ProtectedPage>}
+                >
+                  <Route index element={<AppOverview />} />
+                  <Route path="routes" element={<RouteIndex />}>
+                    <Route path="new/:folderId?" element={<RouteCreate />} />
+                    <Route path=":routeId" element={<RouteEdit />} />
+                    <Route path=":routeId/logs" element={<RouteLogs />} />
+                  </Route>
+                  <Route path="logs" element={<AppLog />} />
+                  <Route path="builds" element={<AppBuilds />}>
+                    <Route path=":buildId" element={null} />
+                  </Route>
+                  <Route path="settings" element={<AppSettings />} />
+                </Route>
+              </Route>
+              <Route path="integrations">
+                <Route
+                  path="callback/github"
+                  element={<IntegrationsGitHubCallback />}
+                />
+                <Route
+                  path="slack/oauth/callback"
+                  element={<IntegrationsSlackCallback />}
+                />
+                <Route path="slack/link" element={<IntegrationsSlackLink />} />
+              </Route>
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </main>
         </div>
         <ToastContainer />
       </BrowserRouter>

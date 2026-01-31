@@ -70,6 +70,13 @@ const useApiClient = () => {
     [send]
   );
 
+  const patch = useCallback(
+    async <T>(url: string, body?: any): Promise<T> => {
+      return send<T>(url, { method: "PATCH", body });
+    },
+    [send]
+  );
+
   const del = useCallback(
     async <T>(url: string, body?: any): Promise<T> => {
       return send<T>(url, { method: "DELETE", body });
@@ -77,7 +84,7 @@ const useApiClient = () => {
     [send]
   );
 
-  return { send, get, post, del };
+  return { send, get, post, del, patch };
 };
 
 export default useApiClient;

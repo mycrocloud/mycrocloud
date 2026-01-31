@@ -1,348 +1,283 @@
-import { useContext, useEffect, useRef, useState } from "react";
-import { AppContext } from ".";
-import { useForm } from "react-hook-form";
+import { useContext, useEffect, useState, useMemo } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { AppContext } from ".";
 import { getAppDomain } from "./service";
-import { PlayCircleIcon, StopCircleIcon } from "@heroicons/react/24/solid";
-import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
-import * as yup from "yup";
-import { yupResolver } from "@hookform/resolvers/yup";
-import Ajv, { JSONSchemaType } from "ajv";
+import { IRouteLog } from "../routes";
+import {
+  PlayCircleIcon,
+  StopCircleIcon,
+  GlobeAltIcon,
+  CalendarIcon,
+  ChartBarIcon,
+  ClockIcon,
+} from "@heroicons/react/24/solid";
 import TextCopyButton from "../../components/ui/TextCopyButton";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import { Area, AreaChart, XAxis, YAxis } from "recharts";
+
+interface DailyStats {
+  date: string;
+  requests: number;
+}
+
+const chartConfig = {
+  requests: {
+    label: "Requests",
+    color: "hsl(var(--chart-1))",
+  },
+} satisfies ChartConfig;
 
 export default function AppOverview() {
   const { app } = useContext(AppContext)!;
   if (!app) throw new Error();
-  const domain = getAppDomain(app.id);
 
-  return (
-    <div className="p-2">
-      <h2 className="font-bold">Overview</h2>
-      <table className="mt-1">
-        <tbody>
-          <tr>
-            <td>Name</td>
-            <td>{app.name}</td>
-          </tr>
-          <tr>
-            <td>Description</td>
-            <td>{app.description}</td>
-          </tr>
-          <tr>
-            <td>Status</td>
-            <td className="inline-flex">
-              {app.status === "Active" ? (
-                <PlayCircleIcon className="h-4 w-4 text-green-500" />
-              ) : (
-                <StopCircleIcon className="h-4 w-4 text-red-500" />
-              )}
-              {app.status}
-            </td>
-          </tr>
-          <tr>
-            <td>Created at</td>
-            <td>{new Date(app.createdAt).toDateString()}</td>
-          </tr>
-          <tr>
-            <td>Updated at</td>
-            <td>
-              {app.updatedAt ? new Date(app.updatedAt!).toDateString() : "-"}
-            </td>
-          </tr>
-          <tr>
-            <td>Domain</td>
-            <td className="flex">
-              <p className="text-blue-500 hover:underline">{domain}</p>
-              <TextCopyButton text={domain} />
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <hr className="mt-2" />
-      <div className="mt-2">
-        <RenameSection />
-      </div>
-      <hr className="mt-2" />
-      <div className="mt-2">
-        <ChangeStateSection />
-      </div>
-      <hr className="mt-2" />
-      <div className="mt-2">
-        <CorsSettingsSection />
-      </div>
-      <hr className="mt-2" />
-      <div className="mt-2">
-        <DeleteSection />
-      </div>
-    </div>
-  );
-}
-
-interface CorsSettings {
-  allowedHeaders?: string[];
-  allowedMethods?: string[];
-  allowedOrigins?: string[];
-  exposeHeaders?: string[];
-  maxAgeSeconds?: number;
-}
-
-const corsSettingsSchema: JSONSchemaType<CorsSettings> = {
-  type: "object",
-  properties: {
-    allowedHeaders: {
-      type: "array",
-      nullable: true,
-      items: { type: "string" },
-    },
-    allowedMethods: {
-      type: "array",
-      nullable: true,
-      items: { type: "string" },
-    },
-    allowedOrigins: {
-      type: "array",
-      nullable: true,
-      items: { type: "string" },
-    },
-    exposeHeaders: { type: "array", nullable: true, items: { type: "string" } },
-    maxAgeSeconds: { type: "number", nullable: true },
-  },
-  additionalProperties: false,
-};
-
-function CorsSettingsSection() {
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
   const { getAccessTokenSilently } = useAuth0();
-
-  const editorElRef = useRef(null);
-  const editor = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
-  const [error, setError] = useState<string>();
-
-  useEffect(() => {
-    editor.current?.dispose();
-
-    editor.current = monaco.editor.create(editorElRef.current!, {
-      language: "json",
-      value: "",
-      minimap: { enabled: false },
-    });
-
-    return () => {
-      editor.current?.dispose();
-    };
-  }, []);
+  const [logs, setLogs] = useState<IRouteLog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const domain = getAppDomain(app.name);
 
   useEffect(() => {
-    if (!editor.current) {
-      return;
-    }
-    const fetchCorsSettings = async () => {
-      const accessToken = await getAccessTokenSilently();
-      const res = await fetch(`/api/apps/${app.id}/cors`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      if (res.ok) {
-        const json = await res.json();
-        editor.current!.setValue(JSON.stringify(json, null, 2));
+    //@ts-ignore
+    const fetchLogs = async () => {
+      try {
+        const accessToken = await getAccessTokenSilently();
+        const today = new Date();
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+
+        const formatDate = (d: Date) => d.toISOString().split("T")[0];
+
+        const response = await fetch(
+          `/api/apps/${app.id}/logs?accessDateFrom=${formatDate(sevenDaysAgo)}&accessDateTo=${formatDate(today)}`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+        const data = (await response.json()) as IRouteLog[];
+        setLogs(data);
+      } catch (error) {
+        console.error("Failed to fetch logs:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchCorsSettings();
-  }, [editor.current]);
+    //fetchLogs();
+  }, [app.id, getAccessTokenSilently]);
 
-  const handleSaveClick = async () => {
-    if (!editor.current) return;
-    if (error) {
-      setError(undefined);
+  const dailyStats = useMemo(() => {
+    const stats: Record<string, number> = {};
+
+    // Initialize last 7 days with 0
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split("T")[0];
+      stats[dateStr] = 0;
     }
-    const json = editor.current.getValue();
-    let data;
-    try {
-      data = JSON.parse(json);
-    } catch (e) {
-      setError("Invalid JSON");
-      return;
-    }
-    const ajv = new Ajv();
-    const validate = ajv.compile(corsSettingsSchema);
-    const valid = validate(data);
-    if (!valid) {
-      setError(validate.errors?.[0].message!);
-      return;
-    }
-    const accessToken = await getAccessTokenSilently();
-    const res = await fetch(`/api/apps/${app.id}/cors`, {
-      method: "PATCH",
-      headers: {
-        "content-type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: json,
+
+    // Count requests per day
+    logs.forEach((log) => {
+      const dateStr = new Date(log.timestamp).toISOString().split("T")[0];
+      if (stats[dateStr] !== undefined) {
+        stats[dateStr]++;
+      }
     });
-    if (res.ok) {
-      toast("CORS settings saved");
-    }
-  };
-  return (
-    <>
-      <h3 className="font-semibold">CORS Settings</h3>
-      <div className="mt-1">
-        <div className="h-[160px] w-full" ref={editorElRef}></div>
-        {error && <span className="text-red-500">{error}</span>}
-        <button
-          type="button"
-          onClick={handleSaveClick}
-          className="ms-auto bg-primary px-2 py-1 text-white"
-        >
-          Save
-        </button>
-      </div>
-    </>
-  );
-}
-type RenameFormInput = { name: string };
-function RenameSection() {
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
-  const { getAccessTokenSilently } = useAuth0();
-  const schema = yup.object({ name: yup.string().required() });
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<RenameFormInput>({
-    resolver: yupResolver(schema),
-    defaultValues: { name: app.name },
-  });
-  const onSubmit = async (input: RenameFormInput) => {
-    const accessToken = await getAccessTokenSilently();
-    const res = await fetch(`/api/apps/${app.id}/rename`, {
-      method: "PATCH",
-      headers: {
-        "content-type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-        "If-Match": app.version,
-      },
-      body: JSON.stringify(input),
-    });
-    if (res.ok) {
-      toast("Renamed app");
-    }
-  };
+
+    // Convert to array and format dates
+    return Object.entries(stats).map(([date, requests]) => ({
+      date: new Date(date).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      }),
+      requests,
+    })) as DailyStats[];
+  }, [logs]);
+
+  const totalRequests = logs.length;
+  const todayRequests = useMemo(() => {
+    const today = new Date().toISOString().split("T")[0];
+    return logs.filter(
+      (log) => new Date(log.timestamp).toISOString().split("T")[0] === today
+    ).length;
+  }, [logs]);
 
   return (
-    <>
-      <h3 className="font-semibold">App name</h3>
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-1">
-        <div className="flex">
-          <div>
-            <input
-              type="text"
-              {...register("name")}
-              className="block border px-2 py-0.5"
-              autoComplete="off"
-            />
-            {errors.name && (
-              <span className="text-red-500">{errors.name.message}</span>
+    <div className="space-y-6 p-4">
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Status</CardTitle>
+            {app.status === "Active" ? (
+              <PlayCircleIcon className="h-4 w-4 text-green-500" />
+            ) : (
+              <StopCircleIcon className="h-4 w-4 text-red-500" />
             )}
-          </div>
-          <div className="relative ms-1">
-            <button
-              type="submit"
-              className="absolute top-0 my-auto bg-primary px-2 py-0.5 text-white"
-            >
-              Rename
-            </button>
-          </div>
-        </div>
-      </form>
-    </>
-  );
-}
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{app.status}</div>
+            <p className="text-xs text-muted-foreground">
+              {app.status === "Active" ? "Running normally" : "Currently stopped"}
+            </p>
+          </CardContent>
+        </Card>
 
-function DeleteSection() {
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
-  const { getAccessTokenSilently } = useAuth0();
-  const navigate = useNavigate();
-  const handleDeleteClick = async () => {
-    if (confirm("Are you sure want to delete this app?")) {
-      const accessToken = await getAccessTokenSilently();
-      const res = await fetch(`/api/apps/${app.id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      if (res.ok) {
-        toast("Deleted app");
-        navigate("/apps");
-      }
-    }
-  };
-  return (
-    <>
-      <h3 className="font-semibold">Delete the app</h3>
-      <button
-        type="button"
-        className="bg-red-500 px-2 py-1 text-white"
-        onClick={handleDeleteClick}
-      >
-        Delete
-      </button>
-    </>
-  );
-}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
+            <ChartBarIcon className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {loading ? "..." : totalRequests.toLocaleString()}
+            </div>
+            <p className="text-xs text-muted-foreground">Last 7 days</p>
+          </CardContent>
+        </Card>
 
-function ChangeStateSection() {
-  const { app } = useContext(AppContext)!;
-  if (!app) throw new Error();
-  const { getAccessTokenSilently } = useAuth0();
-  const navigate = useNavigate();
-  const handleChangeStatusClick = async () => {
-    if (
-      app.status === "Active" &&
-      !confirm("Are you sure want to deactivate the app?")
-    ) {
-      return;
-    }
-    const accessToken = await getAccessTokenSilently();
-    const status = app.status === "Active" ? "Inactive" : "Active";
-    const res = await fetch(`/api/apps/${app.id}/status?status=${status}`, {
-      method: "PATCH",
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    if (res.ok) {
-      //TODO: update app status in context
-      app.status = status;
-      toast("Status changed");
-      navigate(".");
-    }
-  };
-  function getChangeStatusButtonClass(status: string) {
-    switch (status) {
-      case "Active":
-        return "text-red-500";
-      case "Inactive":
-        return "text-green-500";
-      case "Blocked":
-        return "text-gray-500";
-      default:
-        return "";
-    }
-  }
-  return (
-    <div>
-      <h2 className="font-semibold">Change status</h2>
-      <button
-        type="button"
-        className={`${getChangeStatusButtonClass(app.status)} border px-2 py-1`}
-        disabled={app.status === "Blocked"}
-        onClick={handleChangeStatusClick}
-      >
-        {app.status === "Active" ? "Deactivate" : "Activate"}
-      </button>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Today</CardTitle>
+            <ClockIcon className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {loading ? "..." : todayRequests.toLocaleString()}
+            </div>
+            <p className="text-xs text-muted-foreground">Requests today</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Created</CardTitle>
+            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {new Date(app.createdAt).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {new Date(app.createdAt).getFullYear()}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Request Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Requests Overview</CardTitle>
+          <CardDescription>Daily requests for the last 7 days</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex h-[200px] items-center justify-center text-muted-foreground">
+              Loading...
+            </div>
+          ) : (
+            <ChartContainer config={chartConfig} className="h-[200px] w-full">
+              <AreaChart
+                data={dailyStats}
+                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="fillRequests" x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                      offset="5%"
+                      stopColor="var(--color-requests)"
+                      stopOpacity={0.8}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="var(--color-requests)"
+                      stopOpacity={0.1}
+                    />
+                  </linearGradient>
+                </defs>
+                <XAxis
+                  dataKey="date"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent indicator="line" />}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="requests"
+                  stroke="var(--color-requests)"
+                  fill="url(#fillRequests)"
+                  strokeWidth={2}
+                />
+              </AreaChart>
+            </ChartContainer>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* App Details */}
+      <Card>
+        <CardHeader>
+          <CardTitle>App Details</CardTitle>
+          <CardDescription>Configuration and information</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-[auto_1fr] gap-x-8 gap-y-3 text-sm">
+            <span className="text-muted-foreground">Name</span>
+            <span className="font-medium">{app.name}</span>
+
+            <span className="text-muted-foreground">Description</span>
+            <span>{app.description || "-"}</span>
+
+            <span className="text-muted-foreground">Version</span>
+            <span className="font-mono text-xs">{app.version}</span>
+
+            <span className="text-muted-foreground">Created at</span>
+            <span>{new Date(app.createdAt).toLocaleString()}</span>
+
+            <span className="text-muted-foreground">Updated at</span>
+            <span>
+              {app.updatedAt ? new Date(app.updatedAt).toLocaleString() : "-"}
+            </span>
+
+            <span className="text-muted-foreground">Domain</span>
+            <span className="flex items-center gap-2">
+              <GlobeAltIcon className="h-4 w-4 text-muted-foreground" />
+              <a
+                href={`https://${domain}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                {domain}
+              </a>
+              <TextCopyButton text={domain} />
+            </span>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

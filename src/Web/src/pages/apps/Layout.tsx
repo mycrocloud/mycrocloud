@@ -2,8 +2,47 @@ import { Link, Outlet, useLocation, useParams } from "react-router-dom";
 import { AppContext } from ".";
 import { useEffect, useState } from "react";
 import IApp from "./App";
-import { Breadcrumb } from "flowbite-react";
 import { useApiClient } from "@/hooks";
+import { cn } from "@/lib/utils";
+import { ChevronLeft, Loader2 } from "lucide-react";
+
+interface NavItemProps {
+  to: string;
+  label: string;
+  isActive: boolean;
+}
+
+function NavItem({ to, label, isActive }: NavItemProps) {
+  return (
+    <Link
+      to={to}
+      className={cn(
+        "block rounded-lg px-3 py-2 text-sm transition-colors",
+        isActive
+          ? "bg-primary text-primary-foreground"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+      )}
+    >
+      {label}
+    </Link>
+  );
+}
+
+interface NavGroupProps {
+  label: string;
+  children: React.ReactNode;
+}
+
+function NavGroup({ label, children }: NavGroupProps) {
+  return (
+    <div className="space-y-1">
+      <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </div>
+      <div className="ml-4 space-y-1 border-l pl-3">{children}</div>
+    </div>
+  );
+}
 
 export default function AppLayout() {
   const { get } = useApiClient();
@@ -11,17 +50,12 @@ export default function AppLayout() {
   const [app, setApp] = useState<IApp>();
   const { pathname } = useLocation();
   const part3 = pathname.split("/")[3];
-  const part4 = pathname.split("/")[4];
 
   const isMatch_Overview = part3 === undefined;
   const isMatch_Routes = part3 === "routes";
-  const isMatchAuthenticationSchemes =
-    part3 == "authentications" && part4 === "schemes";
-  const isMatchAuthenticationSettings =
-    part3 == "authentications" && part4 === "settings";
-
-  const isMatchLogs = part3 == "logs";
-  const isMatchIntegrations = part3 == "integrations";
+  const isMatchLogs = part3 === "logs";
+  const isMatchBuilds = part3 === "builds";
+  const isMatchSettings = part3 === "settings";
 
   useEffect(() => {
     const getApp = async () => {
@@ -32,72 +66,75 @@ export default function AppLayout() {
   }, []);
 
   if (!app) {
-    return <h1>Loading...</h1>;
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
+
   return (
     <AppContext.Provider value={{ app, setApp }}>
-      <div className="">
-        <Breadcrumb className="p-1">
-          <Breadcrumb.Item>
-            <Link to="/">Home</Link>
-          </Breadcrumb.Item>
-          <Breadcrumb.Item>
-            <Link to="/apps">Apps</Link>
-          </Breadcrumb.Item>
-          <Breadcrumb.Item>{app.name}</Breadcrumb.Item>
-        </Breadcrumb>
-        <div className="flex min-h-screen border">
-          <div className="flex w-28 flex-col space-y-0.5 border-r p-1">
+      <div className="flex min-h-[calc(100vh-64px)]">
+        {/* Sidebar */}
+        <aside className="w-56 border-r bg-muted/30">
+          {/* App Header */}
+          <div className="border-b p-4">
             <Link
+              to="/apps"
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ChevronLeft className="h-3 w-3" />
+              All Apps
+            </Link>
+            <h1 className="mt-1 font-semibold truncate" title={app.name}>
+              {app.name}
+            </h1>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex flex-col gap-4 p-4">
+            <NavItem
               to=""
-              className={`text-xs ${isMatch_Overview ? "text-primary" : ""}`}
-            >
-              Overview
-            </Link>
-            <Link
-              to="routes"
-              className={`text-xs ${isMatch_Routes ? "text-primary" : ""}`}
-            >
-              Routes
-            </Link>
-            <div className="text-xs">
-              Authentications
-              <div className="flex flex-col pl-1">
-                <Link
-                  to="authentications/schemes"
-                  className={`text-xs ${
-                    isMatchAuthenticationSchemes ? "text-primary" : ""
-                  }`}
-                >
-                  Schemes
-                </Link>
-                <Link
-                  to="authentications/settings"
-                  className={`text-xs ${
-                    isMatchAuthenticationSettings ? "text-primary" : ""
-                  }`}
-                >
-                  Settings
-                </Link>
-              </div>
+              label="Overview"
+              isActive={isMatch_Overview}
+            />
+
+            <NavGroup label="API">
+              <NavItem
+                to="routes"
+                label="Routes"
+                isActive={isMatch_Routes}
+              />
+              <NavItem
+                to="logs"
+                label="Logs"
+                isActive={isMatchLogs}
+              />
+            </NavGroup>
+
+            <NavGroup label="Pages">
+              <NavItem
+                to="builds"
+                label="Builds"
+                isActive={isMatchBuilds}
+              />
+            </NavGroup>
+
+            <div className="mt-auto pt-4 border-t">
+              <NavItem
+                to="settings"
+                label="Settings"
+                isActive={isMatchSettings}
+              />
             </div>
-            <Link
-              to="integrations"
-              className={`text-xs ${isMatchIntegrations ? "text-primary" : ""}`}
-            >
-              Integrations
-            </Link>
-            <Link
-              to="logs"
-              className={`text-xs ${isMatchLogs ? "text-primary" : ""}`}
-            >
-              Logs
-            </Link>
-          </div>
-          <div className="flex-1">
-            <Outlet />
-          </div>
-        </div>
+          </nav>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-auto">
+          <Outlet />
+        </main>
       </div>
     </AppContext.Provider>
   );

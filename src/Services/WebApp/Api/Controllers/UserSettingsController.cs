@@ -14,22 +14,23 @@ public class UserSettingsController(AppDbContext dbContext): BaseController
     [HttpPost("tokens")]
     public async Task<IActionResult> CreateToken(CreateApiTokenRequest request)
     {
-        var token = new ApiToken
+        var plainToken = TokenUtils.GenerateReadableToken("mcp", 32);
+        var apiToken = new ApiToken
         {
             UserId = User.GetUserId(),
             Name = request.Name,
             CreatedAt = DateTime.UtcNow,
-            Token = TokenUtils.GenerateReadableToken("mc", 32)
+            HashedToken = TokenUtils.HashToken(plainToken)
         };
-                
-        await dbContext.ApiTokens.AddAsync(token);
+
+        await dbContext.ApiTokens.AddAsync(apiToken);
         await dbContext.SaveChangesAsync();
 
         return Ok(new
         {
-            token.Name,
-            token.Token,
-            token.CreatedAt
+            apiToken.Name,
+            Token = plainToken,
+            apiToken.CreatedAt
         });
     }
     
@@ -48,14 +49,61 @@ public class UserSettingsController(AppDbContext dbContext): BaseController
             t.CreatedAt
         }));
     }
-    
+
+    [HttpGet("tokens/{id:int}")]
+    public async Task<IActionResult> GetToken(int id)
+    {
+        var token = await dbContext.ApiTokens
+            .Where(t => t.UserId == User.GetUserId() && t.Id == id)
+            .FirstOrDefaultAsync();
+
+        if (token is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(new
+        {
+            token.Id,
+            token.Name,
+            Status = token.Status.ToString(),
+            token.CreatedAt
+        });
+    }
+
+    [HttpPost("tokens/{id:int}/regenerate")]
+    public async Task<IActionResult> RegenerateToken(int id)
+    {
+        var token = await dbContext.ApiTokens
+            .Where(t => t.UserId == User.GetUserId() && t.Id == id)
+            .FirstOrDefaultAsync();
+
+        if (token is null)
+        {
+            return NotFound();
+        }
+
+        var plainToken = TokenUtils.GenerateReadableToken("mcp", 32);
+        token.HashedToken = TokenUtils.HashToken(plainToken);
+        token.UpdatedAt = DateTime.UtcNow;
+
+        await dbContext.SaveChangesAsync();
+
+        return Ok(new
+        {
+            token.Id,
+            token.Name,
+            Token = plainToken
+        });
+    }
+
     [HttpDelete("tokens/{id:int}")]
     public async Task<IActionResult> DeleteToken(int id)
     {
         await dbContext.ApiTokens
             .Where(t => t.UserId == User.GetUserId() && t.Id == id)
             .ExecuteDeleteAsync();
-        
+
         await dbContext.SaveChangesAsync();
 
         return NoContent();

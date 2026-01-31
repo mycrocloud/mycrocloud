@@ -111,7 +111,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<ApiToken>()
-            .HasKey(t => new { t.Token });
+            .HasKey(t => t.Id);
 
         modelBuilder.Entity<App>(entity =>
         {
