@@ -10,27 +10,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Cloud, ExternalLink, Settings, LogOut, Copy } from "lucide-react";
+import { Cloud, ExternalLink, Settings, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const isDevMode = import.meta.env.DEV;
-
 function Header() {
-  const {
-    isLoading,
-    isAuthenticated,
-    user,
-    loginWithRedirect,
-    logout,
-    getAccessTokenSilently,
-  } = useAuth0();
+  const { isLoading, isAuthenticated, user, loginWithRedirect, logout } =
+    useAuth0();
   const navigate = useNavigate();
   const location = useLocation();
-
-  const handleCopyAccessTokenClick = async () => {
-    const accessToken = await getAccessTokenSilently();
-    navigator.clipboard.writeText(accessToken);
-  };
 
   const isActive = (path: string) => location.pathname.startsWith(path);
 
@@ -105,12 +92,6 @@ function Header() {
                     <Settings className="mr-2 h-4 w-4" />
                     Settings
                   </DropdownMenuItem>
-                  {isDevMode && (
-                    <DropdownMenuItem onClick={handleCopyAccessTokenClick}>
-                      <Copy className="mr-2 h-4 w-4" />
-                      Copy access token
-                    </DropdownMenuItem>
-                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => logout()}>
                     <LogOut className="mr-2 h-4 w-4" />
