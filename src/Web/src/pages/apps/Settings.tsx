@@ -1,13 +1,11 @@
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AppContext } from ".";
 import { useFieldArray, useForm } from "react-hook-form";
 import { useAuth0 } from "@auth0/auth0-react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
-import Ajv, { JSONSchemaType } from "ajv";
 import { DndContext, DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -127,91 +125,81 @@ interface CorsSettings {
   maxAgeSeconds?: number;
 }
 
-const corsSettingsSchema: JSONSchemaType<CorsSettings> = {
-  type: "object",
-  properties: {
-    allowedHeaders: {
-      type: "array",
-      nullable: true,
-      items: { type: "string" },
-    },
-    allowedMethods: {
-      type: "array",
-      nullable: true,
-      items: { type: "string" },
-    },
-    allowedOrigins: {
-      type: "array",
-      nullable: true,
-      items: { type: "string" },
-    },
-    exposeHeaders: { type: "array", nullable: true, items: { type: "string" } },
-    maxAgeSeconds: { type: "number", nullable: true },
-  },
-  additionalProperties: false,
+type CorsFormInputs = {
+  allowedOrigins: string;
+  allowedMethods: string;
+  allowedHeaders: string;
+  exposeHeaders: string;
+  maxAgeSeconds: string;
 };
+
+const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"];
 
 function CorsSettingsSection() {
   const { app } = useContext(AppContext)!;
   if (!app) throw new Error();
   const { getAccessTokenSilently } = useAuth0();
+  const [loading, setLoading] = useState(true);
 
-  const editorElRef = useRef(null);
-  const editor = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
-  const [error, setError] = useState<string>();
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+  } = useForm<CorsFormInputs>({
+    defaultValues: {
+      allowedOrigins: "",
+      allowedMethods: "",
+      allowedHeaders: "",
+      exposeHeaders: "",
+      maxAgeSeconds: "",
+    },
+  });
+
+  const watchMethods = watch("allowedMethods");
+  const selectedMethods = watchMethods ? watchMethods.split(",").filter(Boolean) : [];
 
   useEffect(() => {
-    editor.current?.dispose();
-
-    editor.current = monaco.editor.create(editorElRef.current!, {
-      language: "json",
-      value: "",
-      minimap: { enabled: false },
-    });
-
-    return () => {
-      editor.current?.dispose();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!editor.current) {
-      return;
-    }
     const fetchCorsSettings = async () => {
       const accessToken = await getAccessTokenSilently();
       const res = await fetch(`/api/apps/${app.id}/cors`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (res.ok) {
-        const json = await res.json();
-        editor.current!.setValue(JSON.stringify(json, null, 2));
+        const data: CorsSettings = await res.json();
+        setValue("allowedOrigins", data.allowedOrigins?.join(", ") || "");
+        setValue("allowedMethods", data.allowedMethods?.join(",") || "");
+        setValue("allowedHeaders", data.allowedHeaders?.join(", ") || "");
+        setValue("exposeHeaders", data.exposeHeaders?.join(", ") || "");
+        setValue("maxAgeSeconds", data.maxAgeSeconds?.toString() || "");
       }
+      setLoading(false);
     };
 
     fetchCorsSettings();
-  }, [editor.current]);
+  }, []);
 
-  const handleSaveClick = async () => {
-    if (!editor.current) return;
-    if (error) {
-      setError(undefined);
+  const toggleMethod = (method: string) => {
+    const current = selectedMethods;
+    if (current.includes(method)) {
+      setValue("allowedMethods", current.filter((m) => m !== method).join(","));
+    } else {
+      setValue("allowedMethods", [...current, method].join(","));
     }
-    const json = editor.current.getValue();
-    let data;
-    try {
-      data = JSON.parse(json);
-    } catch (e) {
-      setError("Invalid JSON");
-      return;
-    }
-    const ajv = new Ajv();
-    const validate = ajv.compile(corsSettingsSchema);
-    const valid = validate(data);
-    if (!valid) {
-      setError(validate.errors?.[0].message!);
-      return;
-    }
+  };
+
+  const onSubmit = async (data: CorsFormInputs) => {
+    const parseArray = (str: string) =>
+      str.split(",").map((s) => s.trim()).filter(Boolean);
+
+    const payload: CorsSettings = {
+      allowedOrigins: parseArray(data.allowedOrigins),
+      allowedMethods: parseArray(data.allowedMethods),
+      allowedHeaders: parseArray(data.allowedHeaders),
+      exposeHeaders: parseArray(data.exposeHeaders),
+      maxAgeSeconds: data.maxAgeSeconds ? parseInt(data.maxAgeSeconds) : undefined,
+    };
+
     const accessToken = await getAccessTokenSilently();
     const res = await fetch(`/api/apps/${app.id}/cors`, {
       method: "PATCH",
@@ -219,12 +207,25 @@ function CorsSettingsSection() {
         "content-type": "application/json",
         Authorization: `Bearer ${accessToken}`,
       },
-      body: json,
+      body: JSON.stringify(payload),
     });
     if (res.ok) {
       toast("CORS settings saved");
     }
   };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>CORS Settings</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-muted-foreground">Loading...</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -234,10 +235,77 @@ function CorsSettingsSection() {
           Configure Cross-Origin Resource Sharing for your API
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="h-[200px] w-full rounded-md border" ref={editorElRef}></div>
-        {error && <p className="text-sm text-destructive">{error}</p>}
-        <Button onClick={handleSaveClick}>Save Changes</Button>
+      <CardContent>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="allowedOrigins">Allowed Origins</Label>
+            <Input
+              id="allowedOrigins"
+              {...register("allowedOrigins")}
+              placeholder="https://example.com, https://app.example.com"
+            />
+            <p className="text-xs text-muted-foreground">
+              Comma-separated list of allowed origins. Use * to allow all origins.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Allowed Methods</Label>
+            <div className="flex flex-wrap gap-2">
+              {HTTP_METHODS.map((method) => (
+                <Button
+                  key={method}
+                  type="button"
+                  variant={selectedMethods.includes(method) ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => toggleMethod(method)}
+                >
+                  {method}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="allowedHeaders">Allowed Headers</Label>
+            <Input
+              id="allowedHeaders"
+              {...register("allowedHeaders")}
+              placeholder="Content-Type, Authorization, X-Custom-Header"
+            />
+            <p className="text-xs text-muted-foreground">
+              Comma-separated list of allowed request headers.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="exposeHeaders">Expose Headers</Label>
+            <Input
+              id="exposeHeaders"
+              {...register("exposeHeaders")}
+              placeholder="X-Request-Id, X-Response-Time"
+            />
+            <p className="text-xs text-muted-foreground">
+              Comma-separated list of headers exposed to the browser.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="maxAgeSeconds">Max Age (seconds)</Label>
+            <Input
+              id="maxAgeSeconds"
+              type="number"
+              {...register("maxAgeSeconds")}
+              placeholder="86400"
+              className="w-32"
+            />
+            <p className="text-xs text-muted-foreground">
+              How long the preflight response can be cached.
+            </p>
+          </div>
+
+          <Button type="submit">Save Changes</Button>
+        </form>
       </CardContent>
     </Card>
   );
