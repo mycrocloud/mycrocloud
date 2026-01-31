@@ -80,7 +80,9 @@ function App() {
                     <Route path=":routeId/logs" element={<RouteLogs />} />
                   </Route>
                   <Route path="logs" element={<AppLog />} />
-                  <Route path="builds" element={<AppBuilds />} />
+                  <Route path="builds" element={<AppBuilds />}>
+                    <Route path=":buildId" element={null} />
+                  </Route>
                   <Route path="settings" element={<AppSettings />} />
                 </Route>
               </Route>
