@@ -39,10 +39,16 @@ public class AppsController(
     [HttpPost]
     public async Task<IActionResult> Create(AppCreateRequest appCreateRequest)
     {
+        var nameExists = await appDbContext.Apps.AnyAsync(a => a.Name == appCreateRequest.Name);
+        if (nameExists)
+        {
+            return Conflict(new { Message = "App name already exists" });
+        }
+
         var app = appCreateRequest.ToEntity();
-        
+
         await appService.Create(User.GetUserId(), app);
-        
+
         return Created(app.Id.ToString(), new
         {
             app.Id,
@@ -84,6 +90,12 @@ public class AppsController(
         if (requestETag != currentETag)
         {
             return StatusCode(StatusCodes.Status412PreconditionFailed);
+        }
+
+        var nameTaken = await appDbContext.Apps.AnyAsync(a => a.Id != id && a.Name == renameRequest.Name);
+        if (nameTaken)
+        {
+            return Conflict(new { Message = "App name already taken" });
         }
 
         await appService.Rename(id, renameRequest.Name);

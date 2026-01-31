@@ -1,11 +1,14 @@
+import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useNavigate } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
+import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Loader2 } from "lucide-react";
 
 type Inputs = {
   name: string;
@@ -15,30 +18,42 @@ type Inputs = {
 function AppCreate() {
   const navigate = useNavigate();
   const { getAccessTokenSilently } = useAuth0();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const schema = yup.object({
-    name: yup.string().required(),
+    name: yup.string().required("Name is required"),
   });
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<Inputs>({
     resolver: yupResolver(schema),
   });
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
-    const accessToken = await getAccessTokenSilently();
-    //TODO: useApiClient
-    const res = await fetch("/api/apps", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify(data),
-    });
-    if (res.ok) {
-      const id = parseInt(res.headers.get("Location")!);
-      navigate(`../${id}`);
+    setIsSubmitting(true);
+    try {
+      const accessToken = await getAccessTokenSilently();
+      const res = await fetch("/api/apps", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        const id = parseInt(res.headers.get("Location")!);
+        navigate(`../${id}`);
+      } else if (res.status === 409) {
+        setError("name", { message: "This app name is already taken" });
+      } else {
+        toast.error("Something went wrong");
+      }
+    } catch {
+      toast.error("Something went wrong");
+    } finally {
+      setIsSubmitting(false);
     }
   };
   return (
@@ -70,11 +85,13 @@ function AppCreate() {
           type="button"
           variant="outline"
           onClick={() => navigate("/apps")}
+          disabled={isSubmitting}
         >
           Cancel
         </Button>
-        <Button type="submit">
-          Save
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Create App
         </Button>
       </div>
     </form>

@@ -1356,10 +1356,11 @@ function RenameSection() {
   if (!app) throw new Error();
   const { getAccessTokenSilently } = useAuth0();
   const [saving, setSaving] = useState(false);
-  const schema = yup.object({ name: yup.string().required() });
+  const schema = yup.object({ name: yup.string().required("Name is required") });
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<RenameFormInput>({
     resolver: yupResolver(schema),
@@ -1367,19 +1368,28 @@ function RenameSection() {
   });
   const onSubmit = async (input: RenameFormInput) => {
     setSaving(true);
-    const accessToken = await getAccessTokenSilently();
-    const res = await fetch(`/api/apps/${app.id}/rename`, {
-      method: "PATCH",
-      headers: {
-        "content-type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-        "If-Match": app.version,
-      },
-      body: JSON.stringify(input),
-    });
-    setSaving(false);
-    if (res.ok) {
-      toast("Renamed app");
+    try {
+      const accessToken = await getAccessTokenSilently();
+      const res = await fetch(`/api/apps/${app.id}/rename`, {
+        method: "PATCH",
+        headers: {
+          "content-type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+          "If-Match": app.version,
+        },
+        body: JSON.stringify(input),
+      });
+      if (res.ok) {
+        toast("Renamed app");
+      } else if (res.status === 409) {
+        setError("name", { message: "This app name is already taken" });
+      } else {
+        toast.error("Something went wrong");
+      }
+    } catch {
+      toast.error("Something went wrong");
+    } finally {
+      setSaving(false);
     }
   };
 
