@@ -1,6 +1,6 @@
 ﻿namespace WebApp.ApiGateway.Middlewares;
 
-public class DevAppIdResolverMiddleware(RequestDelegate next)
+public class DevAppNameResolverMiddleware(RequestDelegate next)
 {
     public async Task InvokeAsync(HttpContext context, IConfiguration configuration)
     {
@@ -9,12 +9,12 @@ public class DevAppIdResolverMiddleware(RequestDelegate next)
         var match = System.Text.RegularExpressions.Regex.Match(host, pattern);
         if (match.Success)
         {
-            var appId = int.Parse(match.Groups[1].Value);
-            var source = configuration["AppIdSource"]!.Split(":")[0];
-            var name = configuration["AppIdSource"]!.Split(":")[1];
+            var appName = match.Groups[1].Value;
+            var source = configuration["AppNameSource"]!.Split(":")[0];
+            var headerName = configuration["AppNameSource"]!.Split(":")[1];
             if (source == "Header")
             {
-                context.Request.Headers.Append(name, appId.ToString());
+                context.Request.Headers.Append(headerName, appName);
             }
             await next(context);
         }

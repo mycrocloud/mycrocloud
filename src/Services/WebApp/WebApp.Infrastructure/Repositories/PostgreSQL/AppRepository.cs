@@ -55,6 +55,26 @@ values
         throw new NotImplementedException();
     }
 
+    public async Task<App> FindByName(string name)
+    {
+        const string sql =
+"""
+SELECT
+    app_id AppId,
+    user_id UserId,
+    name Name,
+    description Description,
+    created_at CreatedAt,
+    updated_at UpdatedAt
+FROM
+    app
+WHERE
+    "name" = @name
+""";
+        using var connection = new NpgsqlConnection(ConnectionString);
+        return await connection.QuerySingleOrDefaultAsync<App>(sql, new { name });
+    }
+
     public async Task<App> FindByUserIdAndAppName(string userId, string name)
     {
         const string sql =

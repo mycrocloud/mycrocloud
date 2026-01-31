@@ -79,7 +79,7 @@ app.UseLoggingMiddleware();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseMiddleware<DevAppIdResolverMiddleware>();
+    app.UseMiddleware<DevAppNameResolverMiddleware>();
 }
 
 app.UseAppResolverMiddleware();

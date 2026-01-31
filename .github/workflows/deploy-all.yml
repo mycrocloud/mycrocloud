@@ -32,3 +32,14 @@ jobs:
           namespace: deployment
           aws-iam-role: ${{ vars.AWS_IAM_ROLE_GITHUB_ACTIONS_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Deploy monitoring namespace
+        uses: ./.github/actions/deploy-action
+        with:
+          ssh-host: ${{ vars.SSH_HOST }}
+          ssh-username: ${{ vars.SSH_USERNAME }}
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          work-dir: /opt/mycrocloud
+          namespace: monitoring
+          aws-iam-role: ${{ vars.AWS_IAM_ROLE_GITHUB_ACTIONS_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
