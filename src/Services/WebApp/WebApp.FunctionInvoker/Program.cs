@@ -1,14 +1,15 @@
 ﻿using System.Diagnostics;
 using System.Text.Json;
 using WebApp.FunctionInvoker;
+using WebApp.FunctionInvoker.Apis.Fetch;
 
 var result = new Result();
-using var logger = new SafeLogger("data/log.json");
 var startingTimestamp = Stopwatch.GetTimestamp();
 try
 {
-    var executor = new JintExecutor(logger);
+    var executor = new JintExecutor();
     executor.Initialize();
+    var console = executor.Console;
 
     var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
     try
@@ -19,11 +20,15 @@ try
     }
     catch (OperationCanceledException)
     {
-        logger.Error("Execution timed out.");
+        console.Error("Execution timed out.");
+    }
+    catch (CountLimitException ex)
+    {
+        console.Error("CountLimitException");
     }
     catch (Exception ex)
     {
-        logger.Error("Execution error: " + ex.Message);
+        console.Error("Execution error: " + ex.Message);
     }
 }
 finally

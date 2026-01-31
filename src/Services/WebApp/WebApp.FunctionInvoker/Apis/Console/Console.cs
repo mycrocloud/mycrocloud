@@ -2,9 +2,9 @@ using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace WebApp.FunctionInvoker;
+namespace WebApp.FunctionInvoker.Apis.Console;
 
-public class SafeLogger(
+public class Console(
     string logFilePath = "log.json",
     int maxLogsPerSecond = 10,
     int maxLogLength = 500,
@@ -163,7 +163,7 @@ public class SafeLogger(
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Failed to save logs to {logFilePath}: {ex.Message}");
+                System.Console.Error.WriteLine($"Failed to save logs to {logFilePath}: {ex.Message}");
             }
         }
     }
