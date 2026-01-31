@@ -46,7 +46,7 @@ function App() {
         <div className="container mx-auto min-h-screen p-2">
           <Routes>
             <Route path="/" Component={Home} />
-            <Route path="settings" Component={Settings} />
+            <Route path="settings" element={<ProtectedPage children={<Settings />} />} />
             <Route path="apps">
               <Route index element={<ProtectedPage children={<AppList />} />} />
               <Route
@@ -79,10 +79,6 @@ function App() {
               />
               <Route path="slack/link" Component={IntegrationsSlackLink} />
             </Route>
-            <Route
-              path="_about"
-              element={<ProtectedPage children={<About />} />}
-            />
             <Route path="*" Component={NotFoundPage} />
           </Routes>
         </div>
