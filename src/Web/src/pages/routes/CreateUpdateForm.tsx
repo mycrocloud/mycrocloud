@@ -15,14 +15,46 @@ import {
   RouteCreateUpdateInputs,
   routeCreateUpdateInputsSchema,
 } from "./CreateUpdateFormInputs";
-import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/16/solid";
-import {
-  ArrowTopRightOnSquareIcon,
-} from "@heroicons/react/24/solid";
 import { getConfig } from "@/config";
-const { WEBAPP_APIGATEWAY_DOMAIN } = getConfig();
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  ExternalLink,
+  Copy,
+  ChevronDown,
+  Plus,
+  X,
+  AlertTriangle,
+  Shield,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { toast } from "react-toastify";
+
+const { WEBAPP_APIGATEWAY_DOMAIN, EDITOR_ORIGIN } = getConfig();
 const apiGatewayDomain = WEBAPP_APIGATEWAY_DOMAIN;
-const { EDITOR_ORIGIN } = getConfig();
 
 export default function RouteCreateUpdate({
   route,
@@ -49,8 +81,8 @@ export default function RouteCreateUpdate({
       responseStatusCode: route?.responseStatusCode || 200,
       responseHeaders: route?.responseHeaders
         ? route.responseHeaders.map((value) => {
-          return { name: value.name, value: value.value };
-        })
+            return { name: value.name, value: value.value };
+          })
         : [],
       response: route?.response,
       responseBodyLanguage: route?.responseBodyLanguage || "plaintext",
@@ -65,168 +97,206 @@ export default function RouteCreateUpdate({
     handleSubmit,
     formState: { errors },
     watch,
+    setValue,
   } = forms;
 
   const responseType = watch("responseType");
+  const enabled = watch("enabled");
   const url = appDomain + watch("path");
+
   const onInvalid = (e: FieldErrors<RouteCreateUpdateInputs>) => {
     console.error(e);
   };
+
+  const copyUrl = () => {
+    navigator.clipboard.writeText(url);
+    toast.success("URL copied to clipboard");
+  };
+
   return (
     <FormProvider {...forms}>
-      <form className="h-full p-2" onSubmit={handleSubmit(onSubmit, onInvalid)}>
-        {route?.status === "Blocked" && (
-          <div className="border border-red-200 bg-red-50 p-2 text-red-700">
-            <p>
-              This route is blocked because of some reason. Your route will be
-              reviewed by our team.
-            </p>
-          </div>
-        )}
-        <div className="overflow-y-auto">
-          <div>
-            <label htmlFor="name">Name</label>
-            <input
-              id="name"
-              type="text"
-              {...register("name")}
-              autoComplete="none"
-              className="inline-block w-full border border-gray-200 px-2 py-1"
-            />
-            {errors.name && (
-              <span className="text-red-500">{errors.name.message}</span>
-            )}
-          </div>
-          <div className="mt-1">
-            <label htmlFor="enable" className="flex items-center">
-              <input type="checkbox" {...register("enabled")} id="enable" />
-              Enable
-            </label>
-            {errors.enabled && (
-              <span className="text-red-500">{errors.enabled.message}</span>
-            )}
-          </div>
-          <section>
-            <div className="flex">
-              <h3 className="mt-3 border-l-2 border-primary px-1 font-semibold">
-                Request
-              </h3>
-            </div>
-            <div className="mt-2">
-              <label>Method and Path</label>
-              <div className="flex">
-                <select
-                  className="w-24 border border-gray-200"
-                  {...register("method")}
-                >
-                  {methods.map((m) => (
-                    <option key={m} value={m.toUpperCase()}>
-                      {m.toUpperCase()}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  autoComplete="none"
-                  type="text"
-                  className="inline-block flex-1 border border-gray-200 px-2 py-1"
-                  {...register("path")}
-                />
-              </div>
-              {errors.method && (
-                <span className="text-red-500">{errors.method.message}</span>
-              )}
-              {errors.path && (
-                <span className="text-red-500">{errors.path.message}</span>
-              )}
-              <div className="mt-1">
-                <small className="me-2">URL:</small>
-                <a
-                  className="inline-flex text-blue-500 hover:underline"
-                  href={url}
-                  target="_blank"
-                >
-                  <small>{url}</small>
-                  <ArrowTopRightOnSquareIcon className="ms-0.5 h-4 w-4" />
-                </a>
-                <button
-                  type="button"
-                  onClick={() => navigator.clipboard.writeText(url)}
-                  className="ms-3 text-blue-500 hover:underline"
-                >
-                  <small>Copy</small>
-                </button>
-              </div>
-            </div>
-            <div className="mt-1">
-              <div className="p-1">
-                <input
-                  id="requireAuthorization"
-                  type="checkbox"
-                  {...register("requireAuthorization")}
-                  className="me-1 inline-block border border-gray-200 px-2 py-1"
-                />
-                <label htmlFor="requireAuthorization" className="mt-2">
-                  Require Authorization
-                </label>
-              </div>
-              {errors.requireAuthorization && (
-                <span className="text-red-500">
-                  {errors.requireAuthorization.message}
-                </span>
-              )}
-            </div>
-            <div className="mt-1">
-              <RequestValidation />
-            </div>
-          </section>
-          <section>
-            <h3 className="mt-3 border-l-2 border-primary pl-1 font-semibold">
-              Response
-            </h3>
-            <div className="mt-1">
-              <label className="me-1">Type</label>
-              <select {...register("responseType")}>
-                {["Static", "StaticFile", "Function"].map((t) => (
-                  <option key={t}>{t}</option>
-                ))}
-              </select>
-            </div>
+      <form
+        className="flex h-full flex-col"
+        onSubmit={handleSubmit(onSubmit, onInvalid)}
+      >
+        <div className="flex-1 overflow-y-auto p-4">
+          {route?.status === "Blocked" && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                This route is blocked and under review by our team.
+              </AlertDescription>
+            </Alert>
+          )}
 
-            <div className="mt-1">
+          {/* Header */}
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <div className="flex-1 space-y-2">
+              <Label htmlFor="name">Route Name</Label>
+              <Input
+                id="name"
+                {...register("name")}
+                autoComplete="off"
+                className="max-w-md"
+              />
+              {errors.name && (
+                <p className="text-sm text-destructive">{errors.name.message}</p>
+              )}
+            </div>
+            <div className="flex items-center gap-2 pt-7">
+              <Switch
+                id="enabled"
+                checked={enabled}
+                onCheckedChange={(checked) => setValue("enabled", checked)}
+              />
+              <Label htmlFor="enabled" className="text-sm">
+                {enabled ? "Enabled" : "Disabled"}
+              </Label>
+            </div>
+          </div>
+
+          {/* Request Section */}
+          <Card className="mb-4">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Request</CardTitle>
+              <CardDescription>Configure the endpoint and request settings</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Method and Path */}
+              <div className="space-y-2">
+                <Label>Endpoint</Label>
+                <div className="flex gap-2">
+                  <Select
+                    value={watch("method")}
+                    onValueChange={(value) => setValue("method", value)}
+                  >
+                    <SelectTrigger className="w-28">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {methods.map((m) => (
+                        <SelectItem key={m} value={m.toUpperCase()}>
+                          {m.toUpperCase()}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    {...register("path")}
+                    autoComplete="off"
+                    className="flex-1"
+                    placeholder="/api/example"
+                  />
+                </div>
+                {errors.method && (
+                  <p className="text-sm text-destructive">{errors.method.message}</p>
+                )}
+                {errors.path && (
+                  <p className="text-sm text-destructive">{errors.path.message}</p>
+                )}
+
+                {/* URL Preview */}
+                <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-2 text-sm">
+                  <span className="text-muted-foreground">URL:</span>
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-primary hover:underline"
+                  >
+                    {url}
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={copyUrl}
+                    className="ml-auto h-6"
+                  >
+                    <Copy className="mr-1 h-3 w-3" />
+                    Copy
+                  </Button>
+                </div>
+              </div>
+
+              {/* Authorization */}
+              <div className="flex items-center gap-3 rounded-md border p-3">
+                <Shield className="h-4 w-4 text-muted-foreground" />
+                <div className="flex-1">
+                  <Label htmlFor="requireAuthorization" className="text-sm font-medium">
+                    Require Authorization
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Requests must include a valid authentication token
+                  </p>
+                </div>
+                <Switch
+                  id="requireAuthorization"
+                  checked={watch("requireAuthorization") || false}
+                  onCheckedChange={(checked) => setValue("requireAuthorization", checked)}
+                />
+              </div>
+
+              {/* Validation */}
+              <RequestValidation />
+            </CardContent>
+          </Card>
+
+          {/* Response Section */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Response</CardTitle>
+              <CardDescription>Configure what this endpoint returns</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Response Type</Label>
+                <Select
+                  value={responseType}
+                  onValueChange={(value) => setValue("responseType", value)}
+                >
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Static">Static</SelectItem>
+                    <SelectItem value="StaticFile">Static File</SelectItem>
+                    <SelectItem value="Function">Function</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               {responseType === "Static" && <StaticResponse />}
               {responseType === "Function" && <FunctionHandler />}
               {errors.response && (
-                <p className="text-red-500">{errors.response.message}</p>
+                <p className="text-sm text-destructive">{errors.response.message}</p>
               )}
-            </div>
-          </section>
+            </CardContent>
+          </Card>
         </div>
-        <div className="sticky bottom-0 mt-2">
-          <button
-            type="submit"
-            className="border bg-primary px-3 py-1 text-center font-medium text-white enabled:hover:bg-cyan-700"
-            disabled={route?.status === "Blocked"}
-          >
-            Save
-          </button>
+
+        {/* Footer */}
+        <div className="border-t bg-background p-4">
+          <Button type="submit" disabled={route?.status === "Blocked"}>
+            {route ? "Save Changes" : "Create Route"}
+          </Button>
         </div>
       </form>
     </FormProvider>
   );
 }
 
-const quickAddResponseHeaderButtons = [
-  { text: "Add", key: "", value: "" },
-  { text: "text/css", key: "content-type", value: "text/css" },
-  { text: "text/csv", key: "content-type", value: "text/csv" },
-  { text: "text/html", key: "content-type", value: "text/html" },
-  { text: "image/jpeg", key: "content-type", value: "image/jpeg" },
-  { text: "text/javascript", key: "content-type", value: "text/javascript" },
-  { text: "application/json", key: "content-type", value: "application/json" },
-  { text: "image/png", key: "content-type", value: "image/png" },
-  { text: "application/pdf", key: "content-type", value: "application/pdf" },
-  { text: "image/svg+xml", key: "content-type", value: "image/svg+xml" },
-  { text: "text/plain", key: "content-type", value: "text/plain" },
+const quickAddHeaders = [
+  { label: "JSON", name: "content-type", value: "application/json" },
+  { label: "HTML", name: "content-type", value: "text/html" },
+  { label: "Plain Text", name: "content-type", value: "text/plain" },
+  { label: "CSS", name: "content-type", value: "text/css" },
+  { label: "JavaScript", name: "content-type", value: "text/javascript" },
+  { label: "PNG", name: "content-type", value: "image/png" },
+  { label: "JPEG", name: "content-type", value: "image/jpeg" },
+  { label: "SVG", name: "content-type", value: "image/svg+xml" },
+  { label: "PDF", name: "content-type", value: "application/pdf" },
 ];
 
 function RequestValidation() {
@@ -235,16 +305,17 @@ function RequestValidation() {
     setValue,
     formState: { errors },
   } = useFormContext<RouteCreateUpdateInputs>();
-  const [tab, setTab] = useState("requestQuerySchema");
+  const [isOpen, setIsOpen] = useState(false);
+  const [tab, setTab] = useState("query");
   const editorEl = useRef<HTMLDivElement>(null);
   const editor = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const requestQuerySchemaModel = useRef<monaco.editor.ITextModel | null>(null);
-  const requestHeaderSchemaModel = useRef<monaco.editor.ITextModel | null>(
-    null,
-  );
+  const requestHeaderSchemaModel = useRef<monaco.editor.ITextModel | null>(null);
   const requestBodySchemaModel = useRef<monaco.editor.ITextModel | null>(null);
 
   useEffect(() => {
+    if (!isOpen) return;
+
     requestQuerySchemaModel.current?.dispose();
     requestHeaderSchemaModel.current?.dispose();
     requestBodySchemaModel.current?.dispose();
@@ -252,34 +323,35 @@ function RequestValidation() {
 
     requestQuerySchemaModel.current = monaco.editor.createModel(
       getValues("requestQuerySchema") || "",
-      "json",
+      "json"
     );
     requestQuerySchemaModel.current.onDidChangeContent(() => {
-      const value = requestQuerySchemaModel.current!.getValue();
-      setValue("requestQuerySchema", value);
+      setValue("requestQuerySchema", requestQuerySchemaModel.current!.getValue());
     });
 
     requestHeaderSchemaModel.current = monaco.editor.createModel(
       getValues("requestHeaderSchema") || "",
-      "json",
+      "json"
     );
     requestHeaderSchemaModel.current.onDidChangeContent(() => {
-      const value = requestHeaderSchemaModel.current!.getValue();
-      setValue("requestHeaderSchema", value);
+      setValue("requestHeaderSchema", requestHeaderSchemaModel.current!.getValue());
     });
 
     requestBodySchemaModel.current = monaco.editor.createModel(
       getValues("requestBodySchema") || "",
-      "json",
+      "json"
     );
     requestBodySchemaModel.current.onDidChangeContent(() => {
-      const value = requestBodySchemaModel.current!.getValue();
-      setValue("requestBodySchema", value);
+      setValue("requestBodySchema", requestBodySchemaModel.current!.getValue());
     });
 
     editor.current = monaco.editor.create(editorEl.current!, {
       model: requestQuerySchemaModel.current,
       automaticLayout: true,
+      minimap: { enabled: false },
+      lineNumbers: "off",
+      folding: false,
+      scrollBeyondLastLine: false,
     });
 
     return () => {
@@ -288,91 +360,72 @@ function RequestValidation() {
       requestBodySchemaModel.current?.dispose();
       editor.current?.dispose();
     };
-  }, []);
+  }, [isOpen]);
 
   useEffect(() => {
-    if (!editor.current) {
-      return;
-    }
+    if (!editor.current) return;
     switch (tab) {
-      case "requestQuerySchema":
+      case "query":
         editor.current.setModel(requestQuerySchemaModel.current!);
         break;
-      case "requestHeaderSchema":
+      case "headers":
         editor.current.setModel(requestHeaderSchemaModel.current!);
         break;
-      case "requestBodySchema":
+      case "body":
         editor.current.setModel(requestBodySchemaModel.current!);
-        break;
-      default:
         break;
     }
   }, [tab]);
 
-  const [show, setShow] = useState(false);
-
   return (
-    <div>
-      <button
-        type="button"
-        onClick={() => setShow(!show)}
-        className="inline-flex items-center"
-      >
-        {show ? (
-          <ChevronDownIcon className="h-4 w-4 text-blue-500" />
-        ) : (
-          <ChevronRightIcon className="h-4 w-4 text-blue-500" />
-        )}
-        Validation
-      </button>
-      <div className={`p-1 ${show ? "" : "hidden"}`}>
-        <div className="flex space-x-2">
-          <button
-            type="button"
-            onClick={() => setTab("requestQuerySchema")}
-            className={
-              tab === "requestQuerySchema" ? "border-b-2 border-primary" : ""
-            }
-          >
-            Query Params
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab("requestHeaderSchema")}
-            className={
-              tab === "requestHeaderSchema" ? "border-b-2 border-primary" : ""
-            }
-          >
-            Headers
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab("requestBodySchema")}
-            className={
-              tab === "requestBodySchema" ? "border-b-2 border-primary" : ""
-            }
-          >
-            Body
-          </button>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <CollapsibleTrigger asChild>
+        <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
+          <ChevronDown
+            className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")}
+          />
+          Request Validation (JSON Schema)
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="mt-2">
+        <div className="rounded-md border">
+          <Tabs value={tab} onValueChange={setTab}>
+            <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0">
+              <TabsTrigger
+                value="query"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none"
+              >
+                Query Params
+              </TabsTrigger>
+              <TabsTrigger
+                value="headers"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none"
+              >
+                Headers
+              </TabsTrigger>
+              <TabsTrigger
+                value="body"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:shadow-none"
+              >
+                Body
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value={tab} className="m-0">
+              <div ref={editorEl} className="h-[180px] w-full" />
+            </TabsContent>
+          </Tabs>
         </div>
-        <div ref={editorEl} className="mt-1 h-[200px] w-full"></div>
         {errors.requestQuerySchema && (
-          <span className="block text-red-500">
-            {errors.requestQuerySchema.message}
-          </span>
+          <p className="mt-1 text-sm text-destructive">{errors.requestQuerySchema.message}</p>
         )}
         {errors.requestHeaderSchema && (
-          <span className="block text-red-500">
-            {errors.requestHeaderSchema.message}
-          </span>
+          <p className="mt-1 text-sm text-destructive">{errors.requestHeaderSchema.message}</p>
         )}
         {errors.requestBodySchema && (
-          <span className="block text-red-500">
-            {errors.requestBodySchema.message}
-          </span>
+          <p className="mt-1 text-sm text-destructive">{errors.requestBodySchema.message}</p>
         )}
-      </div>
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 
@@ -387,7 +440,7 @@ function StaticResponse() {
   } = useFormContext<RouteCreateUpdateInputs>();
   const {
     fields: responseHeaders,
-    append: addResponseHeaders,
+    append: addResponseHeader,
     remove: removeResponseHeader,
   } = useFieldArray({ control, name: "responseHeaders" });
 
@@ -401,6 +454,8 @@ function StaticResponse() {
       language: getValues("responseBodyLanguage"),
       value: getValues("response") || undefined,
       minimap: { enabled: false },
+      automaticLayout: true,
+      scrollBeyondLastLine: false,
     });
     bodyEditor.current.onDidChangeModelContent(() => {
       setValue("response", bodyEditor.current!.getValue());
@@ -416,110 +471,118 @@ function StaticResponse() {
     if (bodyEditor.current && responseBodyLanguage) {
       monaco.editor.setModelLanguage(
         bodyEditor.current!.getModel()!,
-        responseBodyLanguage,
+        responseBodyLanguage
       );
     }
   }, [responseBodyLanguage]);
+
   return (
-    <>
-      <div className="mt-2">
-        <label htmlFor="responseStatusCode" className="block">
-          Status Code
-        </label>
-        <input
+    <div className="space-y-4">
+      {/* Status Code */}
+      <div className="space-y-2">
+        <Label htmlFor="responseStatusCode">Status Code</Label>
+        <Input
           id="responseStatusCode"
           type="number"
           {...register("responseStatusCode")}
-          autoComplete="none"
-          className="block w-1/6 border border-gray-200 px-2 py-1"
+          className="w-24"
         />
         {errors.responseStatusCode && (
-          <span className="text-red-500">
-            {errors.responseStatusCode.message}
-          </span>
+          <p className="text-sm text-destructive">{errors.responseStatusCode.message}</p>
         )}
       </div>
-      <div className="mt-2">
-        <label htmlFor="header">Headers</label>
-        <div className="flex flex-col space-y-0.5">
+
+      {/* Headers */}
+      <div className="space-y-2">
+        <Label>Response Headers</Label>
+        <div className="space-y-2">
           {responseHeaders.map((header, index) => (
-            <div key={header.id} className="flex space-x-1">
-              <input
-                id={`responseHeaders[${index}].name`}
-                type="text"
-                {...register(`responseHeaders.${index}.name` as const)}
-                autoComplete="none"
-                className="border border-gray-200 px-2 py-1"
+            <div key={header.id} className="flex items-center gap-2">
+              <Input
+                {...register(`responseHeaders.${index}.name`)}
+                placeholder="Header name"
+                className="flex-1"
               />
-              <input
-                id={`responseHeaders[${index}].value`}
-                type="text"
-                {...register(`responseHeaders.${index}.value` as const)}
-                autoComplete="none"
-                className="border border-gray-200 px-2 py-1"
+              <Input
+                {...register(`responseHeaders.${index}.value`)}
+                placeholder="Header value"
+                className="flex-1"
               />
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() => removeResponseHeader(index)}
-                className="text-red-600"
+                className="h-9 w-9 text-destructive hover:text-destructive"
               >
-                Remove
-              </button>
+                <X className="h-4 w-4" />
+              </Button>
             </div>
           ))}
         </div>
-        <div className="flex flex-wrap space-x-2">
-          {quickAddResponseHeaderButtons.map((button, index) => (
-            <button
-              key={index}
+        <div className="flex flex-wrap gap-1">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => addResponseHeader({ name: "", value: "" })}
+          >
+            <Plus className="mr-1 h-3 w-3" />
+            Add Header
+          </Button>
+          {quickAddHeaders.map((header) => (
+            <Button
+              key={header.label}
               type="button"
-              onClick={() =>
-                addResponseHeaders({ name: button.key, value: button.value })
-              }
-              className="mt-1 text-blue-600 hover:underline"
+              variant="ghost"
+              size="sm"
+              onClick={() => addResponseHeader({ name: header.name, value: header.value })}
+              className="text-xs"
             >
-              {button.text}
-            </button>
+              {header.label}
+            </Button>
           ))}
         </div>
       </div>
-      <div className="mt-2">
-        <label className="block">Body</label>
-        <div className="mt-1 flex">
-          <div>
-            <label
-              htmlFor="useDynamicResponse"
-              className="mt-2 flex items-center"
-            >
-              <input
+
+      {/* Body */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label>Response Body</Label>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Switch
                 id="useDynamicResponse"
-                type="checkbox"
-                {...register("useDynamicResponse")}
-                className="inline-block border border-gray-200 px-2 py-1"
+                checked={watch("useDynamicResponse") || false}
+                onCheckedChange={(checked) => setValue("useDynamicResponse", checked)}
               />
-              Use dynamic response
-            </label>
-          </div>
-          <div className="ms-auto">
-            <label htmlFor="responseBodyLanguage">Editor format</label>
-            <select {...register("responseBodyLanguage")}>
-              {bodyLanguages.map((l) => (
-                <option key={l}>{l}</option>
-              ))}
-            </select>
+              <Label htmlFor="useDynamicResponse" className="text-xs text-muted-foreground">
+                Dynamic response
+              </Label>
+            </div>
+            <Select
+              value={responseBodyLanguage}
+              onValueChange={(value) => setValue("responseBodyLanguage", value)}
+            >
+              <SelectTrigger className="h-8 w-32 text-xs">
+                <SelectValue placeholder="Language" />
+              </SelectTrigger>
+              <SelectContent>
+                {bodyLanguages.map((lang) => (
+                  <SelectItem key={lang} value={lang}>
+                    {lang}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
-        <div className="mt-1">
-          <div
-            ref={bodyEditorRef}
-            style={{ width: "100%", height: "300px" }}
-          ></div>
-          {errors.response && (
-            <p className="text-red-500">{errors.response.message}</p>
-          )}
-        </div>
+        <div ref={bodyEditorRef} className="h-[280px] w-full rounded-md border" />
+        {errors.response && (
+          <p className="text-sm text-destructive">{errors.response.message}</p>
+        )}
       </div>
-    </>
+    </div>
   );
 }
 
@@ -565,16 +628,11 @@ function FunctionHandler() {
         case "changed":
           setValue("response", payload);
           break;
-        default:
-          break;
       }
     };
 
     window.addEventListener("message", onMessage);
-
-    return () => {
-      window.removeEventListener("message", onMessage);
-    };
+    return () => window.removeEventListener("message", onMessage);
   }, []);
 
   useEffect(() => {
@@ -589,20 +647,23 @@ function FunctionHandler() {
           language: "javascript",
         },
       },
-      EDITOR_ORIGIN,
+      EDITOR_ORIGIN
     );
   }, [editorLoaded]);
 
   return (
-    <div className="mt-1">
-      <label>Handler</label>
+    <div className="space-y-2">
+      <Label>Function Handler</Label>
+      <p className="text-xs text-muted-foreground">
+        Write a JavaScript function that returns a response object with statusCode, headers, and body.
+      </p>
       <iframe
         ref={editorRef}
         src={EDITOR_ORIGIN + "?id=" + editorId}
-        style={{ width: "100%", height: "200px" }}
+        className="h-[280px] w-full rounded-md border"
       />
       {errors.response && (
-        <p className="text-red-500">{errors.response.message}</p>
+        <p className="text-sm text-destructive">{errors.response.message}</p>
       )}
     </div>
   );
