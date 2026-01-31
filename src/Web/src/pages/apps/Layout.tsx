@@ -29,6 +29,7 @@ export default function AppLayout() {
 
   const isMatchLogs = part3 == "logs";
   const isMatchIntegrations = part3 == "integrations";
+  const isMatchSettings = part3 == "settings";
 
   useEffect(() => {
     const getApp = async () => {
@@ -109,6 +110,12 @@ export default function AppLayout() {
               className={`text-xs ${isMatchLogs ? "text-primary" : ""}`}
             >
               Logs
+            </Link>
+            <Link
+              to="settings"
+              className={`text-xs ${isMatchSettings ? "text-primary" : ""}`}
+            >
+              Settings
             </Link>
           </div>
           <div className="flex-1">

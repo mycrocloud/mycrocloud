@@ -35,6 +35,7 @@ import { default as IntegrationsSlackLink } from "./pages/settings/slack_link";
 import Settings from "./pages/settings";
 import { getConfig } from "./config";
 import Home from "./pages/Home";
+import AppSettings from "./pages/apps/Settings";
 const { AUTH0_DOMAIN, AUTH0_CLIENTID, AUTH0_AUDIENCE } = getConfig();
 
 function App() {
@@ -95,6 +96,7 @@ function App() {
                 </Route>
                 <Route path="logs" Component={AppLog} />
                 <Route path="integrations" Component={Integrations}></Route>
+                <Route path="settings" Component={AppSettings}></Route>
               </Route>
             </Route>
             <Route path="integrations">
