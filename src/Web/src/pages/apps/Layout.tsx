@@ -11,6 +11,45 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { useApiClient } from "@/hooks";
+import { cn } from "@/lib/utils";
+
+interface NavItemProps {
+  to: string;
+  label: string;
+  isActive: boolean;
+}
+
+function NavItem({ to, label, isActive }: NavItemProps) {
+  return (
+    <Link
+      to={to}
+      className={cn(
+        "block rounded-lg px-3 py-2 text-sm transition-colors",
+        isActive
+          ? "bg-primary text-primary-foreground"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+      )}
+    >
+      {label}
+    </Link>
+  );
+}
+
+interface NavGroupProps {
+  label: string;
+  children: React.ReactNode;
+}
+
+function NavGroup({ label, children }: NavGroupProps) {
+  return (
+    <div className="space-y-1">
+      <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </div>
+      <div className="ml-4 space-y-1 border-l pl-3">{children}</div>
+    </div>
+  );
+}
 
 export default function AppLayout() {
   const { get } = useApiClient();
@@ -34,12 +73,17 @@ export default function AppLayout() {
   }, []);
 
   if (!app) {
-    return <h1>Loading...</h1>;
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
   }
+
   return (
     <AppContext.Provider value={{ app, setApp }}>
-      <div className="">
-        <Breadcrumb className="p-1">
+      <div>
+        <Breadcrumb className="px-4 py-2">
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
@@ -58,48 +102,56 @@ export default function AppLayout() {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
-        <div className="flex min-h-screen border">
-          <div className="flex w-28 flex-col space-y-0.5 border-r p-1">
-            <Link
-              to=""
-              className={`text-xs ${isMatch_Overview ? "text-primary" : ""}`}
-            >
-              Overview
-            </Link>
-            <div className="text-xs text-muted-foreground pt-2">API</div>
-            <div className="flex flex-col space-y-0.5 pl-2">
-              <Link
-                to="routes"
-                className={`text-xs ${isMatch_Routes ? "text-primary" : ""}`}
-              >
-                Routes
-              </Link>
-              <Link
-                to="logs"
-                className={`text-xs ${isMatchLogs ? "text-primary" : ""}`}
-              >
-                Logs
-              </Link>
-            </div>
-            <div className="text-xs text-muted-foreground pt-2">Pages</div>
-            <div className="flex flex-col space-y-0.5 pl-2">
-              <Link
-                to="builds"
-                className={`text-xs ${isMatchBuilds ? "text-primary" : ""}`}
-              >
-                Builds
-              </Link>
-            </div>
-            <Link
-              to="settings"
-              className={`text-xs pt-2 ${isMatchSettings ? "text-primary" : ""}`}
-            >
-              Settings
-            </Link>
-          </div>
-          <div className="flex-1">
+
+        <div className="flex min-h-[calc(100vh-100px)]">
+          {/* Sidebar */}
+          <aside className="w-56 border-r bg-muted/30">
+            <nav className="flex flex-col gap-4 p-4">
+              {/* Overview */}
+              <NavItem
+                to=""
+                label="Overview"
+                isActive={isMatch_Overview}
+              />
+
+              {/* API Section */}
+              <NavGroup label="API">
+                <NavItem
+                  to="routes"
+                  label="Routes"
+                  isActive={isMatch_Routes}
+                />
+                <NavItem
+                  to="logs"
+                  label="Logs"
+                  isActive={isMatchLogs}
+                />
+              </NavGroup>
+
+              {/* Pages Section */}
+              <NavGroup label="Pages">
+                <NavItem
+                  to="builds"
+                  label="Builds"
+                  isActive={isMatchBuilds}
+                />
+              </NavGroup>
+
+              {/* Settings */}
+              <div className="mt-auto pt-4 border-t">
+                <NavItem
+                  to="settings"
+                  label="Settings"
+                  isActive={isMatchSettings}
+                />
+              </div>
+            </nav>
+          </aside>
+
+          {/* Main Content */}
+          <main className="flex-1 overflow-auto">
             <Outlet />
-          </div>
+          </main>
         </div>
       </div>
     </AppContext.Provider>
