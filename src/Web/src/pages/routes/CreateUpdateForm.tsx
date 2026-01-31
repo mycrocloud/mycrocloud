@@ -54,7 +54,10 @@ import { cn } from "@/lib/utils";
 import { toast } from "react-toastify";
 
 const { WEBAPP_APIGATEWAY_DOMAIN, EDITOR_ORIGIN } = getConfig();
-const apiGatewayDomain = WEBAPP_APIGATEWAY_DOMAIN;
+
+function slugify(text: string): string {
+  return text.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+}
 
 export default function RouteCreateUpdate({
   route,
@@ -65,7 +68,8 @@ export default function RouteCreateUpdate({
 }) {
   const { app } = useContext(AppContext)!;
   if (!app) throw new Error();
-  const appDomain = apiGatewayDomain.replace("__app_id__", app.id.toString());
+  const appSlug = slugify(app.name);
+  const appDomain = WEBAPP_APIGATEWAY_DOMAIN.replace("__app_id__", appSlug);
 
   const forms = useForm<RouteCreateUpdateInputs>({
     resolver: yupResolver(routeCreateUpdateInputsSchema),

@@ -46,7 +46,7 @@ export default function AppOverview() {
   const { getAccessTokenSilently } = useAuth0();
   const [logs, setLogs] = useState<IRouteLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const domain = getAppDomain(app.id);
+  const domain = getAppDomain(app.name);
 
   useEffect(() => {
     const fetchLogs = async () => {
