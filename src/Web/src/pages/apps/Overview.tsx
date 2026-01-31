@@ -49,6 +49,7 @@ export default function AppOverview() {
   const domain = getAppDomain(app.name);
 
   useEffect(() => {
+    //@ts-ignore
     const fetchLogs = async () => {
       try {
         const accessToken = await getAccessTokenSilently();

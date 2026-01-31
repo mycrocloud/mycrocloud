@@ -38,7 +38,7 @@ export default function TokenEdit() {
   const navigate = useNavigate();
   const { get, patch, post } = useApiClient();
 
-  const [token, setToken] = useState<IToken | null>(null);
+  const [, setToken] = useState<IToken | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);

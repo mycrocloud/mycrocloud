@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { useApiClient } from "@/hooks";
@@ -29,7 +29,6 @@ type FormData = {
 type Step = "form" | "created";
 
 export default function TokenCreate() {
-  const navigate = useNavigate();
   const { post } = useApiClient();
   const [step, setStep] = useState<Step>("form");
   const [createdToken, setCreatedToken] = useState<string>("");
