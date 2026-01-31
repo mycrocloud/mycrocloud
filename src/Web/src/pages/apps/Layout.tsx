@@ -2,16 +2,9 @@ import { Link, Outlet, useLocation, useParams } from "react-router-dom";
 import { AppContext } from ".";
 import { useEffect, useState } from "react";
 import IApp from "./App";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import { useApiClient } from "@/hooks";
 import { cn } from "@/lib/utils";
+import { ChevronLeft } from "lucide-react";
 
 interface NavItemProps {
   to: string;
@@ -82,77 +75,66 @@ export default function AppLayout() {
 
   return (
     <AppContext.Provider value={{ app, setApp }}>
-      <div>
-        <Breadcrumb className="px-4 py-2">
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to="/">Home</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to="/apps">Apps</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{app.name}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+      <div className="flex min-h-[calc(100vh-64px)]">
+        {/* Sidebar */}
+        <aside className="w-56 border-r bg-muted/30">
+          {/* App Header */}
+          <div className="border-b p-4">
+            <Link
+              to="/apps"
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ChevronLeft className="h-3 w-3" />
+              All Apps
+            </Link>
+            <h1 className="mt-1 font-semibold truncate" title={app.name}>
+              {app.name}
+            </h1>
+          </div>
 
-        <div className="flex min-h-[calc(100vh-100px)]">
-          {/* Sidebar */}
-          <aside className="w-56 border-r bg-muted/30">
-            <nav className="flex flex-col gap-4 p-4">
-              {/* Overview */}
+          {/* Navigation */}
+          <nav className="flex flex-col gap-4 p-4">
+            <NavItem
+              to=""
+              label="Overview"
+              isActive={isMatch_Overview}
+            />
+
+            <NavGroup label="API">
               <NavItem
-                to=""
-                label="Overview"
-                isActive={isMatch_Overview}
+                to="routes"
+                label="Routes"
+                isActive={isMatch_Routes}
               />
+              <NavItem
+                to="logs"
+                label="Logs"
+                isActive={isMatchLogs}
+              />
+            </NavGroup>
 
-              {/* API Section */}
-              <NavGroup label="API">
-                <NavItem
-                  to="routes"
-                  label="Routes"
-                  isActive={isMatch_Routes}
-                />
-                <NavItem
-                  to="logs"
-                  label="Logs"
-                  isActive={isMatchLogs}
-                />
-              </NavGroup>
+            <NavGroup label="Pages">
+              <NavItem
+                to="builds"
+                label="Builds"
+                isActive={isMatchBuilds}
+              />
+            </NavGroup>
 
-              {/* Pages Section */}
-              <NavGroup label="Pages">
-                <NavItem
-                  to="builds"
-                  label="Builds"
-                  isActive={isMatchBuilds}
-                />
-              </NavGroup>
+            <div className="mt-auto pt-4 border-t">
+              <NavItem
+                to="settings"
+                label="Settings"
+                isActive={isMatchSettings}
+              />
+            </div>
+          </nav>
+        </aside>
 
-              {/* Settings */}
-              <div className="mt-auto pt-4 border-t">
-                <NavItem
-                  to="settings"
-                  label="Settings"
-                  isActive={isMatchSettings}
-                />
-              </div>
-            </nav>
-          </aside>
-
-          {/* Main Content */}
-          <main className="flex-1 overflow-auto">
-            <Outlet />
-          </main>
-        </div>
+        {/* Main Content */}
+        <main className="flex-1 overflow-auto">
+          <Outlet />
+        </main>
       </div>
     </AppContext.Provider>
   );
