@@ -139,10 +139,8 @@ function RouteExplorer() {
                 return;
               }
 
-              if (parent) {
-                result.push(parent);
-                getPathNodes(items, parent, result);
-              }
+              result.push(parent);
+              getPathNodes(items, parent, result);
             }
           }
         }
@@ -172,7 +170,8 @@ function RouteExplorer() {
   }, [routeId]);
 
   const handleNewRouteClick = async (folderId: number | null = null, level: number = 0) => {
-    if (folderId) {
+    // Use strict null check to handle folderId === 0 correctly (0 is falsy but valid ID)
+    if (folderId !== null) {
       navigate(`new/${folderId}`);
     } else {
       navigate("new");
@@ -180,7 +179,8 @@ function RouteExplorer() {
     setExplorerItems((items) => {
       const newRoute: IExplorerItem = {
         type: "Route",
-        id: -1,
+        // Use unique negative ID to avoid conflicts when creating multiple items before saving
+        id: -Date.now(),
         parentId: folderId,
         route: {
           name: "New Route",
@@ -200,7 +200,8 @@ function RouteExplorer() {
     setExplorerItems((items) => {
       const newFolder: IExplorerItem = {
         type: "Folder",
-        id: -1,
+        // Use unique negative ID to avoid conflicts when creating multiple items before saving
+        id: -Date.now(),
         parentId: parentId,
         route: null,
         folder: { name: "new folder" },
@@ -226,7 +227,8 @@ function RouteExplorer() {
     folder: IExplorerItem,
     name: string,
   ) => {
-    const isNewFolder = folder.id === -1;
+    // Check for negative ID (new unsaved folders have unique negative IDs like -Date.now())
+    const isNewFolder = folder.id < 0;
     const accessToken = await getAccessTokenSilently();
     if (isNewFolder) {
       const res = await fetch(`/api/apps/${app.id}/routes/folders`, {
@@ -240,6 +242,7 @@ function RouteExplorer() {
       ensureSuccess(res);
       setExplorerItems((items) => {
         return items.map((item) => {
+          // Check both type and id to avoid updating wrong item when Route and Folder share same id
           if (item.type === "Folder" && item.id === folder.id) {
             return {
               ...item,
@@ -266,6 +269,7 @@ function RouteExplorer() {
       ensureSuccess(res);
       setExplorerItems((items) => {
         return items.map((item) => {
+          // Check both type and id to avoid updating wrong item when Route and Folder share same id
           if (item.type === "Folder" && item.id === folder.id) {
             return { ...item, folder: { name: name }, isEditing: false };
           }
@@ -334,6 +338,7 @@ function RouteExplorer() {
         setExplorerItems((nodes) => {
           let deleteItems = getFolderItems(item);
           return nodes.filter((node) => {
+            // Check both id and type to avoid deleting wrong item when Route and Folder share same id
             return !deleteItems.some((i) => i.id === node.id && i.type === node.type);
           });
 
@@ -372,6 +377,8 @@ function RouteExplorer() {
 
   const renderNode = (node: IExplorerItem | null, items: IExplorerItem[]) => {
     const isRoot = node === null;
+    // Only Folders can have children; Routes return empty array to prevent duplicate rendering
+    // when a Route and Folder share the same id
     const children = isRoot
       ? items.filter((i) => i.parentId === null)
       : node.type === "Folder"

@@ -75,7 +75,7 @@ export default function AppOverview() {
       }
     };
 
-    //fetchLogs();
+    fetchLogs();
   }, [app.id, getAccessTokenSilently]);
 
   const dailyStats = useMemo(() => {
