@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
+using Api.Utils;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -25,8 +26,14 @@ public class ApiTokenAuthenticationHandler: AuthenticationHandler<ApiTokenAuthen
     {
         var token = Context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
 
+        if (string.IsNullOrEmpty(token))
+        {
+            return AuthenticateResult.Fail("Invalid token");
+        }
+
+        var hashedToken = TokenUtils.HashToken(token);
         var apiToken = await _dbContext.ApiTokens
-            .SingleOrDefaultAsync(t => t.Token == token && t.Status == TokenStatus.Active);
+            .SingleOrDefaultAsync(t => t.HashedToken == hashedToken && t.Status == TokenStatus.Active);
 
         if (apiToken is null)
         {

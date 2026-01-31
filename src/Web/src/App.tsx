@@ -26,6 +26,10 @@ import { default as IntegrationsSlackCallback } from "./pages/settings/slack_cal
 import { default as IntegrationsSlackLink } from "./pages/settings/slack_link";
 
 import Settings from "./pages/settings";
+import Connections from "./pages/settings/Connections";
+import Tokens from "./pages/settings/Tokens";
+import TokenCreate from "./pages/settings/TokenCreate";
+import TokenEdit from "./pages/settings/TokenEdit";
 import { getConfig } from "./config";
 import Home from "./pages/Home";
 import AppSettings from "./pages/apps/Settings";
@@ -46,7 +50,13 @@ function App() {
         <div className="container mx-auto min-h-screen p-2">
           <Routes>
             <Route path="/" Component={Home} />
-            <Route path="settings" element={<ProtectedPage children={<Settings />} />} />
+            <Route path="settings" element={<ProtectedPage children={<Settings />} />}>
+              <Route path="connections" element={<Connections />} />
+              <Route path="tokens" element={<Tokens />}>
+                <Route path="new" element={<TokenCreate />} />
+                <Route path=":id/edit" element={<TokenEdit />} />
+              </Route>
+            </Route>
             <Route path="apps">
               <Route index element={<ProtectedPage children={<AppList />} />} />
               <Route

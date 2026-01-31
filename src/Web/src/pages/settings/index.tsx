@@ -1,21 +1,16 @@
-import { useState } from "react";
+import { Link, Outlet, useLocation, Navigate } from "react-router-dom";
 import { Settings as SettingsIcon, Link2, Key } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import Connections from "./Connections";
-import Tokens from "./Tokens";
 
-type Section = "connections" | "tokens";
-
-const navItems: { id: Section; label: string; icon: React.ElementType; description: string }[] = [
+const navItems = [
   {
-    id: "connections",
+    path: "connections",
     label: "Connections",
     icon: Link2,
     description: "Third-party integrations",
   },
   {
-    id: "tokens",
+    path: "tokens",
     label: "API Tokens",
     icon: Key,
     description: "Manage access tokens",
@@ -23,7 +18,14 @@ const navItems: { id: Section; label: string; icon: React.ElementType; descripti
 ];
 
 export default function Settings() {
-  const [activeSection, setActiveSection] = useState<Section>("connections");
+  const location = useLocation();
+
+  // Redirect /settings to /settings/connections
+  if (location.pathname === "/settings") {
+    return <Navigate to="/settings/connections" replace />;
+  }
+
+  const isActive = (path: string) => location.pathname === `/settings/${path}`;
 
   return (
     <div className="container max-w-6xl py-8">
@@ -49,27 +51,31 @@ export default function Settings() {
           <div className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = activeSection === item.id;
+              const active = isActive(item.path);
               return (
-                <Button
-                  key={item.id}
-                  variant="ghost"
-                  onClick={() => setActiveSection(item.id)}
+                <Link
+                  key={item.path}
+                  to={item.path}
                   className={cn(
-                    "w-full justify-start gap-3 h-auto py-3 px-3",
-                    isActive && "bg-muted"
+                    "flex items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-muted",
+                    active && "bg-muted"
                   )}
                 >
-                  <Icon className={cn("h-5 w-5", isActive ? "text-primary" : "text-muted-foreground")} />
-                  <div className="text-left">
-                    <div className={cn("font-medium", !isActive && "text-foreground")}>
+                  <Icon
+                    className={cn(
+                      "h-5 w-5",
+                      active ? "text-primary" : "text-muted-foreground"
+                    )}
+                  />
+                  <div>
+                    <div className={cn("text-sm font-medium", !active && "text-foreground")}>
                       {item.label}
                     </div>
-                    <div className="text-xs text-muted-foreground font-normal">
+                    <div className="text-xs text-muted-foreground">
                       {item.description}
                     </div>
                   </div>
-                </Button>
+                </Link>
               );
             })}
           </div>
@@ -77,8 +83,7 @@ export default function Settings() {
 
         {/* Main Content */}
         <main className="flex-1 min-w-0">
-          {activeSection === "connections" && <Connections />}
-          {activeSection === "tokens" && <Tokens />}
+          <Outlet />
         </main>
       </div>
     </div>
