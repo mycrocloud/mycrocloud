@@ -31,7 +31,7 @@ import TokenCreate from "./pages/settings/TokenCreate";
 import TokenEdit from "./pages/settings/TokenEdit";
 import { getConfig } from "./config";
 import Home from "./pages/Home";
-import AppSettings from "./pages/apps/Settings";
+import AppSettings, { GeneralTab, ApiTab, PagesTab } from "./pages/apps/Settings";
 const { AUTH0_DOMAIN, AUTH0_CLIENTID, AUTH0_AUDIENCE } = getConfig();
 
 function App() {
@@ -83,7 +83,11 @@ function App() {
                   <Route path="builds" element={<AppBuilds />}>
                     <Route path=":buildId" element={null} />
                   </Route>
-                  <Route path="settings" element={<AppSettings />} />
+                  <Route path="settings" element={<AppSettings />}>
+                    <Route path="general" element={<GeneralTab />} />
+                    <Route path="api" element={<ApiTab />} />
+                    <Route path="pages" element={<PagesTab />} />
+                  </Route>
                 </Route>
               </Route>
               <Route path="integrations">
