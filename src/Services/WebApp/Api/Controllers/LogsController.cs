@@ -14,8 +14,16 @@ public class LogsController(ILogRepository logRepository) : BaseController
      DateTime? accessDateTo, int page = 1, int pageSize = 50, string? sort = null) {
         var logs = await logRepository.Search(appId);
         if (routeIds?.Count > 0) logs = logs.Where(l => l.RouteId != null && routeIds.Contains(l.RouteId.Value));
-        if (accessDateFrom is not null) logs = logs.Where(l => l.CreatedAt.Date >= accessDateFrom.Value.Date);
-        if (accessDateTo is not null) logs = logs.Where(l => l.CreatedAt.Date <= accessDateTo.Value.Date);
+        if (accessDateFrom is not null)
+        {
+            var fromUtc = DateTime.SpecifyKind(accessDateFrom.Value.Date, DateTimeKind.Utc);
+            logs = logs.Where(l => l.CreatedAt >= fromUtc);
+        }
+        if (accessDateTo is not null)
+        {
+            var toUtc = DateTime.SpecifyKind(accessDateTo.Value.Date.AddDays(1), DateTimeKind.Utc);
+            logs = logs.Where(l => l.CreatedAt < toUtc);
+        }
         if (!string.IsNullOrEmpty(sort))
         {
             //TODO: Implement sorting

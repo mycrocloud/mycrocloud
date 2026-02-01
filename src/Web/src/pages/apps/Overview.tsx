@@ -1,17 +1,22 @@
 import { useContext, useEffect, useState, useMemo } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
+import { Link } from "react-router-dom";
 import { AppContext } from ".";
-import { getAppDomain } from "./service";
 import { IRouteLog } from "../routes";
 import {
-  PlayCircleIcon,
-  StopCircleIcon,
-  GlobeAltIcon,
-  CalendarIcon,
-  ChartBarIcon,
-  ClockIcon,
-} from "@heroicons/react/24/solid";
-import TextCopyButton from "../../components/ui/TextCopyButton";
+  Activity,
+  Calendar,
+  Clock,
+  ExternalLink,
+  Globe,
+  Loader2,
+  Route,
+  FileText,
+  Settings,
+  Package,
+  Copy,
+  Check,
+} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -19,6 +24,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   ChartConfig,
   ChartContainer,
@@ -26,6 +33,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Area, AreaChart, XAxis, YAxis } from "recharts";
+import { cn } from "@/lib/utils";
 
 interface DailyStats {
   date: string;
@@ -46,10 +54,8 @@ export default function AppOverview() {
   const { getAccessTokenSilently } = useAuth0();
   const [logs, setLogs] = useState<IRouteLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const domain = getAppDomain(app.name);
 
   useEffect(() => {
-    //@ts-ignore
     const fetchLogs = async () => {
       try {
         const accessToken = await getAccessTokenSilently();
@@ -76,7 +82,7 @@ export default function AppOverview() {
       }
     };
 
-    //fetchLogs();
+    fetchLogs();
   }, [app.id, getAccessTokenSilently]);
 
   const dailyStats = useMemo(() => {
@@ -116,22 +122,75 @@ export default function AppOverview() {
     ).length;
   }, [logs]);
 
+  const [copied, setCopied] = useState(false);
+  const handleCopyDomain = () => {
+    navigator.clipboard.writeText(`https://${app.domain}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const quickLinks = [
+    { to: "routes", label: "Routes", icon: Route },
+    { to: "logs", label: "Logs", icon: FileText },
+    { to: "builds", label: "Builds", icon: Package },
+    { to: "settings", label: "Settings", icon: Settings },
+  ];
+
   return (
     <div className="space-y-6 p-4">
+      {/* Domain Banner */}
+      <Card className="bg-muted/30">
+        <CardContent className="flex items-center justify-between py-4">
+          <div className="flex items-center gap-3">
+            <Globe className="h-5 w-5 text-muted-foreground" />
+            <div>
+              <p className="text-sm text-muted-foreground">Your app is live at</p>
+              <a
+                href={`https://${app.domain}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium hover:underline"
+              >
+                {app.domain}
+                <ExternalLink className="ml-1 inline h-3 w-3" />
+              </a>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleCopyDomain}>
+            {copied ? (
+              <Check className="mr-2 h-4 w-4 text-green-500" />
+            ) : (
+              <Copy className="mr-2 h-4 w-4" />
+            )}
+            {copied ? "Copied" : "Copy"}
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Status</CardTitle>
-            {app.status === "Active" ? (
-              <PlayCircleIcon className="h-4 w-4 text-green-500" />
-            ) : (
-              <StopCircleIcon className="h-4 w-4 text-red-500" />
-            )}
+            <Activity className={cn(
+              "h-4 w-4",
+              app.status === "Active" ? "text-green-500" : "text-muted-foreground"
+            )} />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{app.status}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Badge
+                variant="secondary"
+                className={cn(
+                  app.status === "Active"
+                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                    : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                )}
+              >
+                {app.status}
+              </Badge>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
               {app.status === "Active" ? "Running normally" : "Currently stopped"}
             </p>
           </CardContent>
@@ -140,11 +199,15 @@ export default function AppOverview() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
-            <ChartBarIcon className="h-4 w-4 text-muted-foreground" />
+            <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {loading ? "..." : totalRequests.toLocaleString()}
+              {loading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                totalRequests.toLocaleString()
+              )}
             </div>
             <p className="text-xs text-muted-foreground">Last 7 days</p>
           </CardContent>
@@ -153,11 +216,15 @@ export default function AppOverview() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Today</CardTitle>
-            <ClockIcon className="h-4 w-4 text-muted-foreground" />
+            <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {loading ? "..." : todayRequests.toLocaleString()}
+              {loading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                todayRequests.toLocaleString()
+              )}
             </div>
             <p className="text-xs text-muted-foreground">Requests today</p>
           </CardContent>
@@ -166,7 +233,7 @@ export default function AppOverview() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Created</CardTitle>
-            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+            <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -182,6 +249,23 @@ export default function AppOverview() {
         </Card>
       </div>
 
+      {/* Quick Links */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {quickLinks.map((link) => {
+          const Icon = link.icon;
+          return (
+            <Link
+              key={link.to}
+              to={link.to}
+              className="flex items-center gap-2 rounded-lg border bg-card p-3 text-sm transition-colors hover:bg-muted"
+            >
+              <Icon className="h-4 w-4 text-muted-foreground" />
+              {link.label}
+            </Link>
+          );
+        })}
+      </div>
+
       {/* Request Chart */}
       <Card>
         <CardHeader>
@@ -190,8 +274,8 @@ export default function AppOverview() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex h-[200px] items-center justify-center text-muted-foreground">
-              Loading...
+            <div className="flex h-[200px] items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : (
             <ChartContainer config={chartConfig} className="h-[200px] w-full">
@@ -241,41 +325,26 @@ export default function AppOverview() {
       <Card>
         <CardHeader>
           <CardTitle>App Details</CardTitle>
-          <CardDescription>Configuration and information</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-[auto_1fr] gap-x-8 gap-y-3 text-sm">
-            <span className="text-muted-foreground">Name</span>
-            <span className="font-medium">{app.name}</span>
-
-            <span className="text-muted-foreground">Description</span>
-            <span>{app.description || "-"}</span>
-
-            <span className="text-muted-foreground">Version</span>
-            <span className="font-mono text-xs">{app.version}</span>
-
-            <span className="text-muted-foreground">Created at</span>
-            <span>{new Date(app.createdAt).toLocaleString()}</span>
-
-            <span className="text-muted-foreground">Updated at</span>
-            <span>
-              {app.updatedAt ? new Date(app.updatedAt).toLocaleString() : "-"}
-            </span>
-
-            <span className="text-muted-foreground">Domain</span>
-            <span className="flex items-center gap-2">
-              <GlobeAltIcon className="h-4 w-4 text-muted-foreground" />
-              <a
-                href={`https://${domain}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-              >
-                {domain}
-              </a>
-              <TextCopyButton text={domain} />
-            </span>
-          </div>
+          <dl className="grid gap-3 text-sm sm:grid-cols-2">
+            <div className="space-y-1">
+              <dt className="text-muted-foreground">Name</dt>
+              <dd className="font-medium">{app.name}</dd>
+            </div>
+            <div className="space-y-1">
+              <dt className="text-muted-foreground">Description</dt>
+              <dd>{app.description || "-"}</dd>
+            </div>
+            <div className="space-y-1">
+              <dt className="text-muted-foreground">Created</dt>
+              <dd>{new Date(app.createdAt).toLocaleString()}</dd>
+            </div>
+            <div className="space-y-1">
+              <dt className="text-muted-foreground">Last updated</dt>
+              <dd>{app.updatedAt ? new Date(app.updatedAt).toLocaleString() : "-"}</dd>
+            </div>
+          </dl>
         </CardContent>
       </Card>
     </div>

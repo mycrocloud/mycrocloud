@@ -1,9 +1,11 @@
 import { Outlet, useNavigate, useParams, useMatch } from "react-router-dom";
 import React, {
+  useCallback,
   useContext,
   useEffect,
   useMemo,
   useReducer,
+  useRef,
   useState,
 } from "react";
 import { AppContext } from "../apps";
@@ -16,6 +18,7 @@ import { useForm } from "react-hook-form";
 import { ensureSuccess } from "../../hooks/useApiClient";
 import IRouteFolderRouteItem, { calculateLevel } from "./IRouteFolderRouteItem";
 import IRoute from "./Route";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -37,7 +40,17 @@ import {
   Copy,
   Pencil,
   Trash2,
+  Loader2,
+  Route,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 interface IExplorerItem extends IRouteFolderRouteItem {
@@ -92,9 +105,19 @@ function RouteExplorer() {
   if (!app) throw new Error();
   const [explorerItems, setExplorerItems] = useState<IExplorerItem[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; item: IExplorerItem | null }>({
+    open: false,
+    item: null,
+  });
   const filteredItems = useMemo(
     () => getFilteredItems(explorerItems, searchTerm),
     [explorerItems, searchTerm],
+  );
+
+  const routeCount = useMemo(
+    () => explorerItems.filter((item) => item.type === "Route" && item.id > 0).length,
+    [explorerItems],
   );
 
   function getFilteredItems(
@@ -110,9 +133,11 @@ function RouteExplorer() {
 
       for (const item of items) {
         if (item.type === "Route") {
-          if (
-            item.route?.name.toLowerCase().includes(searchTerm.toLowerCase())
-          ) {
+          const term = searchTerm.toLowerCase();
+          const matchesName = item.route?.name.toLowerCase().includes(term);
+          const matchesPath = item.route?.path.toLowerCase().includes(term);
+          const matchesMethod = item.route?.method.toLowerCase().includes(term);
+          if (matchesName || matchesPath || matchesMethod) {
             result.push(item);
             const pathNodes: IExplorerItem[] = [];
             getPathNodes(explorerItems, item, pathNodes);
@@ -153,18 +178,21 @@ function RouteExplorer() {
 
   useEffect(() => {
     const getRoutes = async () => {
-      const accessToken = await getAccessTokenSilently();
-      fetch(`/api/apps/${app.id}/routes`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      })
-        .then((res) => res.json() as Promise<IRouteFolderRouteItem[]>)
-        .then((items) => {
-          setExplorerItems(
-            items.map((route) => {
-              return { ...route, level: calculateLevel(route, items, null, 0) };
-            }),
-          );
+      setLoading(true);
+      try {
+        const accessToken = await getAccessTokenSilently();
+        const res = await fetch(`/api/apps/${app.id}/routes`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
+        const items = (await res.json()) as IRouteFolderRouteItem[];
+        setExplorerItems(
+          items.map((route) => {
+            return { ...route, level: calculateLevel(route, items, null, 0) };
+          }),
+        );
+      } finally {
+        setLoading(false);
+      }
     };
     getRoutes();
   }, [routeId]);
@@ -319,45 +347,52 @@ function RouteExplorer() {
     }
   };
 
-  const handleDeleteClick = async (item: IExplorerItem) => {
+  const handleDeleteClick = (item: IExplorerItem) => {
+    setDeleteDialog({ open: true, item });
+  };
+
+  const confirmDelete = async () => {
+    const item = deleteDialog.item;
+    if (!item) return;
+
     const { type, id } = item;
-    if (confirm(`Are you sure you want to delete this ${type.toLowerCase()}?`)) {
-      const accessToken = await getAccessTokenSilently();
-      const url =
-        type === "Route"
-          ? `/api/apps/${app.id}/routes/${id}`
-          : `/api/apps/${app.id}/routes/folders/${id}`;
+    const accessToken = await getAccessTokenSilently();
+    const url =
+      type === "Route"
+        ? `/api/apps/${app.id}/routes/${id}`
+        : `/api/apps/${app.id}/routes/folders/${id}`;
 
-      const res = await fetch(url, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      ensureSuccess(res);
+    const res = await fetch(url, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    ensureSuccess(res);
 
-      if (type === "Folder") {
-        setExplorerItems((nodes) => {
-          let deleteItems = getFolderItems(item);
-          return nodes.filter((node) => {
-            // Check both id and type to avoid deleting wrong item when Route and Folder share same id
-            return !deleteItems.some((i) => i.id === node.id && i.type === node.type);
-          });
+    if (type === "Folder") {
+      setExplorerItems((nodes) => {
+        let deleteItems = getFolderItems(item);
+        return nodes.filter((node) => {
+          // Check both id and type to avoid deleting wrong item when Route and Folder share same id
+          return !deleteItems.some((i) => i.id === node.id && i.type === node.type);
+        });
 
-          function getFolderItems(folder: IExplorerItem) {
-            var items = nodes.filter((node) => node.parentId === folder.id);
-            for (const i of items) {
-              if (i.type === "Folder") {
-                items = items.concat(getFolderItems(i));
-              }
+        function getFolderItems(folder: IExplorerItem) {
+          var items = nodes.filter((node) => node.parentId === folder.id);
+          for (const i of items) {
+            if (i.type === "Folder") {
+              items = items.concat(getFolderItems(i));
             }
-            return items.concat(folder);
           }
-        });
-      } else {
-        setExplorerItems((items) => {
-          return items.filter((i) => !(i.type === "Route" && i.id === id));
-        });
-      }
+          return items.concat(folder);
+        }
+      });
+    } else {
+      setExplorerItems((items) => {
+        return items.filter((i) => !(i.type === "Route" && i.id === id));
+      });
     }
+
+    setDeleteDialog({ open: false, item: null });
   };
 
   const handleFolderClick = (folder: IExplorerItem) => {
@@ -374,6 +409,48 @@ function RouteExplorer() {
   const handleRouteClick = (route: IExplorerItem) => {
     navigate(route.id.toString());
   };
+
+  // Keyboard navigation
+  const treeRef = useRef<HTMLDivElement>(null);
+  const flatRoutes = useMemo(() => {
+    const result: IExplorerItem[] = [];
+    const addItems = (parentId: number | null) => {
+      const children = filteredItems.filter((i) => i.parentId === parentId);
+      for (const child of children) {
+        result.push(child);
+        if (child.type === "Folder" && !child.collapsed) {
+          addItems(child.id);
+        }
+      }
+    };
+    addItems(null);
+    return result.filter((i) => i.type === "Route" && i.id > 0);
+  }, [filteredItems]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!flatRoutes.length) return;
+
+      const currentIndex = flatRoutes.findIndex((r) => r.id === routeId);
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        const nextIndex = currentIndex < flatRoutes.length - 1 ? currentIndex + 1 : 0;
+        navigate(flatRoutes[nextIndex].id.toString());
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        const prevIndex = currentIndex > 0 ? currentIndex - 1 : flatRoutes.length - 1;
+        navigate(flatRoutes[prevIndex].id.toString());
+      } else if (e.key === "Delete" && routeId) {
+        e.preventDefault();
+        const currentItem = flatRoutes.find((r) => r.id === routeId);
+        if (currentItem) {
+          handleDeleteClick(currentItem);
+        }
+      }
+    },
+    [flatRoutes, routeId, navigate, handleDeleteClick]
+  );
 
   const renderNode = (node: IExplorerItem | null, items: IExplorerItem[]) => {
     const isRoot = node === null;
@@ -432,6 +509,14 @@ function RouteExplorer() {
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="border-b p-3">
+        <div className="mb-3 flex items-center justify-between">
+          <span className="text-sm font-medium">Routes</span>
+          {!loading && (
+            <Badge variant="secondary" className="text-xs">
+              {routeCount}
+            </Badge>
+          )}
+        </div>
         <div className="flex gap-2">
           <Button
             size="sm"
@@ -455,7 +540,7 @@ function RouteExplorer() {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Search routes..."
+            placeholder="Search name, path, method..."
             className="pl-8"
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -463,29 +548,84 @@ function RouteExplorer() {
       </div>
 
       {/* Tree */}
-      <div className="flex-1 overflow-auto p-2">
-        {filteredItems.length === 0 ? (
-          <div className="py-8 text-center text-sm text-muted-foreground">
-            {searchTerm ? "No routes found" : "No routes yet"}
+      <div
+        ref={treeRef}
+        className="flex-1 overflow-auto p-2 focus:outline-none"
+        tabIndex={0}
+        onKeyDown={handleKeyDown}
+      >
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : filteredItems.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            {searchTerm ? (
+              <>
+                <Search className="h-10 w-10 text-muted-foreground/30" />
+                <p className="mt-3 text-sm font-medium">No routes found</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Try searching by name, path, or method
+                </p>
+              </>
+            ) : (
+              <>
+                <Route className="h-10 w-10 text-muted-foreground/30" />
+                <p className="mt-3 text-sm font-medium">No routes yet</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Create your first route to get started
+                </p>
+                <Button
+                  size="sm"
+                  className="mt-4"
+                  onClick={() => handleNewRouteClick(null, 0)}
+                >
+                  <Plus className="mr-1 h-4 w-4" />
+                  Create Route
+                </Button>
+              </>
+            )}
           </div>
         ) : (
           renderNode(null, filteredItems)
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ open, item: open ? deleteDialog.item : null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete {deleteDialog.item?.type}</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this {deleteDialog.item?.type.toLowerCase()}?
+              {deleteDialog.item?.type === "Folder" && " All routes inside will also be deleted."}
+              {" "}This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialog({ open: false, item: null })}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
 const methodColors: Record<string, string> = {
-  GET: "text-sky-600 bg-sky-50",
-  POST: "text-orange-600 bg-orange-50",
-  PUT: "text-emerald-600 bg-emerald-50",
-  DELETE: "text-red-600 bg-red-50",
-  PATCH: "text-amber-600 bg-amber-50",
+  GET: "text-sky-600 bg-sky-100 dark:text-sky-400 dark:bg-sky-950",
+  POST: "text-orange-600 bg-orange-100 dark:text-orange-400 dark:bg-orange-950",
+  PUT: "text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-950",
+  DELETE: "text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-950",
+  PATCH: "text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-950",
 };
 
 function RouteItem({
-  item: { route },
+  item,
   isActive,
   onClick,
   onDuplicate,
@@ -497,9 +637,11 @@ function RouteItem({
   onDuplicate: () => void;
   onDelete: () => void;
 }) {
+  const { route } = item;
   if (!route) return null;
 
   const methodClass = methodColors[route.method.toUpperCase()] || "text-gray-600 bg-gray-50";
+  const isNewRoute = item.id < 0;
 
   return (
     <div
@@ -517,9 +659,17 @@ function RouteItem({
       >
         {route.method}
       </span>
-      <span className="flex-1 truncate text-sm">{route.name}</span>
+      <span className={cn(
+        "flex-1 truncate text-sm",
+        route.status === "Inactive" && "text-muted-foreground"
+      )}>
+        {route.name}
+      </span>
       {route.status === "Blocked" && (
         <span className="shrink-0 text-xs text-destructive">Blocked</span>
+      )}
+      {route.status === "Inactive" && !isNewRoute && (
+        <span className="shrink-0 text-xs text-muted-foreground">Inactive</span>
       )}
       <DropdownMenu>
         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
+import { generateAppName } from "@/lib/utils";
 
 type Inputs = {
   name: string;
@@ -29,6 +30,9 @@ function AppCreate() {
     formState: { errors },
   } = useForm<Inputs>({
     resolver: yupResolver(schema),
+    defaultValues: {
+      name: generateAppName(),
+    },
   });
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     setIsSubmitting(true);
@@ -66,7 +70,11 @@ function AppCreate() {
           id="name"
           {...register("name")}
         />
-        {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+        {errors.name ? (
+          <p className="text-sm text-destructive">{errors.name.message}</p>
+        ) : (
+          <p className="text-sm text-muted-foreground">You can change this later</p>
+        )}
       </div>
       <div className="space-y-2">
         <Label htmlFor="description">Description</Label>
