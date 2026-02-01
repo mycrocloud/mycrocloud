@@ -102,7 +102,7 @@ export default function RouteCreateUpdate({
 
   const responseType = watch("responseType");
   const enabled = watch("enabled");
-  const url = app.domain + watch("path");
+  const url = "https://" + app.domain + watch("path");
   const [copied, setCopied] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
