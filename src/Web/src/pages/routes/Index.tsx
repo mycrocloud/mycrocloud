@@ -16,6 +16,7 @@ import { useForm } from "react-hook-form";
 import { ensureSuccess } from "../../hooks/useApiClient";
 import IRouteFolderRouteItem, { calculateLevel } from "./IRouteFolderRouteItem";
 import IRoute from "./Route";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -37,7 +38,16 @@ import {
   Copy,
   Pencil,
   Trash2,
+  Loader2,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 interface IExplorerItem extends IRouteFolderRouteItem {
@@ -92,9 +102,19 @@ function RouteExplorer() {
   if (!app) throw new Error();
   const [explorerItems, setExplorerItems] = useState<IExplorerItem[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; item: IExplorerItem | null }>({
+    open: false,
+    item: null,
+  });
   const filteredItems = useMemo(
     () => getFilteredItems(explorerItems, searchTerm),
     [explorerItems, searchTerm],
+  );
+
+  const routeCount = useMemo(
+    () => explorerItems.filter((item) => item.type === "Route" && item.id > 0).length,
+    [explorerItems],
   );
 
   function getFilteredItems(
@@ -153,18 +173,21 @@ function RouteExplorer() {
 
   useEffect(() => {
     const getRoutes = async () => {
-      const accessToken = await getAccessTokenSilently();
-      fetch(`/api/apps/${app.id}/routes`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      })
-        .then((res) => res.json() as Promise<IRouteFolderRouteItem[]>)
-        .then((items) => {
-          setExplorerItems(
-            items.map((route) => {
-              return { ...route, level: calculateLevel(route, items, null, 0) };
-            }),
-          );
+      setLoading(true);
+      try {
+        const accessToken = await getAccessTokenSilently();
+        const res = await fetch(`/api/apps/${app.id}/routes`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
+        const items = (await res.json()) as IRouteFolderRouteItem[];
+        setExplorerItems(
+          items.map((route) => {
+            return { ...route, level: calculateLevel(route, items, null, 0) };
+          }),
+        );
+      } finally {
+        setLoading(false);
+      }
     };
     getRoutes();
   }, [routeId]);
@@ -319,45 +342,52 @@ function RouteExplorer() {
     }
   };
 
-  const handleDeleteClick = async (item: IExplorerItem) => {
+  const handleDeleteClick = (item: IExplorerItem) => {
+    setDeleteDialog({ open: true, item });
+  };
+
+  const confirmDelete = async () => {
+    const item = deleteDialog.item;
+    if (!item) return;
+
     const { type, id } = item;
-    if (confirm(`Are you sure you want to delete this ${type.toLowerCase()}?`)) {
-      const accessToken = await getAccessTokenSilently();
-      const url =
-        type === "Route"
-          ? `/api/apps/${app.id}/routes/${id}`
-          : `/api/apps/${app.id}/routes/folders/${id}`;
+    const accessToken = await getAccessTokenSilently();
+    const url =
+      type === "Route"
+        ? `/api/apps/${app.id}/routes/${id}`
+        : `/api/apps/${app.id}/routes/folders/${id}`;
 
-      const res = await fetch(url, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      ensureSuccess(res);
+    const res = await fetch(url, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    ensureSuccess(res);
 
-      if (type === "Folder") {
-        setExplorerItems((nodes) => {
-          let deleteItems = getFolderItems(item);
-          return nodes.filter((node) => {
-            // Check both id and type to avoid deleting wrong item when Route and Folder share same id
-            return !deleteItems.some((i) => i.id === node.id && i.type === node.type);
-          });
+    if (type === "Folder") {
+      setExplorerItems((nodes) => {
+        let deleteItems = getFolderItems(item);
+        return nodes.filter((node) => {
+          // Check both id and type to avoid deleting wrong item when Route and Folder share same id
+          return !deleteItems.some((i) => i.id === node.id && i.type === node.type);
+        });
 
-          function getFolderItems(folder: IExplorerItem) {
-            var items = nodes.filter((node) => node.parentId === folder.id);
-            for (const i of items) {
-              if (i.type === "Folder") {
-                items = items.concat(getFolderItems(i));
-              }
+        function getFolderItems(folder: IExplorerItem) {
+          var items = nodes.filter((node) => node.parentId === folder.id);
+          for (const i of items) {
+            if (i.type === "Folder") {
+              items = items.concat(getFolderItems(i));
             }
-            return items.concat(folder);
           }
-        });
-      } else {
-        setExplorerItems((items) => {
-          return items.filter((i) => !(i.type === "Route" && i.id === id));
-        });
-      }
+          return items.concat(folder);
+        }
+      });
+    } else {
+      setExplorerItems((items) => {
+        return items.filter((i) => !(i.type === "Route" && i.id === id));
+      });
     }
+
+    setDeleteDialog({ open: false, item: null });
   };
 
   const handleFolderClick = (folder: IExplorerItem) => {
@@ -432,6 +462,14 @@ function RouteExplorer() {
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="border-b p-3">
+        <div className="mb-3 flex items-center justify-between">
+          <span className="text-sm font-medium">Routes</span>
+          {!loading && (
+            <Badge variant="secondary" className="text-xs">
+              {routeCount}
+            </Badge>
+          )}
+        </div>
         <div className="flex gap-2">
           <Button
             size="sm"
@@ -464,7 +502,11 @@ function RouteExplorer() {
 
       {/* Tree */}
       <div className="flex-1 overflow-auto p-2">
-        {filteredItems.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : filteredItems.length === 0 ? (
           <div className="py-8 text-center text-sm text-muted-foreground">
             {searchTerm ? "No routes found" : "No routes yet"}
           </div>
@@ -472,16 +514,38 @@ function RouteExplorer() {
           renderNode(null, filteredItems)
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ open, item: open ? deleteDialog.item : null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete {deleteDialog.item?.type}</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this {deleteDialog.item?.type.toLowerCase()}?
+              {deleteDialog.item?.type === "Folder" && " All routes inside will also be deleted."}
+              {" "}This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialog({ open: false, item: null })}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
 const methodColors: Record<string, string> = {
-  GET: "text-sky-600 bg-sky-50",
-  POST: "text-orange-600 bg-orange-50",
-  PUT: "text-emerald-600 bg-emerald-50",
-  DELETE: "text-red-600 bg-red-50",
-  PATCH: "text-amber-600 bg-amber-50",
+  GET: "text-sky-600 bg-sky-100 dark:text-sky-400 dark:bg-sky-950",
+  POST: "text-orange-600 bg-orange-100 dark:text-orange-400 dark:bg-orange-950",
+  PUT: "text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-950",
+  DELETE: "text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-950",
+  PATCH: "text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-950",
 };
 
 function RouteItem({
