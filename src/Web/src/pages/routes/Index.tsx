@@ -197,31 +197,12 @@ function RouteExplorer() {
     getRoutes();
   }, [routeId]);
 
-  const handleNewRouteClick = async (folderId: number | null = null, level: number = 0) => {
-    // Use strict null check to handle folderId === 0 correctly (0 is falsy but valid ID)
+  const handleNewRouteClick = (folderId: number | null = null) => {
     if (folderId !== null) {
       navigate(`new/${folderId}`);
     } else {
       navigate("new");
     }
-    setExplorerItems((items) => {
-      const newRoute: IExplorerItem = {
-        type: "Route",
-        // Use unique negative ID to avoid conflicts when creating multiple items before saving
-        id: -Date.now(),
-        parentId: folderId,
-        route: {
-          name: "New Route",
-          method: "GET",
-          path: "/new-route",
-          status: "Active",
-        },
-        folder: null,
-        collapsed: false,
-        level: level,
-      };
-      return [...items, newRoute];
-    });
   };
 
   const handleNewFolderClick = async (parentId: number | null = null, level: number = 0) => {
@@ -477,7 +458,7 @@ function RouteExplorer() {
               <FolderItem
                 item={node}
                 onClick={() => handleFolderClick(node)}
-                onNewRoute={() => handleNewRouteClick(node.id, node.level + 1)}
+                onNewRoute={() => handleNewRouteClick(node.id)}
                 onNewFolder={() => handleNewFolderClick(node.id, node.level + 1)}
                 onRename={() => handleFolderRenameClick(node)}
                 onDuplicate={() => handleDuplicateClick(node)}
@@ -520,7 +501,7 @@ function RouteExplorer() {
         <div className="flex gap-2">
           <Button
             size="sm"
-            onClick={() => handleNewRouteClick(null, 0)}
+            onClick={() => handleNewRouteClick()}
             className="flex-1"
           >
             <Plus className="mr-1 h-4 w-4" />
@@ -578,7 +559,7 @@ function RouteExplorer() {
                 <Button
                   size="sm"
                   className="mt-4"
-                  onClick={() => handleNewRouteClick(null, 0)}
+                  onClick={() => handleNewRouteClick()}
                 >
                   <Plus className="mr-1 h-4 w-4" />
                   Create Route
