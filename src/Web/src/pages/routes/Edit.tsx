@@ -22,21 +22,29 @@ export default function RouteEdit() {
   useEffect(() => {
     dispatch({
       type: "SET_ACTIVE_ROUTE",
-      payload: routes.find((r) => r.id === routeId)!,
+      payload: routes.find((r) => r.id === routeId),
     });
     const getRoute = async () => {
-      const accessToken = await getAccessTokenSilently();
-      const route = (await (
-        await fetch(`/api/apps/${app.id}/routes/${routeId}`, {
+      try {
+        const accessToken = await getAccessTokenSilently();
+        const res = await fetch(`/api/apps/${app.id}/routes/${routeId}`, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
-        })
-      ).json()) as IRoute;
-      setRoute(route);
+        });
+        if (!res.ok) {
+          toast.error("Failed to load route");
+          return;
+        }
+        const route = (await res.json()) as IRoute;
+        setRoute(route);
+      } catch {
+        toast.error("Failed to load route");
+      }
     };
     getRoute();
-  }, []);
+  }, [routeId]);
+
   const onSubmit = async (data: RouteCreateUpdateInputs) => {
     const accessToken = await getAccessTokenSilently();
     const res = await fetch(`/api/apps/${app.id}/routes/${routeId}`, {
@@ -48,10 +56,17 @@ export default function RouteEdit() {
       body: JSON.stringify(data),
     });
     if (res.ok) {
-      toast("Route updated");
-      route!.name = data.name;
-      route!.method = data.method;
-      dispatch({ type: "UPDATE_ROUTE", payload: route! });
+      toast.success("Route updated");
+      const updatedRoute: IRoute = {
+        ...route!,
+        name: data.name,
+        method: data.method,
+        path: data.path,
+        enabled: data.enabled,
+      };
+      dispatch({ type: "UPDATE_ROUTE", payload: updatedRoute });
+    } else {
+      toast.error("Failed to update route");
     }
   };
 

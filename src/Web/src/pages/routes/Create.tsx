@@ -32,8 +32,10 @@ export default function RouteCreate() {
     if (res.ok) {
       const newRoute = (await res.json()) as IRoute;
       dispatch({ type: "ADD_ROUTE", payload: newRoute });
-      toast("Route created");
+      toast.success("Route created");
       navigate(`../${newRoute.id}`);
+    } else {
+      toast.error("Failed to create route");
     }
   };
   return <RouteCreateUpdate onSubmit={onSubmit} />;

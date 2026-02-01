@@ -76,7 +76,7 @@ export default function RouteCreateUpdate({
       requestQuerySchema: route?.requestQuerySchema,
       requestHeaderSchema: route?.requestHeaderSchema,
       requestBodySchema: route?.requestBodySchema,
-      requireAuthorization: route?.requireAuthorization,
+      requireAuthorization: route?.requireAuthorization ?? false,
       responseType: route?.responseType || "Static",
       responseStatusCode: route?.responseStatusCode || 200,
       responseHeaders: route?.responseHeaders
@@ -281,7 +281,6 @@ export default function RouteCreateUpdate({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Static">Static</SelectItem>
-                    <SelectItem value="StaticFile">Static File</SelectItem>
                     <SelectItem value="Function">Function</SelectItem>
                   </SelectContent>
                 </Select>

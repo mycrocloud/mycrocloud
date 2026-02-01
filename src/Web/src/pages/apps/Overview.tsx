@@ -1,8 +1,7 @@
-import { useContext, useEffect, useState, useMemo } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { Link } from "react-router-dom";
 import { AppContext } from ".";
-import { IRouteLog } from "../routes";
 import {
   Activity,
   Calendar,
@@ -35,7 +34,16 @@ import {
 import { Area, AreaChart, XAxis, YAxis } from "recharts";
 import { cn } from "@/lib/utils";
 
-interface DailyStats {
+interface LogsStatsResponse {
+  totalRequests: number;
+  todayRequests: number;
+  dailyStats: {
+    date: string;
+    count: number;
+  }[];
+}
+
+interface ChartData {
   date: string;
   requests: number;
 }
@@ -52,11 +60,11 @@ export default function AppOverview() {
   if (!app) throw new Error();
 
   const { getAccessTokenSilently } = useAuth0();
-  const [logs, setLogs] = useState<IRouteLog[]>([]);
+  const [stats, setStats] = useState<LogsStatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchLogs = async () => {
+    const fetchStats = async () => {
       try {
         const accessToken = await getAccessTokenSilently();
         const today = new Date();
@@ -66,61 +74,37 @@ export default function AppOverview() {
         const formatDate = (d: Date) => d.toISOString().split("T")[0];
 
         const response = await fetch(
-          `/api/apps/${app.id}/logs?accessDateFrom=${formatDate(sevenDaysAgo)}&accessDateTo=${formatDate(today)}`,
+          `/api/apps/${app.id}/logs/stats?accessDateFrom=${formatDate(sevenDaysAgo)}&accessDateTo=${formatDate(today)}`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
             },
           }
         );
-        const data = (await response.json()) as IRouteLog[];
-        setLogs(data);
+        if (response.ok) {
+          const data = (await response.json()) as LogsStatsResponse;
+          setStats(data);
+        }
       } catch (error) {
-        console.error("Failed to fetch logs:", error);
+        console.error("Failed to fetch stats:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchLogs();
+    fetchStats();
   }, [app.id, getAccessTokenSilently]);
 
-  const dailyStats = useMemo(() => {
-    const stats: Record<string, number> = {};
+  const chartData: ChartData[] = stats?.dailyStats.map((s) => ({
+    date: new Date(s.date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    }),
+    requests: s.count,
+  })) || [];
 
-    // Initialize last 7 days with 0
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split("T")[0];
-      stats[dateStr] = 0;
-    }
-
-    // Count requests per day
-    logs.forEach((log) => {
-      const dateStr = new Date(log.timestamp).toISOString().split("T")[0];
-      if (stats[dateStr] !== undefined) {
-        stats[dateStr]++;
-      }
-    });
-
-    // Convert to array and format dates
-    return Object.entries(stats).map(([date, requests]) => ({
-      date: new Date(date).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      }),
-      requests,
-    })) as DailyStats[];
-  }, [logs]);
-
-  const totalRequests = logs.length;
-  const todayRequests = useMemo(() => {
-    const today = new Date().toISOString().split("T")[0];
-    return logs.filter(
-      (log) => new Date(log.timestamp).toISOString().split("T")[0] === today
-    ).length;
-  }, [logs]);
+  const totalRequests = stats?.totalRequests || 0;
+  const todayRequests = stats?.todayRequests || 0;
 
   const [copied, setCopied] = useState(false);
   const handleCopyDomain = () => {
@@ -280,7 +264,7 @@ export default function AppOverview() {
           ) : (
             <ChartContainer config={chartConfig} className="h-[200px] w-full">
               <AreaChart
-                data={dailyStats}
+                data={chartData}
                 margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
               >
                 <defs>

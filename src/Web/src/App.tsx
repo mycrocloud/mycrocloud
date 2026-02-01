@@ -16,7 +16,7 @@ import {
   AppLayout,
 } from "./pages/apps";
 
-import { RouteIndex, RouteLogs, RouteCreate, RouteEdit } from "./pages/routes";
+import { RouteIndex, RouteCreate, RouteEdit } from "./pages/routes";
 
 import { NotFoundPage } from "./pages/NotFoundPage";
 
@@ -77,7 +77,6 @@ function App() {
                   <Route path="routes" element={<RouteIndex />}>
                     <Route path="new/:folderId?" element={<RouteCreate />} />
                     <Route path=":routeId" element={<RouteEdit />} />
-                    <Route path=":routeId/logs" element={<RouteLogs />} />
                   </Route>
                   <Route path="logs" element={<AppLog />} />
                   <Route path="builds" element={<AppBuilds />}>
