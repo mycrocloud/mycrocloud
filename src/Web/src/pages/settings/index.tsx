@@ -3,18 +3,8 @@ import { Settings as SettingsIcon, Link2, Key } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  {
-    path: "connections",
-    label: "Connections",
-    icon: Link2,
-    description: "Third-party integrations",
-  },
-  {
-    path: "tokens",
-    label: "API Tokens",
-    icon: Key,
-    description: "Manage access tokens",
-  },
+  { path: "connections", label: "Connections", icon: Link2 },
+  { path: "tokens", label: "API Tokens", icon: Key },
 ];
 
 export default function Settings() {
@@ -25,29 +15,20 @@ export default function Settings() {
     return <Navigate to="/settings/connections" replace />;
   }
 
-  const isActive = (path: string) => location.pathname === `/settings/${path}`;
+  const isActive = (path: string) => location.pathname.startsWith(`/settings/${path}`);
 
   return (
-    <div className="container max-w-6xl py-8">
+    <div className="mx-auto max-w-4xl px-4 py-8">
       {/* Page Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-            <SettingsIcon className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Account Settings</h1>
-            <p className="text-sm text-muted-foreground">
-              Manage your account preferences and integrations
-            </p>
-          </div>
-        </div>
+      <div className="mb-6 flex items-center gap-2">
+        <SettingsIcon className="h-5 w-5 text-muted-foreground" />
+        <h1 className="text-lg font-semibold">Account Settings</h1>
       </div>
 
       {/* Sidebar Layout */}
-      <div className="flex gap-8">
+      <div className="flex gap-6">
         {/* Sidebar Navigation */}
-        <nav className="w-64 shrink-0">
+        <nav className="w-48 shrink-0">
           <div className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -57,24 +38,12 @@ export default function Settings() {
                   key={item.path}
                   to={item.path}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-muted",
-                    active && "bg-muted"
+                    "flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted",
+                    active ? "bg-muted font-medium" : "text-muted-foreground"
                   )}
                 >
-                  <Icon
-                    className={cn(
-                      "h-5 w-5",
-                      active ? "text-primary" : "text-muted-foreground"
-                    )}
-                  />
-                  <div>
-                    <div className={cn("text-sm font-medium", !active && "text-foreground")}>
-                      {item.label}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {item.description}
-                    </div>
-                  </div>
+                  <Icon className="h-4 w-4" />
+                  {item.label}
                 </Link>
               );
             })}

@@ -30,6 +30,8 @@ services:
       - Slack__LinkSecret=${Slack__LinkSecret}
     ports:
       - "8080:8080"
+    volumes:
+      - "./Api/gha-mycrocloud.private-key.pem:/app/gha-mycrocloud.private-key.pem:ro"
     depends_on:
       rabbitmq:
         condition: service_healthy

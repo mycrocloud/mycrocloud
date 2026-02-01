@@ -71,6 +71,33 @@ public class UserSettingsController(AppDbContext dbContext): BaseController
         });
     }
 
+    [HttpPatch("tokens/{id:int}")]
+    public async Task<IActionResult> UpdateToken(int id, UpdateApiTokenRequest request)
+    {
+        var token = await dbContext.ApiTokens
+            .Where(t => t.UserId == User.GetUserId() && t.Id == id)
+            .FirstOrDefaultAsync();
+
+        if (token is null)
+        {
+            return NotFound();
+        }
+
+        token.Name = request.Name;
+        token.UpdatedAt = DateTime.UtcNow;
+
+        await dbContext.SaveChangesAsync();
+
+        return Ok(new
+        {
+            token.Id,
+            token.Name,
+            Status = token.Status.ToString(),
+            token.CreatedAt,
+            token.UpdatedAt
+        });
+    }
+
     [HttpPost("tokens/{id:int}/regenerate")]
     public async Task<IActionResult> RegenerateToken(int id)
     {

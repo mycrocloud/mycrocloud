@@ -3,7 +3,7 @@ import { AppContext } from ".";
 import { useFieldArray, useForm } from "react-hook-form";
 import { useAuth0 } from "@auth0/auth0-react";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, Link, Outlet, Navigate } from "react-router-dom";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { DndContext, DragEndEvent } from "@dnd-kit/core";
@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
   CardContent,
@@ -28,12 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -77,52 +70,69 @@ import {
 import { useApiClient } from "@/hooks";
 import { getConfig } from "@/config";
 import { NotFoundError } from "@/errors";
-import InfoIcon from "@/components/ui/InfoIcon";
 import { IAppIntegration } from "./App";
 import { cn } from "@/lib/utils";
 
 const { GITHUB_APP_NAME } = getConfig();
 
+const navItems = [
+  { path: "general", label: "General", icon: Settings },
+  { path: "api", label: "API", icon: Globe },
+  { path: "pages", label: "Pages", icon: FileCode },
+];
+
 export default function AppSettings() {
+  const location = useLocation();
+  const settingsPath = location.pathname.split("/settings")[0] + "/settings";
+
+  // Redirect /apps/:appId/settings to /apps/:appId/settings/general
+  if (location.pathname === settingsPath || location.pathname === settingsPath + "/") {
+    return <Navigate to={`${settingsPath}/general`} replace />;
+  }
+
+  const isActive = (path: string) => location.pathname === `${settingsPath}/${path}`;
+
   return (
     <div className="p-4">
       <div className="mb-6 flex items-center gap-2">
         <Settings className="h-5 w-5 text-muted-foreground" />
         <h2 className="text-lg font-semibold">Settings</h2>
       </div>
-      <Tabs defaultValue="general" className="w-full">
-        <TabsList className="mb-6">
-          <TabsTrigger value="general" className="gap-2">
-            <Settings className="h-4 w-4" />
-            General
-          </TabsTrigger>
-          <TabsTrigger value="api" className="gap-2">
-            <Globe className="h-4 w-4" />
-            API
-          </TabsTrigger>
-          <TabsTrigger value="pages" className="gap-2">
-            <FileCode className="h-4 w-4" />
-            Pages
-          </TabsTrigger>
-        </TabsList>
 
-        <TabsContent value="general" className="space-y-6">
-          <GeneralTab />
-        </TabsContent>
+      <div className="flex gap-6">
+        {/* Sidebar Navigation */}
+        <nav className="w-56 shrink-0">
+          <div className="space-y-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.path);
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={cn(
+                    "flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted",
+                    active ? "bg-muted font-medium" : "text-muted-foreground"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
 
-        <TabsContent value="api" className="space-y-6">
-          <ApiTab />
-        </TabsContent>
-
-        <TabsContent value="pages" className="space-y-6">
-          <PagesTab />
-        </TabsContent>
-      </Tabs>
+        {/* Main Content */}
+        <main className="flex-1 min-w-0 space-y-6">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }
 
-function GeneralTab() {
+export function GeneralTab() {
   return (
     <>
       <RenameSection />
@@ -132,7 +142,7 @@ function GeneralTab() {
   );
 }
 
-function ApiTab() {
+export function ApiTab() {
   return (
     <>
       <CorsSettingsSection />
@@ -141,7 +151,7 @@ function ApiTab() {
   );
 }
 
-function PagesTab() {
+export function PagesTab() {
   return (
     <>
       <GitHubLinkSection />
@@ -977,6 +987,8 @@ function GitHubLinkSection() {
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
   const [installationId, setInstallationId] = useState<number | null>(null);
   const [repoId, setRepoId] = useState<number | null>(null);
+  const [showDisconnectDialog, setShowDisconnectDialog] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -1033,11 +1045,14 @@ function GitHubLinkSection() {
   };
 
   const onDisconnect = async () => {
-    if (!confirm("Are you sure you want to disconnect this repository?"))
-      return;
-
-    await del(`/api/apps/${app.id}/link`);
-    setLink(null);
+    setDisconnecting(true);
+    try {
+      await del(`/api/apps/${app.id}/link`);
+      setLink(null);
+      setShowDisconnectDialog(false);
+    } finally {
+      setDisconnecting(false);
+    }
   };
 
   if (loading) {
@@ -1072,23 +1087,73 @@ function GitHubLinkSection() {
       </CardHeader>
       <CardContent>
         {link ? (
-          <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-4">
-            <div className="flex items-center gap-3">
-              <Link2 className="h-5 w-5 text-green-500" />
-              <div>
-                <p className="text-sm font-medium">
-                  {link.org}/{link.repo}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Connected repository
-                </p>
+          <>
+            <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-4">
+              <div className="flex items-center gap-3">
+                <Link2 className="h-5 w-5 text-green-500" />
+                <div>
+                  <a
+                    href={`https://github.com/${link.org}/${link.repo}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium hover:underline"
+                  >
+                    {link.org}/{link.repo}
+                  </a>
+                  <p className="text-xs text-muted-foreground">
+                    Connected repository
+                  </p>
+                </div>
               </div>
+              <Button variant="ghost" size="sm" onClick={() => setShowDisconnectDialog(true)}>
+                <Unlink className="mr-2 h-4 w-4" />
+                Disconnect
+              </Button>
             </div>
-            <Button variant="ghost" size="sm" onClick={onDisconnect}>
-              <Unlink className="mr-2 h-4 w-4" />
-              Disconnect
-            </Button>
-          </div>
+
+            <Dialog open={showDisconnectDialog} onOpenChange={setShowDisconnectDialog}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Disconnect Repository</DialogTitle>
+                  <DialogDescription>
+                    Are you sure you want to disconnect this repository?
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="py-4">
+                  <div className="flex items-center gap-3 rounded-lg border p-3">
+                    <Github className="h-5 w-5" />
+                    <div>
+                      <p className="text-sm font-medium">{link.org}/{link.repo}</p>
+                      <p className="text-xs text-muted-foreground">This repository will be unlinked</p>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Automatic deployments will stop. You can reconnect at any time.
+                  </p>
+                </div>
+
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowDisconnectDialog(false)}
+                    disabled={disconnecting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={onDisconnect}
+                    disabled={disconnecting}
+                  >
+                    {disconnecting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <Unlink className="mr-2 h-4 w-4" />
+                    Disconnect
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </>
         ) : (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
@@ -1171,177 +1236,137 @@ function BuildSettingsSection() {
   const { app } = useContext(AppContext)!;
   if (!app) throw new Error();
 
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+
   const {
     register,
     handleSubmit,
-    formState: { errors },
-    setValue,
-  } = useForm<IBuildConfig>({
-    defaultValues: {
-      branch: "default",
-      directory: ".",
-      buildCommand: "npm run build",
-      outDir: "dist",
-    },
-  });
+    reset,
+  } = useForm<IBuildConfig>();
 
   useEffect(() => {
     (async () => {
-      const config = await get<IBuildConfig>(
-        `/api/apps/${app.id}/builds/config`
-      );
-
-      setValue("branch", config.branch);
-      setValue("directory", config.directory);
-      setValue("buildCommand", config.buildCommand);
-      setValue("outDir", config.outDir);
+      try {
+        const data = await get<IBuildConfig>(`/api/apps/${app.id}/builds/config`);
+        reset(data);
+      } finally {
+        setLoading(false);
+      }
     })();
-  }, [app.id, get, setValue]);
+  }, [app.id, get, reset]);
 
-  const onSubmitConfig = async (data: IBuildConfig) => {
-    await post(`/api/apps/${app.id}/builds/config`, data);
-    toast.success("Build configuration saved");
+  const onSubmit = async (data: IBuildConfig) => {
+    setSaving(true);
+    try {
+      await post(`/api/apps/${app.id}/builds/config`, data);
+      toast.success("Build settings saved");
+      setIsEditing(false);
+    } catch {
+      toast.error("Failed to save build settings");
+    } finally {
+      setSaving(false);
+    }
   };
+
+  const handleCancel = () => {
+    reset();
+    setIsEditing(false);
+  };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <GitBranch className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-base">Build Settings</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading...
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <GitBranch className="h-4 w-4 text-muted-foreground" />
-          <CardTitle className="text-base">Build Settings</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <GitBranch className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-base">Build Settings</CardTitle>
+          </div>
+          <CardDescription>
+            Configure how your application is built
+          </CardDescription>
         </div>
-        <CardDescription>
-          Configure how your application is built and deployed
-        </CardDescription>
+        {!isEditing && (
+          <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+            <Pencil className="mr-2 h-4 w-4" />
+            Edit
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
-        <Alert variant="destructive" className="mb-4">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            Settings can't be edited right now. Please try again shortly.
-          </AlertDescription>
-        </Alert>
-        <TooltipProvider>
-          <form onSubmit={handleSubmit(onSubmitConfig)} className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label>Branch</Label>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span>
-                        <InfoIcon />
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>The Git branch used for deployment.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <Input
-                  {...register("branch", { required: "Branch is required" })}
-                  readOnly
-                  className="bg-muted"
-                />
-                {errors.branch && (
-                  <p className="text-sm text-destructive">
-                    {errors.branch.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label>Build Directory</Label>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span>
-                        <InfoIcon />
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Path relative to the root where the build runs.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <Input
-                  {...register("directory", {
-                    required: "Directory is required",
-                  })}
-                  readOnly
-                  className="bg-muted"
-                />
-                {errors.directory && (
-                  <p className="text-sm text-destructive">
-                    {errors.directory.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label>Output Directory</Label>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span>
-                        <InfoIcon />
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Path where build output is located.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <Input
-                  {...register("outDir", {
-                    required: "Output dir is required",
-                  })}
-                  readOnly
-                  className="bg-muted"
-                />
-                {errors.outDir && (
-                  <p className="text-sm text-destructive">
-                    {errors.outDir.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label>Build Command</Label>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span>
-                        <InfoIcon />
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>
-                        The command that runs your build (e.g. npm run build).
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <Input
-                  {...register("buildCommand", {
-                    required: "Build command is required",
-                  })}
-                  readOnly
-                  className="bg-muted"
-                />
-                {errors.buildCommand && (
-                  <p className="text-sm text-destructive">
-                    {errors.buildCommand.message}
-                  </p>
-                )}
-              </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="branch">Branch</Label>
+              <Input
+                id="branch"
+                {...register("branch")}
+                disabled={!isEditing}
+                placeholder="main"
+              />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="directory">Root Directory</Label>
+              <Input
+                id="directory"
+                {...register("directory")}
+                disabled={!isEditing}
+                placeholder="."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="buildCommand">Build Command</Label>
+              <Input
+                id="buildCommand"
+                {...register("buildCommand")}
+                disabled={!isEditing}
+                placeholder="npm run build"
+                className="font-mono text-sm"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="outDir">Output Directory</Label>
+              <Input
+                id="outDir"
+                {...register("outDir")}
+                disabled={!isEditing}
+                placeholder="dist"
+              />
+            </div>
+          </div>
 
-            <Button type="submit" disabled>
-              Save Changes
-            </Button>
-          </form>
-        </TooltipProvider>
+          {isEditing && (
+            <div className="flex gap-2">
+              <Button type="submit" disabled={saving}>
+                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save
+              </Button>
+              <Button type="button" variant="outline" onClick={handleCancel} disabled={saving}>
+                Cancel
+              </Button>
+            </div>
+          )}
+        </form>
       </CardContent>
     </Card>
   );
@@ -1433,129 +1458,303 @@ function DeleteSection() {
   if (!app) throw new Error();
   const { getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
+  const [showDialog, setShowDialog] = useState(false);
+  const [confirmName, setConfirmName] = useState("");
   const [deleting, setDeleting] = useState(false);
 
-  const handleDeleteClick = async () => {
-    if (confirm("Are you sure want to delete this app?")) {
-      setDeleting(true);
+  const canDelete = confirmName === app.name;
+
+  const handleDelete = async () => {
+    if (!canDelete) return;
+
+    setDeleting(true);
+    try {
       const accessToken = await getAccessTokenSilently();
       const res = await fetch(`/api/apps/${app.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-      setDeleting(false);
       if (res.ok) {
-        toast("Deleted app");
+        toast.success("App deleted successfully");
         navigate("/apps");
+      } else {
+        toast.error("Failed to delete app");
       }
+    } catch {
+      toast.error("Something went wrong");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    setShowDialog(open);
+    if (!open) {
+      setConfirmName("");
     }
   };
 
   return (
-    <Card className="border-destructive/50">
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <Trash2 className="h-4 w-4 text-destructive" />
-          <CardTitle className="text-base text-destructive">
-            Danger Zone
-          </CardTitle>
-        </div>
-        <CardDescription>
-          Permanently delete this app and all its data
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Button
-          variant="destructive"
-          onClick={handleDeleteClick}
-          disabled={deleting}
-        >
-          {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Delete App
-        </Button>
-      </CardContent>
-    </Card>
+    <>
+      <Card className="border-destructive/50">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Trash2 className="h-4 w-4 text-destructive" />
+            <CardTitle className="text-base text-destructive">
+              Danger Zone
+            </CardTitle>
+          </div>
+          <CardDescription>
+            Permanently delete this app and all its data
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              This action cannot be undone. This will permanently delete the app,
+              including all routes, builds, logs, and configurations.
+            </AlertDescription>
+          </Alert>
+          <Button variant="destructive" onClick={() => setShowDialog(true)}>
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete App
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Dialog open={showDialog} onOpenChange={handleOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Delete App</DialogTitle>
+            <DialogDescription>
+              This action is permanent and cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4">
+              <p className="text-sm font-medium">The following will be deleted:</p>
+              <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                <li>• All API routes and configurations</li>
+                <li>• All build history and deployments</li>
+                <li>• All logs and analytics data</li>
+                <li>• All authentication schemes</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirm-name">
+                Type <span className="font-mono font-semibold text-destructive">{app.name}</span> to confirm
+              </Label>
+              <Input
+                id="confirm-name"
+                value={confirmName}
+                onChange={(e) => setConfirmName(e.target.value)}
+                placeholder="Enter app name"
+                autoComplete="off"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => handleOpenChange(false)}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={!canDelete || deleting}
+            >
+              {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete App
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
 function ChangeStateSection() {
-  const { app } = useContext(AppContext)!;
+  const { app, setApp } = useContext(AppContext)!;
   if (!app) throw new Error();
   const { getAccessTokenSilently } = useAuth0();
-  const navigate = useNavigate();
+  const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
   const [changing, setChanging] = useState(false);
 
-  const handleChangeStatusClick = async () => {
-    if (
-      app.status === "Active" &&
-      !confirm("Are you sure want to deactivate the app?")
-    ) {
-      return;
-    }
+  const handleChangeStatus = async (newStatus: "Active" | "Inactive") => {
     setChanging(true);
-    const accessToken = await getAccessTokenSilently();
-    const status = app.status === "Active" ? "Inactive" : "Active";
-    const res = await fetch(`/api/apps/${app.id}/status?status=${status}`, {
-      method: "PATCH",
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    setChanging(false);
-    if (res.ok) {
-      app.status = status;
-      toast("Status changed");
-      navigate(".");
+    try {
+      const accessToken = await getAccessTokenSilently();
+      const res = await fetch(`/api/apps/${app.id}/status?status=${newStatus}`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (res.ok) {
+        setApp({ ...app, status: newStatus });
+        toast.success(
+          newStatus === "Active"
+            ? "App activated successfully"
+            : "App deactivated successfully"
+        );
+        setShowDeactivateDialog(false);
+      } else {
+        toast.error("Failed to change app status");
+      }
+    } catch {
+      toast.error("Something went wrong");
+    } finally {
+      setChanging(false);
     }
   };
 
+  const isActive = app.status === "Active";
+  const statusConfig = isActive
+    ? {
+        icon: Power,
+        iconClass: "text-green-500",
+        badgeClass: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+        description: "Your app is live and receiving traffic",
+      }
+    : {
+        icon: PowerOff,
+        iconClass: "text-muted-foreground",
+        badgeClass: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+        description: "Your app is offline and not receiving traffic",
+      };
+
+  const StatusIcon = statusConfig.icon;
+
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          {app.status === "Active" ? (
-            <Power className="h-4 w-4 text-green-500" />
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <StatusIcon className={cn("h-4 w-4", statusConfig.iconClass)} />
+            <CardTitle className="text-base">App Status</CardTitle>
+          </div>
+          <CardDescription>{statusConfig.description}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Status Display */}
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="flex items-center gap-3">
+              <div
+                className={cn(
+                  "flex h-10 w-10 items-center justify-center rounded-full",
+                  isActive
+                    ? "bg-green-100 dark:bg-green-900/30"
+                    : "bg-gray-100 dark:bg-gray-800"
+                )}
+              >
+                <StatusIcon
+                  className={cn("h-5 w-5", statusConfig.iconClass)}
+                />
+              </div>
+              <div>
+                <p className="font-medium">Current Status</p>
+                <Badge variant="secondary" className={statusConfig.badgeClass}>
+                  {app.status}
+                </Badge>
+              </div>
+            </div>
+
+            <Button
+              variant={isActive ? "outline" : "default"}
+              disabled={changing}
+              onClick={() => {
+                if (isActive) {
+                  setShowDeactivateDialog(true);
+                } else {
+                  handleChangeStatus("Active");
+                }
+              }}
+            >
+              {changing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isActive ? (
+                <>
+                  <PowerOff className="mr-2 h-4 w-4" />
+                  Deactivate
+                </>
+              ) : (
+                <>
+                  <Power className="mr-2 h-4 w-4" />
+                  Activate
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* Status Info */}
+          {isActive ? (
+            <div className="rounded-lg bg-green-50 p-3 text-sm dark:bg-green-900/10">
+              <p className="font-medium text-green-800 dark:text-green-400">
+                App is receiving traffic
+              </p>
+              <p className="mt-1 text-green-700 dark:text-green-500">
+                All API routes and static pages are accessible to users.
+              </p>
+            </div>
           ) : (
-            <PowerOff className="h-4 w-4 text-muted-foreground" />
+            <div className="rounded-lg bg-gray-50 p-3 text-sm dark:bg-gray-800/50">
+              <p className="font-medium text-gray-800 dark:text-gray-300">
+                App is offline
+              </p>
+              <p className="mt-1 text-gray-600 dark:text-gray-400">
+                All requests to your app will return a 503 Service Unavailable error.
+              </p>
+            </div>
           )}
-          <CardTitle className="text-base">App Status</CardTitle>
-        </div>
-        <CardDescription>
-          {app.status === "Active"
-            ? "Your app is currently active and receiving traffic"
-            : "Your app is currently inactive"}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center gap-4">
-          <Badge
-            variant="secondary"
-            className={cn(
-              app.status === "Active"
-                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
-            )}
-          >
-            {app.status}
-          </Badge>
-          <Button
-            variant={app.status === "Active" ? "outline" : "default"}
-            disabled={app.status === "Blocked" || changing}
-            onClick={handleChangeStatusClick}
-          >
-            {changing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {app.status === "Active" ? (
-              <>
-                <PowerOff className="mr-2 h-4 w-4" />
-                Deactivate
-              </>
-            ) : (
-              <>
-                <Power className="mr-2 h-4 w-4" />
-                Activate
-              </>
-            )}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      {/* Deactivate Confirmation Dialog */}
+      <Dialog open={showDeactivateDialog} onOpenChange={setShowDeactivateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Deactivate App</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to deactivate this app?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="rounded-lg border bg-muted/50 p-4">
+              <p className="text-sm font-medium">What happens when you deactivate:</p>
+              <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                <li>• All API routes will return 503 errors</li>
+                <li>• Static pages will be unavailable</li>
+                <li>• Builds will still be accessible</li>
+                <li>• You can reactivate at any time</li>
+              </ul>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeactivateDialog(false)}
+              disabled={changing}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => handleChangeStatus("Inactive")}
+              disabled={changing}
+            >
+              {changing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <PowerOff className="mr-2 h-4 w-4" />
+              Deactivate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
