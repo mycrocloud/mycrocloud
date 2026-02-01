@@ -44,20 +44,18 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   ExternalLink,
   Copy,
+  Check,
   ChevronDown,
   Plus,
   X,
   AlertTriangle,
   Shield,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { toast } from "react-toastify";
 
-const { WEBAPP_APIGATEWAY_DOMAIN, EDITOR_ORIGIN } = getConfig();
+const { EDITOR_ORIGIN } = getConfig();
 
-function slugify(text: string): string {
-  return text.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-}
 
 export default function RouteCreateUpdate({
   route,
@@ -68,8 +66,6 @@ export default function RouteCreateUpdate({
 }) {
   const { app } = useContext(AppContext)!;
   if (!app) throw new Error();
-  const appSlug = slugify(app.name);
-  const appDomain = WEBAPP_APIGATEWAY_DOMAIN.replace("__app_id__", appSlug);
 
   const forms = useForm<RouteCreateUpdateInputs>({
     resolver: yupResolver(routeCreateUpdateInputsSchema),
@@ -99,14 +95,16 @@ export default function RouteCreateUpdate({
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
     watch,
     setValue,
   } = forms;
 
   const responseType = watch("responseType");
   const enabled = watch("enabled");
-  const url = appDomain + watch("path");
+  const url = app.domain + watch("path");
+  const [copied, setCopied] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const onInvalid = (e: FieldErrors<RouteCreateUpdateInputs>) => {
     console.error(e);
@@ -114,12 +112,26 @@ export default function RouteCreateUpdate({
 
   const copyUrl = () => {
     navigator.clipboard.writeText(url);
-    toast.success("URL copied to clipboard");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
+
+  // Ctrl+S to save
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        formRef.current?.requestSubmit();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   return (
     <FormProvider {...forms}>
       <form
+        ref={formRef}
         className="flex h-full flex-col"
         onSubmit={handleSubmit(onSubmit, onInvalid)}
       >
@@ -218,8 +230,12 @@ export default function RouteCreateUpdate({
                     onClick={copyUrl}
                     className="ml-auto h-6"
                   >
-                    <Copy className="mr-1 h-3 w-3" />
-                    Copy
+                    {copied ? (
+                      <Check className="mr-1 h-3 w-3 text-green-500" />
+                    ) : (
+                      <Copy className="mr-1 h-3 w-3" />
+                    )}
+                    {copied ? "Copied" : "Copy"}
                   </Button>
                 </div>
               </div>
@@ -282,9 +298,13 @@ export default function RouteCreateUpdate({
 
         {/* Footer */}
         <div className="border-t bg-background p-4">
-          <Button type="submit" disabled={route?.status === "Blocked"}>
+          <Button type="submit" disabled={route?.status === "Blocked" || isSubmitting}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {route ? "Save Changes" : "Create Route"}
           </Button>
+          <span className="ml-3 text-xs text-muted-foreground">
+            {navigator.platform.includes("Mac") ? "⌘" : "Ctrl"}+S to save
+          </span>
         </div>
       </form>
     </FormProvider>

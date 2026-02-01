@@ -5,6 +5,7 @@ import IApp from "./App";
 import { useApiClient } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, Loader2 } from "lucide-react";
+import { getAppDomain } from "./service";
 
 interface NavItemProps {
   to: string;
@@ -60,6 +61,7 @@ export default function AppLayout() {
   useEffect(() => {
     const getApp = async () => {
       const app = await get<IApp>(`/api/apps/${appId}`);
+      app.domain = getAppDomain(app.name);
       setApp(app);
     };
     getApp();

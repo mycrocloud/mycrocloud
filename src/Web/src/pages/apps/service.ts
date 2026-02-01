@@ -8,5 +8,5 @@ function slugify(text: string): string {
 
 export function getAppDomain(appName: string) {
   const appSlug = slugify(appName);
-  return WEBAPP_APIGATEWAY_DOMAIN.replace("__app_id__", appSlug);
+  return WEBAPP_APIGATEWAY_DOMAIN.replace("__app_slug__", appSlug);
 }

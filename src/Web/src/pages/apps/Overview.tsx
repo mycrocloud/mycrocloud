@@ -2,7 +2,6 @@ import { useContext, useEffect, useState, useMemo } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { Link } from "react-router-dom";
 import { AppContext } from ".";
-import { getAppDomain } from "./service";
 import { IRouteLog } from "../routes";
 import {
   Activity,
@@ -55,7 +54,6 @@ export default function AppOverview() {
   const { getAccessTokenSilently } = useAuth0();
   const [logs, setLogs] = useState<IRouteLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const domain = getAppDomain(app.name);
 
   useEffect(() => {
     const fetchLogs = async () => {
@@ -126,7 +124,7 @@ export default function AppOverview() {
 
   const [copied, setCopied] = useState(false);
   const handleCopyDomain = () => {
-    navigator.clipboard.writeText(domain);
+    navigator.clipboard.writeText(`https://${app.domain}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -148,12 +146,12 @@ export default function AppOverview() {
             <div>
               <p className="text-sm text-muted-foreground">Your app is live at</p>
               <a
-                href={`https://${domain}`}
+                href={`https://${app.domain}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-medium hover:underline"
               >
-                {domain}
+                {app.domain}
                 <ExternalLink className="ml-1 inline h-3 w-3" />
               </a>
             </div>

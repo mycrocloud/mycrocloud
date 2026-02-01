@@ -1,9 +1,11 @@
 import { Outlet, useNavigate, useParams, useMatch } from "react-router-dom";
 import React, {
+  useCallback,
   useContext,
   useEffect,
   useMemo,
   useReducer,
+  useRef,
   useState,
 } from "react";
 import { AppContext } from "../apps";
@@ -39,6 +41,7 @@ import {
   Pencil,
   Trash2,
   Loader2,
+  Route,
 } from "lucide-react";
 import {
   Dialog,
@@ -130,9 +133,11 @@ function RouteExplorer() {
 
       for (const item of items) {
         if (item.type === "Route") {
-          if (
-            item.route?.name.toLowerCase().includes(searchTerm.toLowerCase())
-          ) {
+          const term = searchTerm.toLowerCase();
+          const matchesName = item.route?.name.toLowerCase().includes(term);
+          const matchesPath = item.route?.path.toLowerCase().includes(term);
+          const matchesMethod = item.route?.method.toLowerCase().includes(term);
+          if (matchesName || matchesPath || matchesMethod) {
             result.push(item);
             const pathNodes: IExplorerItem[] = [];
             getPathNodes(explorerItems, item, pathNodes);
@@ -405,6 +410,48 @@ function RouteExplorer() {
     navigate(route.id.toString());
   };
 
+  // Keyboard navigation
+  const treeRef = useRef<HTMLDivElement>(null);
+  const flatRoutes = useMemo(() => {
+    const result: IExplorerItem[] = [];
+    const addItems = (parentId: number | null) => {
+      const children = filteredItems.filter((i) => i.parentId === parentId);
+      for (const child of children) {
+        result.push(child);
+        if (child.type === "Folder" && !child.collapsed) {
+          addItems(child.id);
+        }
+      }
+    };
+    addItems(null);
+    return result.filter((i) => i.type === "Route" && i.id > 0);
+  }, [filteredItems]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!flatRoutes.length) return;
+
+      const currentIndex = flatRoutes.findIndex((r) => r.id === routeId);
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        const nextIndex = currentIndex < flatRoutes.length - 1 ? currentIndex + 1 : 0;
+        navigate(flatRoutes[nextIndex].id.toString());
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        const prevIndex = currentIndex > 0 ? currentIndex - 1 : flatRoutes.length - 1;
+        navigate(flatRoutes[prevIndex].id.toString());
+      } else if (e.key === "Delete" && routeId) {
+        e.preventDefault();
+        const currentItem = flatRoutes.find((r) => r.id === routeId);
+        if (currentItem) {
+          handleDeleteClick(currentItem);
+        }
+      }
+    },
+    [flatRoutes, routeId, navigate, handleDeleteClick]
+  );
+
   const renderNode = (node: IExplorerItem | null, items: IExplorerItem[]) => {
     const isRoot = node === null;
     // Only Folders can have children; Routes return empty array to prevent duplicate rendering
@@ -493,7 +540,7 @@ function RouteExplorer() {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Search routes..."
+            placeholder="Search name, path, method..."
             className="pl-8"
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -501,14 +548,43 @@ function RouteExplorer() {
       </div>
 
       {/* Tree */}
-      <div className="flex-1 overflow-auto p-2">
+      <div
+        ref={treeRef}
+        className="flex-1 overflow-auto p-2 focus:outline-none"
+        tabIndex={0}
+        onKeyDown={handleKeyDown}
+      >
         {loading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         ) : filteredItems.length === 0 ? (
-          <div className="py-8 text-center text-sm text-muted-foreground">
-            {searchTerm ? "No routes found" : "No routes yet"}
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            {searchTerm ? (
+              <>
+                <Search className="h-10 w-10 text-muted-foreground/30" />
+                <p className="mt-3 text-sm font-medium">No routes found</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Try searching by name, path, or method
+                </p>
+              </>
+            ) : (
+              <>
+                <Route className="h-10 w-10 text-muted-foreground/30" />
+                <p className="mt-3 text-sm font-medium">No routes yet</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Create your first route to get started
+                </p>
+                <Button
+                  size="sm"
+                  className="mt-4"
+                  onClick={() => handleNewRouteClick(null, 0)}
+                >
+                  <Plus className="mr-1 h-4 w-4" />
+                  Create Route
+                </Button>
+              </>
+            )}
           </div>
         ) : (
           renderNode(null, filteredItems)
@@ -549,7 +625,7 @@ const methodColors: Record<string, string> = {
 };
 
 function RouteItem({
-  item: { route },
+  item,
   isActive,
   onClick,
   onDuplicate,
@@ -561,9 +637,11 @@ function RouteItem({
   onDuplicate: () => void;
   onDelete: () => void;
 }) {
+  const { route } = item;
   if (!route) return null;
 
   const methodClass = methodColors[route.method.toUpperCase()] || "text-gray-600 bg-gray-50";
+  const isNewRoute = item.id < 0;
 
   return (
     <div
@@ -581,9 +659,17 @@ function RouteItem({
       >
         {route.method}
       </span>
-      <span className="flex-1 truncate text-sm">{route.name}</span>
+      <span className={cn(
+        "flex-1 truncate text-sm",
+        route.status === "Inactive" && "text-muted-foreground"
+      )}>
+        {route.name}
+      </span>
       {route.status === "Blocked" && (
         <span className="shrink-0 text-xs text-destructive">Blocked</span>
+      )}
+      {route.status === "Inactive" && !isNewRoute && (
+        <span className="shrink-0 text-xs text-muted-foreground">Inactive</span>
       )}
       <DropdownMenu>
         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
