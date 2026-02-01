@@ -13,6 +13,9 @@ import {
   Filter,
   ChevronRight,
   Activity,
+  RefreshCw,
+  AlertCircle,
+  SearchX,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -125,6 +128,8 @@ export default function AppLogs() {
   const { getAccessTokenSilently } = useAuth0();
   const [logs, setLogs] = useState<IRouteLog[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [hasFetched, setHasFetched] = useState(false);
   const [selectedLog, setSelectedLog] = useState<IRouteLog | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const { register, handleSubmit, setValue } = useForm<Inputs>({
@@ -162,23 +167,25 @@ export default function AppLogs() {
     return conditions.join("&");
   }
 
-  const searchLogs = async (data: Inputs) => {
-    const accessToken = await getAccessTokenSilently();
-    const logs = (await (
-      await fetch(`/api/apps/${app.id}/logs?${buildQuery(data)}`, {
+  const onSubmit: SubmitHandler<Inputs> = async (data: Inputs) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const accessToken = await getAccessTokenSilently();
+      const res = await fetch(`/api/apps/${app.id}/logs?${buildQuery(data)}`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
-      })
-    ).json()) as IRouteLog[];
-    return logs;
-  };
-
-  const onSubmit: SubmitHandler<Inputs> = async (data: Inputs) => {
-    setLoading(true);
-    try {
-      const logs = await searchLogs(data);
+      });
+      if (!res.ok) {
+        setError("Failed to load logs");
+        return;
+      }
+      const logs = (await res.json()) as IRouteLog[];
       setLogs(logs);
+      setHasFetched(true);
+    } catch {
+      setError("Failed to load logs");
     } finally {
       setLoading(false);
     }
@@ -348,12 +355,41 @@ export default function AppLogs() {
       {/* Logs Table */}
       <Card>
         <CardContent className="p-0">
-          {logs.length === 0 ? (
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground/50" />
+              <p className="mt-4 text-sm text-muted-foreground">Loading logs...</p>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <AlertCircle className="h-12 w-12 text-destructive/50" />
+              <h3 className="mt-4 text-lg font-medium text-destructive">{error}</h3>
+              <Button variant="outline" size="sm" className="mt-4" onClick={handleSubmit(onSubmit)}>
+                Try again
+              </Button>
+            </div>
+          ) : !hasFetched ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Clock className="h-12 w-12 text-muted-foreground/50" />
+              <h3 className="mt-4 text-lg font-medium">No logs loaded</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Select a date range and click "Apply Filters" to view logs
+              </p>
+            </div>
+          ) : logs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Clock className="h-12 w-12 text-muted-foreground/50" />
               <h3 className="mt-4 text-lg font-medium">No logs found</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Select a date range and click "Apply Filters" to view logs
+                No requests were made in the selected date range
+              </p>
+            </div>
+          ) : filteredLogs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <SearchX className="h-12 w-12 text-muted-foreground/50" />
+              <h3 className="mt-4 text-lg font-medium">No matching logs</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Try adjusting your search query
               </p>
             </div>
           ) : (
