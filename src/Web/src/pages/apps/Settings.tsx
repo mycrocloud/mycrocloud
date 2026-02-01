@@ -1433,48 +1433,125 @@ function DeleteSection() {
   if (!app) throw new Error();
   const { getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
+  const [showDialog, setShowDialog] = useState(false);
+  const [confirmName, setConfirmName] = useState("");
   const [deleting, setDeleting] = useState(false);
 
-  const handleDeleteClick = async () => {
-    if (confirm("Are you sure want to delete this app?")) {
-      setDeleting(true);
+  const canDelete = confirmName === app.name;
+
+  const handleDelete = async () => {
+    if (!canDelete) return;
+
+    setDeleting(true);
+    try {
       const accessToken = await getAccessTokenSilently();
       const res = await fetch(`/api/apps/${app.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-      setDeleting(false);
       if (res.ok) {
-        toast("Deleted app");
+        toast.success("App deleted successfully");
         navigate("/apps");
+      } else {
+        toast.error("Failed to delete app");
       }
+    } catch {
+      toast.error("Something went wrong");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    setShowDialog(open);
+    if (!open) {
+      setConfirmName("");
     }
   };
 
   return (
-    <Card className="border-destructive/50">
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <Trash2 className="h-4 w-4 text-destructive" />
-          <CardTitle className="text-base text-destructive">
-            Danger Zone
-          </CardTitle>
-        </div>
-        <CardDescription>
-          Permanently delete this app and all its data
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Button
-          variant="destructive"
-          onClick={handleDeleteClick}
-          disabled={deleting}
-        >
-          {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Delete App
-        </Button>
-      </CardContent>
-    </Card>
+    <>
+      <Card className="border-destructive/50">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Trash2 className="h-4 w-4 text-destructive" />
+            <CardTitle className="text-base text-destructive">
+              Danger Zone
+            </CardTitle>
+          </div>
+          <CardDescription>
+            Permanently delete this app and all its data
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              This action cannot be undone. This will permanently delete the app,
+              including all routes, builds, logs, and configurations.
+            </AlertDescription>
+          </Alert>
+          <Button variant="destructive" onClick={() => setShowDialog(true)}>
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete App
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Dialog open={showDialog} onOpenChange={handleOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Delete App</DialogTitle>
+            <DialogDescription>
+              This action is permanent and cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4">
+              <p className="text-sm font-medium">The following will be deleted:</p>
+              <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                <li>• All API routes and configurations</li>
+                <li>• All build history and deployments</li>
+                <li>• All logs and analytics data</li>
+                <li>• All authentication schemes</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirm-name">
+                Type <span className="font-mono font-semibold text-destructive">{app.name}</span> to confirm
+              </Label>
+              <Input
+                id="confirm-name"
+                value={confirmName}
+                onChange={(e) => setConfirmName(e.target.value)}
+                placeholder="Enter app name"
+                autoComplete="off"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => handleOpenChange(false)}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={!canDelete || deleting}
+            >
+              {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete App
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
