@@ -49,7 +49,6 @@ export default function AppOverview() {
   const domain = getAppDomain(app.name);
 
   useEffect(() => {
-    //@ts-ignore
     const fetchLogs = async () => {
       try {
         const accessToken = await getAccessTokenSilently();
@@ -76,7 +75,7 @@ export default function AppOverview() {
       }
     };
 
-    //fetchLogs();
+    fetchLogs();
   }, [app.id, getAccessTokenSilently]);
 
   const dailyStats = useMemo(() => {
