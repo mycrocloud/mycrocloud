@@ -47,7 +47,10 @@ export const routeCreateUpdateInputsSchema: ObjectSchema<RouteCreateUpdateInputs
       }),
     ),
     responseBodyLanguage: yup.string(),
-    response: yup.string().nullable(),
+    response: yup.string().nullable().when("responseType", {
+      is: "Function",
+      then: (schema) => schema.required("Function handler is required"),
+    }),
     functionHandlerDependencies: yup.array().of(yup.string()),
     useDynamicResponse: yup.boolean(),
     fileId: yup.number().nullable(),
