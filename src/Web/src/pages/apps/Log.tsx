@@ -1,8 +1,9 @@
-import { useContext, useEffect, useState, useMemo } from "react";
+import { useContext, useState, useMemo } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { AppContext } from ".";
 import { IRouteLog } from "../routes";
+import { functionExecutionEnvironmentMap } from "../routes/constants";
 import {
   Search,
   Download,
@@ -12,7 +13,9 @@ import {
   Clock,
   Filter,
   ChevronRight,
-  Activity,
+  ChevronLeft,
+  ChevronsLeft,
+  ChevronsRight,
   RefreshCw,
   AlertCircle,
   SearchX,
@@ -43,19 +46,37 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 type Inputs = {
   accessDateFrom?: string;
   accessDateTo?: string;
-  routeIds: number[];
 };
+
+interface Pagination {
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+}
+
+interface PaginatedLogsResponse {
+  data: IRouteLog[];
+  pagination: Pagination;
+}
 
 const methodColors: Record<string, string> = {
   GET: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
@@ -64,6 +85,8 @@ const methodColors: Record<string, string> = {
   DELETE: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
   PATCH: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
 };
+
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 function getStatusColor(statusCode: number): string {
   if (statusCode >= 200 && statusCode < 300) {
@@ -127,52 +150,27 @@ export default function AppLogs() {
 
   const { getAccessTokenSilently } = useAuth0();
   const [logs, setLogs] = useState<IRouteLog[]>([]);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasFetched, setHasFetched] = useState(false);
   const [selectedLog, setSelectedLog] = useState<IRouteLog | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const { register, handleSubmit, setValue } = useForm<Inputs>({
-    defaultValues: {
-      routeIds: [],
-    },
-  });
+  const [pageSize, setPageSize] = useState(20);
+  const { register, handleSubmit, getValues } = useForm<Inputs>();
 
-  const [routeIdsValue, setRouteIdsValue] = useState("");
-
-  useEffect(() => {
-    if (routeIdsValue) {
-      setValue(
-        "routeIds",
-        routeIdsValue.split(",").map((id) => parseInt(id))
-      );
-    } else {
-      setValue("routeIds", []);
-    }
-  }, [routeIdsValue, setValue]);
-
-  function buildQuery(data: Inputs) {
-    const conditions = [];
-    if (data.accessDateFrom) {
-      conditions.push(`accessDateFrom=${data.accessDateFrom}`);
-    }
-    if (data.accessDateTo) {
-      conditions.push(`accessDateTo=${data.accessDateTo}`);
-    }
-    if (data.routeIds.length > 0) {
-      data.routeIds.forEach((id) => {
-        conditions.push(`routeIds=${id}`);
-      });
-    }
-    return conditions.join("&");
-  }
-
-  const onSubmit: SubmitHandler<Inputs> = async (data: Inputs) => {
+  const fetchLogs = async (data: Inputs, page: number, size: number) => {
     setLoading(true);
     setError(null);
     try {
       const accessToken = await getAccessTokenSilently();
-      const res = await fetch(`/api/apps/${app.id}/logs?${buildQuery(data)}`, {
+      const params = new URLSearchParams();
+      params.set("page", page.toString());
+      params.set("pageSize", size.toString());
+      if (data.accessDateFrom) params.set("accessDateFrom", data.accessDateFrom);
+      if (data.accessDateTo) params.set("accessDateTo", data.accessDateTo);
+
+      const res = await fetch(`/api/apps/${app.id}/logs?${params.toString()}`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -181,14 +179,31 @@ export default function AppLogs() {
         setError("Failed to load logs");
         return;
       }
-      const logs = (await res.json()) as IRouteLog[];
-      setLogs(logs);
+      const response = (await res.json()) as PaginatedLogsResponse;
+      setLogs(response.data);
+      setPagination(response.pagination);
       setHasFetched(true);
     } catch {
       setError("Failed to load logs");
     } finally {
       setLoading(false);
     }
+  };
+
+  const onSubmit: SubmitHandler<Inputs> = async (data: Inputs) => {
+    await fetchLogs(data, 1, pageSize);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    const data = getValues();
+    fetchLogs(data, newPage, pageSize);
+  };
+
+  const handlePageSizeChange = (newSize: string) => {
+    const size = parseInt(newSize);
+    setPageSize(size);
+    const data = getValues();
+    fetchLogs(data, 1, size);
   };
 
   const filteredLogs = useMemo(() => {
@@ -203,12 +218,12 @@ export default function AppLogs() {
   }, [logs, searchQuery]);
 
   const handleDownloadCsv = (data: IRouteLog[]) => {
-    const header = "Time,Remote Address,Route ID,Method,Path,Status Code";
+    const header = "Time,Remote Address,Method,Path,Status Code";
     const csv = [
       header,
       ...data.map(
         (l) =>
-          `"${formatDate(l.timestamp)}","${l.remoteAddress || "-"}","${l.routeId || "-"}","${l.method}","${l.path}","${l.statusCode}"`
+          `"${formatDate(l.timestamp)}","${l.remoteAddress || "-"}","${l.method}","${l.path}","${l.statusCode}"`
       ),
     ].join("\n");
     downloadFile(csv, `logs_${getTimestamp()}.csv`, "text/csv");
@@ -218,15 +233,6 @@ export default function AppLogs() {
     const json = JSON.stringify(data, null, 2);
     downloadFile(json, `logs_${getTimestamp()}.json`, "application/json");
   };
-
-  const stats = useMemo(() => {
-    const total = logs.length;
-    const success = logs.filter(
-      (l) => l.statusCode >= 200 && l.statusCode < 300
-    ).length;
-    const errors = logs.filter((l) => l.statusCode >= 400).length;
-    return { total, success, errors };
-  }, [logs]);
 
   return (
     <div className="space-y-4 p-4">
@@ -246,32 +252,36 @@ export default function AppLogs() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Export displayed logs</DropdownMenuLabel>
+                <DropdownMenuLabel>Export current page</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => handleDownloadCsv(filteredLogs)}>
                   <FileSpreadsheet className="mr-2 h-4 w-4" />
-                  CSV
+                  CSV ({filteredLogs.length})
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleDownloadJson(filteredLogs)}>
                   <FileJson className="mr-2 h-4 w-4" />
-                  JSON
+                  JSON ({filteredLogs.length})
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>Export all fetched logs</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => handleDownloadCsv(logs)}>
-                  <FileSpreadsheet className="mr-2 h-4 w-4" />
-                  CSV ({logs.length})
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleDownloadJson(logs)}>
-                  <FileJson className="mr-2 h-4 w-4" />
-                  JSON ({logs.length})
-                </DropdownMenuItem>
+                {searchQuery && filteredLogs.length !== logs.length && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Export page (unfiltered)</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => handleDownloadCsv(logs)}>
+                      <FileSpreadsheet className="mr-2 h-4 w-4" />
+                      CSV ({logs.length})
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleDownloadJson(logs)}>
+                      <FileJson className="mr-2 h-4 w-4" />
+                      JSON ({logs.length})
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">
                   From Date
@@ -298,21 +308,21 @@ export default function AppLogs() {
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">
-                  Route IDs
-                </label>
-                <Input
-                  type="text"
-                  value={routeIdsValue}
-                  onChange={(e) => setRouteIdsValue(e.target.value)}
-                  placeholder="e.g. 1,2,3"
-                />
-              </div>
-              <div className="flex items-end">
-                <Button type="submit" className="w-full" disabled={loading}>
+              <div className="flex items-end gap-2">
+                <Button type="submit" className="flex-1" disabled={loading}>
                   {loading ? "Loading..." : "Apply Filters"}
                 </Button>
+                {hasFetched && (
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    size="icon"
+                    disabled={loading}
+                    title="Refresh"
+                  >
+                    <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+                  </Button>
+                )}
               </div>
             </div>
           </form>
@@ -320,30 +330,16 @@ export default function AppLogs() {
       </Card>
 
       {/* Stats and Search */}
-      {logs.length > 0 && (
+      {pagination && pagination.totalItems > 0 && (
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex gap-4">
-            <div className="flex items-center gap-2 text-sm">
-              <Activity className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Total:</span>
-              <span className="font-medium">{stats.total}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="h-2 w-2 rounded-full bg-green-500" />
-              <span className="text-muted-foreground">Success:</span>
-              <span className="font-medium">{stats.success}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="h-2 w-2 rounded-full bg-red-500" />
-              <span className="text-muted-foreground">Errors:</span>
-              <span className="font-medium">{stats.errors}</span>
-            </div>
+          <div className="text-sm text-muted-foreground">
+            Showing {((pagination.page - 1) * pagination.pageSize) + 1} - {Math.min(pagination.page * pagination.pageSize, pagination.totalItems)} of {pagination.totalItems.toLocaleString()} logs
           </div>
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search logs..."
+              placeholder="Filter current page..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -376,7 +372,7 @@ export default function AppLogs() {
                 Select a date range and click "Apply Filters" to view logs
               </p>
             </div>
-          ) : logs.length === 0 ? (
+          ) : pagination && pagination.totalItems === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Clock className="h-12 w-12 text-muted-foreground/50" />
               <h3 className="mt-4 text-lg font-medium">No logs found</h3>
@@ -448,12 +444,74 @@ export default function AppLogs() {
         </CardContent>
       </Card>
 
-      {/* Log Detail Dialog */}
-      <Dialog open={!!selectedLog} onOpenChange={() => setSelectedLog(null)}>
-        <DialogContent className="max-w-2xl">
+      {/* Pagination Controls */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Rows per page</span>
+            <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+              <SelectTrigger className="w-[70px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PAGE_SIZE_OPTIONS.map((size) => (
+                  <SelectItem key={size} value={size.toString()}>
+                    {size}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => handlePageChange(1)}
+              disabled={loading || pagination.page === 1}
+              title="First page"
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => handlePageChange(pagination.page - 1)}
+              disabled={loading || pagination.page === 1}
+              title="Previous page"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="px-3 text-sm">
+              Page {pagination.page} of {pagination.totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => handlePageChange(pagination.page + 1)}
+              disabled={loading || pagination.page === pagination.totalPages}
+              title="Next page"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => handlePageChange(pagination.totalPages)}
+              disabled={loading || pagination.page === pagination.totalPages}
+              title="Last page"
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Log Detail Sheet */}
+      <Sheet open={!!selectedLog} onOpenChange={() => setSelectedLog(null)}>
+        <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
           {selectedLog && (
             <>
-              <DialogHeader>
+              <SheetHeader>
                 <div className="flex items-center gap-3">
                   <Badge
                     variant="secondary"
@@ -464,32 +522,59 @@ export default function AppLogs() {
                   >
                     {selectedLog.method}
                   </Badge>
-                  <DialogTitle className="font-mono text-base">
-                    {selectedLog.path}
-                  </DialogTitle>
+                  <Badge
+                    variant="secondary"
+                    className={cn("font-mono", getStatusColor(selectedLog.statusCode))}
+                  >
+                    {selectedLog.statusCode}
+                  </Badge>
                 </div>
-                <DialogDescription>
+                <SheetTitle className="font-mono text-sm break-all text-left">
+                  {selectedLog.path}
+                </SheetTitle>
+                <SheetDescription>
                   {formatDate(selectedLog.timestamp)}
-                </DialogDescription>
-              </DialogHeader>
+                </SheetDescription>
+              </SheetHeader>
 
-              <div className="space-y-4">
+              {/* Navigation between logs */}
+              <div className="flex items-center justify-between border-b py-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const currentIndex = filteredLogs.findIndex(l => l.id === selectedLog.id);
+                    if (currentIndex > 0) {
+                      setSelectedLog(filteredLogs[currentIndex - 1]);
+                    }
+                  }}
+                  disabled={filteredLogs.findIndex(l => l.id === selectedLog.id) === 0}
+                >
+                  <ChevronLeft className="mr-1 h-4 w-4" />
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {filteredLogs.findIndex(l => l.id === selectedLog.id) + 1} / {filteredLogs.length}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const currentIndex = filteredLogs.findIndex(l => l.id === selectedLog.id);
+                    if (currentIndex < filteredLogs.length - 1) {
+                      setSelectedLog(filteredLogs[currentIndex + 1]);
+                    }
+                  }}
+                  disabled={filteredLogs.findIndex(l => l.id === selectedLog.id) === filteredLogs.length - 1}
+                >
+                  Next
+                  <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="space-y-4 py-4">
                 {/* Request Info */}
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Status Code</span>
-                    <div className="mt-1">
-                      <Badge
-                        variant="secondary"
-                        className={cn(
-                          "font-mono",
-                          getStatusColor(selectedLog.statusCode)
-                        )}
-                      >
-                        {selectedLog.statusCode}
-                      </Badge>
-                    </div>
-                  </div>
                   <div>
                     <span className="text-muted-foreground">Remote Address</span>
                     <p className="mt-1 font-mono">
@@ -497,16 +582,43 @@ export default function AppLogs() {
                     </p>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Route ID</span>
-                    <p className="mt-1 font-mono">{selectedLog.routeId || "-"}</p>
+                    <span className="text-muted-foreground">Content Length</span>
+                    <p className="mt-1 font-mono">
+                      {selectedLog.requestContentLength
+                        ? `${selectedLog.requestContentLength} bytes`
+                        : "-"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Content Type</span>
+                    <p className="mt-1 font-mono text-xs">
+                      {selectedLog.requestContentType || "-"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Execution Duration</span>
+                    <p className="mt-1 font-mono">
+                      {selectedLog.functionExecutionDuration
+                        ? `${selectedLog.functionExecutionDuration}ms`
+                        : "-"}
+                    </p>
                   </div>
                 </div>
+
+                {selectedLog.functionExecutionEnvironment && (
+                  <div className="text-sm">
+                    <span className="text-muted-foreground">Execution Environment</span>
+                    <p className="mt-1">
+                      {functionExecutionEnvironmentMap.get(selectedLog.functionExecutionEnvironment) || "-"}
+                    </p>
+                  </div>
+                )}
 
                 {/* Function Logs */}
                 {selectedLog.functionLogs && selectedLog.functionLogs.length > 0 && (
                   <div>
                     <h4 className="mb-2 font-medium">Function Logs</h4>
-                    <div className="max-h-[300px] overflow-auto rounded-lg bg-muted/50 p-3">
+                    <div className="max-h-[400px] overflow-auto rounded-lg bg-muted/50 p-3">
                       {selectedLog.functionLogs.map((fl, i) => (
                         <div
                           key={i}
@@ -537,11 +649,21 @@ export default function AppLogs() {
                     No function logs available
                   </div>
                 )}
+
+                {/* Request Headers */}
+                {selectedLog.requestHeaders && (
+                  <div>
+                    <h4 className="mb-2 font-medium">Request Headers</h4>
+                    <pre className="max-h-[200px] overflow-auto rounded-lg bg-muted/50 p-3 text-xs">
+                      {selectedLog.requestHeaders}
+                    </pre>
+                  </div>
+                )}
               </div>
             </>
           )}
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

@@ -1,5 +1,4 @@
-﻿using System.Globalization;
-using Api.Filters;
+﻿using Api.Filters;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApp.Domain.Repositories;
@@ -28,35 +27,89 @@ public class LogsController(ILogRepository logRepository) : BaseController
         {
             //TODO: Implement sorting
         }
-        logs = logs
+
+        var totalItems = await logs.CountAsync();
+        var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+
+        var data = await logs
             .OrderByDescending(l => l.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .AsNoTracking();
-        // add page info to the header
-        
-        Response.Headers.Append("X-Total-Count", logs.Count().ToString());
-        Response.Headers.Append("X-Page", page.ToString());
-        Response.Headers.Append("X-Page-Size", pageSize.ToString());
-        Response.Headers.Append("X-Page-Count", Math.Ceiling((double)logs.Count() / pageSize).ToString(CultureInfo.InvariantCulture));
-        
-        return Ok(logs.Select(l => new {
-            l.Id,
-            Timestamp = l.CreatedAt,
-            l.RemoteAddress,
-            l.RouteId,
-            RouteName = l.Route != null ? l.Route.Name : null,
-            l.Method,
-            l.Path,
-            l.StatusCode,
-            l.FunctionExecutionEnvironment,
-            l.FunctionExecutionDuration,
-            l.FunctionLogs,
-            l.RequestContentLength,
-            l.RequestContentType,
-            l.RequestCookie,
-            l.RequestFormContent,
-            l.RequestHeaders
-        }));
+            .AsNoTracking()
+            .Select(l => new {
+                l.Id,
+                Timestamp = l.CreatedAt,
+                l.RemoteAddress,
+                l.RouteId,
+                RouteName = l.Route != null ? l.Route.Name : null,
+                l.Method,
+                l.Path,
+                l.StatusCode,
+                l.FunctionExecutionEnvironment,
+                l.FunctionExecutionDuration,
+                l.FunctionLogs,
+                l.RequestContentLength,
+                l.RequestContentType,
+                l.RequestCookie,
+                l.RequestFormContent,
+                l.RequestHeaders
+            })
+            .ToListAsync();
+
+        return Ok(new
+        {
+            Data = data,
+            Pagination = new
+            {
+                Page = page,
+                PageSize = pageSize,
+                TotalItems = totalItems,
+                TotalPages = totalPages
+            }
+        });
+    }
+
+    [HttpGet("stats")]
+    public async Task<IActionResult> Stats(int appId, DateTime? accessDateFrom, DateTime? accessDateTo)
+    {
+        var logs = await logRepository.Search(appId);
+
+        if (accessDateFrom is not null)
+        {
+            var fromUtc = DateTime.SpecifyKind(accessDateFrom.Value.Date, DateTimeKind.Utc);
+            logs = logs.Where(l => l.CreatedAt >= fromUtc);
+        }
+        if (accessDateTo is not null)
+        {
+            var toUtc = DateTime.SpecifyKind(accessDateTo.Value.Date.AddDays(1), DateTimeKind.Utc);
+            logs = logs.Where(l => l.CreatedAt < toUtc);
+        }
+
+        var totalRequests = await logs.CountAsync();
+
+        var todayUtc = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
+        var tomorrowUtc = todayUtc.AddDays(1);
+        var todayRequests = await logs.CountAsync(l => l.CreatedAt >= todayUtc && l.CreatedAt < tomorrowUtc);
+
+        var dailyStats = await logs
+            .GroupBy(l => l.CreatedAt.Date)
+            .Select(g => new
+            {
+                Date = g.Key,
+                Count = g.Count()
+            })
+            .OrderBy(x => x.Date)
+            .ToListAsync();
+
+        return Ok(new
+        {
+            TotalRequests = totalRequests,
+            TodayRequests = todayRequests,
+            DailyStats = dailyStats.Select(d => new
+            {
+                Date = d.Date.ToString("yyyy-MM-dd"),
+                d.Count
+            })
+        });
     }
 }
