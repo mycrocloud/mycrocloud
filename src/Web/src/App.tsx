@@ -13,6 +13,7 @@ import {
   AppCreate,
   AppLog,
   AppBuilds,
+  AppBuildDetails,
   AppLayout,
 } from "./pages/apps";
 
@@ -79,9 +80,8 @@ function App() {
                     <Route path=":routeId" element={<RouteEdit />} />
                   </Route>
                   <Route path="logs" element={<AppLog />} />
-                  <Route path="builds" element={<AppBuilds />}>
-                    <Route path=":buildId" element={null} />
-                  </Route>
+                  <Route path="builds" element={<AppBuilds />} />
+                  <Route path="builds/:buildId" element={<AppBuildDetails />} />
                   <Route path="settings" element={<AppSettings />}>
                     <Route path="general" element={<GeneralTab />} />
                     <Route path="api" element={<ApiTab />} />
