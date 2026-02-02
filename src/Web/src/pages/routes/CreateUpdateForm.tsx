@@ -458,7 +458,6 @@ function StaticResponse() {
     register,
     formState: { errors },
     setValue,
-    getValues,
     watch,
   } = useFormContext<RouteCreateUpdateInputs>();
   const {
@@ -466,38 +465,6 @@ function StaticResponse() {
     append: addResponseHeader,
     remove: removeResponseHeader,
   } = useFieldArray({ control, name: "responseHeaders" });
-
-  const bodyEditorRef = useRef<HTMLDivElement>(null);
-  const bodyEditor = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
-
-  useEffect(() => {
-    bodyEditor.current?.dispose();
-
-    bodyEditor.current = monaco.editor.create(bodyEditorRef.current!, {
-      language: getValues("responseBodyLanguage"),
-      value: getValues("response") || undefined,
-      minimap: { enabled: false },
-      automaticLayout: true,
-      scrollBeyondLastLine: false,
-    });
-    bodyEditor.current.onDidChangeModelContent(() => {
-      setValue("response", bodyEditor.current!.getValue());
-    });
-
-    return () => {
-      bodyEditor.current?.dispose();
-    };
-  }, []);
-
-  const responseBodyLanguage = watch("responseBodyLanguage");
-  useEffect(() => {
-    if (bodyEditor.current && responseBodyLanguage) {
-      monaco.editor.setModelLanguage(
-        bodyEditor.current!.getModel()!,
-        responseBodyLanguage
-      );
-    }
-  }, [responseBodyLanguage]);
 
   return (
     <div className="space-y-4">
@@ -571,36 +538,24 @@ function StaticResponse() {
       {/* Body */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label>Response Body</Label>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Switch
-                id="useDynamicResponse"
-                checked={watch("useDynamicResponse") || false}
-                onCheckedChange={(checked) => setValue("useDynamicResponse", checked)}
-              />
-              <Label htmlFor="useDynamicResponse" className="text-xs text-muted-foreground">
-                Dynamic response
-              </Label>
-            </div>
-            <Select
-              value={responseBodyLanguage}
-              onValueChange={(value) => setValue("responseBodyLanguage", value)}
-            >
-              <SelectTrigger className="h-8 w-32 text-xs">
-                <SelectValue placeholder="Language" />
-              </SelectTrigger>
-              <SelectContent>
-                {bodyLanguages.map((lang) => (
-                  <SelectItem key={lang} value={lang}>
-                    {lang}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <Label htmlFor="response">Response Body</Label>
+          <div className="flex items-center gap-2">
+            <Switch
+              id="useDynamicResponse"
+              checked={watch("useDynamicResponse") || false}
+              onCheckedChange={(checked) => setValue("useDynamicResponse", checked)}
+            />
+            <Label htmlFor="useDynamicResponse" className="text-xs text-muted-foreground">
+              Dynamic response
+            </Label>
           </div>
         </div>
-        <div ref={bodyEditorRef} className="h-[280px] w-full rounded-md border" />
+        <textarea
+          id="response"
+          {...register("response")}
+          className="h-[280px] w-full resize-none rounded-md border bg-background px-3 py-2 font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          placeholder="Enter response body..."
+        />
         {errors.response && (
           <p className="text-sm text-destructive">{errors.response.message}</p>
         )}
