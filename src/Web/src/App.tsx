@@ -6,32 +6,29 @@ import "react-toastify/dist/ReactToastify.css";
 
 import Header from "./components/Header";
 import ProtectedPage from "./components/ProtectedPage";
-
+import { getConfig } from "./config";
+import Home from "./pages/Home";
+import { NotFoundPage } from "./pages/NotFoundPage";
 import {
   AppList,
   AppOverview,
   AppCreate,
   AppLog,
   AppBuilds,
+  AppBuildDetails,
   AppLayout,
 } from "./pages/apps";
-
+import AppSettings, { GeneralTab, ApiTab, PagesTab } from "./pages/apps/Settings";
 import { RouteIndex, RouteCreate, RouteEdit } from "./pages/routes";
-
-import { NotFoundPage } from "./pages/NotFoundPage";
-
-import { default as IntegrationsGitHubCallback } from "./pages/settings/github_callback";
-import { default as IntegrationsSlackCallback } from "./pages/settings/slack_callback";
-import { default as IntegrationsSlackLink } from "./pages/settings/slack_link";
-
 import Settings from "./pages/settings";
 import Connections from "./pages/settings/Connections";
 import Tokens from "./pages/settings/Tokens";
 import TokenCreate from "./pages/settings/TokenCreate";
 import TokenEdit from "./pages/settings/TokenEdit";
-import { getConfig } from "./config";
-import Home from "./pages/Home";
-import AppSettings, { GeneralTab, ApiTab, PagesTab } from "./pages/apps/Settings";
+import IntegrationsGitHubCallback from "./pages/settings/github_callback";
+import IntegrationsSlackCallback from "./pages/settings/slack_callback";
+import IntegrationsSlackLink from "./pages/settings/slack_link";
+
 const { AUTH0_DOMAIN, AUTH0_CLIENTID, AUTH0_AUDIENCE } = getConfig();
 
 function App() {
@@ -79,9 +76,8 @@ function App() {
                     <Route path=":routeId" element={<RouteEdit />} />
                   </Route>
                   <Route path="logs" element={<AppLog />} />
-                  <Route path="builds" element={<AppBuilds />}>
-                    <Route path=":buildId" element={null} />
-                  </Route>
+                  <Route path="builds" element={<AppBuilds />} />
+                  <Route path="builds/:buildId" element={<AppBuildDetails />} />
                   <Route path="settings" element={<AppSettings />}>
                     <Route path="general" element={<GeneralTab />} />
                     <Route path="api" element={<ApiTab />} />

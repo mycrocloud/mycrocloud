@@ -48,7 +48,7 @@ function AppCreate() {
       });
       if (res.ok) {
         const id = parseInt(res.headers.get("Location")!);
-        navigate(`../${id}`);
+        navigate(`../${id}?onboard=true`);
       } else if (res.status === 409) {
         setError("name", { message: "This app name is already taken" });
       } else {

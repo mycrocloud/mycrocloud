@@ -1,7 +1,8 @@
 import { useContext, useEffect, useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { AppContext } from ".";
+import { OnboardingModal } from "./components/OnboardingModal";
 import {
   Activity,
   Calendar,
@@ -62,6 +63,18 @@ export default function AppOverview() {
   const { getAccessTokenSilently } = useAuth0();
   const [stats, setStats] = useState<LogsStatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [showOnboarding, setShowOnboarding] = useState(
+    searchParams.get("onboard") === "true"
+  );
+
+  useEffect(() => {
+    if (showOnboarding) {
+      searchParams.delete("onboard");
+      setSearchParams(searchParams);
+    }
+  }, [showOnboarding, searchParams, setSearchParams]);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -331,6 +344,8 @@ export default function AppOverview() {
           </dl>
         </CardContent>
       </Card>
+
+      <OnboardingModal open={showOnboarding} onOpenChange={setShowOnboarding} />
     </div>
   );
 }

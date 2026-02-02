@@ -2,9 +2,8 @@ import { useApiClient } from "@/hooks";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { AppContext } from ".";
 import { useAuth0 } from "@auth0/auth0-react";
-import BuildLogs from "./BuildLogs";
 import { useForm } from "react-hook-form";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,16 +24,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   Play,
   CheckCircle2,
   XCircle,
   Clock,
   Loader2,
   Package,
-  Terminal,
   ChevronRight,
   ChevronLeft,
-  GitCommit,
   Timer,
   Search,
   Filter,
@@ -147,7 +152,6 @@ export default function Builds() {
   const { get, post } = useApiClient();
   const { getAccessTokenSilently } = useAuth0();
   const navigate = useNavigate();
-  const { buildId } = useParams();
 
   const [builds, setBuilds] = useState<IBuild[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -256,12 +260,6 @@ export default function Builds() {
     }
   }, [showBuildModal, reset]);
 
-  const selectedBuild = builds.find((b) => b.id === buildId);
-
-  const handleSelectBuild = (id: string) => {
-    navigate(id);
-  };
-
   const hasFilters = statusFilter !== "all" || searchQuery !== "";
 
   return (
@@ -283,194 +281,164 @@ export default function Builds() {
         </Button>
       </div>
 
-      {/* Main Content */}
-      <div className="flex flex-1 gap-4 overflow-hidden rounded-lg border">
-        {/* Builds List */}
-        <div className="flex w-80 shrink-0 flex-col overflow-hidden border-r bg-muted/30">
-          {/* Filters */}
-          <div className="space-y-2 border-b p-3">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search builds..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-8 pl-8 text-sm"
-              />
-            </div>
-            <Select
-              value={statusFilter}
-              onValueChange={(v) => setStatusFilter(v as StatusFilter)}
-            >
-              <SelectTrigger className="h-8 text-sm">
-                <Filter className="mr-2 h-3.5 w-3.5" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      {/* Filters */}
+      <div className="mb-4 flex items-center gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search builds..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-9 pl-8"
+          />
+        </div>
+        <Select
+          value={statusFilter}
+          onValueChange={(v) => setStatusFilter(v as StatusFilter)}
+        >
+          <SelectTrigger className="h-9 w-[150px]">
+            <Filter className="mr-2 h-3.5 w-3.5" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {hasFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSearchQuery("");
+              setStatusFilter("all");
+            }}
+          >
+            Clear filters
+          </Button>
+        )}
+      </div>
+
+      {/* Builds Table */}
+      <div className="flex-1 overflow-hidden rounded-lg border">
+        {isLoading ? (
+          <div className="flex h-full items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
+        ) : paginatedBuilds.length === 0 ? (
+          <div className="flex h-full flex-col items-center justify-center py-12 text-center">
+            <Package className="h-12 w-12 text-muted-foreground/50" />
+            <p className="mt-4 text-sm text-muted-foreground">
+              {hasFilters ? "No builds match filters" : "No builds yet"}
+            </p>
+            {!hasFilters && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Click "New Build" to start your first build
+              </p>
+            )}
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[300px]">Build</TableHead>
+                <TableHead className="w-[120px]">Status</TableHead>
+                <TableHead className="w-[120px]">Duration</TableHead>
+                <TableHead>Started</TableHead>
+                <TableHead className="w-[50px]"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedBuilds.map((build) => {
+                const statusConfig = getStatusConfig(build.status);
+                const StatusIcon = statusConfig.icon;
 
-          {/* Build List */}
-          <div className="flex-1 overflow-y-auto">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : paginatedBuilds.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <Package className="h-10 w-10 text-muted-foreground/50" />
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {hasFilters ? "No builds match filters" : "No builds yet"}
-                </p>
-                {hasFilters ? (
-                  <Button
-                    variant="link"
-                    size="sm"
-                    onClick={() => {
-                      setSearchQuery("");
-                      setStatusFilter("all");
-                    }}
-                    className="mt-1 text-xs"
+                return (
+                  <TableRow
+                    key={build.id}
+                    className="cursor-pointer"
+                    onClick={() => navigate(build.id)}
                   >
-                    Clear filters
-                  </Button>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Click "New Build" to start
-                  </p>
-                )}
-              </div>
-            ) : (
-              <div className="divide-y">
-                {paginatedBuilds.map((build) => {
-                  const statusConfig = getStatusConfig(build.status);
-                  const StatusIcon = statusConfig.icon;
-                  const isSelected = buildId === build.id;
-
-                  return (
-                    <div
-                      key={build.id}
-                      onClick={() => handleSelectBuild(build.id)}
-                      className={cn(
-                        "flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50",
-                        isSelected && "bg-muted"
-                      )}
-                    >
-                      <StatusIcon
-                        className={cn(
-                          "h-4 w-4 shrink-0",
-                          statusConfig.className
-                            .split(" ")
-                            .find((c) => c.startsWith("text-")),
-                          statusConfig.iconClassName
-                        )}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">
                           {build.name || `Build ${build.id.slice(0, 8)}`}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {formatTimestamp(build.createdAt)}
+                          {build.id.slice(0, 8)}
                         </p>
                       </div>
-                      {isSelected && (
-                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between border-t px-3 py-2">
-              <span className="text-xs text-muted-foreground">
-                {filteredBuilds.length} builds
-              </span>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage((p) => p - 1)}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="min-w-[4rem] text-center text-xs text-muted-foreground">
-                  {currentPage} / {totalPages}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage((p) => p + 1)}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Build Details */}
-        <div className="flex flex-1 flex-col overflow-hidden">
-          {selectedBuild ? (
-            <>
-              {/* Build Info Header */}
-              <div className="flex items-center justify-between border-b px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <div>
-                    <h3 className="font-medium">
-                      {selectedBuild.name || `Build ${selectedBuild.id.slice(0, 8)}`}
-                    </h3>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <GitCommit className="h-3 w-3" />
-                        {selectedBuild.id.slice(0, 8)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="secondary"
+                        className={cn("shrink-0", statusConfig.className)}
+                      >
+                        <StatusIcon
+                          className={cn(
+                            "mr-1 h-3 w-3",
+                            statusConfig.iconClassName
+                          )}
+                        />
+                        {statusConfig.label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Timer className="h-3.5 w-3.5" />
+                        {formatDuration(build.createdAt, build.finishedAt)}
                       </span>
-                      <span className="flex items-center gap-1">
-                        <Timer className="h-3 w-3" />
-                        {formatDuration(selectedBuild.createdAt, selectedBuild.finishedAt)}
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-muted-foreground">
+                        {formatTimestamp(build.createdAt)}
                       </span>
-                    </div>
-                  </div>
-                </div>
-                <Badge
-                  variant="secondary"
-                  className={cn("shrink-0", getStatusConfig(selectedBuild.status).className)}
-                >
-                  {getStatusConfig(selectedBuild.status).label}
-                </Badge>
-              </div>
-
-              {/* Build Logs */}
-              <div className="flex-1 overflow-hidden">
-                <BuildLogs appId={app.id} buildId={selectedBuild.id} />
-              </div>
-            </>
-          ) : (
-            <div className="flex h-full flex-col items-center justify-center text-center">
-              <Terminal className="h-12 w-12 text-muted-foreground/30" />
-              <p className="mt-4 text-sm font-medium text-muted-foreground">
-                Select a build to view details
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Build logs and status will appear here
-              </p>
-            </div>
-          )}
-        </div>
+                    </TableCell>
+                    <TableCell>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">
+            {filteredBuilds.length} build{filteredBuilds.length !== 1 && "s"}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+            >
+              <ChevronLeft className="mr-1 h-4 w-4" />
+              Previous
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => p + 1)}
+            >
+              Next
+              <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* New Build Dialog */}
       <Dialog open={showBuildModal} onOpenChange={setShowBuildModal}>
