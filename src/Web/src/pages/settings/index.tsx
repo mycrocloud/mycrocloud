@@ -1,10 +1,11 @@
 import { Link, Outlet, useLocation, Navigate } from "react-router-dom";
-import { Settings as SettingsIcon, Link2, Key } from "lucide-react";
+import { Settings as SettingsIcon, Link2, Key, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { path: "connections", label: "Connections", icon: Link2 },
   { path: "tokens", label: "API Tokens", icon: Key },
+  { path: "billing", label: "Plans & Billing", icon: CreditCard },
 ];
 
 export default function Settings() {

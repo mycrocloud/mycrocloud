@@ -28,6 +28,7 @@ import TokenEdit from "./pages/settings/TokenEdit";
 import IntegrationsGitHubCallback from "./pages/settings/github_callback";
 import IntegrationsSlackCallback from "./pages/settings/slack_callback";
 import IntegrationsSlackLink from "./pages/settings/slack_link";
+import Billing from "./pages/settings/Billing";
 
 const { AUTH0_DOMAIN, AUTH0_CLIENTID, AUTH0_AUDIENCE } = getConfig();
 
@@ -56,6 +57,7 @@ function App() {
                   <Route path="new" element={<TokenCreate />} />
                   <Route path=":id/edit" element={<TokenEdit />} />
                 </Route>
+                <Route path="billing" element={<Billing />} />
               </Route>
               <Route path="apps">
                 <Route
