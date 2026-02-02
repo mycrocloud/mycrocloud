@@ -6,7 +6,9 @@ import "react-toastify/dist/ReactToastify.css";
 
 import Header from "./components/Header";
 import ProtectedPage from "./components/ProtectedPage";
-
+import { getConfig } from "./config";
+import Home from "./pages/Home";
+import { NotFoundPage } from "./pages/NotFoundPage";
 import {
   AppList,
   AppOverview,
@@ -16,23 +18,17 @@ import {
   AppBuildDetails,
   AppLayout,
 } from "./pages/apps";
-
+import AppSettings, { GeneralTab, ApiTab, PagesTab } from "./pages/apps/Settings";
 import { RouteIndex, RouteCreate, RouteEdit } from "./pages/routes";
-
-import { NotFoundPage } from "./pages/NotFoundPage";
-
-import { default as IntegrationsGitHubCallback } from "./pages/settings/github_callback";
-import { default as IntegrationsSlackCallback } from "./pages/settings/slack_callback";
-import { default as IntegrationsSlackLink } from "./pages/settings/slack_link";
-
 import Settings from "./pages/settings";
 import Connections from "./pages/settings/Connections";
 import Tokens from "./pages/settings/Tokens";
 import TokenCreate from "./pages/settings/TokenCreate";
 import TokenEdit from "./pages/settings/TokenEdit";
-import { getConfig } from "./config";
-import Home from "./pages/Home";
-import AppSettings, { GeneralTab, ApiTab, PagesTab } from "./pages/apps/Settings";
+import IntegrationsGitHubCallback from "./pages/settings/github_callback";
+import IntegrationsSlackCallback from "./pages/settings/slack_callback";
+import IntegrationsSlackLink from "./pages/settings/slack_link";
+
 const { AUTH0_DOMAIN, AUTH0_CLIENTID, AUTH0_AUDIENCE } = getConfig();
 
 function App() {
