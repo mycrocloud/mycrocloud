@@ -1,21 +1,22 @@
-import { useParams } from "react-router-dom";
-import RouteCreateUpdate from "./CreateUpdateForm";
-import { useAuth0 } from "@auth0/auth0-react";
 import { useContext, useEffect, useState } from "react";
-import { AppContext } from "../apps";
+import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import IRoute from "./Route";
-import { RouteCreateUpdateInputs } from "./CreateUpdateFormInputs";
+import { useApiClient } from "@/hooks";
+import { AppContext } from "../apps";
 import { useRoutesContext } from "./Context";
+import RouteCreateUpdate from "./CreateUpdateForm";
+import { RouteCreateUpdateInputs } from "./CreateUpdateFormInputs";
+import IRoute from "./Route";
 
 export default function RouteEdit() {
   const { app } = useContext(AppContext)!;
   if (!app) throw new Error();
+
   const {
     state: { routes },
     dispatch,
   } = useRoutesContext();
-  const { getAccessTokenSilently } = useAuth0();
+  const { get, send } = useApiClient();
   const routeId = parseInt(useParams()["routeId"]!);
   const [route, setRoute] = useState<IRoute>();
 
@@ -24,38 +25,24 @@ export default function RouteEdit() {
       type: "SET_ACTIVE_ROUTE",
       payload: routes.find((r) => r.id === routeId),
     });
-    const getRoute = async () => {
+
+    const loadRoute = async () => {
       try {
-        const accessToken = await getAccessTokenSilently();
-        const res = await fetch(`/api/apps/${app.id}/routes/${routeId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-        if (!res.ok) {
-          toast.error("Failed to load route");
-          return;
-        }
-        const route = (await res.json()) as IRoute;
-        setRoute(route);
+        const data = await get<IRoute>(`/api/apps/${app.id}/routes/${routeId}`);
+        setRoute(data);
       } catch {
         toast.error("Failed to load route");
       }
     };
-    getRoute();
-  }, [routeId]);
+    loadRoute();
+  }, [routeId, app.id, get, dispatch, routes]);
 
   const onSubmit = async (data: RouteCreateUpdateInputs) => {
-    const accessToken = await getAccessTokenSilently();
-    const res = await fetch(`/api/apps/${app.id}/routes/${routeId}`, {
-      method: "PUT",
-      headers: {
-        "content-type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify(data),
-    });
-    if (res.ok) {
+    try {
+      await send(`/api/apps/${app.id}/routes/${routeId}`, {
+        method: "PUT",
+        body: data,
+      });
       toast.success("Route updated");
       const updatedRoute: IRoute = {
         ...route!,
@@ -65,7 +52,7 @@ export default function RouteEdit() {
         enabled: data.enabled,
       };
       dispatch({ type: "UPDATE_ROUTE", payload: updatedRoute });
-    } else {
+    } catch {
       toast.error("Failed to update route");
     }
   };
@@ -73,9 +60,6 @@ export default function RouteEdit() {
   if (!route) {
     return null;
   }
-  return (
-    <>
-      <RouteCreateUpdate key={routeId} route={route} onSubmit={onSubmit} />
-    </>
-  );
+
+  return <RouteCreateUpdate key={routeId} route={route} onSubmit={onSubmit} />;
 }

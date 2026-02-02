@@ -1,42 +1,35 @@
-import { useAuth0 } from "@auth0/auth0-react";
+import { useContext } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
+import { useApiClient } from "@/hooks";
+import { AppContext } from "../apps";
+import { useRoutesContext } from "./Context";
 import RouteCreateUpdate from "./CreateUpdateForm";
 import { RouteCreateUpdateInputs } from "./CreateUpdateFormInputs";
-import { useContext } from "react";
-import { AppContext } from "../apps";
-import { toast } from "react-toastify";
 import IRoute from "./Route";
-import { useRoutesContext } from "./Context";
-import { useNavigate, useParams } from "react-router-dom";
 
 export default function RouteCreate() {
   const navigate = useNavigate();
   const { app } = useContext(AppContext)!;
   if (!app) throw new Error();
-  const { dispatch } = useRoutesContext();
 
+  const { dispatch } = useRoutesContext();
+  const { post } = useApiClient();
   const folderId = useParams()["folderId"];
-  const { getAccessTokenSilently } = useAuth0();
+
   const onSubmit = async (data: RouteCreateUpdateInputs) => {
-    const accessToken = await getAccessTokenSilently();
-    const res = await fetch(`/api/apps/${app.id}/routes`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
+    try {
+      const newRoute = await post<IRoute>(`/api/apps/${app.id}/routes`, {
         ...data,
         folderId: folderId ? parseInt(folderId) : null,
-      }),
-    });
-    if (res.ok) {
-      const newRoute = (await res.json()) as IRoute;
+      });
       dispatch({ type: "ADD_ROUTE", payload: newRoute });
       toast.success("Route created");
       navigate(`../${newRoute.id}`);
-    } else {
+    } catch {
       toast.error("Failed to create route");
     }
   };
+
   return <RouteCreateUpdate onSubmit={onSubmit} />;
 }
