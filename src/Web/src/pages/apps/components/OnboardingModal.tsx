@@ -28,8 +28,9 @@ export function OnboardingModal({ open, onOpenChange }: OnboardingModalProps) {
                 <DialogHeader>
                     <DialogTitle className="text-xl">Get started with your app</DialogTitle>
                     <DialogDescription>
-                        Your app supports both hosted web pages and serverless API functions.
-                        Choose how you want to start:
+                        Your app supports both <strong>hosted web pages</strong> and <strong>serverless API functions</strong>.
+                        <br />
+                        Select a path to start your onboarding. You can access all features at any time.
                     </DialogDescription>
                 </DialogHeader>
 
