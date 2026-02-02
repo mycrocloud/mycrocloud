@@ -43,14 +43,12 @@
     "recharts": "^2.15.4",
     "tailwind-merge": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
-    "uuid": "^11.1.0",
     "yup": "^1.7.1"
   },
   "devDependencies": {
     "@types/node": "^24.9.2",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
-    "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.27.0",
     "@vitejs/plugin-react": "^4.7.0",
