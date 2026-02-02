@@ -9,8 +9,8 @@ import {
 import { yupResolver } from "@hookform/resolvers/yup";
 import { AppContext } from "../apps";
 import IRoute from "./Route";
-import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
-import { bodyLanguages, methods } from "./constants";
+import { methods } from "./constants";
+import CodeEditor from "@/components/CodeEditor";
 import {
   RouteCreateUpdateInputs,
   routeCreateUpdateInputsSchema,
@@ -324,81 +324,32 @@ const quickAddHeaders = [
 
 function RequestValidation() {
   const {
-    getValues,
+    watch,
     setValue,
     formState: { errors },
   } = useFormContext<RouteCreateUpdateInputs>();
   const [isOpen, setIsOpen] = useState(false);
   const [tab, setTab] = useState("query");
-  const editorEl = useRef<HTMLDivElement>(null);
-  const editor = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
-  const requestQuerySchemaModel = useRef<monaco.editor.ITextModel | null>(null);
-  const requestHeaderSchemaModel = useRef<monaco.editor.ITextModel | null>(null);
-  const requestBodySchemaModel = useRef<monaco.editor.ITextModel | null>(null);
 
-  useEffect(() => {
-    if (!isOpen) return;
+  const querySchema = watch("requestQuerySchema") || "";
+  const headerSchema = watch("requestHeaderSchema") || "";
+  const bodySchema = watch("requestBodySchema") || "";
 
-    requestQuerySchemaModel.current?.dispose();
-    requestHeaderSchemaModel.current?.dispose();
-    requestBodySchemaModel.current?.dispose();
-    editor.current?.dispose();
+  const currentValue = tab === "query" ? querySchema : tab === "headers" ? headerSchema : bodySchema;
 
-    requestQuerySchemaModel.current = monaco.editor.createModel(
-      getValues("requestQuerySchema") || "",
-      "json"
-    );
-    requestQuerySchemaModel.current.onDidChangeContent(() => {
-      setValue("requestQuerySchema", requestQuerySchemaModel.current!.getValue());
-    });
-
-    requestHeaderSchemaModel.current = monaco.editor.createModel(
-      getValues("requestHeaderSchema") || "",
-      "json"
-    );
-    requestHeaderSchemaModel.current.onDidChangeContent(() => {
-      setValue("requestHeaderSchema", requestHeaderSchemaModel.current!.getValue());
-    });
-
-    requestBodySchemaModel.current = monaco.editor.createModel(
-      getValues("requestBodySchema") || "",
-      "json"
-    );
-    requestBodySchemaModel.current.onDidChangeContent(() => {
-      setValue("requestBodySchema", requestBodySchemaModel.current!.getValue());
-    });
-
-    editor.current = monaco.editor.create(editorEl.current!, {
-      model: requestQuerySchemaModel.current,
-      automaticLayout: true,
-      minimap: { enabled: false },
-      lineNumbers: "off",
-      folding: false,
-      scrollBeyondLastLine: false,
-    });
-
-    return () => {
-      requestQuerySchemaModel.current?.dispose();
-      requestHeaderSchemaModel.current?.dispose();
-      requestBodySchemaModel.current?.dispose();
-      editor.current?.dispose();
-    };
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!editor.current) return;
+  const handleChange = (value: string) => {
     switch (tab) {
       case "query":
-        editor.current.setModel(requestQuerySchemaModel.current!);
+        setValue("requestQuerySchema", value);
         break;
       case "headers":
-        editor.current.setModel(requestHeaderSchemaModel.current!);
+        setValue("requestHeaderSchema", value);
         break;
       case "body":
-        editor.current.setModel(requestBodySchemaModel.current!);
+        setValue("requestBodySchema", value);
         break;
     }
-  }, [tab]);
+  };
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -434,7 +385,16 @@ function RequestValidation() {
               </TabsTrigger>
             </TabsList>
             <TabsContent value={tab} className="m-0">
-              <div ref={editorEl} className="h-[180px] w-full" />
+              {isOpen && (
+                <CodeEditor
+                  value={currentValue}
+                  onChange={handleChange}
+                  language="json"
+                  height="180px"
+                  placeholder="Enter JSON schema..."
+                  className="border-0 rounded-none"
+                />
+              )}
             </TabsContent>
           </Tabs>
         </div>
@@ -570,13 +530,17 @@ function validEditorMessage(e: MessageEvent, editor: string) {
   return true;
 }
 
+type EditorMode = "simple" | "advanced";
+
 function FunctionHandler() {
   const {
     formState: { errors },
     setValue,
     getValues,
+    watch,
   } = useFormContext<RouteCreateUpdateInputs>();
 
+  const [mode, setMode] = useState<EditorMode>("simple");
   const editorId = "functionHandler";
   const editorRef = useRef<HTMLIFrameElement>(null);
   const [editorLoaded, setEditorLoaded] = useState(false);
@@ -589,11 +553,18 @@ function FunctionHandler() {
   }
 }`;
 
+  const response = watch("response");
+
   useEffect(() => {
     const functionHandler = getValues("response");
     if (!functionHandler) {
       setValue("response", sampleFunctionHandler);
     }
+  }, []);
+
+  // Advanced mode: iframe message handling
+  useEffect(() => {
+    if (mode !== "advanced") return;
 
     const onMessage = (e: MessageEvent) => {
       if (!validEditorMessage(e, editorId)) return;
@@ -611,10 +582,11 @@ function FunctionHandler() {
 
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, []);
+  }, [mode]);
 
+  // Advanced mode: send code to iframe when loaded
   useEffect(() => {
-    if (!editorLoaded) return;
+    if (mode !== "advanced" || !editorLoaded) return;
 
     editorRef.current?.contentWindow?.postMessage(
       {
@@ -627,19 +599,71 @@ function FunctionHandler() {
       },
       EDITOR_ORIGIN
     );
-  }, [editorLoaded]);
+  }, [mode, editorLoaded]);
+
+  // Sync code to iframe when switching to advanced mode
+  const handleModeChange = (newMode: EditorMode) => {
+    if (newMode === "advanced" && editorLoaded) {
+      editorRef.current?.contentWindow?.postMessage(
+        {
+          editorId,
+          type: "load",
+          payload: {
+            value: getValues("response"),
+            language: "javascript",
+          },
+        },
+        EDITOR_ORIGIN
+      );
+    }
+    setMode(newMode);
+  };
 
   return (
     <div className="space-y-2">
-      <Label>Function Handler</Label>
+      <div className="flex items-center justify-between">
+        <Label>Function Handler</Label>
+        <div className="flex items-center gap-1 rounded-md border p-1">
+          <Button
+            type="button"
+            variant={mode === "simple" ? "secondary" : "ghost"}
+            size="sm"
+            className="h-6 px-2 text-xs"
+            onClick={() => handleModeChange("simple")}
+          >
+            Simple
+          </Button>
+          <Button
+            type="button"
+            variant={mode === "advanced" ? "secondary" : "ghost"}
+            size="sm"
+            className="h-6 px-2 text-xs"
+            onClick={() => handleModeChange("advanced")}
+          >
+            Advanced
+          </Button>
+        </div>
+      </div>
       <p className="text-xs text-muted-foreground">
         Write a JavaScript function that returns a response object with statusCode, headers, and body.
       </p>
-      <iframe
-        ref={editorRef}
-        src={EDITOR_ORIGIN + "?id=" + editorId}
-        className="h-[280px] w-full rounded-md border"
-      />
+
+      {mode === "simple" ? (
+        <CodeEditor
+          value={response || ""}
+          onChange={(value) => setValue("response", value)}
+          language="javascript"
+          height="280px"
+          placeholder="function handler(req) { ... }"
+        />
+      ) : (
+        <iframe
+          ref={editorRef}
+          src={EDITOR_ORIGIN + "?id=" + editorId}
+          className="h-[280px] w-full rounded-md border"
+        />
+      )}
+
       {errors.response && (
         <p className="text-sm text-destructive">{errors.response.message}</p>
       )}
