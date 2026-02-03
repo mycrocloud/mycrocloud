@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using WebApp.Domain.Entities;
 
 namespace WebApp.Infrastructure;
@@ -37,7 +38,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .OwnsOne(app => app.Settings, builder => { builder.ToJson(); });
         modelBuilder.Entity<App>()
             .OwnsOne(app => app.CorsSettings, builder => { builder.ToJson(); });
-        
+        modelBuilder.Entity<App>()
+            .Property(app => app.RoutingConfig)
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
+                v => JsonSerializer.Deserialize<RoutingConfig>(v, (JsonSerializerOptions)null)
+            );
+
         modelBuilder.Entity<App>()
             .HasOne(a => a.Link)
             .WithOne()

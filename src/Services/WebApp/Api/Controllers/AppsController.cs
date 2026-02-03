@@ -9,6 +9,7 @@ using WebApp.Domain.Repositories;
 using WebApp.Domain.Services;
 using WebApp.Infrastructure;
 using Api.Extensions;
+using Api.Models.Apps;
 
 namespace Api.Controllers;
 
@@ -198,6 +199,66 @@ public class AppsController(
         await appDbContext.SaveChangesAsync();
         
         return NoContent();
+    }
+
+    [HttpPost("{appId}/routing-config")]
+    public async Task<IActionResult> UpdateRoutingConfig(int appId, [FromBody] UpdateRoutingConfigRequest request)
+    {
+        var config = new WebApp.Domain.Entities.RoutingConfig
+        {
+            SchemaVersion = request.SchemaVersion,
+            Routes = request.Routes.Select(r => new RoutingConfigRoute
+            {
+                Name = r.Name,
+                Priority = r.Priority,
+                Match = new WebApp.Domain.Entities.RouteMatch
+                {
+                    Type = (WebApp.Domain.Entities.RouteMatchType)r.Match.Type,
+                    Path = r.Match.Path
+                },
+                Target = new WebApp.Domain.Entities.RouteTarget
+                {
+                    Type = (WebApp.Domain.Entities.RouteTargetType)r.Target.Type,
+                    StripPrefix = r.Target.StripPrefix,
+                    Rewrite = r.Target.Rewrite,
+                    Fallback = r.Target.Fallback
+                }
+            }).ToList()
+        };
+
+        await appService.SetRoutingConfig(appId, config);
+        return NoContent();
+    }
+
+    [HttpGet("{appId}/routing-config")]
+    public async Task<IActionResult> GetRoutingConfig(int appId)
+    {
+        var app = await appRepository.GetByAppId(appId);
+        var config = app.RoutingConfig is { Routes.Count: > 0 }
+            ? app.RoutingConfig
+            : WebApp.Domain.Entities.RoutingConfig.Default;
+
+        return Ok(new
+        {
+            config.SchemaVersion,
+            Routes = config.Routes.Select(r => new
+            {
+                r.Name,
+                r.Priority,
+                Match = new
+                {
+                    Type = r.Match.Type.ToString(),
+                    r.Match.Path
+                },
+                Target = new
+                {
+                    Type = r.Target.Type.ToString(),
+                    r.Target.StripPrefix,
+                    r.Target.Rewrite,
+                    r.Target.Fallback
+                }
+            })
+        });
     }
 }
 

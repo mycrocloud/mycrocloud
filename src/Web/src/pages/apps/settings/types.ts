@@ -58,3 +58,39 @@ export interface IBuildConfig {
 }
 
 export type RenameFormInput = { name: string };
+
+// Routing Configuration Types
+export type RouteMatchType = "prefix" | "exact" | "regex";
+export type RouteTargetType = "api" | "spa" | "static" | "redirect";
+
+export interface RouteMatch {
+  type: RouteMatchType;
+  path: string;
+}
+
+export interface RouteTarget {
+  type: RouteTargetType;
+  stripPrefix?: boolean;
+  rewrite?: string | null;
+  fallback?: string;
+}
+
+export interface Route {
+  id?: string;
+  priority?: number;
+  match: RouteMatch;
+  target: RouteTarget;
+}
+
+export interface RoutingConfig {
+  schemaVersion: string;
+  routes: Route[];
+}
+
+// Simple mode for UI (v1)
+export type RoutingMode = "api" | "spa" | "hybrid";
+
+export interface RoutingConfigFormInput {
+  mode: RoutingMode;
+  apiPrefix: string;
+}

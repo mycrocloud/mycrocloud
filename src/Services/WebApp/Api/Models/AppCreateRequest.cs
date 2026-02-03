@@ -23,6 +23,7 @@ public class AppCreateRequest
             Description = Description,
             Status = AppStatus.Active,
             CorsSettings = CorsSettings.Default,
+            RoutingConfig = RoutingConfig.Default,
             Settings = AppSettings.Default,
             BuildConfigs = new AppBuildConfigs
             {
