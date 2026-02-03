@@ -13,6 +13,8 @@ public class App : BaseEntity
 
     public CorsSettings CorsSettings { get; set; }
 
+    public RoutingConfig RoutingConfig { get; set; }
+
     // Navigation properties
 
     public ICollection<ApiKey> ApiKeys { get; set; }

@@ -33,14 +33,21 @@ import {
   Loader2,
   Power,
   PowerOff,
+  Network,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { RenameFormInput } from "./types";
+import {
+  RenameFormInput,
+  RoutingConfig,
+} from "./types";
+import CodeMirror from "@uiw/react-codemirror";
+import { json } from "@codemirror/lang-json";
 
 export default function GeneralTab() {
   return (
     <>
       <RenameSection />
+      <RoutingConfigSection />
       <ChangeStateSection />
       <DeleteSection />
     </>
@@ -117,6 +124,198 @@ function RenameSection() {
           <Button type="submit" disabled={saving}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Rename
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+function RoutingConfigSection() {
+  const { app } = useContext(AppContext)!;
+  if (!app) throw new Error();
+  const { getAccessTokenSilently } = useAuth0();
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [jsonConfig, setJsonConfig] = useState("");
+  const [jsonError, setJsonError] = useState("");
+
+  // Load existing config on mount
+  useState(() => {
+    const loadConfig = async () => {
+      try {
+        const accessToken = await getAccessTokenSilently();
+        const res = await fetch(`/api/apps/${app.id}/routing-config`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        if (res.ok) {
+          const config = await res.json();
+          setJsonConfig(JSON.stringify(config, null, 2));
+        } else {
+          // Set default config
+          const defaultConfig = {
+            schemaVersion: "1.0",
+            routes: [
+              {
+                priority: 1,
+                match: { type: "prefix", path: "/api" },
+                target: { type: "api", stripPrefix: true },
+              },
+              {
+                priority: 2,
+                match: { type: "prefix", path: "/" },
+                target: { type: "spa", fallback: "/index.html" },
+              },
+            ],
+          };
+          setJsonConfig(JSON.stringify(defaultConfig, null, 2));
+        }
+      } catch (err) {
+        toast.error("Failed to load routing configuration");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadConfig();
+  });
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+
+    try {
+      // Validate JSON
+      let routingConfig: RoutingConfig;
+      try {
+        routingConfig = JSON.parse(jsonConfig);
+        setJsonError("");
+      } catch (err) {
+        setJsonError("Invalid JSON format");
+        setSaving(false);
+        return;
+      }
+
+      // Validate schema
+      if (!routingConfig.schemaVersion || !routingConfig.routes || routingConfig.routes.length === 0) {
+        setJsonError("Invalid routing config schema");
+        setSaving(false);
+        return;
+      }
+
+      const accessToken = await getAccessTokenSilently();
+      const res = await fetch(`/api/apps/${app.id}/routing-config`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(routingConfig),
+      });
+
+      if (res.ok) {
+        toast("Routing configuration updated");
+      } else {
+        toast.error("Failed to update routing configuration");
+      }
+    } catch {
+      toast.error("Something went wrong");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Network className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-base">Routing Configuration</CardTitle>
+          </div>
+          <CardDescription>
+            Configure how requests are routed to your app
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <Network className="h-4 w-4 text-muted-foreground" />
+          <CardTitle className="text-base">Routing Configuration</CardTitle>
+        </div>
+        <CardDescription>
+          Configure how requests are routed to your app
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="json-config">Configuration (JSON)</Label>
+            <div className="border rounded-md overflow-hidden">
+              <CodeMirror
+                value={jsonConfig}
+                height="400px"
+                extensions={[json()]}
+                onChange={(value) => {
+                  setJsonConfig(value);
+                  setJsonError("");
+                }}
+                theme="light"
+                basicSetup={{
+                  lineNumbers: true,
+                  highlightActiveLineGutter: true,
+                  highlightSpecialChars: true,
+                  foldGutter: true,
+                  drawSelection: true,
+                  dropCursor: true,
+                  allowMultipleSelections: true,
+                  indentOnInput: true,
+                  bracketMatching: true,
+                  closeBrackets: true,
+                  autocompletion: true,
+                  rectangularSelection: true,
+                  crosshairCursor: true,
+                  highlightActiveLine: true,
+                  highlightSelectionMatches: true,
+                  closeBracketsKeymap: true,
+                  searchKeymap: true,
+                  foldKeymap: true,
+                  completionKeymap: true,
+                  lintKeymap: true,
+                }}
+              />
+            </div>
+            {jsonError && (
+              <p className="text-sm text-destructive">{jsonError}</p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Edit the routing configuration in JSON format. See{" "}
+              <a
+                href="https://docs.example.com/routing-config"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                documentation
+              </a>{" "}
+              for schema details.
+            </p>
+          </div>
+
+          <Button type="submit" disabled={saving}>
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save Configuration
           </Button>
         </form>
       </CardContent>
