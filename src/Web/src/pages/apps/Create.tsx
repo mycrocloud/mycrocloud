@@ -10,11 +10,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { generateAppName } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { AppWindow, Globe, Server } from "lucide-react";
+
 
 type Inputs = {
   name: string;
   description?: string;
+  type: "FullStack" | "SPA" | "API";
 };
+
 
 function AppCreate() {
   const navigate = useNavigate();
@@ -22,18 +27,26 @@ function AppCreate() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const schema = yup.object({
     name: yup.string().required("Name is required"),
+    description: yup.string(),
+    type: yup.string().oneOf(["FullStack", "SPA", "API"]).required() as yup.Schema<"FullStack" | "SPA" | "API">,
   });
   const {
     register,
     handleSubmit,
     setError,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<Inputs>({
     resolver: yupResolver(schema),
     defaultValues: {
       name: generateAppName(),
+      type: "FullStack",
     },
   });
+
+  const selectedType = watch("type");
+
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     setIsSubmitting(true);
     try {
@@ -48,7 +61,7 @@ function AppCreate() {
       });
       if (res.ok) {
         const id = parseInt(res.headers.get("Location")!);
-        navigate(`../${id}?onboard=true`);
+        navigate(`../${id}?onboard=true&type=${data.type}`);
       } else if (res.status === 409) {
         setError("name", { message: "This app name is already taken" });
       } else {
@@ -88,6 +101,40 @@ function AppCreate() {
           <p className="text-sm text-destructive">{errors.description.message}</p>
         )}
       </div>
+
+      <div className="space-y-4">
+        <div>
+          <Label>App Type</Label>
+          <p className="text-sm text-muted-foreground">
+            We use this to set up the initial routing for your app. You can change this configuration later in the app settings.
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          <AppTypeCard
+            title="Full-stack App"
+            description="Standard web application. Handles both static files and API routes."
+            icon={AppWindow}
+            selected={selectedType === "FullStack"}
+            onClick={() => setValue("type", "FullStack")}
+          />
+          <AppTypeCard
+            title="SPA"
+            description="For apps like React, Vue, etc. Redirects all unknown requests to index.html."
+            icon={Globe}
+            selected={selectedType === "SPA"}
+            onClick={() => setValue("type", "SPA")}
+          />
+          <AppTypeCard
+            title="API Backend"
+            description="Optimized for backend services that only provide API endpoints."
+            icon={Server}
+            selected={selectedType === "API"}
+            onClick={() => setValue("type", "API")}
+          />
+        </div>
+      </div>
+
+
       <div className="flex justify-end gap-2">
         <Button
           type="button"
@@ -106,3 +153,36 @@ function AppCreate() {
   );
 }
 export default AppCreate;
+
+function AppTypeCard({
+  title,
+  description,
+  icon: Icon,
+  selected,
+  onClick,
+}: {
+  title: string;
+  description: string;
+  icon: any;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <div
+      onClick={onClick}
+      className={cn(
+        "cursor-pointer rounded-lg border p-4 transition-all hover:border-primary",
+        selected
+          ? "border-primary bg-primary/5 ring-1 ring-primary"
+          : "bg-card text-card-foreground shadow-sm"
+      )}
+    >
+      <div className="mb-2 flex items-center gap-2 font-semibold">
+        <Icon className={cn("h-5 w-5", selected ? "text-primary" : "text-muted-foreground")} />
+        {title}
+      </div>
+      <p className="text-xs text-muted-foreground">{description}</p>
+    </div>
+  );
+}
+

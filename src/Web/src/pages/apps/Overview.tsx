@@ -65,16 +65,20 @@ export default function AppOverview() {
   const [loading, setLoading] = useState(true);
 
   const [searchParams, setSearchParams] = useSearchParams();
+  const [onboardingType] = useState<string | null>(searchParams.get("type"));
   const [showOnboarding, setShowOnboarding] = useState(
     searchParams.get("onboard") === "true"
   );
 
+
   useEffect(() => {
     if (showOnboarding) {
       searchParams.delete("onboard");
+      searchParams.delete("type");
       setSearchParams(searchParams);
     }
   }, [showOnboarding, searchParams, setSearchParams]);
+
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -345,7 +349,12 @@ export default function AppOverview() {
         </CardContent>
       </Card>
 
-      <OnboardingModal open={showOnboarding} onOpenChange={setShowOnboarding} />
+      <OnboardingModal
+        open={showOnboarding}
+        onOpenChange={setShowOnboarding}
+        type={onboardingType}
+      />
+
     </div>
   );
 }

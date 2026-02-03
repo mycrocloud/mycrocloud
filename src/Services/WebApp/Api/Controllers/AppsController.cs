@@ -17,7 +17,8 @@ public class AppsController(
     IAppService appService,
     IAppRepository appRepository,
     AppDbContext appDbContext,
-    GitHubAppService githubAppService
+    GitHubAppService githubAppService,
+    ISubscriptionService subscriptionService
 ) : BaseController
 {
     [HttpGet]
@@ -43,6 +44,12 @@ public class AppsController(
         if (nameExists)
         {
             return Conflict(new { Message = "App name already exists" });
+        }
+
+        var appCount = await appDbContext.Apps.CountAsync(a => a.UserId == User.GetUserId());
+        if (!await subscriptionService.CanCreateApp(User.GetUserId(), appCount))
+        {
+            return BadRequest(new { Message = "You have reached the limit of 10 apps" });
         }
 
         var app = appCreateRequest.ToEntity();

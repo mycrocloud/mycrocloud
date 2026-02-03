@@ -9,6 +9,8 @@ export default interface IApp {
   domain: string;
 }
 
+
+
 export interface IAppIntegration {
   type: string,
   org: string,
