@@ -86,7 +86,6 @@ public class RoutesController(
                 h.Name,
                 h.Value
             }),
-            route.UseDynamicResponse,
             route.Response,
             route.ResponseBodyLanguage,
             route.FunctionHandlerDependencies,

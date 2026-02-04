@@ -18,7 +18,6 @@ public class RouteCreateUpdateRequest
     public int? ResponseStatusCode { get; set; }
     public List<ResponseHeader> ResponseHeaders { get; set; } = [];
     public string? Response { get; set; }
-    public bool UseDynamicResponse { get; set; }
     public string? ResponseBodyLanguage { get; set; }
     public string? FunctionHandler { get; set; }
     public List<string>? FunctionHandlerDependencies { get; set; }
@@ -47,7 +46,6 @@ public class RouteCreateUpdateRequest
             ResponseHeaders = ResponseHeaders.Select(h => h.ToEntity()).ToList(),
             ResponseBodyLanguage = ResponseBodyLanguage,
             Response = Response,
-            UseDynamicResponse = UseDynamicResponse,
             FunctionHandlerDependencies = FunctionHandlerDependencies,
             RequireAuthorization = RequireAuthorization,
             Enabled = Enabled,
@@ -68,7 +66,6 @@ public class RouteCreateUpdateRequest
         route.ResponseHeaders = ResponseHeaders.Select(h => h.ToEntity()).ToList();
         route.ResponseBodyLanguage = ResponseBodyLanguage;
         route.Response = Response;
-        route.UseDynamicResponse = UseDynamicResponse;
         route.FunctionHandlerDependencies = FunctionHandlerDependencies;
         route.RequireAuthorization = RequireAuthorization;
         route.Enabled = Enabled;
