@@ -104,33 +104,38 @@ function AppCreate() {
 
       <div className="space-y-4">
         <div>
-          <Label>App Type</Label>
+          <Label>Initial Setup Template</Label>
           <p className="text-sm text-muted-foreground">
-            We use this to set up the initial routing for your app. You can change this configuration later in the app settings.
+            Choose a starting template. You can customize everything later.
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
           <AppTypeCard
             title="Full-stack App"
-            description="Standard web application. Handles both static files and API routes."
+            useCase="Frontend + Backend together"
             icon={AppWindow}
             selected={selectedType === "FullStack"}
             onClick={() => setValue("type", "FullStack")}
           />
           <AppTypeCard
-            title="SPA"
-            description="For apps like React, Vue, etc. Redirects all unknown requests to index.html."
+            title="SPA Only"
+            useCase="Frontend only (React, Vue, Angular)"
             icon={Globe}
             selected={selectedType === "SPA"}
             onClick={() => setValue("type", "SPA")}
           />
           <AppTypeCard
-            title="API Backend"
-            description="Optimized for backend services that only provide API endpoints."
+            title="API Only"
+            useCase="Backend only (REST APIs, microservices)"
             icon={Server}
             selected={selectedType === "API"}
             onClick={() => setValue("type", "API")}
           />
+        </div>
+        <div className="rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30 p-4">
+          <p className="text-sm text-blue-900 dark:text-blue-100">
+            <strong>Not sure?</strong> Choose <strong>Full-stack App</strong> - it's the most flexible.
+          </p>
         </div>
       </div>
 
@@ -157,12 +162,16 @@ export default AppCreate;
 function AppTypeCard({
   title,
   description,
+  badge,
+  useCase,
   icon: Icon,
   selected,
   onClick,
 }: {
   title: string;
-  description: string;
+  description?: string;
+  badge?: string;
+  useCase?: string;
   icon: any;
   selected: boolean;
   onClick: () => void;
@@ -177,11 +186,23 @@ function AppTypeCard({
           : "bg-card text-card-foreground shadow-sm"
       )}
     >
-      <div className="mb-2 flex items-center gap-2 font-semibold">
-        <Icon className={cn("h-5 w-5", selected ? "text-primary" : "text-muted-foreground")} />
-        {title}
+      <div className="mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-2 font-semibold">
+          <Icon className={cn("h-5 w-5", selected ? "text-primary" : "text-muted-foreground")} />
+          {title}
+        </div>
+        {badge && (
+          <span className="text-[10px] font-bold uppercase tracking-wide text-primary">
+            {badge}
+          </span>
+        )}
       </div>
-      <p className="text-xs text-muted-foreground">{description}</p>
+      {description && (
+        <p className="text-xs text-muted-foreground mb-2">{description}</p>
+      )}
+      {useCase && (
+        <p className="text-xs font-medium text-foreground/70">{useCase}</p>
+      )}
     </div>
   );
 }

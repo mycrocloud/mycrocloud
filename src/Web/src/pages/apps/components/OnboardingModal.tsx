@@ -35,8 +35,8 @@ interface OnboardingModalProps {
 const QUICK_START_CONFIG: Record<string, OnboardingConfig> = {
 
     SPA: {
-        title: "Quick Start: Deploy your SPA",
-        description: "To get your Single Page Application live, the first step is to connect your source code from GitHub.",
+        title: "Your SPA is Ready!",
+        description: "Connect your repository to deploy.",
         primaryAction: {
             title: "Connect GitHub Repository",
             description: "Automatic builds and deployments for React, Vue, Next.js, etc.",
@@ -46,8 +46,8 @@ const QUICK_START_CONFIG: Record<string, OnboardingConfig> = {
         secondaryAction: null
     },
     API: {
-        title: "Quick Start: Build your API",
-        description: "Your API backend is ready. Let's create your first HTTP endpoint to handle requests.",
+        title: "Your API is Ready!",
+        description: "Create your first endpoint.",
         primaryAction: {
             title: "Create HTTP Route",
             description: "Define an endpoint and code your serverless function logic.",
@@ -57,8 +57,8 @@ const QUICK_START_CONFIG: Record<string, OnboardingConfig> = {
         secondaryAction: null
     },
     FullStack: {
-        title: "Quick Start: Setup your App",
-        description: "Your Full-stack application can host both a frontend and a backend. Choose where to start:",
+        title: "Your App is Ready!",
+        description: "Choose where to start:",
         primaryAction: {
             title: "Connect Frontend",
             description: "Link a GitHub repo for your web pages.",
@@ -122,10 +122,7 @@ export function OnboardingModal({ open, onOpenChange, type }: OnboardingModalPro
                     </div>
                 </div>
 
-                <div className="bg-muted/30 p-4 border-t flex items-center justify-between">
-                    <p className="text-xs text-muted-foreground px-4">
-                        You can always access these settings later in the app dashboard.
-                    </p>
+                <div className="bg-muted/30 p-4 border-t flex justify-end">
                     <Button
                         variant="ghost"
                         size="sm"
