@@ -14,7 +14,6 @@ export default interface IRoute {
   functionHandlerDependencies?: string[];
   requireAuthorization: boolean;
   status: string;
-  useDynamicResponse: boolean;
   fileId?: number;
   fileName?: string;
   fileFolderId?: number;

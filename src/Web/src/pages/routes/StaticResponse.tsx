@@ -104,19 +104,7 @@ export default function StaticResponse() {
 
       {/* Body */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="response">Response Body</Label>
-          <div className="flex items-center gap-2">
-            <Switch
-              id="useDynamicResponse"
-              checked={watch("useDynamicResponse") || false}
-              onCheckedChange={(checked) => setValue("useDynamicResponse", checked)}
-            />
-            <Label htmlFor="useDynamicResponse" className="text-xs text-muted-foreground">
-              Dynamic response
-            </Label>
-          </div>
-        </div>
+        <Label htmlFor="response">Response Body</Label>
         <textarea
           id="response"
           {...register("response")}

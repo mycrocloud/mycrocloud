@@ -65,7 +65,6 @@ export default function RouteCreateUpdate({
       response: route?.response,
       responseBodyLanguage: route?.responseBodyLanguage || "plaintext",
       functionHandlerDependencies: route?.functionHandlerDependencies || [],
-      useDynamicResponse: route?.useDynamicResponse,
       fileId: route?.fileId,
       enabled: route?.enabled ?? true,
     },

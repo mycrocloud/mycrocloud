@@ -16,7 +16,6 @@ export type RouteCreateUpdateInputs = {
   responseBodyLanguage?: string;
   response?: string | null;
   functionHandlerDependencies?: (string | undefined)[];
-  useDynamicResponse?: boolean;
   fileId?: number | null;
   enabled: boolean;
 };
@@ -52,7 +51,6 @@ export const routeCreateUpdateInputsSchema: ObjectSchema<RouteCreateUpdateInputs
       then: (schema) => schema.required("Function handler is required"),
     }),
     functionHandlerDependencies: yup.array().of(yup.string()),
-    useDynamicResponse: yup.boolean(),
     fileId: yup.number().nullable(),
     enabled: yup.boolean().required(),
   });
