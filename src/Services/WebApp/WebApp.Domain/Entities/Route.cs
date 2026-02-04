@@ -29,7 +29,7 @@ public class Route : BaseEntity
 
     public bool Enabled { get; set; }
 
-    public FunctionExecutionEnvironment? FunctionExecutionEnvironment { get; set; }
+    public FunctionRuntime? FunctionRuntime { get; set; }
     
     // Navigation properties
     public ICollection<Log> Logs { get; set; }
@@ -48,7 +48,3 @@ public enum ResponseType
     Function = 3
 }
 
-public enum FunctionExecutionEnvironment
-{
-    JintInDocker = 2,
-}

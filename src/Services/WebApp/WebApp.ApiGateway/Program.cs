@@ -32,7 +32,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
 });
 builder.Services.AddSingleton<ICachedOpenIdConnectionSigningKeys, CachedOpenIdConnectionSigningKeys>();
 
-builder.Services.AddKeyedSingleton("DockerContainerFunctionExecutionManager", new ConcurrencyJobManager(100));
+builder.Services.AddKeyedSingleton("DockerFunctionExecution", new ConcurrentJobQueue(maxConcurrency: 100));
 builder.Services.AddSingleton(_ =>
 {
     var client = new DockerClientConfiguration(
@@ -41,6 +41,9 @@ builder.Services.AddSingleton(_ =>
 
     return client;
 });
+// Function executors - add new IFunctionExecutor implementations here
+builder.Services.AddScoped<IFunctionExecutor, DockerFunctionExecutor>();
+builder.Services.AddScoped<FunctionExecutorFactory>();
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
@@ -76,11 +79,6 @@ app.UseWhen(context => context.Request.Host.Host == builder.Configuration["Host"
 });
 
 app.UseLoggingMiddleware();
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseMiddleware<DevAppNameResolverMiddleware>();
-}
 
 app.UseAppResolverMiddleware();
 

@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using WebApp.Domain.Entities;
+using WebApp.Domain.Enums;
 using Route = WebApp.Domain.Entities.Route;
 
 namespace Api.Models.Routes;
@@ -49,7 +50,7 @@ public class RouteCreateUpdateRequest
             FunctionHandlerDependencies = FunctionHandlerDependencies,
             RequireAuthorization = RequireAuthorization,
             Enabled = Enabled,
-            FunctionExecutionEnvironment = ResponseType == ResponseType.Function ? FunctionExecutionEnvironment.JintInDocker : null
+            FunctionRuntime = ResponseType == ResponseType.Function ? FunctionRuntime.JintInDocker : null
         };
     }
 

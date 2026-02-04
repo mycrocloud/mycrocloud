@@ -1,38 +1,29 @@
-﻿using WebApp.ApiGateway.Models;
-using WebApp.Domain.Entities;
+﻿using WebApp.Domain.Entities;
 using WebApp.Domain.Repositories;
-using WebApp.Infrastructure;
 
 namespace WebApp.ApiGateway.Middlewares;
 
 public class FunctionInvokerMiddleware(RequestDelegate next)
 {
-    public async Task InvokeAsync(HttpContext context, AppDbContext dbContext, IAppRepository appRepository, IConfiguration configuration)
+    public async Task InvokeAsync(HttpContext context, IAppRepository appRepository, FunctionExecutorFactory executorFactory)
     {
         var app = (App)context.Items["_App"]!;
         var route = (Route)context.Items["_Route"]!;
-        var service = new Service();
 
-        FunctionResult result;
-        
-        context.Items["_FunctionExecutionEnvironment"] = route.FunctionExecutionEnvironment;
-        
-        switch (route.FunctionExecutionEnvironment)
+        context.Items["_FunctionRuntime"] = route.FunctionRuntime;
+
+        var executor = executorFactory.GetExecutor(route.FunctionRuntime);
+        if (executor is null)
         {
-            case FunctionExecutionEnvironment.JintInDocker:
-            {
-                result = await service.ExecuteJintInDocker(context, app, appRepository, route.Response, configuration, null);
-                break;
-            }
-
-            default:
-                context.Response.StatusCode = 500;
-                await context.Response.WriteAsync("Function execution environment not supported.");
-                return;
+            context.Response.StatusCode = 500;
+            await context.Response.WriteAsync("Function runtime not supported.");
+            return;
         }
-        
+
+        var result = await executor.ExecuteAsync(context, app, appRepository, route.Response, null);
+
         await context.Response.WriteFromFunctionResult(result);
-        
+
         context.Items["_FunctionExecutionResult"] = result;
     }
 }

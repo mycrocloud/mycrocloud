@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using WebApp.Domain.Enums;
 
 namespace WebApp.Domain.Entities;
 
@@ -14,7 +15,7 @@ public class Log : BaseEntity
     public int StatusCode { get; set; }
     public TimeSpan? FunctionExecutionDuration { get; set; }
     
-    public FunctionExecutionEnvironment? FunctionExecutionEnvironment { get; set; }
+    public FunctionRuntime? FunctionRuntime { get; set; }
     public string RemoteAddress { get; set; }
     public long? RequestContentLength { get; set; }
     public string RequestContentType { get; set; }

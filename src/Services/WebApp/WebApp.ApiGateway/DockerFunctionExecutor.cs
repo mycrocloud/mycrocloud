@@ -3,24 +3,26 @@ using Docker.DotNet;
 using Docker.DotNet.Models;
 using WebApp.ApiGateway.Models;
 using WebApp.Domain.Entities;
+using WebApp.Domain.Enums;
 using WebApp.Domain.Repositories;
 using File = System.IO.File;
 
 namespace WebApp.ApiGateway;
 
-public class Service
+public class DockerFunctionExecutor(
+    [FromKeyedServices("DockerFunctionExecution")] ConcurrentJobQueue jobQueue,
+    DockerClient dockerClient,
+    IConfiguration configuration) : IFunctionExecutor
 {
-    public async Task<FunctionResult> ExecuteJintInDocker(HttpContext context, App app, IAppRepository appRepository,
-        string handler, IConfiguration configuration, Dictionary<string, string>? values)
+    public FunctionRuntime Runtime => FunctionRuntime.JintInDocker;
+
+    public async Task<FunctionResult> ExecuteAsync(HttpContext context, App app, IAppRepository appRepository,
+        string handler, Dictionary<string, string>? values)
     {
-        var concurrencyJobManager = context.RequestServices.GetKeyedService<ConcurrencyJobManager>("DockerContainerFunctionExecutionManager")!;
-
-        var dockerClient = context.RequestServices.GetRequiredService<DockerClient>();
-
         var hostDir = Path.Combine(configuration["DockerFunctionExecution:HostFilePath"]!, context.TraceIdentifier.Replace(':', '_'));
 
         Directory.CreateDirectory(hostDir);
-        
+
         await File.WriteAllTextAsync(Path.Combine(hostDir, "request.json"), JsonSerializer.Serialize(await context.Request.Normalize()));
 
         await File.WriteAllTextAsync(Path.Combine(hostDir, "handler.js"), handler);
@@ -32,17 +34,17 @@ public class Service
         }
 
         FunctionResult result;
-        
+
         try
         {
-            result = await concurrencyJobManager.EnqueueJob(async token =>
+            result = await jobQueue.EnqueueAsync(async token =>
             {
                 const string containerDataPath = "/app/data";
 
                 var vars = await appRepository.GetVariables(app.Id);
 
                 var env = vars.Select(v => $"{v.Name}={v.StringValue}").ToList();
-                
+
                 var container = await dockerClient.Containers.CreateContainerAsync(new CreateContainerParameters
                 {
                     Image = configuration["DockerFunctionExecution:Image"],
@@ -59,7 +61,7 @@ public class Service
 
                 await dockerClient.Containers.StartContainerAsync(container.ID, new ContainerStartParameters
                 {
-                    
+
                 }, token);
 
                 await dockerClient.Containers.WaitContainerAsync(container.ID, token);
@@ -67,9 +69,9 @@ public class Service
                 var resultText = await File.ReadAllTextAsync(Path.Combine(hostDir, "result.json"), token);
 
                 var innerResult = JsonSerializer.Deserialize<FunctionResult>(resultText)!;
-                
+
                 var logFilePath = Path.Combine(hostDir, "log.json");
-                
+
                 if (File.Exists(logFilePath))
                 {
                     var logJson = await File.ReadAllTextAsync(logFilePath, token);

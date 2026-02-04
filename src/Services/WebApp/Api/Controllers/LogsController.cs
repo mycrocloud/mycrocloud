@@ -45,7 +45,7 @@ public class LogsController(ILogRepository logRepository) : BaseController
                 l.Method,
                 l.Path,
                 l.StatusCode,
-                l.FunctionExecutionEnvironment,
+                l.FunctionRuntime,
                 l.FunctionExecutionDuration,
                 l.FunctionLogs,
                 l.RequestContentLength,

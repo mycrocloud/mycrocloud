@@ -2,25 +2,25 @@ using System.Collections.Concurrent;
 
 namespace WebApp.ApiGateway;
 
-public class ConcurrencyJobManager : IDisposable
+public class ConcurrentJobQueue : IDisposable
 {
     private readonly SemaphoreSlim _semaphore;
     private readonly ConcurrentQueue<Func<CancellationToken, Task>> _jobQueue = new();
     private readonly CancellationTokenSource _shutdownCts = new();
     private readonly Task _processingTask;
 
-    public ConcurrencyJobManager(int maxConcurrency)
+    public ConcurrentJobQueue(int maxConcurrency)
     {
         _semaphore = new SemaphoreSlim(maxConcurrency);
         _processingTask = Task.Run(ProcessQueueAsync);
     }
 
-    public Task<TResult> EnqueueJob<TResult>(Func<CancellationToken, Task<TResult>> job, TimeSpan jobTimeout)
+    public Task<TResult> EnqueueAsync<TResult>(Func<CancellationToken, Task<TResult>> job, TimeSpan timeout)
     {
         var tcs = new TaskCompletionSource<TResult>();
         _jobQueue.Enqueue(async (cancellationToken) =>
         {
-            using var timeoutCts = new CancellationTokenSource(jobTimeout);
+            using var timeoutCts = new CancellationTokenSource(timeout);
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
 
             try
