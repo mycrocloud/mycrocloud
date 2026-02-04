@@ -160,7 +160,7 @@ function RoutingConfigSection() {
               {
                 priority: 1,
                 match: { type: "prefix", path: "/api" },
-                target: { type: "api", stripPrefix: true },
+                target: { type: "api", stripPrefix: false },
               },
               {
                 priority: 2,

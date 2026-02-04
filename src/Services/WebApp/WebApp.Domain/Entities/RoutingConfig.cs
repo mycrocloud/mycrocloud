@@ -49,7 +49,7 @@ public class RoutingConfig
             {
                 Priority = 1,
                 Match = new RouteMatch { Type = RouteMatchType.Prefix, Path = "/api" },
-                Target = new RouteTarget { Type = RouteTargetType.Api, StripPrefix = true }
+                Target = new RouteTarget { Type = RouteTargetType.Api, StripPrefix = false }
             },
             new RoutingConfigRoute
             {
