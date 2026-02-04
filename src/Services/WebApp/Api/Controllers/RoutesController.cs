@@ -1,3 +1,4 @@
+using Api.Extensions;
 using Api.Filters;
 using Api.Models.Routes;
 using Dapper;
