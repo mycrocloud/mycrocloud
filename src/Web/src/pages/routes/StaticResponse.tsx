@@ -3,7 +3,6 @@ import { RouteCreateUpdateInputs } from "./CreateUpdateFormInputs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Plus, X } from "lucide-react";
 
 const QUICK_ADD_HEADERS = [
@@ -23,8 +22,6 @@ export default function StaticResponse() {
     control,
     register,
     formState: { errors },
-    setValue,
-    watch,
   } = useFormContext<RouteCreateUpdateInputs>();
 
   const {
