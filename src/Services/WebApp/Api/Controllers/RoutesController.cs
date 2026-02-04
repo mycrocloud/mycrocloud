@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApp.Domain.Entities;
 using WebApp.Domain.Enums;
+using WebApp.Domain.Services;
 using WebApp.Infrastructure;
 using Route = WebApp.Domain.Entities.Route;
 
@@ -13,7 +14,8 @@ namespace Api.Controllers;
 [Route("apps/{appId:int}/[controller]")]
 [TypeFilter<AppOwnerActionFilter>(Arguments = ["appId"])]
 public class RoutesController(
-    AppDbContext appDbContext
+    AppDbContext appDbContext,
+    ISubscriptionService subscriptionService
 ) : BaseController
 {
     private App App => (HttpContext.Items["App"] as App)!;
@@ -100,6 +102,12 @@ public class RoutesController(
     [HttpPost("{id:int}/Clone")]
     public async Task<IActionResult> Clone(int id)
     {
+        var routeCount = await appDbContext.Routes.CountAsync(r => r.App == App);
+        if (!await subscriptionService.CanCreateRoutes(User.GetUserId(), routeCount))
+        {
+            return BadRequest(new { Message = "You have reached the limit of 1000 routes per app" });
+        }
+
         var route = await appDbContext.Routes.AsNoTracking().SingleAsync(r => r.App == App && r.Id == id);
         route.Id = 0;
         route.Name += " - Copy";
@@ -113,6 +121,12 @@ public class RoutesController(
     [HttpPost]
     public async Task<IActionResult> Create(RouteCreateUpdateRequest createRequest)
     {
+        var routeCount = await appDbContext.Routes.CountAsync(r => r.App == App);
+        if (!await subscriptionService.CanCreateRoutes(User.GetUserId(), routeCount))
+        {
+            return BadRequest(new { Message = "You have reached the limit of 1000 routes per app" });
+        }
+
         var route = createRequest.ToCreateEntity();
 
         route.Folder = createRequest.FolderId != null
@@ -196,6 +210,24 @@ public class RoutesController(
         var folder = await appDbContext.RouteFolders
             .Include(routeFolder => routeFolder.Parent)
             .SingleAsync(f => f.App == App && f.Id == id);
+
+        // Count routes in folder hierarchy to be duplicated
+        var routesInFolderCount = await appDbContext.Database.GetDbConnection()
+            .ExecuteScalarAsync<int>("""
+                WITH RECURSIVE FolderHierarchy AS (
+                    SELECT "Id" FROM "RouteFolders" WHERE "Id" = @id
+                    UNION ALL
+                    SELECT rf."Id" FROM "RouteFolders" rf
+                    JOIN FolderHierarchy fh ON fh."Id" = rf."ParentId"
+                )
+                SELECT COUNT(*) FROM "Routes" WHERE "FolderId" IN (SELECT "Id" FROM FolderHierarchy)
+                """, new { id });
+
+        var currentRouteCount = await appDbContext.Routes.CountAsync(r => r.App == App);
+        if (!await subscriptionService.CanCreateRoutes(User.GetUserId(), currentRouteCount, routesInFolderCount))
+        {
+            return BadRequest(new { Message = "You have reached the limit of 1000 routes per app" });
+        }
 
         var newFolder = await RecursiveDuplicateFolder(folder, folder.Parent, true);
 
