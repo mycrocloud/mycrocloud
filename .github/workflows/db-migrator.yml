@@ -104,3 +104,4 @@ jobs:
           service: db-migrator
           aws-iam-role: ${{ vars.AWS_IAM_ROLE_GITHUB_ACTIONS_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
+          gh-pat: ${{ secrets.CR_PAT }}

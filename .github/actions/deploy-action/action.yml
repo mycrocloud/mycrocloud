@@ -37,6 +37,10 @@ inputs:
     description: 'AWS region'
     required: true
 
+  gh-pat:
+    description: 'GitHub Personal Access Token for container registry'
+    required: true
+
 runs:
   using: composite
   steps:
@@ -53,6 +57,12 @@ runs:
       with:
         role-to-assume: ${{ inputs.aws-iam-role }}
         aws-region: ${{ inputs.aws-region }}
+
+    - name: Login to GitHub Container Registry on server
+      shell: bash
+      run: |
+        ssh -i ~/.ssh/id_rsa ${{ inputs.ssh-username }}@${{ inputs.ssh-host }} \
+          "echo '${{ inputs.gh-pat }}' | docker login ghcr.io -u github --password-stdin"
 
     - name: Deploy
       shell: bash
