@@ -100,4 +100,4 @@
       ansible.builtin.command:
         cmd: docker compose exec lb nginx -s reload
         chdir: "{{ deploy_path }}"
-      when: service in ['api', 'apigateway', 'web', 'web-editor']
+      when: service in ['api', 'gateway', 'web', 'web-editor']

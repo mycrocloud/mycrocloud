@@ -4,7 +4,7 @@ using WebApp.Domain.Entities;
 using WebApp.Domain.Repositories;
 using WebApp.Infrastructure;
 
-namespace WebApp.ApiGateway.Middlewares;
+namespace WebApp.Gateway.Middlewares;
 
 public class StaticFilesMiddleware2(RequestDelegate next)
 {

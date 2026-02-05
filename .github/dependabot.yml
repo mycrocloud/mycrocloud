@@ -4,7 +4,7 @@ updates:
     directories:
       - "src/Services/WebApp/WebApp.Admin"
       - "src/Services/WebApp/Api"
-      - "src/Services/WebApp/WebApp.ApiGateway"
+      - "src/Services/WebApp/WebApp.Gateway"
       - "src/Services/WebApp/WebApp.Domain"
       - "src/Services/WebApp/WebApp.FunctionInvoker"
       - "src/Services/WebApp/WebApp.FunctionShared"

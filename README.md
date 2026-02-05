@@ -1,7 +1,7 @@
 # MycroCloud
 
 ![api](https://github.com/mycrocloud/mycrocloud/actions/workflows/api.yml/badge.svg)
-![apigateway](https://github.com/mycrocloud/mycrocloud/actions/workflows/apigateway.yml/badge.svg)
+![gateway](https://github.com/mycrocloud/mycrocloud/actions/workflows/gateway.yml/badge.svg)
 ![web](https://github.com/mycrocloud/mycrocloud/actions/workflows/web.yml/badge.svg)
 
 A cloud platform for building and deploying managed web applications.

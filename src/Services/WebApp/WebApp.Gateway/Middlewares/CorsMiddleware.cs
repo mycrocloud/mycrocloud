@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Cors.Infrastructure;
 using WebApp.Domain.Entities;
 
-namespace WebApp.ApiGateway.Middlewares;
+namespace WebApp.Gateway.Middlewares;
 
 public class CorsMiddleware(RequestDelegate next)
 {

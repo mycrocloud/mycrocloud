@@ -1,7 +1,7 @@
 ﻿using WebApp.Domain.Enums;
 using WebApp.Domain.Repositories;
 
-namespace WebApp.ApiGateway.Middlewares;
+namespace WebApp.Gateway.Middlewares;
 
 public class AppResolverMiddleware(RequestDelegate next)
 {

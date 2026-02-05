@@ -1,4 +1,4 @@
-namespace WebApp.ApiGateway.Models;
+namespace WebApp.Gateway.Models;
 
 public class Request
 {

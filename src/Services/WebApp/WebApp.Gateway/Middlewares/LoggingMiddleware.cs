@@ -1,9 +1,9 @@
 ﻿using System.Text.Json;
-using WebApp.ApiGateway.Models;
+using WebApp.Gateway.Models;
 using WebApp.Domain.Entities;
 using WebApp.Domain.Repositories;
 
-namespace WebApp.ApiGateway.Middlewares;
+namespace WebApp.Gateway.Middlewares;
 
 public class LoggingMiddleware(RequestDelegate next)
 {

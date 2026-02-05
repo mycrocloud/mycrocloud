@@ -1,5 +1,5 @@
 host: mycrocloud.info
-apigateway_server_name: ~^apigw-\d+\.mycrocloud\.info$
+gateway_server_name: ~^apigw-\d+\.mycrocloud\.info$
 
 web:
   replicaCount: 1
@@ -29,12 +29,12 @@ api:
     AppIntegrations__GitHubWebhook__Config__Secret: ""
     Elasticsearch__Password: ""
 
-apigateway:
+gateway:
   replicaCount: 2
   containerPort: 8080
   imagePullSecret: ghcr-secret
   image:
-    repository: ghcr.io/mycrocloud/mycrocloud-apigateway
+    repository: ghcr.io/mycrocloud/mycrocloud-gateway
     tag: dev
   service:
     type: ClusterIP

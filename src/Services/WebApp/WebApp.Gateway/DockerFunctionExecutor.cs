@@ -1,13 +1,13 @@
 using System.Text.Json;
 using Docker.DotNet;
 using Docker.DotNet.Models;
-using WebApp.ApiGateway.Models;
+using WebApp.Gateway.Models;
 using WebApp.Domain.Entities;
 using WebApp.Domain.Enums;
 using WebApp.Domain.Repositories;
 using File = System.IO.File;
 
-namespace WebApp.ApiGateway;
+namespace WebApp.Gateway;
 
 public class DockerFunctionExecutor(
     [FromKeyedServices("DockerFunctionExecution")] ConcurrentJobQueue jobQueue,

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Cors.Infrastructure;
-using WebApp.ApiGateway.Models;
+using WebApp.Gateway.Models;
 
-namespace WebApp.ApiGateway;
+namespace WebApp.Gateway;
 
 public static class HttpRequestExtensions
 {

@@ -1,4 +1,4 @@
-name: CI/CD ApiGateway
+name: CI/CD Gateway
 
 on:
   push:
@@ -8,13 +8,13 @@ on:
       - "src/Services/WebApp/WebApp.Domain/**"
       - "src/Services/WebApp/WebApp.Infrastructure/**"
       - "src/Services/WebApp/WebApp.FunctionShared/**"
-      - "src/Services/WebApp/WebApp.ApiGateway/**"
+      - "src/Services/WebApp/WebApp.Gateway/**"
 
   workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-apigateway
+  IMAGE_NAME: ${{ github.repository }}-gateway
   WORK_DIR: src/Services/WebApp
 
 jobs:
@@ -44,7 +44,7 @@ jobs:
         uses: docker/build-push-action@v6.18.0
         with:
           context: ${{env.WORK_DIR}}
-          file: ${{env.WORK_DIR}}/WebApp.ApiGateway/Dockerfile
+          file: ${{env.WORK_DIR}}/WebApp.Gateway/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
 
@@ -62,7 +62,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         
-      - name: Deploy apigateway
+      - name: Deploy gateway
         uses: ./.github/actions/deploy-action
         if: ${{ vars.SSH_DOCKER_DEPLOY == 'true' }}
 
@@ -71,6 +71,6 @@ jobs:
           ssh-username: ${{ vars.SSH_USERNAME }}
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
           work-dir: ${{ env.WORK_DIR }}
-          service: apigateway
+          service: gateway
           aws-iam-role: ${{ vars.AWS_IAM_ROLE_GITHUB_ACTIONS_ARN }}
           aws-region: ${{ vars.AWS_REGION }}

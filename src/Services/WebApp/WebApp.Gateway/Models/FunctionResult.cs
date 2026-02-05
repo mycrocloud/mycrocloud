@@ -1,6 +1,6 @@
 using WebApp.Domain.Entities;
 
-namespace WebApp.ApiGateway.Models;
+namespace WebApp.Gateway.Models;
 
 public class FunctionResult
 {

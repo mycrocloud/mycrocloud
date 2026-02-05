@@ -1,7 +1,7 @@
 ﻿using WebApp.Domain.Entities;
 using WebApp.Domain.Repositories;
 
-namespace WebApp.ApiGateway.Middlewares;
+namespace WebApp.Gateway.Middlewares;
 
 public class FunctionInvokerMiddleware(RequestDelegate next)
 {

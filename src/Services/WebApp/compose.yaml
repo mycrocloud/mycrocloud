@@ -36,10 +36,10 @@ services:
       rabbitmq:
         condition: service_healthy
         
-  apigateway:
-    image: mycrocloud-apigateway
+  gateway:
+    image: mycrocloud-gateway
     build:
-      dockerfile: WebApp.ApiGateway/Dockerfile
+      dockerfile: WebApp.Gateway/Dockerfile
     environment:
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
     volumes:

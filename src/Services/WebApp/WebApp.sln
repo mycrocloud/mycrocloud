@@ -2,7 +2,7 @@
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp.ApiGateway", "WebApp.ApiGateway\WebApp.ApiGateway.csproj", "{BD267F17-F979-4A1F-9309-99BF3EFFAB3C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp.Gateway", "WebApp.Gateway\WebApp.Gateway.csproj", "{BD267F17-F979-4A1F-9309-99BF3EFFAB3C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp.Domain", "WebApp.Domain\WebApp.Domain.csproj", "{4E16F3CB-82F1-4ADB-AC76-5C2C8614F014}"
 EndProject

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using WebApp.Domain.Entities;
 using WebApp.Infrastructure;
 
-namespace WebApp.ApiGateway.Middlewares;
+namespace WebApp.Gateway.Middlewares;
 
 public class RoutingMiddleware(RequestDelegate next, ILogger<RoutingMiddleware> logger)
 {

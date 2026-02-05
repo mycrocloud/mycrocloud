@@ -1,5 +1,5 @@
 ﻿// using WebApp.Infrastructure;
-// namespace WebApp.ApiGateway.Middlewares;
+// namespace WebApp.Gateway.Middlewares;
 //
 // public class StaticFilesMiddleware(RequestDelegate next)
 // {

@@ -25,13 +25,13 @@ services:
       - ./Services/WebApp/WebApp.Api/appsettings.json:/app/appsettings.json:ro
       - ./Services/WebApp/WebApp.Api/gha-mycrocloud.pem:/app/gha-mycrocloud.pem:ro
 
-  apigateway:
-    image: ghcr.io/mycrocloud/mycrocloud-apigateway:main
+  gateway:
+    image: ghcr.io/mycrocloud/mycrocloud-gateway:main
     environment:
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
       - ConnectionStrings__Redis=${ConnectionStrings__Redis}
     volumes:
-      - ./Services/WebApp/WebApp.ApiGateway/appsettings.json:/app/appsettings.json:ro
+      - ./Services/WebApp/WebApp.Gateway/appsettings.json:/app/appsettings.json:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - /srv/function-data:/srv/function-data
       
@@ -52,7 +52,7 @@ services:
     - web
     - web-editor
     - api
-    - apigateway
+    - gateway
 
   web-editor:
     image: ghcr.io/mycrocloud/mycrocloud-web-editor:main

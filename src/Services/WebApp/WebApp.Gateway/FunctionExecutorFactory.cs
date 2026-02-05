@@ -1,6 +1,6 @@
 using WebApp.Domain.Enums;
 
-namespace WebApp.ApiGateway;
+namespace WebApp.Gateway;
 
 public class FunctionExecutorFactory(IEnumerable<IFunctionExecutor> executors)
 {

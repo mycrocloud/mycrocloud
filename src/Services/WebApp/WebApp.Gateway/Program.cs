@@ -5,8 +5,8 @@ using WebApp.Domain.Entities;
 using WebApp.Domain.Repositories;
 using WebApp.Infrastructure;
 using WebApp.Infrastructure.Repositories;
-using WebApp.ApiGateway;
-using WebApp.ApiGateway.Middlewares;
+using WebApp.Gateway;
+using WebApp.Gateway.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddLogging(options =>

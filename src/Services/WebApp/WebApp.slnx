@@ -5,7 +5,7 @@
     <File Path=".config\dotnet-tools.json" />
   </Folder>
   <Project Path="Api\Api.csproj" Type="Classic C#" />
-  <Project Path="WebApp.ApiGateway\WebApp.ApiGateway.csproj" Type="Classic C#" />
+  <Project Path="WebApp.Gateway\WebApp.Gateway.csproj" Type="Classic C#" />
   <Project Path="WebApp.Domain\WebApp.Domain.csproj" Type="Classic C#" />
   <Project Path="WebApp.FunctionInvoker\WebApp.FunctionInvoker.csproj" Type="Classic C#" />
   <Project Path="WebApp.Infrastructure\WebApp.Infrastructure.csproj" Type="Classic C#" />
