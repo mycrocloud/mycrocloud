@@ -23,7 +23,7 @@
         <PackageReference Include="NEST" Version="7.10.0" />
         <PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
         <PackageReference Include="Seq.Extensions.Logging" Version="8.0.0" />
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.8.1" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.1" />
     </ItemGroup>
 
     <ItemGroup>
