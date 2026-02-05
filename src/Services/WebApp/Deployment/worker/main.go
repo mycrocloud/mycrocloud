@@ -119,17 +119,34 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, l *flue
 
 	autoRemove := os.Getenv("BUILDER_AUTO_REMOVE") != "false"
 
+	// Prepare environment variables for the container
+	envVars := []string{
+		"REPO_URL=" + buildMsg.CloneUrl,
+		"WORK_DIR=" + buildMsg.Directory,
+		"OUT_DIR=" + buildMsg.OutDir,
+		"INSTALL_CMD=" + buildMsg.InstallCommand,
+		"BUILD_CMD=" + buildMsg.BuildCommand,
+	}
+
+	if buildMsg.NodeVersion != "" {
+		envVars = append(envVars, "NODE_VERSION="+buildMsg.NodeVersion)
+	}
+
+	// Serialize EnvVars to JSON for the builder to parse
+	if len(buildMsg.EnvVars) > 0 {
+		envVarsJSON, err := json.Marshal(buildMsg.EnvVars)
+		if err != nil {
+			log.Printf("Failed to marshal env vars: %v", err)
+		} else {
+			envVars = append(envVars, "ENV_VARS="+string(envVarsJSON))
+		}
+	}
+
 	resp, err := cli.ContainerCreate(ctx,
 		&container.Config{
-			Image: builderImage,
-			Tty:   false,
-			Env: []string{
-				"REPO_URL=" + buildMsg.CloneUrl,
-				"WORK_DIR=" + buildMsg.Directory,
-				"OUT_DIR=" + buildMsg.OutDir,
-				"INSTALL_CMD=" + buildMsg.InstallCommand,
-				"BUILD_CMD=" + buildMsg.BuildCommand,
-			},
+			Image:  builderImage,
+			Tty:    false,
+			Env:    envVars,
 			Labels: map[string]string{"build_id": buildMsg.BuildId},
 		},
 		&container.HostConfig{

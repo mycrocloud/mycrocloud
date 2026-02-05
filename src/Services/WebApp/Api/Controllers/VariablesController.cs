@@ -12,16 +12,21 @@ namespace Api.Controllers;
 public class VariablesController(AppDbContext appDbContext) : BaseController
 {
     [HttpGet]
-    public async Task<IActionResult> List(int appId)
+    public async Task<IActionResult> List(int appId, [FromQuery] VariableTarget? target = null)
     {
-        var variables = await appDbContext.Variables.Where(v => v.AppId == appId).ToListAsync();
+        var query = appDbContext.Variables.Where(v => v.AppId == appId);
+        if (target.HasValue)
+        {
+            query = query.Where(v => v.Target == target.Value || v.Target == VariableTarget.All);
+        }
+        var variables = await query.ToListAsync();
         return Ok(variables.Select(variable => new
         {
             variable.Id,
             variable.Name,
             variable.IsSecret,
-            ValueType = variable.ValueType.ToString(),
-            variable.StringValue,
+            Target = variable.Target.ToString(),
+            variable.Value,
             variable.CreatedAt,
             variable.UpdatedAt
         }));
@@ -56,8 +61,8 @@ public class VariablesController(AppDbContext appDbContext) : BaseController
             variable.Id,
             variable.Name,
             variable.IsSecret,
-            ValueType = variable.ValueType.ToString(),
-            variable.StringValue,
+            Target = variable.Target.ToString(),
+            variable.Value,
             variable.CreatedAt,
             variable.UpdatedAt
         });
@@ -75,35 +80,29 @@ public class VariablesController(AppDbContext appDbContext) : BaseController
 
 public class CreateUpdateVariableRequest
 {
-    // if (string.IsNullOrEmpty(key)) continue;
-    // if (key.StartsWith("#")) continue;
-    // if (!System.Text.RegularExpressions.Regex.IsMatch(key, @"^[A-Za-z_][A-Za-z0-9_]*$"))
-    //     continue;
-    
     public string Name { get; set; }
-    public string? StringValue { get; set; }
-    
-    [JsonConverter(typeof(JsonStringEnumConverter))]
-    public VariableValueType ValueType { get; set; }
-    
+    public string? Value { get; set; }
     public bool IsSecret { get; set; }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public VariableTarget Target { get; set; } = VariableTarget.Runtime;
 
     public Variable ToEntity()
     {
         return new()
         {
             Name = Name,
-            ValueType = ValueType,
-            StringValue = StringValue,
-            IsSecret = IsSecret
+            Value = Value,
+            IsSecret = IsSecret,
+            Target = Target
         };
     }
 
     public void CopyToEntity(Variable variable)
     {
         variable.Name = Name;
-        variable.ValueType = ValueType;
-        variable.StringValue = StringValue;
+        variable.Value = Value;
         variable.IsSecret = IsSecret;
+        variable.Target = Target;
     }
 }

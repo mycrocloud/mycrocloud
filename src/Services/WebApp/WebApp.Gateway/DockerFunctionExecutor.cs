@@ -43,7 +43,7 @@ public class DockerFunctionExecutor(
 
                 var vars = await appRepository.GetVariables(app.Id);
 
-                var env = vars.Select(v => $"{v.Name}={v.StringValue}").ToList();
+                var env = vars.Select(v => $"{v.Name}={v.Value}").ToList();
 
                 var container = await dockerClient.Containers.CreateContainerAsync(new CreateContainerParameters
                 {

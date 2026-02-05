@@ -56,4 +56,6 @@ public class AppBuildConfigs
     public string OutDir { get; set; }
     public string InstallCommand { get; set; }
     public string BuildCommand { get; set; }
+    public string NodeVersion { get; set; }
+    public string Framework { get; set; }
 }

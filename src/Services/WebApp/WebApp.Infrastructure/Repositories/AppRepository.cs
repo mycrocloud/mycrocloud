@@ -76,6 +76,6 @@ public class AppRepository(AppDbContext dbContext) : IAppRepository
     {
         var variables = await GetVariables(appId);
 
-        return variables.ToDictionary(v => v.Name, v => v.StringValue);
+        return variables.ToDictionary(v => v.Name, v => v.Value);
     }
 }

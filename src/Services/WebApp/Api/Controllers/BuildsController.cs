@@ -65,11 +65,16 @@ public class BuildsController(
         var installationAccessToken = await gitHubAppService.GetInstallationAccessToken(app.Link.InstallationId);
 
         var repos = await gitHubAppService.GetAccessibleRepos(app.Link.InstallationId, installationAccessToken);
-        
+
         var repo = repos.SingleOrDefault(r => r.Id == app.Link.RepoId);
         if (repo is null)
             return BadRequest();
-        
+
+        // Fetch build environment variables
+        var buildEnvVars = await appDbContext.Variables
+            .Where(v => v.AppId == appId && (v.Target == VariableTarget.Build || v.Target == VariableTarget.All))
+            .ToDictionaryAsync(v => v.Name, v => v.Value ?? "");
+
         var build = new AppBuild
         {
             Id = Guid.NewGuid(),
@@ -82,7 +87,7 @@ public class BuildsController(
         appDbContext.AppBuildJobs.Add(build);
 
         var config = app.BuildConfigs;
-        
+
         var message = new AppBuildMessage
         {
             BuildId = build.Id.ToString(),
@@ -93,6 +98,8 @@ public class BuildsController(
             OutDir = config.OutDir,
             InstallCommand = config.InstallCommand,
             BuildCommand = config.BuildCommand,
+            NodeVersion = config.NodeVersion,
+            EnvVars = buildEnvVars,
             ArtifactsUploadUrl = linkGenerator.GetUriByAction(HttpContext, nameof(BuildsController.PutObject), BuildsController.Controller, new { appId = app.Id, buildId = build.Id })!
         };
 
@@ -135,8 +142,11 @@ public class BuildsController(
         {
             Branch = config.Branch,
             Directory = config.Directory,
+            InstallCommand = config.InstallCommand,
             BuildCommand = config.BuildCommand,
             OutDir = config.OutDir,
+            NodeVersion = config.NodeVersion,
+            Framework = config.Framework,
         };
 
         await appDbContext.SaveChangesAsync();

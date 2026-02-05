@@ -1,6 +1,8 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { AppContext } from "..";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
+import * as yup from "yup";
+import { yupResolver } from "@hookform/resolvers/yup";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,7 +41,13 @@ import { useApiClient } from "@/hooks";
 import { getConfig } from "@/config";
 import { NotFoundError } from "@/errors";
 import { IAppIntegration } from "../App";
-import { IGitHubInstallation, GitHubRepo, IBuildConfig } from "./types";
+import {
+  IGitHubInstallation,
+  GitHubRepo,
+  IBuildConfig,
+  NODE_VERSIONS,
+  FRAMEWORKS,
+} from "./types";
 
 const { GITHUB_APP_NAME } = getConfig();
 
@@ -300,6 +308,16 @@ function GitHubLinkSection() {
   );
 }
 
+const buildConfigSchema = yup.object({
+  branch: yup.string().required("Branch is required"),
+  directory: yup.string().required("Directory is required"),
+  installCommand: yup.string().required("Install command is required"),
+  buildCommand: yup.string().required("Build command is required"),
+  outDir: yup.string().required("Output directory is required"),
+  nodeVersion: yup.string().default("20"),
+  framework: yup.string().default(""),
+});
+
 function BuildSettingsSection() {
   const { get, post } = useApiClient();
   const { app } = useContext(AppContext)!;
@@ -308,17 +326,23 @@ function BuildSettingsSection() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const originalData = useRef<IBuildConfig | null>(null);
 
   const {
     register,
     handleSubmit,
     reset,
-  } = useForm<IBuildConfig>();
+    control,
+    formState: { errors },
+  } = useForm<IBuildConfig>({
+    resolver: yupResolver(buildConfigSchema),
+  });
 
   useEffect(() => {
     (async () => {
       try {
         const data = await get<IBuildConfig>(`/api/apps/${app.id}/builds/config`);
+        originalData.current = data;
         reset(data);
       } finally {
         setLoading(false);
@@ -330,9 +354,11 @@ function BuildSettingsSection() {
     setSaving(true);
     try {
       await post(`/api/apps/${app.id}/builds/config`, data);
+      originalData.current = data;
       toast.success("Build settings saved");
       setIsEditing(false);
-    } catch {
+    } catch (err) {
+      console.error("Failed to save build settings:", err);
       toast.error("Failed to save build settings");
     } finally {
       setSaving(false);
@@ -340,7 +366,9 @@ function BuildSettingsSection() {
   };
 
   const handleCancel = () => {
-    reset();
+    if (originalData.current) {
+      reset(originalData.current);
+    }
     setIsEditing(false);
   };
 
@@ -393,6 +421,9 @@ function BuildSettingsSection() {
                 disabled={!isEditing}
                 placeholder="main"
               />
+              {errors.branch && (
+                <p className="text-sm text-destructive">{errors.branch.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="directory">Root Directory</Label>
@@ -402,6 +433,22 @@ function BuildSettingsSection() {
                 disabled={!isEditing}
                 placeholder="."
               />
+              {errors.directory && (
+                <p className="text-sm text-destructive">{errors.directory.message}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="installCommand">Install Command</Label>
+              <Input
+                id="installCommand"
+                {...register("installCommand")}
+                disabled={!isEditing}
+                placeholder="npm ci"
+                className="font-mono text-sm"
+              />
+              {errors.installCommand && (
+                <p className="text-sm text-destructive">{errors.installCommand.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="buildCommand">Build Command</Label>
@@ -412,6 +459,9 @@ function BuildSettingsSection() {
                 placeholder="npm run build"
                 className="font-mono text-sm"
               />
+              {errors.buildCommand && (
+                <p className="text-sm text-destructive">{errors.buildCommand.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="outDir">Output Directory</Label>
@@ -421,6 +471,62 @@ function BuildSettingsSection() {
                 disabled={!isEditing}
                 placeholder="dist"
               />
+              {errors.outDir && (
+                <p className="text-sm text-destructive">{errors.outDir.message}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nodeVersion">Node.js Version</Label>
+              <Controller
+                name="nodeVersion"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    value={field.value || "20"}
+                    onValueChange={field.onChange}
+                    disabled={!isEditing}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Node.js version" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {NODE_VERSIONS.map((version) => (
+                        <SelectItem key={version} value={version}>
+                          Node.js {version}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="framework">Framework Preset</Label>
+              <Controller
+                name="framework"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    value={field.value || ""}
+                    onValueChange={field.onChange}
+                    disabled={!isEditing}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select framework" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FRAMEWORKS.map((fw) => (
+                        <SelectItem key={fw.value} value={fw.value || "_none"}>
+                          {fw.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              <p className="text-xs text-muted-foreground">
+                Optional: Auto-fill build settings based on framework
+              </p>
             </div>
           </div>
 
@@ -440,3 +546,4 @@ function BuildSettingsSection() {
     </Card>
   );
 }
+

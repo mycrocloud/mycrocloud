@@ -27,7 +27,13 @@ public class AppBuildMessage
     
     [JsonPropertyName("build_command")]
     public string BuildCommand { get; set; }
-    
+
+    [JsonPropertyName("node_version")]
+    public string NodeVersion { get; set; }
+
+    [JsonPropertyName("env_vars")]
+    public Dictionary<string, string> EnvVars { get; set; } = new();
+
     [JsonPropertyName("artifacts_upload_url")]
     public string ArtifactsUploadUrl { get; set; }
 }

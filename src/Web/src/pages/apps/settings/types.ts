@@ -53,9 +53,52 @@ export interface GitHubRepo {
 export interface IBuildConfig {
   branch: string;
   directory: string;
+  installCommand: string;
   buildCommand: string;
   outDir: string;
+  nodeVersion: string;
+  framework: string;
 }
+
+export const NODE_VERSIONS = ["18", "20", "22"] as const;
+export type NodeVersion = (typeof NODE_VERSIONS)[number];
+
+export const FRAMEWORKS = [
+  { value: "", label: "None / Other" },
+  { value: "vite", label: "Vite" },
+  { value: "nextjs", label: "Next.js" },
+  { value: "remix", label: "Remix" },
+  { value: "astro", label: "Astro" },
+  { value: "nuxt", label: "Nuxt" },
+  { value: "sveltekit", label: "SvelteKit" },
+  { value: "gatsby", label: "Gatsby" },
+  { value: "cra", label: "Create React App" },
+] as const;
+
+export type VariableTarget = "Runtime" | "Build" | "All";
+
+export interface IEnvVariable {
+  id: number;
+  name: string;
+  value: string;
+  target: VariableTarget;
+  isSecret: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface IEnvVariableCreate {
+  name: string;
+  value: string;
+  target: VariableTarget;
+  isSecret: boolean;
+}
+
+export const VARIABLE_TARGETS: { value: VariableTarget; label: string; description: string }[] = [
+  { value: "Build", label: "Build", description: "Available during build only" },
+  { value: "Runtime", label: "Runtime", description: "Available at runtime only" },
+  { value: "All", label: "All", description: "Available both at build and runtime" },
+];
 
 export type RenameFormInput = { name: string };
 
