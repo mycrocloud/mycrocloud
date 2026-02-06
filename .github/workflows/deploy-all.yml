@@ -1,6 +1,8 @@
 name: Deploy all services
+
 on:
   workflow_dispatch:
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -8,6 +10,10 @@ jobs:
       id-token: write
       contents: read
     if: ${{ github.ref == 'refs/heads/main' }}
+    concurrency:
+      group: deploy-all
+      cancel-in-progress: false
+
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -18,7 +24,6 @@ jobs:
           ssh-host: ${{ vars.SSH_HOST }}
           ssh-username: ${{ vars.SSH_USERNAME }}
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          work-dir: /opt/mycrocloud
           aws-iam-role: ${{ vars.AWS_IAM_ROLE_GITHUB_ACTIONS_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
           gh-pat: ${{ secrets.CR_PAT }}
@@ -29,7 +34,6 @@ jobs:
           ssh-host: ${{ vars.SSH_HOST }}
           ssh-username: ${{ vars.SSH_USERNAME }}
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          work-dir: /opt/mycrocloud
           namespace: deployment
           aws-iam-role: ${{ vars.AWS_IAM_ROLE_GITHUB_ACTIONS_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
@@ -41,7 +45,6 @@ jobs:
           ssh-host: ${{ vars.SSH_HOST }}
           ssh-username: ${{ vars.SSH_USERNAME }}
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          work-dir: /opt/mycrocloud
           namespace: monitoring
           aws-iam-role: ${{ vars.AWS_IAM_ROLE_GITHUB_ACTIONS_ARN }}
           aws-region: ${{ vars.AWS_REGION }}

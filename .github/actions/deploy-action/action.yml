@@ -1,45 +1,44 @@
 name: 'Deploy'
-description: 'Deploy to server via SSH'
+description: 'Deploy to server via SSH - pull images and optionally deploy services'
+
 inputs:
+  # SSH Configuration
   ssh-host:
     description: 'SSH host'
     required: true
-
   ssh-username:
     description: 'SSH username'
     required: true
-
   ssh-key:
     description: 'SSH private key'
     required: true
 
-  work-dir:
-    description: 'Working directory'
-    required: true
-
-  namespace:
-    description: 'Namespace (default or deployment)'
-    default: 'default'
-
-  service:
-    description: 'Service name (optional, deploys all if not specified)'
-    default: ''
-
-  image:
-    description: 'Image'
-    default: ''
-
+  # AWS Configuration
   aws-iam-role:
     description: 'AWS IAM role ARN for GitHub Actions'
     required: true
-
   aws-region:
     description: 'AWS region'
     required: true
 
+  # Container Registry
   gh-pat:
     description: 'GitHub Personal Access Token for container registry'
     required: true
+  image:
+    description: 'Docker image to pull'
+    default: ''
+
+  # Deploy Configuration
+  pull-only:
+    description: 'If true, only pull image without deploying'
+    default: 'false'
+  namespace:
+    description: 'Namespace (default or deployment)'
+    default: 'default'
+  service:
+    description: 'Service name to deploy (deploys all if not specified)'
+    default: ''
 
 runs:
   using: composite
@@ -51,7 +50,7 @@ runs:
         echo "${{ inputs.ssh-key }}" | tr -d '\r' > ~/.ssh/id_rsa
         chmod 400 ~/.ssh/id_rsa
         ssh-keyscan -H "${{ inputs.ssh-host }}" > ~/.ssh/known_hosts
-    
+
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v5.1.1
       with:
@@ -64,7 +63,15 @@ runs:
         ssh -i ~/.ssh/id_rsa ${{ inputs.ssh-username }}@${{ inputs.ssh-host }} \
           "echo '${{ inputs.gh-pat }}' | docker login ghcr.io -u github --password-stdin"
 
+    - name: Pull Docker image on server
+      if: ${{ inputs.image != '' }}
+      shell: bash
+      run: |
+        ssh -i ~/.ssh/id_rsa ${{ inputs.ssh-username }}@${{ inputs.ssh-host }} \
+          "docker pull ${{ inputs.image }}"
+
     - name: Deploy
+      if: ${{ inputs.pull-only != 'true' }}
       shell: bash
       working-directory: deploy/simple/deploy
       run: |

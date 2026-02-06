@@ -17,8 +17,6 @@ env:
   WORK_DIR: src/Services/WebApp
 
 jobs:
-  #ref: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-  #ref: https://docs.github.com/en/actions/using-containerized-services/creating-postgresql-service-containers#running-jobs-directly-on-the-runner-machine
   test-migrations:
     runs-on: ubuntu-latest
     services:
@@ -52,6 +50,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tags: ${{ steps.meta.outputs.tags }}
+    concurrency:
+      group: build-${{ github.repository }}-db-migrator
+      cancel-in-progress: false
 
     steps:
       - name: Checkout
@@ -71,10 +72,10 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v6.18.0
+        uses: docker/build-push-action@v6
         with:
-          context: ${{env.WORK_DIR}}
-          file: ${{env.WORK_DIR}}/WebApp.Migrations/Dockerfile
+          context: ${{ env.WORK_DIR }}
+          file: ${{ env.WORK_DIR }}/WebApp.Migrations/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
 
@@ -85,22 +86,21 @@ jobs:
       id-token: write
       contents: read
     if: ${{ github.ref == 'refs/heads/main' }}
-    env:
-      WORK_DIR: "/opt/mycrocloud"
+    concurrency:
+      group: deploy-default-db-migrator
+      cancel-in-progress: false
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-        
+
       - name: Deploy
         uses: ./.github/actions/deploy-action
         if: ${{ vars.SSH_DOCKER_DEPLOY == 'true' }}
-
         with:
-          ssh-host: ${{ vars.SSH_HOST}}
+          ssh-host: ${{ vars.SSH_HOST }}
           ssh-username: ${{ vars.SSH_USERNAME }}
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          work-dir: ${{ env.WORK_DIR }}
           service: db-migrator
           aws-iam-role: ${{ vars.AWS_IAM_ROLE_GITHUB_ACTIONS_ARN }}
           aws-region: ${{ vars.AWS_REGION }}

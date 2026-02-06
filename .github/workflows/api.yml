@@ -11,68 +11,14 @@ on:
 
   workflow_dispatch:
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-api
-  WORK_DIR: src/Services/WebApp
-
 jobs:
-  build-and-push-image:
-    runs-on: ubuntu-latest
-    outputs:
-      tags: ${{ steps.meta.outputs.tags }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.CR_PAT }}
-
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6.18.0
-        with:
-          context: ${{env.WORK_DIR}}
-          file: ${{env.WORK_DIR}}/Api/Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          build-args: |
-            COMMIT_HASH=${{ github.sha }}
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build-and-push-image
-    permissions:
-      id-token: write
-      contents: read
-    if: ${{ github.ref == 'refs/heads/main' }}
-    env:
-      WORK_DIR: "/opt/mycrocloud"
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Deploy
-        uses: ./.github/actions/deploy-action
-        if: ${{ vars.SSH_DOCKER_DEPLOY == 'true' }}
-
-        with:
-          ssh-host: ${{ vars.SSH_HOST}}
-          ssh-username: ${{ vars.SSH_USERNAME }}
-          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          work-dir: ${{ env.WORK_DIR }}
-          service: api
-          aws-iam-role: ${{ vars.AWS_IAM_ROLE_GITHUB_ACTIONS_ARN }}
-          aws-region: ${{ vars.AWS_REGION }}
-          gh-pat: ${{ secrets.CR_PAT }}
+  build-and-deploy:
+    uses: ./.github/workflows/_build-deploy.yml
+    with:
+      image-name: ${{ github.repository }}-api
+      work-dir: src/Services/WebApp
+      dockerfile: Api/Dockerfile
+      service: api
+    secrets:
+      CR_PAT: ${{ secrets.CR_PAT }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
