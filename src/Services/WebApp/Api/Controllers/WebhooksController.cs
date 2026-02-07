@@ -57,8 +57,7 @@ public class WebhooksController(GitHubAppService gitHubAppService,
             {
                 Id = Guid.NewGuid(),
                 App = app,
-                Name = commitMessage ?? $"Build {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}",
-                Status = "Queued",
+                Status = AppBuildState.queued,
                 CreatedAt = DateTime.UtcNow
             };
 

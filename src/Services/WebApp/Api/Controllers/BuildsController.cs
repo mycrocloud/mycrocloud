@@ -1,4 +1,3 @@
-using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
 using Api.Filters;
@@ -38,18 +37,17 @@ public class BuildsController(
     [HttpGet]
     public async Task<IActionResult> List(int appId)
     {
-        var jobs = await appDbContext.AppBuildJobs
-            .Where(j => j.AppId == appId)
-            .OrderByDescending(j => j.CreatedAt)
+        var builds = await appDbContext.AppBuildJobs
+            .Where(b => b.AppId == appId)
+            .OrderByDescending(b => b.CreatedAt)
             .ToListAsync();
         
-        return Ok(jobs.Select(job => new
+        return Ok(builds.Select(b => new
         {
-            job.Id,
-            job.Name,
-            job.Status,
-            job.CreatedAt,
-            job.UpdatedAt,
+            b.Id,
+            b.Status,
+            b.CreatedAt,
+            b.UpdatedAt,
         }));
     }
     
@@ -80,8 +78,7 @@ public class BuildsController(
         {
             Id = Guid.NewGuid(),
             App = app,
-            Name = request.Name,
-            Status = "Queued",
+            Status = AppBuildState.queued,
             CreatedAt = DateTime.UtcNow
         };
 
