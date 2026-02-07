@@ -2,9 +2,9 @@ FROM node:20-alpine
 
 RUN apk add --no-cache git bash curl jq zip
 
-# Create non-root user for security
-RUN addgroup -g 1000 builder && \
-    adduser -u 1000 -G builder -s /bin/bash -D builder
+# Create non-root user for security (UID 1001 to avoid conflict with existing node user)
+RUN addgroup -g 1001 builder && \
+    adduser -u 1001 -G builder -s /bin/bash -D builder
 
 # Install nvm for the builder user
 ENV NVM_DIR="/home/builder/.nvm"

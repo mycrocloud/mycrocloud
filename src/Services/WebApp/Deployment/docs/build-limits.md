@@ -54,7 +54,7 @@ Only the following hosts are allowed for cloning repositories:
 
 ### Container Security
 
-- **Non-root user**: Builds run as `builder` user (UID 1000), not root
+- **Non-root user**: Builds run as `builder` user (UID 1001), not root
 - Privileged mode disabled
 - Capabilities dropped (only essential ones added)
 - No privilege escalation (`no-new-privileges`)
