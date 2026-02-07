@@ -22,15 +22,15 @@ public class AppResolverMiddleware(RequestDelegate next)
             return;
         }
 
-        switch (cachedApp.Status)
+        switch (cachedApp.State)
         {
-            case AppStatus.Inactive:
+            case AppState.Disabled:
                 context.Response.StatusCode = 403;
-                await context.Response.WriteAsync("App is inactive");
+                await context.Response.WriteAsync("App is disabled");
                 return;
-            case AppStatus.Blocked:
+            case AppState.Deleted:
                 context.Response.StatusCode = 403;
-                await context.Response.WriteAsync("App is blocked");
+                await context.Response.WriteAsync("App is deleted");
                 return;
         }
 
