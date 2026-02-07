@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"os"
 	"strings"
 
@@ -10,7 +11,10 @@ import (
 
 func publishJobStatusChangedEventMessage(ch *amqp.Channel, message BuildStatusChangedEventMessage) {
 	jsonMessage, err := json.Marshal(message)
-	failOnError(err, "Failed to marshal JSON")
+	if err != nil {
+		log.Printf("Failed to marshal status message: %v", err)
+		return
+	}
 
 	err = ch.Publish(
 		"app.build.events",
@@ -21,7 +25,9 @@ func publishJobStatusChangedEventMessage(ch *amqp.Channel, message BuildStatusCh
 			ContentType: "application/json",
 			Body:        jsonMessage,
 		})
-	failOnError(err, "Failed to publish a message")
+	if err != nil {
+		log.Printf("Failed to publish status message: %v", err)
+	}
 }
 
 func isInContainer() bool {

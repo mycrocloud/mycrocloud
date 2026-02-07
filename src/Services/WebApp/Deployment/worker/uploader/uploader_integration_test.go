@@ -38,7 +38,7 @@ func TestUploadFile_Integration(t *testing.T) {
 	tmpFile.WriteString("Hello from uploader integration test!")
 
 	// Step 3: Gọi uploader thật
-	err = UploadFile(uploadURL+"/"+tmpFile.Name(), tmpFile.Name(), token)
+	err = UploadFile(uploadURL+"/"+filepath.Base(tmpFile.Name()), tmpFile.Name(), token, "test-agent")
 	if err != nil {
 		t.Fatalf("UploadFile failed: %v", err)
 	}
@@ -66,14 +66,14 @@ func TestUploadArtifacts_Integration(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	os.WriteFile(filepath.Join(tmpDir, "a.txt"), []byte("AAA"), 0644)
-	os.WriteFile(filepath.Join(tmpDir, "b.txt"), []byte("BBB"), 0644)
+	// Create a mock zip file (simulating builder output)
+	outDir := "dist"
+	zipPath := filepath.Join(tmpDir, outDir+".zip")
+	if err := os.WriteFile(zipPath, []byte("mock zip content"), 0644); err != nil {
+		t.Fatalf("Failed to create mock zip: %v", err)
+	}
 
-	subDir := filepath.Join(tmpDir, "sub")
-	os.Mkdir(subDir, 0755)
-	os.WriteFile(filepath.Join(subDir, "c.txt"), []byte("CCC"), 0644)
-
-	err = UploadArtifacts(uploadURL, tmpDir, token)
+	err = UploadArtifacts(uploadURL, tmpDir, outDir, token, "test-agent")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,9 +81,12 @@ func TestUploadArtifacts_Integration(t *testing.T) {
 
 func TestUploadArtifacts_FromExistingFolder(t *testing.T) {
 	rootDir := "/tmp/build-outputs/6fa5fdea-8760-4faf-994c-c94d6f25223c"
-	// Check folder exists
-	if _, err := os.Stat(rootDir); err != nil {
-		t.Skip("Folder does not exist on this machine: " + rootDir)
+	outDir := "dist"
+
+	// Check zip file exists
+	zipPath := filepath.Join(rootDir, outDir+".zip")
+	if _, err := os.Stat(zipPath); err != nil {
+		t.Skip("Zip file does not exist: " + zipPath)
 	}
 
 	// Get Auth0 token
@@ -99,7 +102,7 @@ func TestUploadArtifacts_FromExistingFolder(t *testing.T) {
 		t.Fatalf("GetAccessToken: %v", err)
 	}
 
-	err = UploadArtifacts(uploadURL, rootDir, token)
+	err = UploadArtifacts(uploadURL, rootDir, outDir, token, "test-agent")
 	if err != nil {
 		t.Fatalf("UploadArtifacts failed: %v", err)
 	}

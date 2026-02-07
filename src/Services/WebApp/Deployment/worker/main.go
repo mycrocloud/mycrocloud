@@ -8,9 +8,11 @@ import (
 	"mycrocloud/worker/logutil"
 	"mycrocloud/worker/uploader"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
@@ -21,14 +23,11 @@ import (
 	"github.com/streadway/amqp"
 )
 
-func failOnError(err error, msg string) {
-	if err != nil {
-		log.Fatalf("%s: %s", msg, err)
-	}
-}
-
 // MaxConcurrentJobs is the limit for concurrent jobs being processed
 const MaxConcurrentJobs = 3
+
+// DefaultJobTimeout is the maximum time a build job can run
+const DefaultJobTimeout = 30 * time.Minute
 
 func logFluentd(l *fluent.Fluent, msg string, jobID string) {
 	data := map[string]string{
@@ -58,21 +57,23 @@ func getLogConfig() container.LogConfig {
 	return cfg
 }
 
-// ProcessJob simulates job processing asynchronously
-func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, l *fluent.Fluent) {
-	defer wg.Done()
-
+// ProcessJob processes a build job and returns an error if it fails
+func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *fluent.Fluent) error {
 	var buildMsg BuildMessage
-	err := json.Unmarshal([]byte(jsonString), &buildMsg)
-	failOnError(err, "Failed to unmarshal JSON")
+	if err := json.Unmarshal([]byte(jsonString), &buildMsg); err != nil {
+		return err
+	}
+
 	log.Printf("Processing... Id: %s, RepoFullName: %s", buildMsg.BuildId, buildMsg.RepoFullName)
 	logFluentd(l, "Processing", buildMsg.BuildId)
 
-	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	failOnError(err, "Failed to create docker client")
+	if err != nil {
+		return err
+	}
+	defer cli.Close()
 
-	// Create a container
+	// Create output directory
 	log.Printf("Creating container")
 	builderImage := os.Getenv("BUILDER_IMAGE")
 
@@ -81,7 +82,7 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, l *flue
 	jobOut := filepath.Join(baseOut, jobID)
 
 	if err := os.MkdirAll(jobOut, 0755); err != nil {
-		log.Fatalf("❌ Failed to create job output dir: %v", err)
+		return err
 	}
 
 	log.Printf("📦 Starting build job: %s", jobID)
@@ -103,9 +104,6 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, l *flue
 		if logConf.Config != nil {
 			addr = logConf.Config["fluentd-address"]
 		}
-		// If using a unix socket address, mount it into the builder container.
-		// We do not pre-check the path from inside the worker container; the
-		// Docker daemon will validate the source path on the host.
 		if strings.HasPrefix(addr, "unix://") {
 			socketPath := strings.TrimPrefix(addr, "unix://")
 			mounts = append(mounts, mount.Mount{
@@ -132,7 +130,6 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, l *flue
 		envVars = append(envVars, "NODE_VERSION="+buildMsg.NodeVersion)
 	}
 
-	// Serialize EnvVars to JSON for the builder to parse
 	if len(buildMsg.EnvVars) > 0 {
 		envVarsJSON, err := json.Marshal(buildMsg.EnvVars)
 		if err != nil {
@@ -155,12 +152,15 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, l *flue
 			AutoRemove: autoRemove,
 		},
 		nil, nil, "")
-	failOnError(err, "Failed to create container")
+	if err != nil {
+		return err
+	}
 
 	// Start the container
 	log.Printf("Starting container")
-	err = cli.ContainerStart(ctx, resp.ID, container.StartOptions{})
-	failOnError(err, "Failed to start container")
+	if err := cli.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
+		return err
+	}
 
 	publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
 		BuildId:     buildMsg.BuildId,
@@ -168,21 +168,46 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, l *flue
 		ContainerId: resp.ID,
 	})
 
-	// Wait for the container to finish
-	statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
+	// Wait for container with timeout
+	timeoutCtx, cancel := context.WithTimeout(ctx, DefaultJobTimeout)
+	defer cancel()
+
+	statusCh, errCh := cli.ContainerWait(timeoutCtx, resp.ID, container.WaitConditionNotRunning)
+
+	var containerFailed bool
 	select {
 	case err := <-errCh:
-		failOnError(err, "Failed to wait for container")
+		if err != nil {
+			// Try to stop container if timeout
+			if timeoutCtx.Err() == context.DeadlineExceeded {
+				log.Printf("Job timeout, stopping container %s", resp.ID)
+				stopCtx, stopCancel := context.WithTimeout(context.Background(), 10*time.Second)
+				_ = cli.ContainerStop(stopCtx, resp.ID, container.StopOptions{})
+				stopCancel()
+			}
+			publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
+				BuildId: buildMsg.BuildId,
+				Status:  Failed,
+			})
+			return err
+		}
+
+	case status := <-statusCh:
+		log.Printf("Container finished with status %d", status.StatusCode)
+		if status.StatusCode != 0 {
+			containerFailed = true
+		}
+	}
+
+	if containerFailed {
 		publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
 			BuildId: buildMsg.BuildId,
 			Status:  Failed,
 		})
-
-	case status := <-statusCh:
-		log.Printf("Container finished with status %d", status.StatusCode)
+		return nil // Job processed, but build failed
 	}
 
-	//distDir := path.Join("/output", repo.Id)
+	// Upload artifacts
 	log.Printf("Dist dir: %s", jobOut)
 	shouldUploadArtifacts := os.Getenv("UPLOAD_ARTIFACTS") != "false"
 
@@ -196,15 +221,30 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, l *flue
 
 		token, err := api_client.GetAccessToken(cfg)
 		if err != nil {
-			log.Fatalf("Failed to get token: %v", err)
+			publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
+				BuildId: buildMsg.BuildId,
+				Status:  Failed,
+			})
+			return err
 		}
 
-		if err := uploader.UploadArtifacts(strings.TrimSuffix(buildMsg.ArtifactsUploadUrl, "/"), jobOut, token, "deployment-worker"); err != nil {
-			log.Fatalf("Upload failed: %v", err)
+		if err := uploader.UploadArtifacts(strings.TrimSuffix(buildMsg.ArtifactsUploadUrl, "/"), jobOut, buildMsg.OutDir, token, "deployment-worker"); err != nil {
+			publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
+				BuildId: buildMsg.BuildId,
+				Status:  Failed,
+			})
+			return err
+		}
+
+		// Cleanup job output directory after successful upload
+		if err := os.RemoveAll(jobOut); err != nil {
+			log.Printf("Warning: failed to cleanup job output dir %s: %v", jobOut, err)
+		} else {
+			log.Printf("Cleaned up job output dir: %s", jobOut)
 		}
 	}
 
-	// publish completion message
+	// Publish completion message
 	publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
 		BuildId: buildMsg.BuildId,
 		Status:  Done,
@@ -212,52 +252,64 @@ func ProcessJob(jsonString string, wg *sync.WaitGroup, ch *amqp.Channel, l *flue
 
 	log.Printf("Finished processing. Id: %s", buildMsg.BuildId)
 	logFluentd(l, "Finished processing", buildMsg.BuildId)
+	return nil
 }
 
 func getOutputBaseDir() string {
 	dir := os.Getenv("HOST_OUT_DIR")
 	if dir == "" {
-		log.Fatal("❌ HOST_OUT_DIR must be set (compose-only mode)")
+		log.Fatal("HOST_OUT_DIR must be set")
 	}
 	return dir
 }
 
 func main() {
 	if err := godotenv.Load(".conf"); err != nil && !os.IsNotExist(err) {
-		failOnError(err, "Failed to load .conf file")
+		log.Printf("Warning: failed to load .conf file: %v", err)
 	}
 
 	inContainer := isInContainer()
 	log.Printf("Running in container: %v", inContainer)
 
+	// Setup signal handling for graceful shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
 	rabbitMQURL := os.Getenv("RABBITMQ_URL")
-	// Connect to RabbitMQ server
 	conn, err := amqp.Dial(rabbitMQURL)
-	failOnError(err, "Failed to connect to RabbitMQ")
+	if err != nil {
+		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
+	}
 	defer conn.Close()
 
-	// Open a channel
 	chConsumer, err := conn.Channel()
-	failOnError(err, "Failed to open a channel")
+	if err != nil {
+		log.Fatalf("Failed to open consumer channel: %v", err)
+	}
 	defer chConsumer.Close()
 
-	// Declare the queue from which jobs are consumed
 	qBuildJob, err := chConsumer.QueueDeclare(
-		"job_queue", // name
-		true,        // durable
-		false,       // delete when unused
-		false,       // exclusive
-		false,       // no-wait
-		nil,         // arguments
+		"job_queue",
+		true,  // durable
+		false, // delete when unused
+		false, // exclusive
+		false, // no-wait
+		nil,
 	)
-	failOnError(err, "Failed to declare a queue")
+	if err != nil {
+		log.Fatalf("Failed to declare queue: %v", err)
+	}
 
-	//
 	chPublisher, err := conn.Channel()
-	failOnError(err, "Failed to open a channel")
+	if err != nil {
+		log.Fatalf("Failed to open publisher channel: %v", err)
+	}
 	defer chPublisher.Close()
 
-	err = chPublisher.ExchangeDeclare(
+	if err := chPublisher.ExchangeDeclare(
 		"app.build.events",
 		"fanout",
 		true,
@@ -265,47 +317,97 @@ func main() {
 		false,
 		false,
 		nil,
-	)
-	failOnError(err, "Failed to declare exchange")
+	); err != nil {
+		log.Fatalf("Failed to declare exchange: %v", err)
+	}
 
-	// Create a channel to limit the number of concurrent jobs
-	jobLimit := make(chan struct{}, MaxConcurrentJobs)
-	wg := &sync.WaitGroup{}
+	// Set prefetch to limit concurrent processing
+	if err := chConsumer.Qos(MaxConcurrentJobs, 0, false); err != nil {
+		log.Fatalf("Failed to set QoS: %v", err)
+	}
 
-	// RabbitMQ Consumer setup
+	// Manual ack mode
 	msgs, err := chConsumer.Consume(
-		qBuildJob.Name, // queue
-		"",             // consumer
-		true,           // auto-ack
-		false,          // exclusive
-		false,          // no-local
-		false,          // no-wait
-		nil,            // args
+		qBuildJob.Name,
+		"",
+		false, // auto-ack = false (manual ack)
+		false,
+		false,
+		false,
+		nil,
 	)
-	failOnError(err, "Failed to register a consumer")
+	if err != nil {
+		log.Fatalf("Failed to register consumer: %v", err)
+	}
 
 	fluentdLogger := logutil.NewFluentClient()
 	defer fluentdLogger.Close()
 
-	forever := make(chan bool)
+	var wg sync.WaitGroup
+	jobLimit := make(chan struct{}, MaxConcurrentJobs)
 
+	// Message processing goroutine
 	go func() {
-		for d := range msgs {
-			job := string(d.Body)
+		for {
+			select {
+			case <-ctx.Done():
+				log.Printf("Context cancelled, stopping message consumption")
+				return
+			case d, ok := <-msgs:
+				if !ok {
+					log.Printf("Message channel closed")
+					return
+				}
 
-			// Limit concurrency by using a buffered channel
-			jobLimit <- struct{}{}
-			wg.Add(1)
+				jobLimit <- struct{}{}
+				wg.Add(1)
 
-			go func(job string) {
-				defer func() { <-jobLimit }() // Release the slot once the job is done
-				ProcessJob(job, wg, chPublisher, fluentdLogger)
-			}(job)
+				go func(delivery amqp.Delivery) {
+					defer func() {
+						<-jobLimit
+						wg.Done()
+					}()
+
+					job := string(delivery.Body)
+					if err := ProcessJob(ctx, job, chPublisher, fluentdLogger); err != nil {
+						log.Printf("Job failed: %v", err)
+						// Nack and requeue on error (could be transient)
+						if nackErr := delivery.Nack(false, true); nackErr != nil {
+							log.Printf("Failed to nack message: %v", nackErr)
+						}
+						return
+					}
+
+					// Ack on success
+					if err := delivery.Ack(false); err != nil {
+						log.Printf("Failed to ack message: %v", err)
+					}
+				}(d)
+			}
 		}
 	}()
 
-	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
-	<-forever
+	log.Printf(" [*] Waiting for messages. Press Ctrl+C to exit")
 
-	wg.Wait() // Wait for all goroutines to finish
+	// Wait for shutdown signal
+	sig := <-sigChan
+	log.Printf("Received signal %v, initiating graceful shutdown...", sig)
+
+	// Cancel context to stop accepting new jobs
+	cancel()
+
+	// Wait for in-flight jobs with timeout
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	shutdownTimeout := 60 * time.Second
+	select {
+	case <-done:
+		log.Printf("All jobs completed, shutting down")
+	case <-time.After(shutdownTimeout):
+		log.Printf("Shutdown timeout after %v, forcing exit", shutdownTimeout)
+	}
 }

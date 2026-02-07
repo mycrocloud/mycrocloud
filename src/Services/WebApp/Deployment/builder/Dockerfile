@@ -1,6 +1,6 @@
 FROM node:20-alpine
 
-RUN apk add --no-cache git bash curl jq
+RUN apk add --no-cache git bash curl jq zip
 
 # Install nvm for node version management
 ENV NVM_DIR="/root/.nvm"

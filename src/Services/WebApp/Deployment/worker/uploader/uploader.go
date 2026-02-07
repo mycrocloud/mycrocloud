@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 )
 
@@ -70,23 +69,15 @@ func UploadFile(url, filePath, accessToken, userAgent string) error {
 	return nil
 }
 
-// UploadArtifacts recursively uploads all files in rootDir to baseURL.
-func UploadArtifacts(baseURL, rootDir, accessToken, userAgent string) error {
-	return filepath.Walk(rootDir, func(path string, info os.FileInfo, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
-		}
-		if info.IsDir() {
-			return nil
-		}
+// UploadArtifacts uploads the zipped artifact file from rootDir to baseURL.
+// The zip file is named {outDir}.zip (e.g., dist.zip, build.zip).
+func UploadArtifacts(baseURL, rootDir, outDir, accessToken, userAgent string) error {
+	zipName := outDir + ".zip"
+	zipPath := filepath.Join(rootDir, zipName)
 
-		relPath, err := filepath.Rel(rootDir, path)
-		if err != nil {
-			return err
-		}
-		relPath = filepath.ToSlash(relPath)
+	if _, err := os.Stat(zipPath); os.IsNotExist(err) {
+		return fmt.Errorf("%s not found in %s", zipName, rootDir)
+	}
 
-		uploadURL := strings.TrimRight(baseURL, "/") + "/" + relPath
-		return UploadFile(uploadURL, path, accessToken, userAgent)
-	})
+	return UploadFile(baseURL, zipPath, accessToken, userAgent)
 }

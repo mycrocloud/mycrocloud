@@ -48,4 +48,9 @@ eval "$BUILD_CMD"
 
 mkdir -p "$OUTPUT_DIR"
 cp -r "$OUT_DIR"/* "$OUTPUT_DIR"/
+
+# ZIP output for efficient upload
+echo "Creating ${OUT_DIR}.zip..."
+cd "$OUTPUT_DIR"
+zip -qr "/output/${OUT_DIR}.zip" .
 echo "Build completed successfully."
