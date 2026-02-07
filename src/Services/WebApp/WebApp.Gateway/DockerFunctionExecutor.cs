@@ -1,10 +1,10 @@
 using System.Text.Json;
 using Docker.DotNet;
 using Docker.DotNet.Models;
+using WebApp.Gateway.Cache;
 using WebApp.Gateway.Models;
-using WebApp.Domain.Entities;
 using WebApp.Domain.Enums;
-using WebApp.Domain.Repositories;
+using WebApp.Domain.Entities;
 using File = System.IO.File;
 
 namespace WebApp.Gateway;
@@ -16,7 +16,7 @@ public class DockerFunctionExecutor(
 {
     public FunctionRuntime Runtime => FunctionRuntime.JintInDocker;
 
-    public async Task<FunctionResult> ExecuteAsync(HttpContext context, App app, IAppRepository appRepository,
+    public async Task<FunctionResult> ExecuteAsync(HttpContext context, CachedApp app,
         string handler, Dictionary<string, string>? values)
     {
         var hostDir = Path.Combine(configuration["DockerFunctionExecution:HostFilePath"]!, context.TraceIdentifier.Replace(':', '_'));
@@ -35,15 +35,14 @@ public class DockerFunctionExecutor(
 
         FunctionResult result;
 
+        // Use cached variables
+        var env = app.Variables.Select(v => $"{v.Name}={v.Value}").ToList();
+
         try
         {
             result = await jobQueue.EnqueueAsync(async token =>
             {
                 const string containerDataPath = "/app/data";
-
-                var vars = await appRepository.GetVariables(app.Id);
-
-                var env = vars.Select(v => $"{v.Name}={v.Value}").ToList();
 
                 var container = await dockerClient.Containers.CreateContainerAsync(new CreateContainerParameters
                 {

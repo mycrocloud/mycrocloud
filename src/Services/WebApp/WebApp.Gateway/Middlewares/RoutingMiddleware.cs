@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using WebApp.Domain.Entities;
+using WebApp.Gateway.Cache;
 using WebApp.Infrastructure;
 
 namespace WebApp.Gateway.Middlewares;
@@ -10,7 +11,7 @@ public class RoutingMiddleware(RequestDelegate next, ILogger<RoutingMiddleware> 
 {
     public async Task Invoke(HttpContext context, AppDbContext appDbContext)
     {
-        var app = (App)context.Items["_App"]!;
+        var app = (CachedApp)context.Items["_CachedApp"]!;
         var isCustomConfig = app.RoutingConfig is { Routes.Count: > 0 };
         var config = isCustomConfig ? app.RoutingConfig : RoutingConfig.Default;
 
@@ -84,7 +85,7 @@ public class RoutingMiddleware(RequestDelegate next, ILogger<RoutingMiddleware> 
         return requestPath;
     }
 
-    private static async Task HandleStaticRequest(HttpContext context, App app, AppDbContext appDbContext,
+    private static async Task HandleStaticRequest(HttpContext context, CachedApp app, AppDbContext appDbContext,
         string requestPath, RoutingConfigRoute route, ILogger logger)
     {
         if (!HttpMethods.IsGet(context.Request.Method))

@@ -1,15 +1,15 @@
 ﻿using System.Text.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Schema;
-using WebApp.Domain.Repositories;
+using WebApp.Gateway.Cache;
 
 namespace WebApp.Gateway.Middlewares;
 
 public class ValidationMiddleware(RequestDelegate next)
 {
-    public async Task InvokeAsync(HttpContext context, IRouteRepository routeRepository)
+    public async Task InvokeAsync(HttpContext context)
     {
-        var route = (Route)context.Items["_Route"]!;
+        var route = (CachedRoute)context.Items["_CachedRoute"]!;
         if (string.IsNullOrEmpty(route.RequestQuerySchema)
             && string.IsNullOrEmpty(route.RequestHeaderSchema)
             && string.IsNullOrEmpty(route.RequestBodySchema))

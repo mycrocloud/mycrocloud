@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Cors.Infrastructure;
-using WebApp.Domain.Entities;
+using WebApp.Gateway.Cache;
 
 namespace WebApp.Gateway.Middlewares;
 
@@ -7,7 +7,7 @@ public class CorsMiddleware(RequestDelegate next)
 {
     public async Task Invoke(HttpContext context, ILogger<CorsMiddleware> logger)
     {
-        var app = (App)context.Items["_App"]!;
+        var app = (CachedApp)context.Items["_CachedApp"]!;
         var requestHeaders = context.Request.Headers;
         if (context.Request.IsPreflightRequest())
         {

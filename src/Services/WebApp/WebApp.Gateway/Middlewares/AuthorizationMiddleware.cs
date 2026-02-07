@@ -1,4 +1,4 @@
-using WebApp.Domain.Entities;
+using WebApp.Gateway.Cache;
 
 namespace WebApp.Gateway.Middlewares;
 
@@ -6,8 +6,8 @@ public class AuthorizationMiddleware(RequestDelegate next)
 {
     public async Task InvokeAsync(HttpContext context)
     {
-        var route = (Route)context.Items["_Route"]!;
-        var authenticatedScheme = context.Items["_AuthenticatedScheme"] as AuthenticationScheme;
+        var route = (CachedRoute)context.Items["_CachedRoute"]!;
+        var authenticatedScheme = context.Items["_AuthenticatedScheme"] as CachedAuthenticationScheme;
         if (!route.RequireAuthorization)
         {
             await next.Invoke(context);

@@ -1,6 +1,7 @@
 using Api.Extensions;
 using Api.Filters;
 using Api.Models.Routes;
+using Api.Services;
 using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,7 +17,8 @@ namespace Api.Controllers;
 [TypeFilter<AppOwnerActionFilter>(Arguments = ["appId"])]
 public class RoutesController(
     AppDbContext appDbContext,
-    ISubscriptionService subscriptionService
+    ISubscriptionService subscriptionService,
+    IAppCacheInvalidator cacheInvalidator
 ) : BaseController
 {
     private App App => (HttpContext.Items["App"] as App)!;
@@ -115,6 +117,7 @@ public class RoutesController(
 
         await appDbContext.Routes.AddAsync(route);
         await appDbContext.SaveChangesAsync();
+        await cacheInvalidator.InvalidateByIdAsync(App.Id);
 
         return Created(route.Id.ToString(), RouteDetails(route));
     }
@@ -139,6 +142,7 @@ public class RoutesController(
 
         await appDbContext.Routes.AddAsync(route);
         await appDbContext.SaveChangesAsync();
+        await cacheInvalidator.InvalidateByIdAsync(App.Id);
 
         return Created(route.Id.ToString(), new { route.Id, route.Version });
     }
@@ -158,6 +162,7 @@ public class RoutesController(
         updateRequest.ToUpdateEntity(ref route);
 
         await appDbContext.SaveChangesAsync();
+        await cacheInvalidator.InvalidateByIdAsync(App.Id);
 
         return NoContent();
     }
@@ -174,6 +179,7 @@ public class RoutesController(
 
         appDbContext.Routes.Remove(route);
         await appDbContext.SaveChangesAsync();
+        await cacheInvalidator.InvalidateByIdAsync(App.Id);
         return NoContent();
     }
 

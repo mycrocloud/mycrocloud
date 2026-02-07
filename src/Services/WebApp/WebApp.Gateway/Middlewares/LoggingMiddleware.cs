@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using WebApp.Gateway.Cache;
 using WebApp.Gateway.Models;
 using WebApp.Domain.Entities;
 using WebApp.Domain.Repositories;
@@ -7,20 +8,19 @@ namespace WebApp.Gateway.Middlewares;
 
 public class LoggingMiddleware(RequestDelegate next)
 {
-    public async Task Invoke(HttpContext context, ILogger<LoggingMiddleware> logger, ILogRepository logRepository,
-        IRouteRepository routeRepository, IConfiguration configuration)
+    public async Task Invoke(HttpContext context, ILogger<LoggingMiddleware> logger, ILogRepository logRepository)
     {
         await next.Invoke(context);
 
-        if (context.Items["_App"] is App app && !context.Request.IsPreflightRequest())
+        if (context.Items["_CachedApp"] is CachedApp app && !context.Request.IsPreflightRequest())
         {
-            var route = context.Items["_Route"] as Route;
+            var route = context.Items["_CachedRoute"] as CachedRoute;
             var functionExecutionResult = context.Items["_FunctionExecutionResult"] as FunctionResult;
 
             await logRepository.Add(new Log
             {
-                App = app,
-                Route = route,
+                AppId = app.Id,
+                RouteId = route?.Id,
                 Method = context.Request.Method,
                 Path = context.Request.Path + context.Request.QueryString,
                 StatusCode = context.Response.StatusCode,

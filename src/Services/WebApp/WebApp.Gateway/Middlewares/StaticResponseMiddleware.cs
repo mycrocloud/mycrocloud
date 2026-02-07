@@ -1,12 +1,12 @@
-﻿using WebApp.Domain.Entities;
+﻿using WebApp.Gateway.Cache;
 
 namespace WebApp.Gateway.Middlewares;
 
 public class StaticResponseMiddleware(RequestDelegate next)
 {
-    public async Task InvokeAsync(HttpContext context)
+    public async Task InvokeAsync(HttpContext context, IAppCacheService appCacheService)
     {
-        var route = (Route)context.Items["_Route"]!;
+        var route = (CachedRoute)context.Items["_CachedRoute"]!;
 
         context.Response.StatusCode = route.ResponseStatusCode ??
                                       throw new InvalidOperationException("ResponseStatusCode is null");
@@ -16,7 +16,9 @@ public class StaticResponseMiddleware(RequestDelegate next)
             context.Response.Headers.Append(header.Name, header.Value);
         }
 
-        await context.Response.WriteAsync(route.Response);
+        // Load response content from DB (not cached)
+        var response = await appCacheService.GetRouteResponseAsync(route.Id);
+        await context.Response.WriteAsync(response ?? string.Empty);
     }
 }
 

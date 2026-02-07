@@ -6,6 +6,7 @@ using WebApp.Domain.Repositories;
 using WebApp.Infrastructure;
 using WebApp.Infrastructure.Repositories;
 using WebApp.Gateway;
+using WebApp.Gateway.Cache;
 using WebApp.Gateway.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -31,6 +32,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
     options.Configuration = builder.Configuration.GetConnectionString("Redis");
 });
 builder.Services.AddSingleton<ICachedOpenIdConnectionSigningKeys, CachedOpenIdConnectionSigningKeys>();
+builder.Services.AddScoped<IAppCacheService, AppCacheService>();
 
 builder.Services.AddKeyedSingleton("DockerFunctionExecution", new ConcurrentJobQueue(maxConcurrency: 100));
 builder.Services.AddSingleton(_ =>
@@ -94,13 +96,13 @@ app.UseAuthorizationMiddleware();
 
 app.UseValidationMiddleware();
 
-app.UseWhen(context => ((Route)context.Items["_Route"]!).ResponseType == ResponseType.Static,
+app.UseWhen(context => ((CachedRoute)context.Items["_CachedRoute"]!).ResponseType == ResponseType.Static,
     appBuilder => appBuilder.UseStaticResponseMiddleware());
 
-// app.UseWhen(context => ((Route)context.Items["_Route"]!).ResponseType == ResponseType.StaticFile,
+// app.UseWhen(context => ((CachedRoute)context.Items["_CachedRoute"]!).ResponseType == ResponseType.StaticFile,
 //     appBuilder => appBuilder.UseStaticFilesMiddleware());
 
-app.UseWhen(context => ((Route)context.Items["_Route"]!).ResponseType == ResponseType.Function,
+app.UseWhen(context => ((CachedRoute)context.Items["_CachedRoute"]!).ResponseType == ResponseType.Function,
     appBuilder => appBuilder.UseFunctionInvokerMiddleware());
 
 app.Run();

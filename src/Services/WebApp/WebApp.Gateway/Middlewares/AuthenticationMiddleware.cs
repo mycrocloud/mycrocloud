@@ -1,9 +1,8 @@
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using WebApp.Domain.Entities;
 using WebApp.Domain.Enums;
-using WebApp.Domain.Repositories;
+using WebApp.Gateway.Cache;
 using WebApp.Infrastructure;
 
 namespace WebApp.Gateway.Middlewares;
@@ -12,15 +11,15 @@ public class AuthenticationMiddleware(RequestDelegate next, ILogger<Authenticati
 {
     public async Task InvokeAsync(HttpContext context)
     {
-        var app = (App)context.Items["_App"]!;
-        var appRepository = context.RequestServices.GetService<IAppRepository>()!;
-        var authenticationSchemes = await appRepository.GetAuthenticationSchemes(app.Id);
-        if (!authenticationSchemes.Any())
+        var app = (CachedApp)context.Items["_CachedApp"]!;
+
+        if (app.AuthenticationSchemes.Count == 0)
         {
             await next.Invoke(context);
             return;
         }
-        foreach (var scheme in authenticationSchemes)
+
+        foreach (var scheme in app.AuthenticationSchemes)
         {
             switch (scheme.Type)
             {
@@ -41,7 +40,7 @@ public class AuthenticationMiddleware(RequestDelegate next, ILogger<Authenticati
         await next.Invoke(context);
     }
 
-    private async Task AuthenticateOpenIdConnectScheme(HttpContext context, AuthenticationScheme scheme)
+    private async Task AuthenticateOpenIdConnectScheme(HttpContext context, CachedAuthenticationScheme scheme)
     {
         var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
         if (string.IsNullOrEmpty(token))
@@ -72,7 +71,7 @@ public class AuthenticationMiddleware(RequestDelegate next, ILogger<Authenticati
         context.Items.Add("_OpenIdConnectUser", user);
     }
 
-    private static async Task AuthenticateApiKeyScheme(HttpContext context, App app, AuthenticationScheme scheme)
+    private static async Task AuthenticateApiKeyScheme(HttpContext context, CachedApp app, CachedAuthenticationScheme scheme)
     {
         var apiKey = context.Request.Headers["X-Api-Key"].FirstOrDefault();
         if (string.IsNullOrEmpty(apiKey))

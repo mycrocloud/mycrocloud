@@ -19,7 +19,8 @@ public class AppsController(
     IAppRepository appRepository,
     AppDbContext appDbContext,
     GitHubAppService githubAppService,
-    ISubscriptionService subscriptionService
+    ISubscriptionService subscriptionService,
+    IAppCacheInvalidator cacheInvalidator
 ) : BaseController
 {
     [HttpGet]
@@ -106,7 +107,9 @@ public class AppsController(
             return Conflict(new { Message = "App name already taken" });
         }
 
+        var oldName = app.Name;
         await appService.Rename(id, renameRequest.Name);
+        await cacheInvalidator.InvalidateAsync(oldName); // Invalidate old name
         return NoContent();
     }
 
@@ -114,12 +117,14 @@ public class AppsController(
     public async Task<IActionResult> SetStatus(int id, AppStatus status)
     {
         await appService.SetStatus(id, status);
+        await cacheInvalidator.InvalidateByIdAsync(id);
         return NoContent();
     }
 
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
+        await cacheInvalidator.InvalidateByIdAsync(id); // Invalidate before deletion
         await appService.Delete(id);
         return NoContent();
     }
@@ -128,6 +133,7 @@ public class AppsController(
     public async Task<IActionResult> Cors(int id, CorsSettings settings)
     {
         await appService.SetCorsSettings(id, settings);
+        await cacheInvalidator.InvalidateByIdAsync(id);
         return NoContent();
     }
 
@@ -227,6 +233,7 @@ public class AppsController(
         };
 
         await appService.SetRoutingConfig(appId, config);
+        await cacheInvalidator.InvalidateByIdAsync(appId);
         return NoContent();
     }
 

@@ -100,6 +100,13 @@ builder.Services.AddSingleton<IAppBuildPublisher, InMemoryAppBuildPublisher>();
 builder.Services.AddScoped<SlackAppService>();
 builder.Services.AddHostedService<SubscribeService>();
 
+// Redis cache for Gateway cache invalidation
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("Redis");
+});
+builder.Services.AddScoped<IAppCacheInvalidator, AppCacheInvalidator>();
+
 builder.Services.AddKeyedSingleton("AppBuildLogs_ES7", (_, _) =>
 {
     var settings = new ConnectionSettings(new Uri(builder.Configuration["Elasticsearch:Host"]!))

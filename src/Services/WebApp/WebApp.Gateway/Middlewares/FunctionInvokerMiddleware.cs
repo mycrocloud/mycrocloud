@@ -1,14 +1,13 @@
-﻿using WebApp.Domain.Entities;
-using WebApp.Domain.Repositories;
+﻿using WebApp.Gateway.Cache;
 
 namespace WebApp.Gateway.Middlewares;
 
 public class FunctionInvokerMiddleware(RequestDelegate next)
 {
-    public async Task InvokeAsync(HttpContext context, IAppRepository appRepository, FunctionExecutorFactory executorFactory)
+    public async Task InvokeAsync(HttpContext context, IAppCacheService appCacheService, FunctionExecutorFactory executorFactory)
     {
-        var app = (App)context.Items["_App"]!;
-        var route = (Route)context.Items["_Route"]!;
+        var app = (CachedApp)context.Items["_CachedApp"]!;
+        var route = (CachedRoute)context.Items["_CachedRoute"]!;
 
         context.Items["_FunctionRuntime"] = route.FunctionRuntime;
 
@@ -20,7 +19,16 @@ public class FunctionInvokerMiddleware(RequestDelegate next)
             return;
         }
 
-        var result = await executor.ExecuteAsync(context, app, appRepository, route.Response, null);
+        // Load function code from DB (not cached)
+        var functionCode = await appCacheService.GetRouteResponseAsync(route.Id);
+        if (string.IsNullOrEmpty(functionCode))
+        {
+            context.Response.StatusCode = 500;
+            await context.Response.WriteAsync("Function code not found.");
+            return;
+        }
+
+        var result = await executor.ExecuteAsync(context, app, functionCode, null);
 
         await context.Response.WriteFromFunctionResult(result);
 

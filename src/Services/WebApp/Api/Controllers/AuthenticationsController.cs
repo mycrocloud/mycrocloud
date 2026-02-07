@@ -1,4 +1,5 @@
 using Api.Filters;
+using Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApp.Domain.Entities;
@@ -8,7 +9,9 @@ namespace Api.Controllers;
 
 [Route("apps/{appId:int}/[controller]")]
 [TypeFilter<AppOwnerActionFilter>(Arguments = ["appId"])]
-public class AuthenticationsController(AppDbContext dbContext): BaseController
+public class AuthenticationsController(
+    AppDbContext dbContext,
+    IAppCacheInvalidator cacheInvalidator) : BaseController
 {
     [HttpGet("schemes")]
     public async Task<IActionResult> ListSchemes(int appId)
@@ -33,6 +36,7 @@ public class AuthenticationsController(AppDbContext dbContext): BaseController
         scheme.AppId = appId;
         await dbContext.AuthenticationSchemes.AddAsync(scheme);
         await dbContext.SaveChangesAsync();
+        await cacheInvalidator.InvalidateByIdAsync(appId);
         return Created();
     }
     
@@ -53,9 +57,10 @@ public class AuthenticationsController(AppDbContext dbContext): BaseController
         existingScheme.OpenIdConnectAudience = scheme.OpenIdConnectAudience;
         dbContext.AuthenticationSchemes.Update(existingScheme);
         await dbContext.SaveChangesAsync();
+        await cacheInvalidator.InvalidateByIdAsync(appId);
         return NoContent();
     }
-    
+
     [HttpGet("schemes/{schemeId:int}")]
     public async Task<IActionResult> GetScheme(int appId, int schemeId)
     {
@@ -92,9 +97,10 @@ public class AuthenticationsController(AppDbContext dbContext): BaseController
         }
         dbContext.AuthenticationSchemes.Remove(scheme);
         await dbContext.SaveChangesAsync();
+        await cacheInvalidator.InvalidateByIdAsync(appId);
         return NoContent();
     }
-    
+
     [HttpPost("schemes/settings")]
     public async Task<IActionResult> Settings(int appId, List<int> schemeIds)
     {
@@ -116,6 +122,7 @@ public class AuthenticationsController(AppDbContext dbContext): BaseController
         }
         dbContext.AuthenticationSchemes.UpdateRange(schemes);
         await dbContext.SaveChangesAsync();
+        await cacheInvalidator.InvalidateByIdAsync(appId);
         return NoContent();
     }
 }

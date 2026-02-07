@@ -1,11 +1,11 @@
 ﻿using WebApp.Domain.Enums;
-using WebApp.Domain.Repositories;
+using WebApp.Gateway.Cache;
 
 namespace WebApp.Gateway.Middlewares;
 
 public class AppResolverMiddleware(RequestDelegate next)
 {
-    public async Task InvokeAsync(HttpContext context, IAppRepository appRepository, IConfiguration configuration)
+    public async Task InvokeAsync(HttpContext context, IAppCacheService appCacheService, IConfiguration configuration)
     {
         var appName = context.Request.Evaluate(configuration["AppNameSource"] ?? "Header:X-App-Name");
 
@@ -14,14 +14,15 @@ public class AppResolverMiddleware(RequestDelegate next)
             await context.Response.WriteNotFound("App not found");
             return;
         }
-        var app = await appRepository.FindByName(appName);
-        if (app is null)
+
+        var cachedApp = await appCacheService.GetByNameAsync(appName);
+        if (cachedApp is null)
         {
             await context.Response.WriteNotFound("App not found");
             return;
         }
 
-        switch (app.Status)
+        switch (cachedApp.Status)
         {
             case AppStatus.Inactive:
                 context.Response.StatusCode = 403;
@@ -32,7 +33,8 @@ public class AppResolverMiddleware(RequestDelegate next)
                 await context.Response.WriteAsync("App is blocked");
                 return;
         }
-        context.Items["_App"] = app;
+
+        context.Items["_CachedApp"] = cachedApp;
         await next(context);
     }
 }
