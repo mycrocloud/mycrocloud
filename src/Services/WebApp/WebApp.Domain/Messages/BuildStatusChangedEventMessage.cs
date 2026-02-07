@@ -19,4 +19,7 @@ public class BuildStatusChangedMessage
     
     [JsonPropertyName("container_id")]
     public string? ContainerId { get; set; }
+    
+    [JsonPropertyName("artifact_id")]
+    public Guid? ArtifactId { get; set; }
 }
