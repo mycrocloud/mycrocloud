@@ -21,6 +21,7 @@ services:
       - OAuthApps__Slack__ClientSecret=${OAuthApps__Slack__ClientSecret}
       - OAuthApps__Slack__SigningSecret=${OAuthApps__Slack__SigningSecret}
       - OAuthApps__Slack__LinkSecret=${OAuthApps__Slack__LinkSecret}
+      - ConnectionStrings__Redis=${ConnectionStrings__Redis}
     volumes:
       - ./Services/WebApp/WebApp.Api/appsettings.json:/app/appsettings.json:ro
       - ./Services/WebApp/WebApp.Api/gha-mycrocloud.pem:/app/gha-mycrocloud.pem:ro
