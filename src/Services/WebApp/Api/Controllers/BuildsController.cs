@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
 using Api.Filters;
@@ -104,7 +105,7 @@ public class BuildsController(
             BuildCommand = config.BuildCommand,
             NodeVersion = config.NodeVersion,
             EnvVars = buildEnvVars,
-            ArtifactsUploadUrl = linkGenerator.GetUriByAction(HttpContext, nameof(BuildsController.PutObject), BuildsController.Controller, new { appId = app.Id, buildId = build.Id })!,
+            ArtifactsUploadUrl = linkGenerator.GetUriByAction(HttpContext, nameof(BuildsController.UploadArtifacts), BuildsController.Controller, new { appId = app.Id, buildId = build.Id })!,
             Limits = planLimits
         };
 
@@ -295,41 +296,58 @@ public class BuildsController(
         return new EmptyResult();
     }
 
-    [HttpPut("{buildId:guid}/artifacts/{*key}")]
+    /// <summary>
+    /// Upload build artifacts (zip file) from worker.
+    /// The zip will be extracted and each file stored as a separate artifact.
+    /// </summary>
+    [HttpPut("{buildId:guid}/artifacts")]
     [Consumes("multipart/form-data")]
     [DisableRequestSizeLimit]
     [DisableAppOwnerActionFilter]
     [Authorize(Policy = "M2M", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-    public async Task<IActionResult> PutObject(int appId, Guid buildId, string key, [FromForm]IFormFile file)
+    public async Task<IActionResult> UploadArtifacts(int appId, Guid buildId, [FromForm] IFormFile file)
     {
         var build = await appDbContext.AppBuildJobs
             .SingleAsync(b => b.AppId == appId && b.Id == buildId);
 
-        await using var stream = file.OpenReadStream();
-        await using var memoryStream = new MemoryStream();
-        await stream.CopyToAsync(memoryStream);
-        var content = memoryStream.ToArray();
-    
-        var dbFile = appDbContext.AppBuildArtifacts.SingleOrDefault(f => f.BuildId == build.Id && f.Path == key);
-
-        if (dbFile is null)
+        if (!file.FileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
         {
-            dbFile = new AppBuildArtifact
+            return BadRequest("Only zip files are supported");
+        }
+
+        // Remove existing artifacts for this build
+        var existingArtifacts = appDbContext.AppBuildArtifacts.Where(a => a.BuildId == build.Id);
+        appDbContext.AppBuildArtifacts.RemoveRange(existingArtifacts);
+
+        await using var stream = file.OpenReadStream();
+        using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
+
+        var fileCount = 0;
+        foreach (var entry in archive.Entries)
+        {
+            // Skip directories
+            if (string.IsNullOrEmpty(entry.Name))
+                continue;
+
+            await using var entryStream = entry.Open();
+            await using var memoryStream = new MemoryStream();
+            await entryStream.CopyToAsync(memoryStream);
+
+            var artifact = new AppBuildArtifact
             {
                 Build = build,
-                Path = key,
-                Content = content
+                Path = entry.FullName,
+                Content = memoryStream.ToArray()
             };
-            
-            appDbContext.AppBuildArtifacts.Add(dbFile);
-        }
-        else
-        {
-            dbFile.Content = content;
+
+            appDbContext.AppBuildArtifacts.Add(artifact);
+            fileCount++;
         }
 
         await appDbContext.SaveChangesAsync();
 
-        return Ok();
+        logger.LogInformation("Extracted {Count} files from zip for build {BuildId}", fileCount, build.Id);
+
+        return Ok(new { filesExtracted = fileCount });
     }
 }
