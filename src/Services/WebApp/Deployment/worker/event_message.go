@@ -33,4 +33,5 @@ type BuildStatusChangedEventMessage struct {
 	BuildId     string      `json:"build_id"`
 	Status      BuildStatus `json:"status"`
 	ContainerId string      `json:"container_id,omitempty"`
+	ArtifactId  string      `json:"artifact_id,omitempty"`
 }

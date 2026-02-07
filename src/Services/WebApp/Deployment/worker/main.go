@@ -264,7 +264,8 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 			return err
 		}
 
-		if err := uploader.UploadArtifacts(strings.TrimSuffix(buildMsg.ArtifactsUploadUrl, "/"), jobOut, buildMsg.OutDir, token, "deployment-worker"); err != nil {
+		artifactId, err := uploader.UploadArtifacts(strings.TrimSuffix(buildMsg.ArtifactsUploadUrl, "/"), jobOut, buildMsg.OutDir, token, "deployment-worker")
+		if err != nil {
 			publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
 				BuildId: buildMsg.BuildId,
 				Status:  Failed,
@@ -278,13 +279,20 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 		} else {
 			log.Printf("Cleaned up job output dir: %s", jobOut)
 		}
-	}
 
-	// Publish completion message
-	publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
-		BuildId: buildMsg.BuildId,
-		Status:  Done,
-	})
+		// Publish completion message with artifactId
+		publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
+			BuildId:    buildMsg.BuildId,
+			Status:     Done,
+			ArtifactId: artifactId,
+		})
+	} else {
+		// Publish completion message without artifactId if upload is disabled
+		publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
+			BuildId: buildMsg.BuildId,
+			Status:  Done,
+		})
+	}
 
 	log.Printf("Finished processing. Id: %s", buildMsg.BuildId)
 	logFluentd(l, "Finished processing", buildMsg.BuildId)
