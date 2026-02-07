@@ -106,6 +106,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
     options.Configuration = builder.Configuration.GetConnectionString("Redis");
 });
 builder.Services.AddScoped<IAppCacheInvalidator, AppCacheInvalidator>();
+builder.Services.AddScoped<IArtifactExtractionService, ArtifactExtractionService>();
 
 builder.Services.AddKeyedSingleton("AppBuildLogs_ES7", (_, _) =>
 {
