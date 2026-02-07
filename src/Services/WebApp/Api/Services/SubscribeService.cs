@@ -55,14 +55,14 @@ public class SubscribeService(IServiceScopeFactory serviceScopeFactory, IConfigu
         
         var slackAppService = scope.ServiceProvider.GetRequiredService<SlackAppService>();
         var appDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
+        
         var build = await appDbContext.AppBuildJobs
             .Include(b => b.App)
             .SingleAsync(b => b.Id == eventMessage.BuildId);
         
         var subscriptions = await appDbContext.SlackAppSubscriptions.Where(s => s.AppId == build.AppId)
             .ToListAsync();
-
+        
         var emoji = eventMessage.Status switch
         {
             BuildStatus.Started => "🟡",
@@ -70,19 +70,19 @@ public class SubscribeService(IServiceScopeFactory serviceScopeFactory, IConfigu
             BuildStatus.Failed => "❌",
             _ => "ℹ️"
         };
-
+        
         var text = eventMessage.Status switch
         {
-            BuildStatus.Started => $"{emoji} *Build started* for *{build.App.Name}* (Build #{build.Id})",
-            BuildStatus.Done => $"{emoji} *Build completed successfully!* 🎉\nApp: *{build.App.Name}*  \nBuild Id: `{build.Id}`",
-            BuildStatus.Failed => $"{emoji} *Build failed!* 💥\nApp: *{build.App.Name}*  \nBuild Id: `{build.Id}`",
-            _ => $"{emoji} Build status changed for *{build.App.Name}*"
+            BuildStatus.Started => $"{emoji} *Build started* for *{build.App.Slug}* (Build #{build.Id})",
+            BuildStatus.Done => $"{emoji} *Build completed successfully!* 🎉\nApp: *{build.App.Slug}*  \nBuild Id: `{build.Id}`",
+            BuildStatus.Failed => $"{emoji} *Build failed!* 💥\nApp: *{build.App.Slug}*  \nBuild Id: `{build.Id}`",
+            _ => $"{emoji} Build status changed for *{build.App.Slug}*"
         };
-
+        
         var webOrigin = configuration.GetValue<string>("WebOrigin")!.TrimEnd('/');
         var detailsUrl = $"{webOrigin}/apps/{build.AppId}/integrations/builds/{build.Id}";
         text += $"\n<{detailsUrl}|View build details>";
-
+        
         foreach (var subscription in subscriptions)
         {
             await slackAppService.SendSlackMessage(subscription.TeamId, subscription.ChannelId, text);
