@@ -51,7 +51,7 @@ public class AppOwnerActionFilter(AppDbContext appDbContext,
         logger.LogDebug("AppId: {AppId}", appId);
 
         var app = await appDbContext.Apps.FindAsync(appId);
-        var isAppOwner = app?.UserId == userId;
+        var isAppOwner = app?.OwnerId == userId;
         logger.LogDebug("IsAppOwner: {IsAppOwner}", isAppOwner);
         if (!isAppOwner)
         {

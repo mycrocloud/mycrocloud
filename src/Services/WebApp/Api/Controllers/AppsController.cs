@@ -31,9 +31,9 @@ public class AppsController(
         return Ok(apps.Select(app => new
         {
             app.Id,
-            app.Name,
+            app.Slug,
             app.Description,
-            Status = app.Status.ToString(),
+            State = app.State.ToString(),
             app.CreatedAt,
             app.UpdatedAt
         }));
@@ -42,13 +42,13 @@ public class AppsController(
     [HttpPost]
     public async Task<IActionResult> Create(AppCreateRequest appCreateRequest)
     {
-        var nameExists = await appDbContext.Apps.AnyAsync(a => a.Name == appCreateRequest.Name);
+        var nameExists = await appDbContext.Apps.AnyAsync(a => a.Slug == appCreateRequest.Name);
         if (nameExists)
         {
             return Conflict(new { Message = "App name already exists" });
         }
 
-        var appCount = await appDbContext.Apps.CountAsync(a => a.UserId == User.GetUserId());
+        var appCount = await appDbContext.Apps.CountAsync(a => a.OwnerId == User.GetUserId());
         if (!await subscriptionService.CanCreateApp(User.GetUserId(), appCount))
         {
             return BadRequest(new { Message = "You have reached the limit of 10 apps" });
@@ -76,9 +76,9 @@ public class AppsController(
         return Ok(new
         {
             app.Id,
-            app.Name,
+            app.Slug,
             app.Description,
-            Status = app.Status.ToString(),
+            State = app.State.ToString(),
             app.CreatedAt,
             app.UpdatedAt,
             app.Version
@@ -92,7 +92,7 @@ public class AppsController(
 
         if (app is null) return BadRequest();
 
-        if (!User.GetUserId().Equals(app.UserId)) return BadRequest();
+        if (!User.GetUserId().Equals(app.OwnerId)) return BadRequest();
 
         var currentETag = app.Version.ToString();
         var requestETag = Request.Headers[IfMatchHeader].ToString();
@@ -101,22 +101,22 @@ public class AppsController(
             return StatusCode(StatusCodes.Status412PreconditionFailed);
         }
 
-        var nameTaken = await appDbContext.Apps.AnyAsync(a => a.Id != id && a.Name == renameRequest.Name);
+        var nameTaken = await appDbContext.Apps.AnyAsync(a => a.Id != id && a.Slug == renameRequest.Name);
         if (nameTaken)
         {
             return Conflict(new { Message = "App name already taken" });
         }
 
-        var oldName = app.Name;
+        var oldName = app.Slug;
         await appService.Rename(id, renameRequest.Name);
         await cacheInvalidator.InvalidateAsync(oldName); // Invalidate old name
         return NoContent();
     }
 
-    [HttpPatch("{id:int}/Status")]
-    public async Task<IActionResult> SetStatus(int id, AppStatus status)
+    [HttpPatch("{id:int}/State")]
+    public async Task<IActionResult> SetState(int id, AppState state)
     {
-        await appService.SetStatus(id, status);
+        await appService.SetState(id, state);
         await cacheInvalidator.InvalidateByIdAsync(id);
         return NoContent();
     }
@@ -150,7 +150,7 @@ public class AppsController(
         var app = await appDbContext.Apps
             .Include(a => a.Link)
             .ThenInclude(i => i.GitHubInstallation)
-            .SingleAsync(a => a.Id == id && a.UserId == User.GetUserId());
+            .SingleAsync(a => a.Id == id && a.OwnerId == User.GetUserId());
 
         if (app.Link is not { } link)
         {

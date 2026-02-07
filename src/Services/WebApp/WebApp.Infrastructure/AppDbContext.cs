@@ -24,6 +24,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     public DbSet<AppBuildArtifact> AppBuildArtifacts { get; set; }
 
+    public DbSet<Artifact> Artifacts { get; set; }
+
+    public DbSet<SpaDeployment> SpaDeployments { get; set; }
+
+    public DbSet<Release> Releases { get; set; }
+
     public DbSet<SlackInstallation> SlackInstallations { get; set; }
 
     public DbSet<SlackUserLink> SlackUserLinks { get; set; }
@@ -120,34 +126,22 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<ApiToken>()
             .HasKey(t => t.Id);
 
-        modelBuilder.Entity<App>(entity =>
-        {
-            entity.HasMany(e => e.AppBuilds)
-                  .WithOne(e => e.App)
-                  .HasForeignKey(e => e.AppId)
-                  .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasOne(e => e.LatestBuild)
-                  .WithOne()
-                  .HasForeignKey<App>(e => e.LatestBuildId)
-                  .IsRequired(false)
-                  .OnDelete(DeleteBehavior.SetNull);
-        });
+        modelBuilder.Entity<App>()
+            .HasMany(e => e.AppBuilds)
+            .WithOne(e => e.App)
+            .HasForeignKey(e => e.AppId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<App>()
-            .HasIndex(x => x.Name)
+            .HasIndex(x => x.Slug)
             .IsUnique();
 
         modelBuilder.Entity<App>()
-            .Property(x => x.Name)
+            .Property(x => x.Slug)
             .HasMaxLength(50);
 
-        modelBuilder.Entity<AppBuild>()
-            .Property(p => p.Name)
-            .HasDefaultValue("build");
-
         modelBuilder.Entity<AppBuildArtifact>()
-            .HasKey(a => new { a.BuildId, a.Path });
+            .HasKey(a => new { a.BuildJobId, a.ArtifactId });
 
         modelBuilder.Entity<SlackInstallation>()
             .HasIndex(x => x.TeamId)
@@ -176,6 +170,55 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         modelBuilder.Entity<GitHubInstallation>()
             .HasIndex(x => x.UserId); // no need to be unique because one user can have multiple installations e.g. for orgs
+
+        // Artifact, SpaDeployment, Release configurations
+        modelBuilder.Entity<Artifact>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.App)
+                .WithMany(a => a.Artifacts)
+                .HasForeignKey(e => e.AppId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => e.ContentHash);
+        });
+
+        modelBuilder.Entity<SpaDeployment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.App)
+                .WithMany(a => a.SpaDeployments)
+                .HasForeignKey(e => e.AppId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Build)
+                .WithMany()
+                .HasForeignKey(e => e.BuildId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Artifact)
+                .WithMany()
+                .HasForeignKey(e => e.ArtifactId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => new { e.AppId, e.Status });
+        });
+
+        modelBuilder.Entity<Release>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.App)
+                .WithMany(a => a.Releases)
+                .HasForeignKey(e => e.AppId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.SpaDeployment)
+                .WithMany()
+                .HasForeignKey(e => e.SpaDeploymentId)
+                .OnDelete(DeleteBehavior.SetNull);
+            entity.HasIndex(e => e.AppId);
+        });
+
+        modelBuilder.Entity<App>()
+            .HasOne(a => a.ActiveRelease)
+            .WithMany()
+            .HasForeignKey(a => a.ActiveReleaseId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

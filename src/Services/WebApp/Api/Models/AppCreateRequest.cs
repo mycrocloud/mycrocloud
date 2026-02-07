@@ -19,9 +19,9 @@ public class AppCreateRequest
     {
         return new App
         {
-            Name = Name,
+            Slug = Name,
             Description = Description,
-            Status = AppStatus.Active,
+            State = AppState.Active,
             CorsSettings = CorsSettings.Default,
             RoutingConfig = RoutingConfig.Default,
             Settings = AppSettings.Default,

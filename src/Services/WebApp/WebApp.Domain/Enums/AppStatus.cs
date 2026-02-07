@@ -1,8 +1,8 @@
 namespace WebApp.Domain.Enums;
 
-public enum AppStatus
+public enum AppState
 {
     Active = 1,
-    Inactive,
-    Blocked
+    Disabled,
+    Deleted
 }

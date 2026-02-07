@@ -3,22 +3,25 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using WebApp.Infrastructure;
 
 #nullable disable
 
-namespace WebApp.Migrations.Migrations
+namespace WebApp.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260207142815_AddArtifactDeploymentRelease")]
+    partial class AddArtifactDeploymentRelease
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.11")
+                .HasAnnotation("ProductVersion", "8.0.22")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -109,21 +112,24 @@ namespace WebApp.Migrations.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
-                    b.Property<string>("OwnerId")
-                        .HasColumnType("text");
+                    b.Property<Guid?>("LatestBuildId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("RoutingConfig")
                         .HasColumnType("text");
 
-                    b.Property<string>("Slug")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<int>("State")
+                    b.Property<int>("Status")
                         .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
 
                     b.Property<Guid>("Version")
                         .IsConcurrencyToken()
@@ -133,7 +139,10 @@ namespace WebApp.Migrations.Migrations
 
                     b.HasIndex("ActiveReleaseId");
 
-                    b.HasIndex("Slug")
+                    b.HasIndex("LatestBuildId")
+                        .IsUnique();
+
+                    b.HasIndex("Name")
                         .IsUnique();
 
                     b.ToTable("Apps");
@@ -148,11 +157,19 @@ namespace WebApp.Migrations.Migrations
                     b.Property<int>("AppId")
                         .HasColumnType("integer");
 
+                    b.Property<Guid?>("ArtifactId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContainerId")
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("FinishedAt")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<string>("Name")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("build");
 
                     b.Property<string>("Status")
                         .HasColumnType("text");
@@ -168,22 +185,24 @@ namespace WebApp.Migrations.Migrations
 
                     b.HasIndex("AppId");
 
+                    b.HasIndex("ArtifactId");
+
                     b.ToTable("AppBuildJobs");
                 });
 
             modelBuilder.Entity("WebApp.Domain.Entities.AppBuildArtifact", b =>
                 {
-                    b.Property<Guid>("BuildJobId")
+                    b.Property<Guid>("BuildId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ArtifactId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("Path")
+                        .HasColumnType("text");
+
+                    b.Property<byte[]>("Content")
+                        .HasColumnType("bytea");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Role")
-                        .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -192,9 +211,7 @@ namespace WebApp.Migrations.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("uuid");
 
-                    b.HasKey("BuildJobId", "ArtifactId");
-
-                    b.HasIndex("ArtifactId");
+                    b.HasKey("BuildId", "Path");
 
                     b.ToTable("AppBuildArtifacts");
                 });
@@ -239,23 +256,20 @@ namespace WebApp.Migrations.Migrations
                     b.Property<int>("AppId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("ArtifactType")
-                        .HasColumnType("integer");
-
-                    b.Property<byte[]>("BlobData")
-                        .HasColumnType("bytea");
-
-                    b.Property<string>("Compression")
-                        .HasColumnType("text");
-
                     b.Property<string>("ContentHash")
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<byte[]>("DataBlob")
+                        .HasColumnType("bytea");
+
                     b.Property<long>("SizeBytes")
                         .HasColumnType("bigint");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -432,11 +446,20 @@ namespace WebApp.Migrations.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime>("ActivatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("AppId")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeactivatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
 
                     b.Property<Guid?>("SpaDeploymentId")
                         .HasColumnType("uuid");
@@ -450,9 +473,9 @@ namespace WebApp.Migrations.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AppId");
-
                     b.HasIndex("SpaDeploymentId");
+
+                    b.HasIndex("AppId", "IsActive");
 
                     b.ToTable("Releases");
                 });
@@ -696,11 +719,14 @@ namespace WebApp.Migrations.Migrations
                     b.Property<Guid>("ArtifactId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("BuildId")
+                    b.Property<Guid>("BuildId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ExtractedPath")
+                        .HasColumnType("text");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -778,6 +804,11 @@ namespace WebApp.Migrations.Migrations
                     b.HasOne("WebApp.Domain.Entities.Release", "ActiveRelease")
                         .WithMany()
                         .HasForeignKey("ActiveReleaseId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("WebApp.Domain.Entities.AppBuild", "LatestBuild")
+                        .WithOne()
+                        .HasForeignKey("WebApp.Domain.Entities.App", "LatestBuildId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.OwnsOne("WebApp.Domain.Entities.AppBuildConfigs", "BuildConfigs", b1 =>
@@ -882,6 +913,8 @@ namespace WebApp.Migrations.Migrations
 
                     b.Navigation("CorsSettings");
 
+                    b.Navigation("LatestBuild");
+
                     b.Navigation("Settings");
                 });
 
@@ -893,26 +926,25 @@ namespace WebApp.Migrations.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("WebApp.Domain.Entities.Artifact", "Artifact")
+                        .WithMany()
+                        .HasForeignKey("ArtifactId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("App");
+
+                    b.Navigation("Artifact");
                 });
 
             modelBuilder.Entity("WebApp.Domain.Entities.AppBuildArtifact", b =>
                 {
-                    b.HasOne("WebApp.Domain.Entities.Artifact", "Artifact")
+                    b.HasOne("WebApp.Domain.Entities.AppBuild", "Build")
                         .WithMany()
-                        .HasForeignKey("ArtifactId")
+                        .HasForeignKey("BuildId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("WebApp.Domain.Entities.AppBuild", "BuildJob")
-                        .WithMany()
-                        .HasForeignKey("BuildJobId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Artifact");
-
-                    b.Navigation("BuildJob");
+                    b.Navigation("Build");
                 });
 
             modelBuilder.Entity("WebApp.Domain.Entities.AppLink", b =>
@@ -1097,7 +1129,8 @@ namespace WebApp.Migrations.Migrations
                     b.HasOne("WebApp.Domain.Entities.AppBuild", "Build")
                         .WithMany()
                         .HasForeignKey("BuildId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("App");
 

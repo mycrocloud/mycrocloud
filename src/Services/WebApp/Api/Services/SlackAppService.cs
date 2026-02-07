@@ -169,7 +169,7 @@ ON CONFLICT ("TeamId", "SlackUserId") DO NOTHING;
         string channelId)
     {
         //TODO: add Authorization
-        var app = await _appDbContext.Apps.SingleOrDefaultAsync(a => a.UserId == userId && a.Name == appName);
+        var app = await _appDbContext.Apps.SingleOrDefaultAsync(a => a.OwnerId == userId && a.Slug == appName);
         if (app is null)
         {
             return "App is not found or you are not allowed to subscribe to this app";

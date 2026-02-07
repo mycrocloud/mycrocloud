@@ -6,10 +6,10 @@ namespace WebApp.Domain.Services;
 public interface IAppService {
     Task Create(string userId, App app);
     Task Delete(int id);
-    Task Rename(int id, string name);
+    Task Rename(int id, string slug);
     Task SetCorsSettings(int id, CorsSettings settings);
     Task SetRoutingConfig(int id, RoutingConfig config);
-    Task SetStatus(int id, AppStatus status);
+    Task SetState(int id, AppState state);
 }
 
 public class AppService(IAppRepository appRepository) : IAppService
@@ -24,10 +24,10 @@ public class AppService(IAppRepository appRepository) : IAppService
         await appRepository.Delete(id);
     }
 
-    public async Task Rename(int id, string name)
+    public async Task Rename(int id, string slug)
     {
         var currentApp = await appRepository.GetByAppId(id);
-        currentApp.Name = name;
+        currentApp.Slug = slug;
         currentApp.Version = Guid.NewGuid();
         await appRepository.Update(id, currentApp);
     }
@@ -48,10 +48,10 @@ public class AppService(IAppRepository appRepository) : IAppService
         await appRepository.Update(id, app);
     }
 
-    public async Task SetStatus(int id, AppStatus status)
+    public async Task SetState(int id, AppState state)
     {
         var app = await appRepository.GetByAppId(id);
-        app.Status = status;
+        app.State = state;
         app.Version = Guid.NewGuid();
         await appRepository.Update(id, app);
     }

@@ -8,7 +8,7 @@ public class AppRepository(AppDbContext dbContext) : IAppRepository
 {
     public async Task Add(string userId, App app)
     {
-        app.UserId = userId;
+        app.OwnerId = userId;
         await dbContext.Apps.AddAsync(app);
         await dbContext.SaveChangesAsync();
     }
@@ -34,7 +34,7 @@ public class AppRepository(AppDbContext dbContext) : IAppRepository
 
     public async Task<App> FindByName(string name)
     {
-        return await dbContext.Apps.FirstOrDefaultAsync(a => a.Name == name);
+        return await dbContext.Apps.FirstOrDefaultAsync(a => a.Slug == name);
     }
 
     public Task<App> FindByUserIdAndAppName(string userId, string name)
@@ -49,10 +49,10 @@ public class AppRepository(AppDbContext dbContext) : IAppRepository
 
     public async Task<IEnumerable<App>> ListByUserId(string userId, string query, string sort)
     {
-        var apps = dbContext.Apps.Where(a => a.UserId == userId);
+        var apps = dbContext.Apps.Where(a => a.OwnerId == userId);
         if (!string.IsNullOrEmpty(query))
         {
-            apps = apps.Where(a => a.Name.Contains(query) || a.Description.Contains(query));
+            apps = apps.Where(a => a.Slug.Contains(query) || a.Description.Contains(query));
         }
         if (!string.IsNullOrEmpty(sort))
         {

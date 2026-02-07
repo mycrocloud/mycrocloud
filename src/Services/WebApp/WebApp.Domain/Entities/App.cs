@@ -5,10 +5,10 @@ namespace WebApp.Domain.Entities;
 public class App : BaseEntity
 {
     public int Id { get; set; }
-    public string UserId { get; set; }
-    public string Name { get; set; }
+    public string OwnerId { get; set; }
+    public string Slug { get; set; }
     public string Description { get; set; }
-    public AppStatus Status { get; set; }
+    public AppState State { get; set; }
     public AppSettings Settings { get; set; }
 
     public CorsSettings CorsSettings { get; set; }
@@ -30,9 +30,14 @@ public class App : BaseEntity
     public AppBuildConfigs BuildConfigs { get; set; }
 
     public ICollection<AppBuild> AppBuilds { get; set; } = [];
-    public AppBuild LatestBuild { get; set; }
 
-    public Guid? LatestBuildId { get; set; }
+    // Release management
+    public Guid? ActiveReleaseId { get; set; }
+    public Release? ActiveRelease { get; set; }
+
+    public ICollection<Artifact> Artifacts { get; set; } = [];
+    public ICollection<SpaDeployment> SpaDeployments { get; set; } = [];
+    public ICollection<Release> Releases { get; set; } = [];
 }
 
 public class AppLink : BaseEntity
