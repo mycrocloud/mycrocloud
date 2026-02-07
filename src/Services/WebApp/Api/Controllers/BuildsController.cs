@@ -293,17 +293,45 @@ public class BuildsController(
         return new EmptyResult();
     }
 
-    /// <summary>
-    /// Upload build artifacts (zip file) from worker.
-    /// The zip will be extracted and each file stored as a separate artifact.
-    /// </summary>
+    // Artifact Upload — Phase 1 design
+    // -------------------------------
+    // Worker computes SHA256 hash before upload.
+    // API verifies hash and stores artifact blob in DB.
+    // Artifact is deduplicated by ContentHash (UNIQUE index).
+    // BuildArtifact junction links build → artifact.
+    // This endpoint must be idempotent and retry-safe.
+    //
+    // Future phase:
+    // - move blob to object storage
+    // - stream hash instead of memory copy
+    // - chunked upload
     [HttpPut("{buildId:guid}/artifacts")]
     [Consumes("multipart/form-data")]
     [DisableRequestSizeLimit]
     [DisableAppOwnerActionFilter]
     [Authorize(Policy = "M2M", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-    public async Task<IActionResult> UploadArtifacts(int appId, Guid buildId, [FromForm] IFormFile file)
+    public async Task<IActionResult> UploadArtifacts(int appId, Guid buildId, [FromForm] IFormFile file, [FromForm] string contentHash)
     {
+        // TODO: dedup by ContentHash
+        // if artifact with same hash exists → reuse instead of insert
+        
+        // IMPORTANT: ContentHash must be UNIQUE
+        // to guarantee dedup + retry safety
+
+        // TODO: wrap insert in try/catch for unique constraint
+        // if duplicate hash inserted concurrently → reload existing artifact
+
+        // TODO: ensure build status == Started before accepting artifact upload
+        // reject upload if build already completed/failed/canceled
+
+        // TODO: ensure (BuildJobId, Role) unique
+        // avoid duplicate link on retry upload
+
+        // TODO: add max artifact size limit (phase 1 DB blob protection)
+
+        // TODO: wrap artifact insert + buildArtifact insert in transaction
+        // avoid orphan artifact rows
+
         var build = await appDbContext.AppBuildJobs
             .SingleAsync(b => b.AppId == appId && b.Id == buildId);
 
@@ -312,39 +340,58 @@ public class BuildsController(
             return BadRequest("Only zip files are supported");
         }
 
-        // Remove existing artifacts for this build
-        var existingArtifacts = appDbContext.AppBuildArtifacts.Where(a => a.BuildId == build.Id);
-        appDbContext.AppBuildArtifacts.RemoveRange(existingArtifacts);
-
-        await using var stream = file.OpenReadStream();
-        using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
-
-        var fileCount = 0;
-        foreach (var entry in archive.Entries)
+        if (string.IsNullOrEmpty(contentHash))
         {
-            // Skip directories
-            if (string.IsNullOrEmpty(entry.Name))
-                continue;
-
-            await using var entryStream = entry.Open();
-            await using var memoryStream = new MemoryStream();
-            await entryStream.CopyToAsync(memoryStream);
-
-            var artifact = new AppBuildArtifact
-            {
-                Build = build,
-                Path = entry.FullName,
-                Content = memoryStream.ToArray()
-            };
-
-            appDbContext.AppBuildArtifacts.Add(artifact);
-            fileCount++;
+            return BadRequest("contentHash is required");
         }
+
+        // Read zip file into memory
+        await using var stream = file.OpenReadStream();
+        await using var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream);
+        var zipBytes = memoryStream.ToArray();
+
+        // Verify hash
+        var computedHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(zipBytes));
+        if (!computedHash.Equals(contentHash, StringComparison.OrdinalIgnoreCase))
+        {
+            logger.LogWarning("Hash mismatch for build {BuildId}. Expected: {Expected}, Got: {Got}", 
+                buildId, contentHash, computedHash);
+            return BadRequest("Content hash mismatch");
+        }
+
+        // Create Artifact
+        var artifact = new Artifact
+        {
+            Id = Guid.NewGuid(),
+            AppId = appId,
+            ArtifactType = ArtifactType.SpaBundle,
+            BlobData = zipBytes,
+            ContentHash = contentHash.ToUpperInvariant(),
+            SizeBytes = zipBytes.Length,
+            Compression = "zip"
+        };
+        appDbContext.Artifacts.Add(artifact);
+
+        // Link build to artifact via AppBuildArtifact junction table
+        var buildArtifact = new AppBuildArtifact
+        {
+            BuildJobId = buildId,
+            ArtifactId = artifact.Id,
+            Role = "primary"
+        };
+        appDbContext.AppBuildArtifacts.Add(buildArtifact);
 
         await appDbContext.SaveChangesAsync();
 
-        logger.LogInformation("Extracted {Count} files from zip for build {BuildId}", fileCount, build.Id);
+        logger.LogInformation("Uploaded artifact {ArtifactId} ({SizeBytes} bytes) for build {BuildId}", 
+            artifact.Id, artifact.SizeBytes, build.Id);
 
-        return Ok(new { filesExtracted = fileCount });
+        return Ok(new 
+        { 
+            artifactId = artifact.Id,
+            sizeBytes = artifact.SizeBytes,
+            contentHash = artifact.ContentHash
+        });
     }
 }
