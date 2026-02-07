@@ -12,6 +12,9 @@ on:
 jobs:
   build-and-deploy:
     uses: ./.github/workflows/_build-deploy.yml
+    permissions:
+      id-token: write
+      contents: read
     with:
       image-name: ${{ github.repository }}-deployment-fluentd
       work-dir: src/Services/WebApp/Deployment/fluentd
