@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"mycrocloud/worker/api_client"
 	"mycrocloud/worker/logutil"
@@ -23,11 +24,8 @@ import (
 	"github.com/streadway/amqp"
 )
 
-// MaxConcurrentJobs is the limit for concurrent jobs being processed
-const MaxConcurrentJobs = 3
-
-// DefaultJobTimeout is the maximum time a build job can run
-const DefaultJobTimeout = 30 * time.Minute
+// Global limits loaded from environment
+var limits Limits
 
 func logFluentd(l *fluent.Fluent, msg string, jobID string) {
 	data := map[string]string{
@@ -63,6 +61,20 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 	if err := json.Unmarshal([]byte(jsonString), &buildMsg); err != nil {
 		return err
 	}
+
+	// Validate input
+	if result := ValidateBuildMessage(&buildMsg, limits); !result.IsValid() {
+		log.Printf("Validation failed for build %s: %s", buildMsg.BuildId, result.Error())
+		return fmt.Errorf("validation failed: %s", result.Error())
+	}
+
+	// Get job-specific limits from plan (capped by system max)
+	jobLimits := limits.GetJobLimits(buildMsg.Limits)
+	log.Printf("Job limits: memory=%s, cpu=%d%%, timeout=%ds, artifact=%s",
+		formatBytes(jobLimits.MemoryBytes),
+		jobLimits.CPUQuota/1000,
+		jobLimits.BuildDuration,
+		formatBytes(jobLimits.MaxArtifactSize))
 
 	log.Printf("Processing... Id: %s, RepoFullName: %s", buildMsg.BuildId, buildMsg.RepoFullName)
 	logFluentd(l, "Processing", buildMsg.BuildId)
@@ -117,6 +129,12 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 
 	autoRemove := os.Getenv("BUILDER_AUTO_REMOVE") != "false"
 
+	// Get secure host config with resource limits
+	hostConfig := GetSecureHostConfig(jobLimits)
+	hostConfig.Mounts = mounts
+	hostConfig.LogConfig = logConf
+	hostConfig.AutoRemove = autoRemove
+
 	// Prepare environment variables for the container
 	envVars := []string{
 		"REPO_URL=" + buildMsg.CloneUrl,
@@ -146,11 +164,7 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 			Env:    envVars,
 			Labels: map[string]string{"build_id": buildMsg.BuildId},
 		},
-		&container.HostConfig{
-			Mounts:     mounts,
-			LogConfig:  logConf,
-			AutoRemove: autoRemove,
-		},
+		hostConfig,
 		nil, nil, "")
 	if err != nil {
 		return err
@@ -169,7 +183,8 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 	})
 
 	// Wait for container with timeout
-	timeoutCtx, cancel := context.WithTimeout(ctx, DefaultJobTimeout)
+	jobTimeout := time.Duration(jobLimits.BuildDuration) * time.Second
+	timeoutCtx, cancel := context.WithTimeout(ctx, jobTimeout)
 	defer cancel()
 
 	statusCh, errCh := cli.ContainerWait(timeoutCtx, resp.ID, container.WaitConditionNotRunning)
@@ -212,6 +227,27 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 	shouldUploadArtifacts := os.Getenv("UPLOAD_ARTIFACTS") != "false"
 
 	if shouldUploadArtifacts {
+		// Check output directory for suspicious files
+		if err := CheckOutputDirectory(jobOut); err != nil {
+			log.Printf("Warning: output directory check failed: %v", err)
+		}
+
+		// Check artifact size
+		zipPath := filepath.Join(jobOut, buildMsg.OutDir+".zip")
+		sizeCheck, err := CheckArtifactSize(zipPath, jobLimits)
+		if err != nil {
+			log.Printf("Warning: artifact size check failed: %v", err)
+		} else if sizeCheck.ExceedsHard {
+			log.Printf("Artifact size exceeds hard limit: %s", sizeCheck.Message)
+			publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
+				BuildId: buildMsg.BuildId,
+				Status:  Failed,
+			})
+			return fmt.Errorf("artifact too large: %s", sizeCheck.Message)
+		} else if sizeCheck.ExceedsSoft {
+			log.Printf("Warning: %s", sizeCheck.Message)
+		}
+
 		cfg := api_client.Config{
 			Domain:       os.Getenv("AUTH0_DOMAIN"),
 			ClientID:     os.Getenv("AUTH0_CLIENT_ID"),
@@ -268,6 +304,19 @@ func main() {
 		log.Printf("Warning: failed to load .conf file: %v", err)
 	}
 
+	// Load limits from environment
+	limits = LoadLimitsFromEnv()
+	log.Printf("System max: memory=%s, cpu=%d%%, timeout=%ds, artifact=%s",
+		formatBytes(limits.System.MaxMemoryBytes),
+		limits.System.MaxCPUPercent,
+		limits.System.MaxBuildDuration,
+		formatBytes(limits.System.MaxArtifactSize))
+	log.Printf("Default job: memory=%s, cpu=%d%%, timeout=%ds, artifact=%s",
+		formatBytes(limits.DefaultJob.MemoryBytes),
+		limits.DefaultJob.CPUQuota/1000,
+		limits.DefaultJob.BuildDuration,
+		formatBytes(limits.DefaultJob.MaxArtifactSize))
+
 	inContainer := isInContainer()
 	log.Printf("Running in container: %v", inContainer)
 
@@ -322,7 +371,7 @@ func main() {
 	}
 
 	// Set prefetch to limit concurrent processing
-	if err := chConsumer.Qos(MaxConcurrentJobs, 0, false); err != nil {
+	if err := chConsumer.Qos(limits.MaxConcurrentJobs, 0, false); err != nil {
 		log.Fatalf("Failed to set QoS: %v", err)
 	}
 
@@ -344,7 +393,7 @@ func main() {
 	defer fluentdLogger.Close()
 
 	var wg sync.WaitGroup
-	jobLimit := make(chan struct{}, MaxConcurrentJobs)
+	jobLimit := make(chan struct{}, limits.MaxConcurrentJobs)
 
 	// Message processing goroutine
 	go func() {

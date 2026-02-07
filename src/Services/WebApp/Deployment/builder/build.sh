@@ -15,7 +15,7 @@ OUTPUT_DIR="/output"
 # --- Setup Node version if specified ---
 if [ -n "$NODE_VERSION" ]; then
     echo "Setting up Node.js version: $NODE_VERSION"
-    export NVM_DIR="/root/.nvm"
+    export NVM_DIR="${NVM_DIR:-/home/builder/.nvm}"
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
     nvm install "$NODE_VERSION"
     nvm use "$NODE_VERSION"

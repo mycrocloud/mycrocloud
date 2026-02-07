@@ -88,6 +88,10 @@ public class BuildsController(
 
         var config = app.BuildConfigs;
 
+        // TODO: Get limits based on user's subscription plan
+        // var planLimits = await GetUserPlanLimits(app.UserId);
+        var planLimits = PlanLimits.Free;
+
         var message = new AppBuildMessage
         {
             BuildId = build.Id.ToString(),
@@ -100,7 +104,8 @@ public class BuildsController(
             BuildCommand = config.BuildCommand,
             NodeVersion = config.NodeVersion,
             EnvVars = buildEnvVars,
-            ArtifactsUploadUrl = linkGenerator.GetUriByAction(HttpContext, nameof(BuildsController.PutObject), BuildsController.Controller, new { appId = app.Id, buildId = build.Id })!
+            ArtifactsUploadUrl = linkGenerator.GetUriByAction(HttpContext, nameof(BuildsController.PutObject), BuildsController.Controller, new { appId = app.Id, buildId = build.Id })!,
+            Limits = planLimits
         };
 
         rabbitMqService.PublishMessage(JsonSerializer.Serialize(message));

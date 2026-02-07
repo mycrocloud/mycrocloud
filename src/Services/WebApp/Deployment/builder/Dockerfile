@@ -2,9 +2,19 @@ FROM node:20-alpine
 
 RUN apk add --no-cache git bash curl jq zip
 
-# Install nvm for node version management
-ENV NVM_DIR="/root/.nvm"
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+# Create non-root user for security
+RUN addgroup -g 1000 builder && \
+    adduser -u 1000 -G builder -s /bin/bash -D builder
+
+# Install nvm for the builder user
+ENV NVM_DIR="/home/builder/.nvm"
+RUN mkdir -p $NVM_DIR && \
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash && \
+    chown -R builder:builder $NVM_DIR
+
+# Create directories with proper permissions
+RUN mkdir -p /repo /output && \
+    chown -R builder:builder /repo /output
 
 WORKDIR /repo
 
@@ -18,5 +28,7 @@ ENV REPO_URL="" \
     BUILD_CMD="npm run build" \
     NODE_VERSION="" \
     ENV_VARS=""
+
+USER builder
 
 ENTRYPOINT ["/usr/local/bin/build.sh"]
