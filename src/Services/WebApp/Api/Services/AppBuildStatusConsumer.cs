@@ -1,7 +1,11 @@
+using System.IO.Compression;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using WebApp.Domain.Entities;
 using WebApp.Domain.Messages;
 using WebApp.Infrastructure;
 
@@ -94,6 +98,7 @@ public class AppBuildStatusConsumer(
 
         build.Status = "failed";
         build.UpdatedAt = DateTime.UtcNow;
+        build.FinishedAt = DateTime.UtcNow;
         await appDbContext.SaveChangesAsync();
     }
 
@@ -101,6 +106,9 @@ public class AppBuildStatusConsumer(
     {
         using var scope = serviceProvider.CreateScope();
         var appDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var extractionService = scope.ServiceProvider.GetRequiredService<IArtifactExtractionService>();
+        var cacheInvalidator = scope.ServiceProvider.GetRequiredService<IAppCacheInvalidator>();
+
         var build = await appDbContext.AppBuildJobs.FindAsync(message.BuildId);
         if (build == null)
         {
@@ -115,15 +123,77 @@ public class AppBuildStatusConsumer(
             return;
         }
 
-        // Update the job status
-        logger.LogInformation("Updating job status. Id: {Id}, Status: {Status}", message.BuildId, message.Status);
-
+        // Update build status
         build.Status = "done";
         build.UpdatedAt = DateTime.UtcNow;
+        build.FinishedAt = DateTime.UtcNow;
 
-        app.LatestBuild = build;
-        
+        // Verify artifact exists
+        if (!message.ArtifactId.HasValue)
+        {
+            logger.LogWarning("No artifact uploaded for build {BuildId}", message.BuildId);
+            await appDbContext.SaveChangesAsync();
+            return;
+        }
+
+        var artifact = await appDbContext.Artifacts.FindAsync(message.ArtifactId.Value);
+        if (artifact == null)
+        {
+            logger.LogError("Artifact {ArtifactId} not found for build {BuildId}", message.ArtifactId, message.BuildId);
+            build.Status = "failed";
+            await appDbContext.SaveChangesAsync();
+            return;
+        }
+
+        logger.LogInformation("Processing artifact {ArtifactId} ({SizeBytes} bytes) for build {BuildId}", 
+            artifact.Id, artifact.SizeBytes, build.Id);
+
+        // Create SpaDeployment
+        var deployment = new SpaDeployment
+        {
+            Id = Guid.NewGuid(),
+            AppId = build.AppId,
+            BuildId = build.Id,
+            ArtifactId = artifact.Id,
+            Status = DeploymentStatus.Pending
+        };
+        appDbContext.SpaDeployments.Add(deployment);
         await appDbContext.SaveChangesAsync();
+
+        // Extract zip to disk
+        try
+        {
+            await extractionService.ExtractAsync(artifact.Id, deployment.Id, build.AppId);
+            deployment.Status = DeploymentStatus.Ready;
+            logger.LogInformation("Extracted artifact {ArtifactId} for deployment {DeploymentId}", 
+                artifact.Id, deployment.Id);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to extract artifact {ArtifactId}", artifact.Id);
+            deployment.Status = DeploymentStatus.Failed;
+            build.Status = "failed";
+            await appDbContext.SaveChangesAsync();
+            return;
+        }
+
+        // Create and activate release
+        var release = new Release
+        {
+            Id = Guid.NewGuid(),
+            AppId = build.AppId,
+            SpaDeploymentId = deployment.Id
+        };
+        appDbContext.Releases.Add(release);
+        app.ActiveReleaseId = release.Id;
+
+        await appDbContext.SaveChangesAsync();
+
+        logger.LogInformation("Created and activated release {ReleaseId} for app {AppId}", 
+            release.Id, build.AppId);
+
+        // Invalidate Gateway cache
+        await cacheInvalidator.InvalidateByIdAsync(build.AppId);
     }
 
     private async Task ProcessStartedMessage(BuildStatusChangedMessage message)
@@ -139,7 +209,7 @@ public class AppBuildStatusConsumer(
 
         build.Status = "started";
         build.UpdatedAt = DateTime.UtcNow;
-        build.ContainerId = message.ContainerId;
+        build.FinishedAt = null;
         await appDbContext.SaveChangesAsync();
     }
 

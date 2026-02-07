@@ -6,7 +6,7 @@ namespace Api.Services;
 
 public interface IAppCacheInvalidator
 {
-    Task InvalidateAsync(string appName);
+    Task InvalidateAsync(string slug);
     Task InvalidateByIdAsync(int appId);
 }
 
@@ -17,23 +17,23 @@ public class AppCacheInvalidator(
 {
     private const string CacheKeyPrefix = "app:";
 
-    public async Task InvalidateAsync(string appName)
+    public async Task InvalidateAsync(string slug)
     {
-        var cacheKey = $"{CacheKeyPrefix}{appName}";
+        var cacheKey = $"{CacheKeyPrefix}{slug}";
         await cache.RemoveAsync(cacheKey);
-        logger.LogInformation("Invalidated Gateway cache for app: {AppName}", appName);
+        logger.LogInformation("Invalidated Gateway cache for app: {AppSlug}", slug);
     }
 
     public async Task InvalidateByIdAsync(int appId)
     {
-        var appName = await dbContext.Apps
+        var slug = await dbContext.Apps
             .Where(a => a.Id == appId)
-            .Select(a => a.Name)
+            .Select(a => a.Slug)
             .SingleOrDefaultAsync();
-
-        if (appName is not null)
+        
+        if (slug is not null)
         {
-            await InvalidateAsync(appName);
+            await InvalidateAsync(slug);
         }
         else
         {
