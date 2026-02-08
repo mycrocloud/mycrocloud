@@ -32,11 +32,12 @@ public class FunctionResponseHandler(
             return;
         }
 
-        // Load function code from DB (not cached)
-        var functionCode = await appCacheService.GetRouteResponseAsync(route.Id);
+        // Load function code from Deployment Manifest (indexed blobs)
+        var functionCode = await appCacheService.GetApiDeploymentFileContentAsync(app.ApiDeploymentId, $"routes/{route.Id}/content");
         if (string.IsNullOrEmpty(functionCode))
         {
-            logger.LogError("Function code not found for route {RouteId}", route.Id);
+            logger.LogError("Function code not found for route {RouteId} in deployment {DeploymentId}", 
+                route.Id, app.ApiDeploymentId);
             context.Response.StatusCode = 500;
             await context.Response.WriteAsync("Function code not found.");
             return;
