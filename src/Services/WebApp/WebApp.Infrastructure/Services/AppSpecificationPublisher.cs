@@ -44,8 +44,8 @@ public class AppSpecificationPublisher(
             AbsoluteExpirationRelativeToNow = CacheTtl
         });
 
-        logger.LogInformation("Successfully published spec for app: {Slug} (Release: {ReleaseId})", 
-            slug, spec.SpaDeploymentId);
+        logger.LogInformation("Successfully published spec for app: {Slug} (SPA: {SpaId}, API: {ApiId})", 
+            slug, spec.SpaDeploymentId, spec.ApiDeploymentId);
     }
 
     public async Task InvalidateAsync(string slug)
@@ -62,6 +62,7 @@ public class AppSpecificationPublisher(
         OwnerId = app.OwnerId,
         State = app.State,
         SpaDeploymentId = app.ActiveRelease?.SpaDeploymentId,
+        ApiDeploymentId = app.ActiveApiDeploymentId,
         ApiCorsSettings = app.CorsSettings ?? CorsSettings.Default,
         RoutingConfig = app.RoutingConfig ?? RoutingConfig.Default,
         Settings = app.Settings ?? AppSettings.Default,
