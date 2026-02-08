@@ -6,6 +6,7 @@ public static class ApiMiddlewareExtensions
     {
         builder.UseCorsMiddleware();
         builder.UseRouteResolverMiddleware();
+        builder.UseRouteMetadataMiddleware();
         builder.UseAuthenticationMiddleware();
         builder.UseAuthorizationMiddleware();
         builder.UseValidationMiddleware();

@@ -15,11 +15,11 @@ public class StaticResponseHandler(IAppSpecificationService appCacheService, ILo
     public async Task HandleAsync(HttpContext context)
     {
         var route = (CachedRoute)context.Items["_CachedRoute"]!;
+        var metadata = context.Items["_ApiRouteMetadata"] as ApiRouteMetadata;
 
-        context.Response.StatusCode = route.ResponseStatusCode ??
-                                      throw new InvalidOperationException("ResponseStatusCode is null");
+        context.Response.StatusCode = metadata?.ResponseStatusCode ?? 200;
 
-        foreach (var header in route.ResponseHeaders ?? [])
+        foreach (var header in metadata?.ResponseHeaders ?? [])
         {
             context.Response.Headers.Append(header.Name, header.Value);
         }

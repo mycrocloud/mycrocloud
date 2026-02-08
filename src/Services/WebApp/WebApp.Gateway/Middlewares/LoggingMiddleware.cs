@@ -15,6 +15,7 @@ public class LoggingMiddleware(RequestDelegate next)
         if (context.Items["_AppSpecification"] is AppSpecification app && !context.Request.IsPreflightRequest())
         {
             var route = context.Items["_CachedRoute"] as CachedRoute;
+            var metadata = context.Items["_ApiRouteMetadata"] as ApiRouteMetadata;
             var functionExecutionResult = context.Items["_FunctionExecutionResult"] as FunctionResult;
 
             await logRepository.Add(new Log
@@ -25,7 +26,7 @@ public class LoggingMiddleware(RequestDelegate next)
                 Path = context.Request.Path + context.Request.QueryString,
                 StatusCode = context.Response.StatusCode,
                 FunctionLogs = functionExecutionResult?.Logs,
-                FunctionRuntime = route?.FunctionRuntime,
+                FunctionRuntime = metadata?.FunctionRuntime,
                 FunctionExecutionDuration = functionExecutionResult?.Duration,
                 RemoteAddress = context.Connection.RemoteIpAddress?.ToString(),
                 RequestContentLength = context.Request.ContentLength,

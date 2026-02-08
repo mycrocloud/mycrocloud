@@ -10,9 +10,11 @@ public class ValidationMiddleware(RequestDelegate next)
     public async Task InvokeAsync(HttpContext context)
     {
         var route = (CachedRoute)context.Items["_CachedRoute"]!;
-        if (string.IsNullOrEmpty(route.RequestQuerySchema)
-            && string.IsNullOrEmpty(route.RequestHeaderSchema)
-            && string.IsNullOrEmpty(route.RequestBodySchema))
+        var metadata = context.Items["_ApiRouteMetadata"] as ApiRouteMetadata;
+
+        if (metadata == null || (string.IsNullOrEmpty(metadata.RequestQuerySchema)
+            && string.IsNullOrEmpty(metadata.RequestHeaderSchema)
+            && string.IsNullOrEmpty(metadata.RequestBodySchema)))
         {
             await next(context);
             return;
@@ -20,28 +22,28 @@ public class ValidationMiddleware(RequestDelegate next)
 
         List<ValidationError> errors = [];
         bool isValidContentType = true;
-        if (!string.IsNullOrEmpty(route.RequestQuerySchema))
+        if (!string.IsNullOrEmpty(metadata.RequestQuerySchema))
         {
-            var schema = JSchema.Parse(route.RequestQuerySchema);
+            var schema = JSchema.Parse(metadata.RequestQuerySchema);
             var query = JObject.FromObject(context.Request.Query.ToDictionary(kv => kv.Key, kv => kv.Value.ToString()));
             query.IsValid(schema, out IList<ValidationError>? validationErrors);
             errors.AddRange(validationErrors);
         }
 
-        if (!string.IsNullOrEmpty(route.RequestHeaderSchema))
+        if (!string.IsNullOrEmpty(metadata.RequestHeaderSchema))
         {
-            var schema = JSchema.Parse(route.RequestHeaderSchema);
+            var schema = JSchema.Parse(metadata.RequestHeaderSchema);
             var query = JObject.FromObject(context.Request.Headers.ToDictionary());
             query.IsValid(schema, out IList<ValidationError>? validationErrors);
             errors.AddRange(validationErrors);
         }
 
-        if (!string.IsNullOrEmpty(route.RequestBodySchema))
+        if (!string.IsNullOrEmpty(metadata.RequestBodySchema))
         {
             //TODO: Support other content-type
             if (context.Request.HasJsonContentType())
             {
-                var schema = JSchema.Parse(route.RequestBodySchema);
+                var schema = JSchema.Parse(metadata.RequestBodySchema);
                 context.Request.EnableBuffering();
                 var bodyString = await new StreamReader(context.Request.Body).ReadToEndAsync();
                 context.Request.Body.Position = 0;

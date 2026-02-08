@@ -19,14 +19,16 @@ public class FunctionResponseHandler(
     {
         var app = (AppSpecification)context.Items["_AppSpecification"]!;
         var route = (CachedRoute)context.Items["_CachedRoute"]!;
+        var metadata = context.Items["_ApiRouteMetadata"] as ApiRouteMetadata;
 
-        context.Items["_FunctionRuntime"] = route.FunctionRuntime;
+        var runtime = metadata?.FunctionRuntime;
 
-        var executor = executorFactory.GetExecutor(route.FunctionRuntime);
+        context.Items["_FunctionRuntime"] = runtime;
+
+        var executor = executorFactory.GetExecutor(runtime);
         if (executor is null)
         {
-            logger.LogError("Function runtime {Runtime} not supported for route {RouteId}", 
-                route.FunctionRuntime, route.Id);
+            logger.LogError("Function runtime {Runtime} not supported for route {RouteId}", runtime, route.Id);
             context.Response.StatusCode = 500;
             await context.Response.WriteAsync("Function runtime not supported.");
             return;
@@ -44,7 +46,7 @@ public class FunctionResponseHandler(
         }
 
         logger.LogDebug("Executing function for route {RouteId} with runtime {Runtime}", 
-            route.Id, route.FunctionRuntime);
+            route.Id, runtime);
 
         var result = await executor.ExecuteAsync(context, app, functionCode, null);
 
