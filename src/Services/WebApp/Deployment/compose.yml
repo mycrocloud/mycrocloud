@@ -10,7 +10,7 @@ services:
       - AUTH0_SECRET=${AUTH0_SECRET}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./worker/.conf:/app/.env:ro
+      - ./worker/.conf:/app/.conf:ro
       - /tmp/build-outputs:/tmp/build-outputs
     depends_on:
       - fluentd
