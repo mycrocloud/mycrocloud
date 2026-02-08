@@ -33,6 +33,7 @@ public class AppsController(
         {
             app.Id,
             app.Slug,
+            Name = app.Slug,
             app.Description,
             State = app.State.ToString(),
             app.CreatedAt,
@@ -78,6 +79,7 @@ public class AppsController(
         {
             app.Id,
             app.Slug,
+            Name = app.Slug,
             app.Description,
             State = app.State.ToString(),
             app.CreatedAt,
