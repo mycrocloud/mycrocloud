@@ -88,14 +88,17 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 	// Create output directory
 	log.Printf("Creating container")
 	builderImage := os.Getenv("BUILDER_IMAGE")
+	log.Printf("Using builder image: %s", builderImage)
 
 	jobID := buildMsg.BuildId
 	baseOut := getOutputBaseDir()
 	jobOut := filepath.Join(baseOut, jobID)
 
-	if err := os.MkdirAll(jobOut, 0755); err != nil {
+	if err := os.MkdirAll(jobOut, 0777); err != nil {
 		return err
 	}
+	// Ensure permissions are actually 0777 regardless of umask
+	_ = os.Chmod(jobOut, 0777)
 
 	log.Printf("📦 Starting build job: %s", jobID)
 	log.Printf("HOST_OUT_DIR: %s", baseOut)
@@ -308,8 +311,13 @@ func getOutputBaseDir() string {
 }
 
 func main() {
-	if err := godotenv.Load(".conf"); err != nil && !os.IsNotExist(err) {
-		log.Printf("Warning: failed to load .conf file: %v", err)
+	// Load config from .conf or .env
+	confFiles := []string{".conf", ".env"}
+	for _, f := range confFiles {
+		if err := godotenv.Load(f); err == nil {
+			log.Printf("Loaded configuration from %s", f)
+			break
+		}
 	}
 
 	// Load limits from environment
