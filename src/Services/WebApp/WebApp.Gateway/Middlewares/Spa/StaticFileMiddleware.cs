@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.StaticFiles;
 using WebApp.Domain.Entities;
-using WebApp.Gateway.Cache;
+using WebApp.Domain.Models;
 using WebApp.Infrastructure;
 using WebApp.Domain.Services;
 using Microsoft.EntityFrameworkCore;
@@ -12,14 +12,14 @@ public class StaticFileMiddleware(RequestDelegate next, ILogger<StaticFileMiddle
 {
     public async Task Invoke(HttpContext context, AppDbContext appDbContext, IStorageProvider storageProvider)
     {
-        var app = (CachedApp)context.Items["_CachedApp"]!;
+        var app = (AppSpecification)context.Items["_AppSpecification"]!;
         var route = (RoutingConfigRoute)context.Items["_RoutingConfigRoute"]!;
         var requestPath = context.Request.Path.Value ?? "/";
 
         await HandleStaticRequest(context, app, appDbContext, storageProvider, requestPath, route, logger);
     }
 
-    private static async Task HandleStaticRequest(HttpContext context, CachedApp app, AppDbContext appDbContext,
+    private static async Task HandleStaticRequest(HttpContext context, AppSpecification app, AppDbContext appDbContext,
         IStorageProvider storageProvider, string requestPath, RoutingConfigRoute route, ILogger logger)
     {
         if (!HttpMethods.IsGet(context.Request.Method))

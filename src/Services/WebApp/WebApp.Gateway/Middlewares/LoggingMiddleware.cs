@@ -1,5 +1,5 @@
 ﻿using System.Text.Json;
-using WebApp.Gateway.Cache;
+using WebApp.Domain.Models;
 using WebApp.Gateway.Models;
 using WebApp.Domain.Entities;
 using WebApp.Domain.Repositories;
@@ -12,7 +12,7 @@ public class LoggingMiddleware(RequestDelegate next)
     {
         await next.Invoke(context);
 
-        if (context.Items["_CachedApp"] is CachedApp app && !context.Request.IsPreflightRequest())
+        if (context.Items["_AppSpecification"] is AppSpecification app && !context.Request.IsPreflightRequest())
         {
             var route = context.Items["_CachedRoute"] as CachedRoute;
             var functionExecutionResult = context.Items["_FunctionExecutionResult"] as FunctionResult;

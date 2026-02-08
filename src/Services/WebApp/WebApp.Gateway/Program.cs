@@ -6,12 +6,13 @@ using WebApp.Domain.Repositories;
 using WebApp.Infrastructure;
 using WebApp.Infrastructure.Repositories;
 using WebApp.Gateway;
-using WebApp.Gateway.Cache;
+using WebApp.Domain.Models;
 using WebApp.Gateway.Middlewares;
 using WebApp.Gateway.Middlewares.Api;
 using WebApp.Gateway.Middlewares.Spa;
 using WebApp.Domain.Services;
 using WebApp.Infrastructure.Storage;
+using WebApp.Gateway.Cache;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddLogging(options =>
@@ -36,7 +37,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
     options.Configuration = builder.Configuration.GetConnectionString("Redis");
 });
 builder.Services.AddSingleton<ICachedOpenIdConnectionSigningKeys, CachedOpenIdConnectionSigningKeys>();
-builder.Services.AddScoped<IAppCacheService, AppCacheService>();
+builder.Services.AddScoped<IAppSpecificationService, AppSpecificationService>();
 
 var storagePath = builder.Configuration["Storage:RootPath"] ?? Path.Combine(builder.Environment.ContentRootPath, "data");
 builder.Services.AddSingleton<IStorageProvider>(new DiskStorageProvider(storagePath));

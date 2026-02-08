@@ -1,4 +1,5 @@
 using WebApp.Domain.Entities;
+using WebApp.Domain.Models;
 using WebApp.Gateway.Cache;
 
 namespace WebApp.Gateway.Middlewares.Api;
@@ -7,7 +8,7 @@ namespace WebApp.Gateway.Middlewares.Api;
 /// Handler for static responses configured in the route.
 /// Returns predefined status code, headers, and body content.
 /// </summary>
-public class StaticResponseHandler(IAppCacheService appCacheService, ILogger<StaticResponseHandler> logger) : IResponseHandler
+public class StaticResponseHandler(IAppSpecificationService appCacheService, ILogger<StaticResponseHandler> logger) : IResponseHandler
 {
     public ResponseType SupportedType => ResponseType.Static;
 

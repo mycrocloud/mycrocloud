@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Docker.DotNet;
 using Docker.DotNet.Models;
-using WebApp.Gateway.Cache;
+using WebApp.Domain.Models;
 using WebApp.Gateway.Models;
 using WebApp.Domain.Enums;
 using WebApp.Domain.Entities;
@@ -16,7 +16,7 @@ public class DockerFunctionExecutor(
 {
     public FunctionRuntime Runtime => FunctionRuntime.JintInDocker;
 
-    public async Task<FunctionResult> ExecuteAsync(HttpContext context, CachedApp app,
+    public async Task<FunctionResult> ExecuteAsync(HttpContext context, AppSpecification app,
         string handler, Dictionary<string, string>? values)
     {
         var hostDir = Path.Combine(configuration["DockerFunctionExecution:HostFilePath"]!, context.TraceIdentifier.Replace(':', '_'));

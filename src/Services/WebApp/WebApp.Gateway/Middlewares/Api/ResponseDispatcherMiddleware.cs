@@ -1,4 +1,4 @@
-using WebApp.Gateway.Cache;
+using WebApp.Domain.Models;
 
 namespace WebApp.Gateway.Middlewares.Api;
 

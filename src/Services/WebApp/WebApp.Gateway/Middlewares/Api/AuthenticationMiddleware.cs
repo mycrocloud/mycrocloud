@@ -2,7 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using WebApp.Domain.Enums;
-using WebApp.Gateway.Cache;
+using WebApp.Domain.Models;
 using WebApp.Infrastructure;
 
 namespace WebApp.Gateway.Middlewares.Api;
@@ -11,7 +11,7 @@ public class AuthenticationMiddleware(RequestDelegate next, ILogger<Authenticati
 {
     public async Task InvokeAsync(HttpContext context)
     {
-        var app = (CachedApp)context.Items["_CachedApp"]!;
+        var app = (AppSpecification)context.Items["_AppSpecification"]!;
 
         if (app.AuthenticationSchemes.Count == 0)
         {
@@ -71,7 +71,7 @@ public class AuthenticationMiddleware(RequestDelegate next, ILogger<Authenticati
         context.Items.Add("_OpenIdConnectUser", user);
     }
 
-    private static async Task AuthenticateApiKeyScheme(HttpContext context, CachedApp app, CachedAuthenticationScheme scheme)
+    private static async Task AuthenticateApiKeyScheme(HttpContext context, AppSpecification app, CachedAuthenticationScheme scheme)
     {
         var apiKey = context.Request.Headers["X-Api-Key"].FirstOrDefault();
         if (string.IsNullOrEmpty(apiKey))

@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Routing.Template;
-using WebApp.Gateway.Cache;
+using WebApp.Domain.Models;
 
 namespace WebApp.Gateway.Middlewares.Api;
 
@@ -7,7 +7,7 @@ public class RouteResolverMiddleware(RequestDelegate next)
 {
     public async Task Invoke(HttpContext context)
     {
-        var app = (CachedApp)context.Items["_CachedApp"]!;
+        var app = (AppSpecification)context.Items["_AppSpecification"]!;
         var matchedRoutes = new List<CachedRoute>();
 
         foreach (var r in app.Routes)

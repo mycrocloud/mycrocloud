@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 using WebApp.Domain.Entities;
-using WebApp.Gateway.Cache;
+using WebApp.Domain.Models;
 using WebApp.Infrastructure;
 
 namespace WebApp.Gateway.Middlewares;
@@ -9,7 +9,7 @@ public class RoutingMiddleware(RequestDelegate next, ILogger<RoutingMiddleware> 
 {
     public async Task Invoke(HttpContext context, AppDbContext appDbContext)
     {
-        var app = (CachedApp)context.Items["_CachedApp"]!;
+        var app = (AppSpecification)context.Items["_AppSpecification"]!;
         var isCustomConfig = app.RoutingConfig is { Routes.Count: > 0 };
         var config = isCustomConfig ? app.RoutingConfig : RoutingConfig.Default;
 

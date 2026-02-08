@@ -1,4 +1,4 @@
-using WebApp.Gateway.Cache;
+using WebApp.Domain.Models;
 using WebApp.Gateway.Models;
 using WebApp.Domain.Enums;
 
@@ -10,7 +10,7 @@ public interface IFunctionExecutor
 
     Task<FunctionResult> ExecuteAsync(
         HttpContext context,
-        CachedApp app,
+        AppSpecification app,
         string handler,
         Dictionary<string, string>? values);
 }

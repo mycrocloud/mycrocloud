@@ -1,4 +1,5 @@
 using WebApp.Domain.Entities;
+using WebApp.Domain.Models;
 using WebApp.Gateway.Cache;
 
 namespace WebApp.Gateway.Middlewares.Api;
@@ -8,7 +9,7 @@ namespace WebApp.Gateway.Middlewares.Api;
 /// Executes serverless functions and returns their output.
 /// </summary>
 public class FunctionResponseHandler(
-    IAppCacheService appCacheService,
+    IAppSpecificationService appCacheService,
     FunctionExecutorFactory executorFactory,
     ILogger<FunctionResponseHandler> logger) : IResponseHandler
 {
@@ -16,7 +17,7 @@ public class FunctionResponseHandler(
 
     public async Task HandleAsync(HttpContext context)
     {
-        var app = (CachedApp)context.Items["_CachedApp"]!;
+        var app = (AppSpecification)context.Items["_AppSpecification"]!;
         var route = (CachedRoute)context.Items["_CachedRoute"]!;
 
         context.Items["_FunctionRuntime"] = route.FunctionRuntime;
