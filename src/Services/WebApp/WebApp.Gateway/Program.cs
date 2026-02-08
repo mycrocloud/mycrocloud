@@ -102,15 +102,12 @@ app.UseWhen(context =>
 {
     var route = context.Items["_RoutingConfigRoute"] as RoutingConfigRoute;
     return route?.Target.Type == RouteTargetType.Static;
-}, appBuilder => appBuilder.UseSpaStaticFileMiddleware());
+}, appBuilder => appBuilder.UseSpaMiddleware());
 
 app.UseWhen(context => 
 {
     var route = context.Items["_RoutingConfigRoute"] as RoutingConfigRoute;
     return route?.Target.Type == RouteTargetType.Api;
-}, appBuilder =>
-{
-    appBuilder.UseApiMiddleware();
-});
+}, appBuilder => appBuilder.UseApiMiddleware());
 
 app.Run();
