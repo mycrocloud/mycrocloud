@@ -26,6 +26,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     public DbSet<Artifact> Artifacts { get; set; }
 
+    public DbSet<ObjectBlob> ObjectBlobs { get; set; }
+
+    public DbSet<DeploymentFile> DeploymentFiles { get; set; }
+
     public DbSet<SpaDeployment> SpaDeployments { get; set; }
 
     public DbSet<Release> Releases { get; set; }
@@ -171,7 +175,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<GitHubInstallation>()
             .HasIndex(x => x.UserId); // no need to be unique because one user can have multiple installations e.g. for orgs
 
-        // Artifact, SpaDeployment, Release configurations
+        // Artifact, ObjectBlob, DeploymentFile, SpaDeployment, Release configurations
         modelBuilder.Entity<Artifact>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -179,7 +183,44 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithMany(a => a.Artifacts)
                 .HasForeignKey(e => e.AppId)
                 .OnDelete(DeleteBehavior.Cascade);
-            entity.HasIndex(e => e.ContentHash);
+            entity.HasOne(e => e.Build)
+                .WithMany()
+                .HasForeignKey(e => e.BuildId)
+                .OnDelete(DeleteBehavior.SetNull);
+            entity.HasIndex(e => e.BundleHash).IsUnique();
+            entity.Property(e => e.BundleHash).HasMaxLength(64);
+            entity.Property(e => e.StorageKey).HasMaxLength(500);
+            entity.Property(e => e.Compression).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<ObjectBlob>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.ContentHash).IsUnique();
+            entity.Property(e => e.ContentHash).HasMaxLength(64);
+            entity.Property(e => e.ContentType).HasMaxLength(255);
+            entity.Property(e => e.StorageKey).HasMaxLength(500);
+        });
+
+        modelBuilder.Entity<DeploymentFile>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.DeploymentId);
+            entity.HasIndex(e => e.BlobId);
+            entity.HasIndex(e => new { e.DeploymentId, e.Path }).IsUnique();
+            
+            entity.Property(e => e.Path).HasMaxLength(500);
+            entity.Property(e => e.ETag).HasMaxLength(64);
+            
+            entity.HasOne(e => e.Deployment)
+                .WithMany(d => d.Files)
+                .HasForeignKey(e => e.DeploymentId)
+                .OnDelete(DeleteBehavior.Cascade);
+                
+            entity.HasOne(e => e.Blob)
+                .WithMany(b => b.DeploymentFiles)
+                .HasForeignKey(e => e.BlobId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<SpaDeployment>(entity =>
@@ -194,10 +235,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .HasForeignKey(e => e.BuildId)
                 .OnDelete(DeleteBehavior.Cascade);
             entity.HasOne(e => e.Artifact)
-                .WithMany()
+                .WithMany(a => a.Deployments)
                 .HasForeignKey(e => e.ArtifactId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(e => new { e.AppId, e.Status });
+            entity.Property(e => e.ExtractedPath).HasMaxLength(500);
         });
 
         modelBuilder.Entity<Release>(entity =>

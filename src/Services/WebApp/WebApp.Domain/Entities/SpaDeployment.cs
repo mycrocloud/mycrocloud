@@ -19,4 +19,13 @@ public class SpaDeployment : BaseEntity
     public Guid ArtifactId { get; set; }
     public Artifact Artifact { get; set; } = null!;
     public DeploymentStatus Status { get; set; }
+    
+    /// <summary>
+    /// Extracted path on disk (for backward compatibility)
+    /// </summary>
+    public string? ExtractedPath { get; set; }
+    
+    // Navigation
+    public ICollection<DeploymentFile> Files { get; set; } = [];
 }
+
