@@ -3,6 +3,7 @@ using System.Text.Json;
 using Api.Filters;
 using Api.Models.Builds;
 using Api.Services;
+using WebApp.Domain.Services;
 using Elastic.Clients.Elasticsearch;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -30,6 +31,7 @@ public class BuildsController(
     RabbitMqService rabbitMqService,
     LinkGenerator linkGenerator,
     GitHubAppService gitHubAppService,
+    IStorageProvider storageProvider,
     ILogger<BuildsController> logger): BaseController
 {
     public const string Controller = "Builds";
@@ -312,26 +314,6 @@ public class BuildsController(
     [Authorize(Policy = "M2M", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public async Task<IActionResult> UploadArtifacts(int appId, Guid buildId, [FromForm] IFormFile file, [FromForm] string contentHash)
     {
-        // TODO: dedup by ContentHash
-        // if artifact with same hash exists → reuse instead of insert
-        
-        // IMPORTANT: ContentHash must be UNIQUE
-        // to guarantee dedup + retry safety
-
-        // TODO: wrap insert in try/catch for unique constraint
-        // if duplicate hash inserted concurrently → reload existing artifact
-
-        // TODO: ensure build status == Started before accepting artifact upload
-        // reject upload if build already completed/failed/canceled
-
-        // TODO: ensure (BuildJobId, Role) unique
-        // avoid duplicate link on retry upload
-
-        // TODO: add max artifact size limit (phase 1 DB blob protection)
-
-        // TODO: wrap artifact insert + buildArtifact insert in transaction
-        // avoid orphan artifact rows
-
         var build = await appDbContext.AppBuildJobs
             .SingleAsync(b => b.AppId == appId && b.Id == buildId);
 
@@ -345,35 +327,45 @@ public class BuildsController(
             return BadRequest("contentHash is required");
         }
 
-        // Read zip file into memory
-        await using var stream = file.OpenReadStream();
-        await using var memoryStream = new MemoryStream();
-        await stream.CopyToAsync(memoryStream);
-        var zipBytes = memoryStream.ToArray();
-
-        // Verify hash
-        var computedHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(zipBytes));
-        if (!computedHash.Equals(contentHash, StringComparison.OrdinalIgnoreCase))
+        // 1. Save ZIP to storage
+        var artifactId = Guid.NewGuid();
+        var storageKey = $"artifacts/{appId}/{artifactId}.zip";
+        
+        await using (var stream = file.OpenReadStream())
         {
-            logger.LogWarning("Hash mismatch for build {BuildId}. Expected: {Expected}, Got: {Got}", 
-                buildId, contentHash, computedHash);
-            return BadRequest("Content hash mismatch");
+            await storageProvider.SaveAsync(storageKey, stream);
         }
 
-        // Create Artifact
+        // 2. Verify hash (optional but good for integrity)
+        // In a production environment, we might compute hash while streaming to storage
+        // For now, we'll reopen to verify if needed, or trust the worker if we move hash computation there.
+        // Let's reopening to compute hash to be sure.
+        using (var verifyStream = await storageProvider.OpenReadAsync(storageKey))
+        {
+            var computedHash = Convert.ToHexString(await System.Security.Cryptography.SHA256.HashDataAsync(verifyStream));
+            if (!computedHash.Equals(contentHash, StringComparison.OrdinalIgnoreCase))
+            {
+                logger.LogWarning("Hash mismatch for build {BuildId}. Expected: {Expected}, Got: {Got}", 
+                    buildId, contentHash, computedHash);
+                await storageProvider.DeleteAsync(storageKey);
+                return BadRequest("Content hash mismatch");
+            }
+        }
+
+        // 3. Create Artifact metadata
         var artifact = new Artifact
         {
-            Id = Guid.NewGuid(),
+            Id = artifactId,
             AppId = appId,
-            ArtifactType = ArtifactType.SpaBundle,
-            BlobData = zipBytes,
-            ContentHash = contentHash.ToUpperInvariant(),
-            SizeBytes = zipBytes.Length,
+            BundleHash = contentHash.ToUpperInvariant(),
+            BundleSize = file.Length,
+            StorageType = ArtifactStorageType.Disk,
+            StorageKey = storageKey,
             Compression = "zip"
         };
         appDbContext.Artifacts.Add(artifact);
 
-        // Link build to artifact via AppBuildArtifact junction table
+        // 4. Link build to artifact
         var buildArtifact = new AppBuildArtifact
         {
             BuildJobId = buildId,
@@ -385,13 +377,13 @@ public class BuildsController(
         await appDbContext.SaveChangesAsync();
 
         logger.LogInformation("Uploaded artifact {ArtifactId} ({SizeBytes} bytes) for build {BuildId}", 
-            artifact.Id, artifact.SizeBytes, build.Id);
+            artifact.Id, artifact.BundleSize, build.Id);
 
         return Ok(new 
         { 
             artifactId = artifact.Id,
-            sizeBytes = artifact.SizeBytes,
-            contentHash = artifact.ContentHash
+            sizeBytes = artifact.BundleSize,
+            contentHash = artifact.BundleHash
         });
     }
 }

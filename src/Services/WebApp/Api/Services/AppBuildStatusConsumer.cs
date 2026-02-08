@@ -146,7 +146,7 @@ public class AppBuildStatusConsumer(
         }
 
         logger.LogInformation("Processing artifact {ArtifactId} ({SizeBytes} bytes) for build {BuildId}", 
-            artifact.Id, artifact.SizeBytes, build.Id);
+            artifact.Id, artifact.BundleSize, build.Id);
 
         // Create SpaDeployment
         var deployment = new SpaDeployment

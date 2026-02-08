@@ -16,6 +16,7 @@ using WebApp.Infrastructure;
 using WebApp.Infrastructure.Repositories;
 using Api.Middlewares;
 using Api.Services;
+using WebApp.Infrastructure.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -107,6 +108,9 @@ builder.Services.AddStackExchangeRedisCache(options =>
 });
 builder.Services.AddScoped<IAppCacheInvalidator, AppCacheInvalidator>();
 builder.Services.AddScoped<IArtifactExtractionService, ArtifactExtractionService>();
+
+var storagePath = builder.Configuration["Storage:RootPath"] ?? Path.Combine(builder.Environment.ContentRootPath, "data");
+builder.Services.AddSingleton<IStorageProvider>(new DiskStorageProvider(storagePath));
 
 builder.Services.AddKeyedSingleton("AppBuildLogs_ES7", (_, _) =>
 {

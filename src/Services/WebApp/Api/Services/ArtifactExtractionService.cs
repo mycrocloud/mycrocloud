@@ -1,4 +1,8 @@
 using System.IO.Compression;
+using System.Security.Cryptography;
+using Microsoft.EntityFrameworkCore;
+using WebApp.Domain.Entities;
+using WebApp.Domain.Services;
 using WebApp.Infrastructure;
 
 namespace Api.Services;
@@ -10,46 +14,82 @@ public interface IArtifactExtractionService
 }
 
 public class ArtifactExtractionService(
-    IConfiguration config,
     AppDbContext dbContext,
+    IStorageProvider storageProvider,
     ILogger<ArtifactExtractionService> logger) : IArtifactExtractionService
 {
-    private readonly string _basePath = config["Deployment:ExtractBasePath"]
-        ?? Path.Combine(Path.GetTempPath(), "mycrocloud", "deployments");
-
     public async Task<string> ExtractAsync(Guid artifactId, Guid deploymentId, int appId)
     {
         var artifact = await dbContext.Artifacts.FindAsync(artifactId);
-        if (artifact?.BlobData == null)
-            throw new InvalidOperationException($"Artifact {artifactId} not found or has no data");
-        
-        var extractPath = Path.Combine(_basePath, appId.ToString(), deploymentId.ToString());
-        
-        // Ensure clean directory
-        if (Directory.Exists(extractPath))
-            Directory.Delete(extractPath, recursive: true);
-        
-        Directory.CreateDirectory(extractPath);
-        
-        logger.LogInformation("Extracting artifact {ArtifactId} to {ExtractPath}", artifactId, extractPath);
-        
-        using var stream = new MemoryStream(artifact.BlobData);
-        using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
-        archive.ExtractToDirectory(extractPath, overwriteFiles: true);
-        
-        logger.LogInformation("Extracted {EntryCount} files to {ExtractPath}", archive.Entries.Count, extractPath);
-        
-        return extractPath;
+        if (artifact == null)
+            throw new InvalidOperationException($"Artifact {artifactId} not found");
+
+        var deployment = await dbContext.SpaDeployments.FindAsync(deploymentId);
+        if (deployment == null)
+            throw new InvalidOperationException($"Deployment {deploymentId} not found");
+
+        logger.LogInformation("Extracting artifact {ArtifactId} for deployment {DeploymentId}", artifactId, deploymentId);
+
+        using var artifactStream = await storageProvider.OpenReadAsync(artifact.StorageKey);
+        using var archive = new ZipArchive(artifactStream, ZipArchiveMode.Read);
+
+        foreach (var entry in archive.Entries)
+        {
+            if (string.IsNullOrEmpty(entry.Name)) continue; // Skip directories
+
+            using var entryStream = entry.Open();
+            using var ms = new MemoryStream();
+            await entryStream.CopyToAsync(ms);
+            var content = ms.ToArray();
+            
+            var contentHash = Convert.ToHexString(SHA256.HashData(content)).ToUpperInvariant();
+            
+            // Check if blob already exists
+            var blob = await dbContext.ObjectBlobs.FirstOrDefaultAsync(b => b.ContentHash == contentHash);
+            
+            if (blob == null)
+            {
+                var storageKey = $"blobs/{contentHash.Substring(0, 2)}/{contentHash}";
+                
+                ms.Position = 0;
+                await storageProvider.SaveAsync(storageKey, ms);
+                
+                blob = new ObjectBlob
+                {
+                    Id = Guid.NewGuid(),
+                    ContentHash = contentHash,
+                    SizeBytes = content.Length,
+                    StorageType = BlobStorageType.Disk,
+                    StorageKey = storageKey
+                };
+                dbContext.ObjectBlobs.Add(blob);
+                await dbContext.SaveChangesAsync(); // Save immediately to avoid duplicate inserts if multiple files have same hash in one zip
+            }
+
+            // Create deployment file entry
+            var deploymentFile = new DeploymentFile
+            {
+                Id = Guid.NewGuid(),
+                DeploymentId = deploymentId,
+                Path = entry.FullName,
+                BlobId = blob.Id,
+                SizeBytes = content.Length,
+                ETag = contentHash
+            };
+            dbContext.DeploymentFiles.Add(deploymentFile);
+        }
+
+        deployment.Status = DeploymentStatus.Ready;
+        await dbContext.SaveChangesAsync();
+
+        logger.LogInformation("Extracted {EntryCount} files for deployment {DeploymentId}", archive.Entries.Count, deploymentId);
+
+        return "success";
     }
 
     public Task CleanupAsync(string extractedPath)
     {
-        if (Directory.Exists(extractedPath))
-        {
-            logger.LogInformation("Cleaning up deployment at {ExtractPath}", extractedPath);
-            Directory.Delete(extractedPath, recursive: true);
-        }
-
+        // No-op for now as we don't have ExtractedPath anymore
         return Task.CompletedTask;
     }
 }

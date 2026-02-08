@@ -239,7 +239,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .HasForeignKey(e => e.ArtifactId)
                 .OnDelete(DeleteBehavior.Restrict);
             entity.HasIndex(e => new { e.AppId, e.Status });
-            entity.Property(e => e.ExtractedPath).HasMaxLength(500);
         });
 
         modelBuilder.Entity<Release>(entity =>
