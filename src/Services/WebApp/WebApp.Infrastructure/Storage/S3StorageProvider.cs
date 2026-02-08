@@ -23,7 +23,9 @@ public class S3StorageProvider : IStorageProvider
             BucketName = _bucketName,
             Key = NormalizePath(path),
             InputStream = stream,
-            AutoCloseStream = false
+            AutoCloseStream = false,
+            DisablePayloadSigning = true, // TODO: temporary workaround for R2 compatibility
+            DisableDefaultChecksumValidation = true // TODO: temporary workaround for R2 compatibility
         };
 
         await _s3Client.PutObjectAsync(request, ct);
