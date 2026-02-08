@@ -28,10 +28,12 @@ services:
       - OAuthApps__GitHub__ClientSecret=${OAuthApps__GitHub__ClientSecret}
       - Slack__SigningSecret=${Slack__SigningSecret}
       - Slack__LinkSecret=${Slack__LinkSecret}
+      - Storage__RootPath=/app/data
     ports:
       - "8080:8080"
     volumes:
       - "./Api/gha-mycrocloud.private-key.pem:/app/gha-mycrocloud.private-key.pem:ro"
+      - "./data:/app/data"
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -42,9 +44,11 @@ services:
       dockerfile: WebApp.Gateway/Dockerfile
     environment:
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
+      - Storage__RootPath=/app/data
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/function-data:/tmp/function-data
+      - "./data:/app/data"
     ports:
       - "8081:8080"
 
