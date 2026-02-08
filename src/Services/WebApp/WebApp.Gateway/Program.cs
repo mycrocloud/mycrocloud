@@ -13,6 +13,7 @@ using WebApp.Gateway.Middlewares.Spa;
 using WebApp.Domain.Services;
 using WebApp.Infrastructure.Storage;
 using WebApp.Gateway.Cache;
+using Amazon.S3;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddLogging(options =>
@@ -39,8 +40,28 @@ builder.Services.AddStackExchangeRedisCache(options =>
 builder.Services.AddSingleton<ICachedOpenIdConnectionSigningKeys, CachedOpenIdConnectionSigningKeys>();
 builder.Services.AddScoped<IAppSpecificationService, AppSpecificationService>();
 
-var storagePath = builder.Configuration["Storage:RootPath"] ?? Path.Combine(builder.Environment.ContentRootPath, "data");
-builder.Services.AddSingleton<IStorageProvider>(new DiskStorageProvider(storagePath));
+// Storage Provider selection (Disk or S3/R2)
+var storageType = builder.Configuration["Storage:Type"] ?? "Disk";
+if (storageType.Equals("S3", StringComparison.OrdinalIgnoreCase))
+{
+    var s3Config = new AmazonS3Config
+    {
+        ServiceURL = builder.Configuration["Storage:S3:ServiceURL"],
+        ForcePathStyle = true
+    };
+    var s3Client = new AmazonS3Client(
+        builder.Configuration["Storage:S3:AccessKey"],
+        builder.Configuration["Storage:S3:SecretKey"],
+        s3Config);
+
+    builder.Services.AddSingleton<IAmazonS3>(s3Client);
+    builder.Services.AddSingleton<IStorageProvider>(new S3StorageProvider(s3Client, builder.Configuration["Storage:S3:BucketName"]!));
+}
+else
+{
+    var storagePath = builder.Configuration["Storage:RootPath"] ?? Path.Combine(builder.Environment.ContentRootPath, "data");
+    builder.Services.AddSingleton<IStorageProvider>(new DiskStorageProvider(storagePath));
+}
 
 builder.Services.AddKeyedSingleton("DockerFunctionExecution", new ConcurrentJobQueue(maxConcurrency: 100));
 builder.Services.AddSingleton(_ =>
