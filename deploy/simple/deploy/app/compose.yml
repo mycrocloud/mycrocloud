@@ -22,6 +22,8 @@ services:
       - OAuthApps__Slack__SigningSecret=${OAuthApps__Slack__SigningSecret}
       - OAuthApps__Slack__LinkSecret=${OAuthApps__Slack__LinkSecret}
       - ConnectionStrings__Redis=${ConnectionStrings__Redis}
+      - Storage__S3__AccessKey=${Storage__S3__AccessKey}
+      - Storage__S3__SecretKey=${Storage__S3__SecretKey}
     volumes:
       - ./Services/WebApp/WebApp.Api/appsettings.json:/app/appsettings.json:ro
       - ./Services/WebApp/WebApp.Api/gha-mycrocloud.pem:/app/gha-mycrocloud.pem:ro
@@ -31,6 +33,8 @@ services:
     environment:
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
       - ConnectionStrings__Redis=${ConnectionStrings__Redis}
+      - Storage__S3__AccessKey=${Storage__S3__AccessKey}
+      - Storage__S3__SecretKey=${Storage__S3__SecretKey}
     volumes:
       - ./Services/WebApp/WebApp.Gateway/appsettings.json:/app/appsettings.json:ro
       - /var/run/docker.sock:/var/run/docker.sock
