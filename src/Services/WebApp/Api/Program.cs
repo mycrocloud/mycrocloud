@@ -110,6 +110,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
 builder.Services.AddScoped<IAppCacheInvalidator, AppCacheInvalidator>();
 builder.Services.AddScoped<IAppSpecificationPublisher, AppSpecificationPublisher>();
 builder.Services.AddScoped<IArtifactExtractionService, ArtifactExtractionService>();
+builder.Services.AddScoped<IApiDeploymentService, ApiDeploymentService>();
 
 var storagePath = builder.Configuration["Storage:RootPath"] ?? Path.Combine(builder.Environment.ContentRootPath, "data");
 builder.Services.AddSingleton<IStorageProvider>(new DiskStorageProvider(storagePath));
