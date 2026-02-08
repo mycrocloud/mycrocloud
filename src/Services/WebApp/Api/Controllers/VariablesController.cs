@@ -4,13 +4,26 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApp.Domain.Entities;
 using WebApp.Infrastructure;
+using WebApp.Domain.Services;
+using WebApp.Domain.Repositories;
 
 namespace Api.Controllers;
 
 [Route("apps/{appId:int}/[controller]")]
 [TypeFilter<AppOwnerActionFilter>(Arguments = ["appId"])]
-public class VariablesController(AppDbContext appDbContext) : BaseController
+public class VariablesController(
+    AppDbContext appDbContext,
+    IAppSpecificationPublisher specPublisher,
+    IAppRepository appRepository) : BaseController
 {
+    private async Task PublishSpec(int appId)
+    {
+        var app = await appRepository.GetByAppId(appId);
+        if (app != null)
+        {
+            await specPublisher.PublishAsync(app.Slug);
+        }
+    }
     [HttpGet]
     public async Task<IActionResult> List(int appId, [FromQuery] VariableTarget? target = null)
     {
@@ -39,6 +52,7 @@ public class VariablesController(AppDbContext appDbContext) : BaseController
         entity.AppId = appId;
         await appDbContext.Variables.AddAsync(entity);
         await appDbContext.SaveChangesAsync();
+        await PublishSpec(appId);
         return Created("", new { entity.Id });
     }
 
@@ -49,6 +63,7 @@ public class VariablesController(AppDbContext appDbContext) : BaseController
         createUpdateVariableRequest.CopyToEntity(entity);
         appDbContext.Variables.Update(entity);
         await appDbContext.SaveChangesAsync();
+        await PublishSpec(appId);
         return NoContent();
     }
 
@@ -74,6 +89,7 @@ public class VariablesController(AppDbContext appDbContext) : BaseController
         var variable = await appDbContext.Variables.SingleAsync(v => v.AppId == appId && v.Id == id);
         appDbContext.Variables.Remove(variable);
         await appDbContext.SaveChangesAsync();
+        await PublishSpec(appId);
         return NoContent();
     }
 }

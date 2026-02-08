@@ -17,6 +17,7 @@ using WebApp.Infrastructure.Repositories;
 using Api.Middlewares;
 using Api.Services;
 using WebApp.Infrastructure.Storage;
+using WebApp.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -107,6 +108,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
     options.Configuration = builder.Configuration.GetConnectionString("Redis");
 });
 builder.Services.AddScoped<IAppCacheInvalidator, AppCacheInvalidator>();
+builder.Services.AddScoped<IAppSpecificationPublisher, AppSpecificationPublisher>();
 builder.Services.AddScoped<IArtifactExtractionService, ArtifactExtractionService>();
 
 var storagePath = builder.Configuration["Storage:RootPath"] ?? Path.Combine(builder.Environment.ContentRootPath, "data");

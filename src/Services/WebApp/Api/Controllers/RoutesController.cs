@@ -18,7 +18,8 @@ namespace Api.Controllers;
 public class RoutesController(
     AppDbContext appDbContext,
     ISubscriptionService subscriptionService,
-    IAppCacheInvalidator cacheInvalidator
+    IAppCacheInvalidator cacheInvalidator,
+    IAppSpecificationPublisher specPublisher
 ) : BaseController
 {
     private App App => (HttpContext.Items["App"] as App)!;
@@ -118,6 +119,7 @@ public class RoutesController(
         await appDbContext.Routes.AddAsync(route);
         await appDbContext.SaveChangesAsync();
         await cacheInvalidator.InvalidateByIdAsync(App.Id);
+        await specPublisher.PublishAsync(App.Slug);
 
         return Created(route.Id.ToString(), RouteDetails(route));
     }
@@ -143,6 +145,7 @@ public class RoutesController(
         await appDbContext.Routes.AddAsync(route);
         await appDbContext.SaveChangesAsync();
         await cacheInvalidator.InvalidateByIdAsync(App.Id);
+        await specPublisher.PublishAsync(App.Slug);
 
         return Created(route.Id.ToString(), new { route.Id, route.Version });
     }
@@ -163,6 +166,7 @@ public class RoutesController(
 
         await appDbContext.SaveChangesAsync();
         await cacheInvalidator.InvalidateByIdAsync(App.Id);
+        await specPublisher.PublishAsync(App.Slug);
 
         return NoContent();
     }
@@ -180,6 +184,7 @@ public class RoutesController(
         appDbContext.Routes.Remove(route);
         await appDbContext.SaveChangesAsync();
         await cacheInvalidator.InvalidateByIdAsync(App.Id);
+        await specPublisher.PublishAsync(App.Slug);
         return NoContent();
     }
 
@@ -239,6 +244,7 @@ public class RoutesController(
         var newFolder = await RecursiveDuplicateFolder(folder, folder.Parent, true);
 
         await appDbContext.SaveChangesAsync();
+        await specPublisher.PublishAsync(App.Slug);
 
         const string sql = """
                            WITH RECURSIVE FolderHierarchy AS (
@@ -378,6 +384,8 @@ public class RoutesController(
 
         var deletedItems = await appDbContext.Database.GetDbConnection()
             .QueryAsync<RouteFolderRouteItem>(sql, new { id = folder.Id });
+
+        await specPublisher.PublishAsync(App.Slug);
 
         return Ok(deletedItems.Select(RouteFolderRouteItem));
     }

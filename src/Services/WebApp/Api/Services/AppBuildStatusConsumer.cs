@@ -8,6 +8,7 @@ using RabbitMQ.Client.Events;
 using WebApp.Domain.Entities;
 using WebApp.Domain.Messages;
 using WebApp.Infrastructure;
+using WebApp.Domain.Services;
 
 namespace Api.Services;
 
@@ -108,6 +109,7 @@ public class AppBuildStatusConsumer(
         var appDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var extractionService = scope.ServiceProvider.GetRequiredService<IArtifactExtractionService>();
         var cacheInvalidator = scope.ServiceProvider.GetRequiredService<IAppCacheInvalidator>();
+        var specPublisher = scope.ServiceProvider.GetRequiredService<IAppSpecificationPublisher>();
 
         var build = await appDbContext.AppBuildJobs.FindAsync(message.BuildId);
         if (build == null)
@@ -192,8 +194,11 @@ public class AppBuildStatusConsumer(
         logger.LogInformation("Created and activated release {ReleaseId} for app {AppId}", 
             release.Id, build.AppId);
 
-        // Invalidate Gateway cache
+        // Invalidate Gateway cache (Old mechanism)
         await cacheInvalidator.InvalidateByIdAsync(build.AppId);
+
+        // Publish new AppSpecification (New mechanism)
+        await specPublisher.PublishAsync(app.Slug);
     }
 
     private async Task ProcessStartedMessage(BuildStatusChangedMessage message)
