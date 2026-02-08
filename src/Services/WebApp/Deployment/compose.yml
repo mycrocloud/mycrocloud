@@ -1,7 +1,9 @@
 name: deployment
 services:
   worker:
-    build: ./worker
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
     image: mycrocloud-deployment-worker:main
     environment:
       - RABBITMQ_URL=${RABBITMQ_URL}
@@ -15,67 +17,35 @@ services:
 
   fluentd:
     image: mycrocloud-deployment-fluentd:main
-    build: ./fluentd
+    build:
+      context: ./fluentd
+      dockerfile: Dockerfile
     environment:
-      - ES_HOST=localhost
-      - ES_USER=elastic
-      - ES_PASSWORD=changeme
+      - ES_HOST=${ES_HOST:-localhost}
+      - ES_USER=${ES_USER:-elastic}
+      - ES_PASSWORD=${ES_PASSWORD:-changeme}
       - RABBITMQ_URL=${RABBITMQ_URL}
     volumes:
       - ./fluentd/conf:/fluentd/etc
     ports:
       - "24224:24224"
-    # depends_on:
-    #   rabbitmq:
-    #     condition: service_healthy
 
+  # The builder is usually run dynamically by the worker, 
+  # but kept here for image build/test purposes.
   builder:
     image: mycrocloud-deployment-builder:main
-    build: ./builder
-    labels:
-      - build_id=73318fcf-8d1e-4716-9106-2ae681e79e6d
+    build:
+      context: ./builder
+      dockerfile: Dockerfile
     environment:
-      - REPO_URL=https://github.com/mycrocloud/sample-react-app
-      - WORK_DIR=.
-      - OUT_DIR=dist
-      - INSTALL_CMD=npm install
-      - BUILD_CMD=npm run build
+      - REPO_URL=${REPO_URL}
+      - WORK_DIR=${WORK_DIR:-.}
+      - OUT_DIR=${OUT_DIR:-dist}
+      - INSTALL_CMD=${INSTALL_CMD:-npm install}
+      - BUILD_CMD=${BUILD_CMD:-npm run build}
     logging:
       driver: "fluentd"
       options:
         fluentd-address: host.docker.internal:24224
         tag: app.builder
         labels: build_id
-    
-  logger:
-      image: busybox
-      command: sh -c "i=1; while true; do echo \"loop log $i\"; i=$((i+1)); sleep 3; done"
-      labels:
-      - build_id=81de56d8-56aa-4989-a0da-7ecf39ccc388
-      logging:
-        driver: "fluentd"
-        options:
-          fluentd-address: host.docker.internal:24224
-          tag: app.builder
-          labels: build_id
-  #   depends_on:
-  #     - worker
-  #     - fluentd
-
-  # rabbitmq:
-  #   image: rabbitmq:4.1.5-management-alpine
-  #   ports:
-  #     - "5672:5672"
-  #     - "15672:15672"
-  #   healthcheck:
-  #     test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
-  #     interval: 5s
-  #     timeout: 10s
-  #     retries: 5
-
-  # es:
-  #   image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
-  #   environment:
-  #     - discovery.type=single-node
-  #   ports:
-  #     - "9200:9200"
