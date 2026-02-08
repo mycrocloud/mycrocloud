@@ -18,6 +18,8 @@ public interface IAppSpecificationService
     /// Get content from an API deployment manifest.
     /// </summary>
     Task<string?> GetApiDeploymentFileContentAsync(Guid? deploymentId, string path);
+
+    Task<ApiRouteMetadata?> GetRouteMetadataAsync(Guid? deploymentId, int routeId);
 }
 
 public class AppSpecificationService(
@@ -28,6 +30,7 @@ public class AppSpecificationService(
 {
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(5);
     private const string CacheKeyPrefix = "app:";
+    private const string MetaCacheKeyPrefix = "route_meta:";
 
     public async Task<AppSpecification?> GetBySlugAsync(string slug)
     {
@@ -65,5 +68,31 @@ public class AppSpecificationService(
         using var stream = await storageProvider.OpenReadAsync(file.Blob.StorageKey);
         using var reader = new StreamReader(stream);
         return await reader.ReadToEndAsync();
+    }
+
+    public async Task<ApiRouteMetadata?> GetRouteMetadataAsync(Guid? deploymentId, int routeId)
+    {
+        if (deploymentId == null) return null;
+
+        var cacheKey = $"{MetaCacheKeyPrefix}{deploymentId}:{routeId}";
+        var cached = await cache.GetStringAsync(cacheKey);
+        if (cached is not null)
+        {
+            return JsonSerializer.Deserialize<ApiRouteMetadata>(cached);
+        }
+
+        var json = await GetApiDeploymentFileContentAsync(deploymentId, $"routes/{routeId}/meta.json");
+        if (json == null) return null;
+
+        var meta = JsonSerializer.Deserialize<ApiRouteMetadata>(json);
+        if (meta != null)
+        {
+            await cache.SetStringAsync(cacheKey, json, new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1) // Long TTL for versioned metadata
+            });
+        }
+
+        return meta;
     }
 }

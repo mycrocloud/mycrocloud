@@ -76,14 +76,7 @@ public class AppSpecificationPublisher(
         Id = route.Id,
         Method = route.Method,
         Path = route.Path,
-        ResponseType = route.ResponseType,
-        ResponseStatusCode = route.ResponseStatusCode,
-        ResponseHeaders = route.ResponseHeaders ?? [],
-        RequestQuerySchema = route.RequestQuerySchema,
-        RequestHeaderSchema = route.RequestHeaderSchema,
-        RequestBodySchema = route.RequestBodySchema,
-        RequireAuthorization = route.RequireAuthorization,
-        FunctionRuntime = route.FunctionRuntime
+        ResponseType = route.ResponseType
     };
 
     private static CachedAuthenticationScheme MapToCachedAuthScheme(AuthenticationScheme scheme) => new()

@@ -34,7 +34,7 @@ public class AppSpecification
 }
 
 /// <summary>
-/// Cached route. Excludes Response (function code or static content).
+/// Cached route. Excludes Response (function code or static content) and metadata (headers, schemas).
 /// Only contains enabled and active routes.
 /// </summary>
 public class CachedRoute
@@ -43,13 +43,6 @@ public class CachedRoute
     public string Method { get; set; } = string.Empty;
     public string Path { get; set; } = string.Empty;
     public ResponseType ResponseType { get; set; }
-    public int? ResponseStatusCode { get; set; }
-    public IList<ResponseHeader> ResponseHeaders { get; set; } = [];
-    public string? RequestQuerySchema { get; set; }
-    public string? RequestHeaderSchema { get; set; }
-    public string? RequestBodySchema { get; set; }
-    public bool RequireAuthorization { get; set; }
-    public FunctionRuntime? FunctionRuntime { get; set; }
 }
 
 /// <summary>

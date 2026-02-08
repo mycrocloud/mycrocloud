@@ -1,8 +1,10 @@
 using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 using WebApp.Domain.Entities;
 using WebApp.Domain.Enums;
+using WebApp.Domain.Models;
 using WebApp.Domain.Services;
 
 namespace WebApp.Infrastructure.Services;
@@ -31,44 +33,47 @@ public class ApiDeploymentService(
 
         foreach (var route in app.Routes)
         {
-            if (string.IsNullOrEmpty(route.Response)) continue;
-
-            var content = System.Text.Encoding.UTF8.GetBytes(route.Response);
-            var contentHash = Convert.ToHexString(SHA256.HashData(content)).ToUpperInvariant();
-
-            // Handle Blob deduplication
-            var blob = await dbContext.ObjectBlobs.FirstOrDefaultAsync(b => b.ContentHash == contentHash);
-            if (blob == null)
+            // 1. Save Content (if exists)
+            if (!string.IsNullOrEmpty(route.Response))
             {
-                var storageKey = $"blobs/{contentHash.Substring(0, 2)}/{contentHash}";
-                using var ms = new MemoryStream(content);
-                await storageProvider.SaveAsync(storageKey, ms);
+                var content = System.Text.Encoding.UTF8.GetBytes(route.Response);
+                var blob = await GetOrCreateBlobAsync(content, 
+                    route.ResponseType == ResponseType.Function ? "application/javascript" : "text/plain");
 
-                blob = new ObjectBlob
+                dbContext.DeploymentFiles.Add(new DeploymentFile
                 {
                     Id = Guid.NewGuid(),
-                    ContentHash = contentHash,
+                    DeploymentId = deployment.Id,
+                    Path = $"routes/{route.Id}/content",
+                    BlobId = blob.Id,
                     SizeBytes = content.Length,
-                    StorageType = BlobStorageType.Disk,
-                    StorageKey = storageKey,
-                    ContentType = route.ResponseType == ResponseType.Function ? "application/javascript" : "text/plain"
-                };
-                dbContext.ObjectBlobs.Add(blob);
-                // Save immediately to avoid duplicate inserts if multiple routes have same code in one snapshot
-                await dbContext.SaveChangesAsync(); 
+                    ETag = blob.ContentHash
+                });
             }
 
-            // Create DeploymentFile indexed by RouteId convention
-            var deploymentFile = new DeploymentFile
+            // 2. Save Metadata (Always exists for a route)
+            var metadata = new ApiRouteMetadata
+            {
+                ResponseStatusCode = route.ResponseStatusCode,
+                ResponseHeaders = route.ResponseHeaders ?? [],
+                RequestQuerySchema = route.RequestQuerySchema,
+                RequestHeaderSchema = route.RequestHeaderSchema,
+                RequestBodySchema = route.RequestBodySchema,
+                FunctionRuntime = route.FunctionRuntime
+            };
+            
+            var metaContent = System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(metadata));
+            var metaBlob = await GetOrCreateBlobAsync(metaContent, "application/json");
+
+            dbContext.DeploymentFiles.Add(new DeploymentFile
             {
                 Id = Guid.NewGuid(),
                 DeploymentId = deployment.Id,
-                Path = $"routes/{route.Id}/content",
-                BlobId = blob.Id,
-                SizeBytes = content.Length,
-                ETag = contentHash
-            };
-            dbContext.DeploymentFiles.Add(deploymentFile);
+                Path = $"routes/{route.Id}/meta.json",
+                BlobId = metaBlob.Id,
+                SizeBytes = metaContent.Length,
+                ETag = metaBlob.ContentHash
+            });
         }
 
         // Activate the new deployment
@@ -78,5 +83,33 @@ public class ApiDeploymentService(
         logger.LogInformation("Created API Deployment snapshot {DeploymentId} for app {AppId}", deployment.Id, appId);
 
         return deployment.Id;
+    }
+
+    private async Task<ObjectBlob> GetOrCreateBlobAsync(byte[] content, string contentType)
+    {
+        var contentHash = Convert.ToHexString(SHA256.HashData(content)).ToUpperInvariant();
+
+        var blob = await dbContext.ObjectBlobs.FirstOrDefaultAsync(b => b.ContentHash == contentHash);
+        if (blob == null)
+        {
+            var storageKey = $"blobs/{contentHash.Substring(0, 2)}/{contentHash}";
+            using var ms = new MemoryStream(content);
+            await storageProvider.SaveAsync(storageKey, ms);
+
+            blob = new ObjectBlob
+            {
+                Id = Guid.NewGuid(),
+                ContentHash = contentHash,
+                SizeBytes = content.Length,
+                StorageType = BlobStorageType.Disk,
+                StorageKey = storageKey,
+                ContentType = contentType
+            };
+            dbContext.ObjectBlobs.Add(blob);
+            // Save immediately to avoid duplicate inserts if multiple routes have same code/meta in one snapshot
+            await dbContext.SaveChangesAsync();
+        }
+
+        return blob;
     }
 }
