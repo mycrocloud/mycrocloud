@@ -52,7 +52,7 @@ public class StaticFileMiddleware(RequestDelegate next, ILogger<StaticFileMiddle
             if (deploymentFile != null)
             {
                 logger.LogDebug("Serving static file from manifest: {FilePath} (Blob: {BlobKey})", filePath, deploymentFile.Blob.StorageKey);
-                await ServeFileFromStorage(context, storageProvider, deploymentFile.Blob.StorageKey, deploymentFile.ETag);
+                await ServeFileFromStorage(context, storageProvider, deploymentFile.Blob.StorageKey, filePath, deploymentFile.ETag);
                 return;
             }
             logger.LogDebug("File not found in manifest: {FilePath}", filePath);
@@ -70,7 +70,7 @@ public class StaticFileMiddleware(RequestDelegate next, ILogger<StaticFileMiddle
             if (deploymentFile != null)
             {
                 logger.LogDebug("Serving fallback file from manifest: {FallbackPath} (Blob: {BlobKey})", fallbackPath, deploymentFile.Blob.StorageKey);
-                await ServeFileFromStorage(context, storageProvider, deploymentFile.Blob.StorageKey, deploymentFile.ETag);
+                await ServeFileFromStorage(context, storageProvider, deploymentFile.Blob.StorageKey, fallbackPath, deploymentFile.ETag);
                 return;
             }
             logger.LogDebug("Fallback file not found in manifest: {FallbackPath}", fallbackPath);
@@ -80,7 +80,7 @@ public class StaticFileMiddleware(RequestDelegate next, ILogger<StaticFileMiddle
         context.Response.StatusCode = 404;
     }
 
-    private static async Task ServeFileFromStorage(HttpContext context, IStorageProvider storageProvider, string storageKey, string etag)
+    private static async Task ServeFileFromStorage(HttpContext context, IStorageProvider storageProvider, string storageKey, string fileName, string etag)
     {
         // ETag check
         var requestHeaders = context.Request.Headers;
@@ -94,7 +94,7 @@ public class StaticFileMiddleware(RequestDelegate next, ILogger<StaticFileMiddle
         context.Response.Headers[HeaderNames.CacheControl] = "public, max-age=31536000"; // Long cache since it's immutable
 
         var provider = new FileExtensionContentTypeProvider();
-        if (!provider.TryGetContentType(storageKey, out var contentType))
+        if (!provider.TryGetContentType(fileName, out var contentType))
         {
             contentType = "application/octet-stream";
         }
