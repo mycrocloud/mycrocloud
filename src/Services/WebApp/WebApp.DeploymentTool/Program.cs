@@ -7,6 +7,7 @@ using WebApp.Domain.Services;
 using WebApp.Infrastructure;
 using WebApp.Infrastructure.Services;
 using WebApp.Infrastructure.Storage;
+using Amazon.S3;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -21,9 +22,28 @@ builder.Services.AddStackExchangeRedisCache(options =>
     options.Configuration = builder.Configuration.GetConnectionString("Redis");
 });
 
-// 2. Add Storage
-var storagePath = builder.Configuration["Storage:RootPath"] ?? Path.Combine(AppContext.BaseDirectory, "data");
-builder.Services.AddSingleton<IStorageProvider>(new DiskStorageProvider(storagePath));
+// 2. Add Storage (Disk or S3/R2)
+var storageType = builder.Configuration["Storage:Type"] ?? "Disk";
+if (storageType.Equals("S3", StringComparison.OrdinalIgnoreCase))
+{
+    var s3Config = new AmazonS3Config
+    {
+        ServiceURL = builder.Configuration["Storage:S3:ServiceURL"],
+        ForcePathStyle = true
+    };
+    var s3Client = new AmazonS3Client(
+        builder.Configuration["Storage:S3:AccessKey"],
+        builder.Configuration["Storage:S3:SecretKey"],
+        s3Config);
+
+    builder.Services.AddSingleton<IAmazonS3>(s3Client);
+    builder.Services.AddSingleton<IStorageProvider>(new S3StorageProvider(s3Client, builder.Configuration["Storage:S3:BucketName"]!));
+}
+else
+{
+    var storagePath = builder.Configuration["Storage:RootPath"] ?? Path.Combine(AppContext.BaseDirectory, "data");
+    builder.Services.AddSingleton<IStorageProvider>(new DiskStorageProvider(storagePath));
+}
 
 // 3. Add Services
 builder.Services.AddScoped<IAppSpecificationPublisher, AppSpecificationPublisher>();
