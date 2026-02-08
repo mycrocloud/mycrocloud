@@ -15,7 +15,6 @@ public class CachedApp
     
     // SPA
     public Guid? SpaDeploymentId { get; init; }
-    public string? SpaExtractedPath { get; init; }
 
     public CorsSettings ApiCorsSettings { get; set; }
     public RoutingConfig RoutingConfig { get; set; }

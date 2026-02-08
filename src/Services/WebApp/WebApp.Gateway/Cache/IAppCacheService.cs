@@ -88,7 +88,7 @@ public class AppCacheService(
         Slug = app.Slug,
         OwnerId = app.OwnerId,
         State = app.State,
-        //ActiveSpaExtractedPath = app.ActiveRelease?.SpaDeployment?.ExtractedPath,
+        SpaDeploymentId = app.ActiveRelease?.SpaDeploymentId,
         ApiCorsSettings = app.CorsSettings ?? CorsSettings.Default,
         RoutingConfig = app.RoutingConfig ?? RoutingConfig.Default,
         Settings = app.Settings ?? AppSettings.Default,

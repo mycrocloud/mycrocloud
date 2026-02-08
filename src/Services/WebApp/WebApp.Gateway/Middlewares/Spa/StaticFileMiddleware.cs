@@ -2,22 +2,25 @@ using Microsoft.AspNetCore.StaticFiles;
 using WebApp.Domain.Entities;
 using WebApp.Gateway.Cache;
 using WebApp.Infrastructure;
+using WebApp.Domain.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Net.Http.Headers;
 
 namespace WebApp.Gateway.Middlewares.Spa;
 
 public class StaticFileMiddleware(RequestDelegate next, ILogger<StaticFileMiddleware> logger)
 {
-    public async Task Invoke(HttpContext context, AppDbContext appDbContext)
+    public async Task Invoke(HttpContext context, AppDbContext appDbContext, IStorageProvider storageProvider)
     {
         var app = (CachedApp)context.Items["_CachedApp"]!;
         var route = (RoutingConfigRoute)context.Items["_RoutingConfigRoute"]!;
         var requestPath = context.Request.Path.Value ?? "/";
 
-        await HandleStaticRequest(context, app, appDbContext, requestPath, route, logger);
+        await HandleStaticRequest(context, app, appDbContext, storageProvider, requestPath, route, logger);
     }
 
     private static async Task HandleStaticRequest(HttpContext context, CachedApp app, AppDbContext appDbContext,
-        string requestPath, RoutingConfigRoute route, ILogger logger)
+        IStorageProvider storageProvider, string requestPath, RoutingConfigRoute route, ILogger logger)
     {
         if (!HttpMethods.IsGet(context.Request.Method))
         {
@@ -27,48 +30,79 @@ public class StaticFileMiddleware(RequestDelegate next, ILogger<StaticFileMiddle
         }
 
         // Check if we have any deployment available
-        if (app.SpaDeploymentId is null && app.SpaExtractedPath is null)
+        if (app.SpaDeploymentId is null)
         {
-            logger.LogDebug("Static request failed: No build available for app {AppName}", app.Slug);
+            logger.LogDebug("Static request failed: No deployment available for app {AppName}", app.Slug);
             context.Response.StatusCode = 404;
-            await context.Response.WriteAsync("No build available");
+            await context.Response.WriteAsync("No deployment available");
             return;
         }
 
         var filePath = GetFilePath(requestPath, route);
         logger.LogDebug("Static request: RequestPath={RequestPath}, ResolvedFilePath={FilePath}", requestPath, filePath ?? "(null)");
 
-        if (!string.IsNullOrEmpty(app.SpaExtractedPath))
+        // 1. Try resolving file from manifest
+        if (filePath is not null)
         {
-            if (filePath is not null)
-            {
-                var diskPath = Path.Combine(app.SpaExtractedPath, filePath);
-                if (File.Exists(diskPath))
-                {
-                    logger.LogDebug("Serving static file from disk: {FilePath}", filePath);
-                    await ServeFileFromDisk(context, diskPath);
-                    return;
-                }
-                logger.LogDebug("File not found on disk: {FilePath}", filePath);
-            }
+            var deploymentFile = await appDbContext.DeploymentFiles
+                .AsNoTracking()
+                .Include(f => f.Blob)
+                .FirstOrDefaultAsync(f => f.DeploymentId == app.SpaDeploymentId && f.Path == filePath);
 
-            // Fallback for SPA (from disk)
-            if (!string.IsNullOrEmpty(route.Target.Fallback))
+            if (deploymentFile != null)
             {
-                var fallbackPath = route.Target.Fallback.TrimStart('/');
-                var diskFallbackPath = Path.Combine(app.SpaExtractedPath, fallbackPath);
-                if (File.Exists(diskFallbackPath))
-                {
-                    logger.LogDebug("Serving fallback file from disk: {FallbackPath}", fallbackPath);
-                    await ServeFileFromDisk(context, diskFallbackPath);
-                    return;
-                }
-                logger.LogDebug("Fallback file not found on disk: {FallbackPath}", fallbackPath);
+                logger.LogDebug("Serving static file from manifest: {FilePath} (Blob: {BlobKey})", filePath, deploymentFile.Blob.StorageKey);
+                await ServeFileFromStorage(context, storageProvider, deploymentFile.Blob.StorageKey, deploymentFile.ETag);
+                return;
             }
+            logger.LogDebug("File not found in manifest: {FilePath}", filePath);
+        }
+
+        // 2. Fallback for SPA (from manifest)
+        if (!string.IsNullOrEmpty(route.Target.Fallback))
+        {
+            var fallbackPath = route.Target.Fallback.TrimStart('/');
+            var deploymentFile = await appDbContext.DeploymentFiles
+                .AsNoTracking()
+                .Include(f => f.Blob)
+                .FirstOrDefaultAsync(f => f.DeploymentId == app.SpaDeploymentId && f.Path == fallbackPath);
+
+            if (deploymentFile != null)
+            {
+                logger.LogDebug("Serving fallback file from manifest: {FallbackPath} (Blob: {BlobKey})", fallbackPath, deploymentFile.Blob.StorageKey);
+                await ServeFileFromStorage(context, storageProvider, deploymentFile.Blob.StorageKey, deploymentFile.ETag);
+                return;
+            }
+            logger.LogDebug("Fallback file not found in manifest: {FallbackPath}", fallbackPath);
         }
 
         logger.LogDebug("Static request: No file found, returning 404");
         context.Response.StatusCode = 404;
+    }
+
+    private static async Task ServeFileFromStorage(HttpContext context, IStorageProvider storageProvider, string storageKey, string etag)
+    {
+        // ETag check
+        var requestHeaders = context.Request.Headers;
+        if (requestHeaders.TryGetValue(HeaderNames.IfNoneMatch, out var ifNoneMatch) && ifNoneMatch == $"\"{etag}\"")
+        {
+            context.Response.StatusCode = 304;
+            return;
+        }
+
+        context.Response.Headers[HeaderNames.ETag] = $"\"{etag}\"";
+        context.Response.Headers[HeaderNames.CacheControl] = "public, max-age=31536000"; // Long cache since it's immutable
+
+        var provider = new FileExtensionContentTypeProvider();
+        if (!provider.TryGetContentType(storageKey, out var contentType))
+        {
+            contentType = "application/octet-stream";
+        }
+
+        context.Response.ContentType = contentType;
+        
+        using var stream = await storageProvider.OpenReadAsync(storageKey);
+        await stream.CopyToAsync(context.Response.Body);
     }
 
     private static string? GetFilePath(string requestPath, RoutingConfigRoute route)
@@ -106,17 +140,6 @@ public class StaticFileMiddleware(RequestDelegate next, ILogger<StaticFileMiddle
         return requestPath;
     }
 
-    private static async Task ServeFileFromDisk(HttpContext context, string filePath)
-    {
-        var provider = new FileExtensionContentTypeProvider();
-        if (!provider.TryGetContentType(filePath, out var contentType))
-        {
-            contentType = "application/octet-stream";
-        }
-
-        context.Response.ContentType = contentType;
-        await context.Response.SendFileAsync(filePath);
-    }
 }
 
 public static class StaticFileMiddlewareExtensions

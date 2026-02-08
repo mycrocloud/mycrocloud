@@ -10,6 +10,8 @@ using WebApp.Gateway.Cache;
 using WebApp.Gateway.Middlewares;
 using WebApp.Gateway.Middlewares.Api;
 using WebApp.Gateway.Middlewares.Spa;
+using WebApp.Domain.Services;
+using WebApp.Infrastructure.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddLogging(options =>
@@ -35,6 +37,9 @@ builder.Services.AddStackExchangeRedisCache(options =>
 });
 builder.Services.AddSingleton<ICachedOpenIdConnectionSigningKeys, CachedOpenIdConnectionSigningKeys>();
 builder.Services.AddScoped<IAppCacheService, AppCacheService>();
+
+var storagePath = builder.Configuration["Storage:RootPath"] ?? Path.Combine(builder.Environment.ContentRootPath, "data");
+builder.Services.AddSingleton<IStorageProvider>(new DiskStorageProvider(storagePath));
 
 builder.Services.AddKeyedSingleton("DockerFunctionExecution", new ConcurrentJobQueue(maxConcurrency: 100));
 builder.Services.AddSingleton(_ =>
