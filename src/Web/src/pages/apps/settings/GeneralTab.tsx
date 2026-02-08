@@ -528,7 +528,7 @@ function ChangeStateSection() {
               <div>
                 <p className="font-medium">Current Status</p>
                 <Badge variant="secondary" className={statusConfig.badgeClass}>
-                  {app.status}
+                  {app.state}
                 </Badge>
               </div>
             </div>
