@@ -12,8 +12,36 @@ namespace WebApp.Infrastructure.Services;
 public class ApiDeploymentService(
     AppDbContext dbContext,
     IStorageProvider storageProvider,
+    IAppSpecificationPublisher specPublisher,
     ILogger<ApiDeploymentService> logger) : IApiDeploymentService
 {
+    public async Task<int> BootstrapLegacyAppsAsync()
+    {
+        var apps = await dbContext.Apps
+            .Where(a => a.ActiveApiDeploymentId == null)
+            .Select(a => new { a.Id, a.Slug })
+            .ToListAsync();
+
+        logger.LogInformation("Bootstrapping API deployments for {Count} legacy apps", apps.Count);
+
+        int count = 0;
+        foreach (var app in apps)
+        {
+            try
+            {
+                await CreateDeploymentSnapshotAsync(app.Id);
+                await specPublisher.PublishAsync(app.Slug);
+                count++;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to bootstrap app {AppId} ({Slug})", app.Id, app.Slug);
+            }
+        }
+
+        return count;
+    }
+
     public async Task<Guid> CreateDeploymentSnapshotAsync(int appId)
     {
         var app = await dbContext.Apps

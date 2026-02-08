@@ -7,4 +7,9 @@ public interface IApiDeploymentService
     /// Each function/static route's response will be saved as a blob.
     /// </summary>
     Task<Guid> CreateDeploymentSnapshotAsync(int appId);
+
+    /// <summary>
+    /// Creates initial snapshots for all legacy apps that don't have an active API deployment yet.
+    /// </summary>
+    Task<int> BootstrapLegacyAppsAsync();
 }
