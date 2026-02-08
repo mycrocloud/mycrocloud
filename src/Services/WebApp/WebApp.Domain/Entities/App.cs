@@ -37,7 +37,11 @@ public class App : BaseEntity
 
     public ICollection<Artifact> Artifacts { get; set; } = [];
     public ICollection<SpaDeployment> SpaDeployments { get; set; } = [];
+    public ICollection<ApiDeployment> ApiDeployments { get; set; } = [];
     public ICollection<Release> Releases { get; set; } = [];
+
+    public Guid? ActiveApiDeploymentId { get; set; }
+    public ApiDeployment? ActiveApiDeployment { get; set; }
 }
 
 public class AppLink : BaseEntity

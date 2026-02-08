@@ -29,8 +29,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<ObjectBlob> ObjectBlobs { get; set; }
 
     public DbSet<DeploymentFile> DeploymentFiles { get; set; }
-
+    
+    public DbSet<Deployment> Deployments { get; set; }
     public DbSet<SpaDeployment> SpaDeployments { get; set; }
+    public DbSet<ApiDeployment> ApiDeployments { get; set; }
 
     public DbSet<Release> Releases { get; set; }
 
@@ -223,13 +225,23 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<SpaDeployment>(entity =>
+        modelBuilder.Entity<Deployment>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.AppId, e.Status });
+            
+            entity.HasDiscriminator<string>("DeploymentType")
+                .HasValue<SpaDeployment>("SPA")
+                .HasValue<ApiDeployment>("API");
+        });
+
+        modelBuilder.Entity<SpaDeployment>(entity =>
+        {
             entity.HasOne(e => e.App)
                 .WithMany(a => a.SpaDeployments)
                 .HasForeignKey(e => e.AppId)
                 .OnDelete(DeleteBehavior.Cascade);
+
             entity.HasOne(e => e.Build)
                 .WithMany()
                 .HasForeignKey(e => e.BuildId)
@@ -238,7 +250,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithMany(a => a.Deployments)
                 .HasForeignKey(e => e.ArtifactId)
                 .OnDelete(DeleteBehavior.Restrict);
-            entity.HasIndex(e => new { e.AppId, e.Status });
+        });
+
+        modelBuilder.Entity<ApiDeployment>(entity =>
+        {
+            entity.HasOne(e => e.App)
+                .WithMany(a => a.ApiDeployments)
+                .HasForeignKey(e => e.AppId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Release>(entity =>
@@ -259,6 +278,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasOne(a => a.ActiveRelease)
             .WithMany()
             .HasForeignKey(a => a.ActiveReleaseId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<App>()
+            .HasOne(a => a.ActiveApiDeployment)
+            .WithMany()
+            .HasForeignKey(a => a.ActiveApiDeploymentId)
             .OnDelete(DeleteBehavior.SetNull);
     }
 

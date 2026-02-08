@@ -9,7 +9,7 @@ public class DeploymentFile : BaseEntity
     public Guid Id { get; set; }
     
     public Guid DeploymentId { get; set; }
-    public SpaDeployment Deployment { get; set; } = null!;
+    public Deployment Deployment { get; set; } = null!;
     
     /// <summary>
     /// File path within deployment (e.g., "index.html", "assets/app.js")

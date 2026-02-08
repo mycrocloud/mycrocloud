@@ -5,6 +5,7 @@ using WebApp.Domain.Entities;
 using WebApp.Domain.Enums;
 using WebApp.Infrastructure;
 using WebApp.Domain.Models;
+using WebApp.Domain.Services;
 
 namespace WebApp.Gateway.Cache;
 
@@ -14,14 +15,15 @@ public interface IAppSpecificationService
     Task InvalidateAsync(string slug);
 
     /// <summary>
-    /// Get function code for a route. Not cached - loaded directly from DB.
+    /// Get content from an API deployment manifest.
     /// </summary>
-    Task<string?> GetRouteResponseAsync(int routeId);
+    Task<string?> GetApiDeploymentFileContentAsync(Guid? deploymentId, string path);
 }
 
 public class AppSpecificationService(
     IDistributedCache cache,
     AppDbContext dbContext,
+    IStorageProvider storageProvider,
     ILogger<AppSpecificationService> logger) : IAppSpecificationService
 {
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(5);
@@ -49,14 +51,19 @@ public class AppSpecificationService(
         logger.LogInformation("Invalidated spec for app: {Slug}", slug);
     }
 
-    public async Task<string?> GetRouteResponseAsync(int routeId)
+    public async Task<string?> GetApiDeploymentFileContentAsync(Guid? deploymentId, string path)
     {
-        var route = await dbContext.Routes
-            .AsNoTracking()
-            .Where(r => r.Id == routeId)
-            .Select(r => r.Response)
-            .SingleOrDefaultAsync();
+        if (deploymentId == null) return null;
 
-        return route;
+        var file = await dbContext.DeploymentFiles
+            .AsNoTracking()
+            .Include(f => f.Blob)
+            .FirstOrDefaultAsync(f => f.DeploymentId == deploymentId && f.Path == path);
+
+        if (file == null) return null;
+
+        using var stream = await storageProvider.OpenReadAsync(file.Blob.StorageKey);
+        using var reader = new StreamReader(stream);
+        return await reader.ReadToEndAsync();
     }
 }

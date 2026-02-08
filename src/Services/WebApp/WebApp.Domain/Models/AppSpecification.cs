@@ -16,6 +16,9 @@ public class AppSpecification
     
     // SPA
     public Guid? SpaDeploymentId { get; init; }
+    
+    // API
+    public Guid? ApiDeploymentId { get; init; }
 
     public CorsSettings ApiCorsSettings { get; set; }
     public RoutingConfig RoutingConfig { get; set; }

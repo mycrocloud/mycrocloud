@@ -9,18 +9,11 @@ public enum DeploymentStatus
     Archived = 5
 }
 
-public class SpaDeployment : BaseEntity
+public class SpaDeployment : Deployment
 {
-    public Guid Id { get; set; }
-    public int AppId { get; set; }
-    public App App { get; set; } = null!;
     public Guid? BuildId { get; set; }
     public AppBuild? Build { get; set; }
     public Guid ArtifactId { get; set; }
     public Artifact Artifact { get; set; } = null!;
-    public DeploymentStatus Status { get; set; }
-    
-    // Navigation
-    public ICollection<DeploymentFile> Files { get; set; } = [];
 }
 
