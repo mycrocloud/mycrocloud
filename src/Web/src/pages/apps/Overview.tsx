@@ -175,7 +175,7 @@ export default function AppOverview() {
             <CardTitle className="text-sm font-medium">Status</CardTitle>
             <Activity className={cn(
               "h-4 w-4",
-              app.status === "Active" ? "text-green-500" : "text-muted-foreground"
+              app.state === "Active" ? "text-green-500" : "text-muted-foreground"
             )} />
           </CardHeader>
           <CardContent>
@@ -183,16 +183,16 @@ export default function AppOverview() {
               <Badge
                 variant="secondary"
                 className={cn(
-                  app.status === "Active"
+                  app.state === "Active"
                     ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                     : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
                 )}
               >
-                {app.status}
+                {app.state}
               </Badge>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              {app.status === "Active" ? "Running normally" : "Currently stopped"}
+              {app.state === "Active" ? "Running normally" : "Currently stopped"}
             </p>
           </CardContent>
         </Card>

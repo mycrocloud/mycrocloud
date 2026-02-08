@@ -466,7 +466,7 @@ function ChangeStateSection() {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       if (res.ok) {
-        setApp({ ...app, status: newStatus });
+        setApp({ ...app, state: newStatus });
         toast.success(
           newStatus === "Active"
             ? "App activated successfully"
@@ -483,7 +483,7 @@ function ChangeStateSection() {
     }
   };
 
-  const isActive = app.status === "Active";
+  const isActive = app.state === "Active";
   const statusConfig = isActive
     ? {
         icon: Power,

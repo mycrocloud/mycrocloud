@@ -122,10 +122,10 @@ export default function List() {
                         {app.name}
                       </h3>
                       <Badge
-                        variant={app.status === "Active" ? "default" : "destructive"}
+                        variant={app.state === "Active" ? "default" : "destructive"}
                         className="text-xs"
                       >
-                        {app.status}
+                        {app.state}
                       </Badge>
                     </div>
                     {app.description ? (

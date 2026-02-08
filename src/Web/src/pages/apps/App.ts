@@ -4,7 +4,7 @@ export default interface IApp {
   description?: string;
   createdAt: string;
   updatedAt?: string;
-  status: string;
+  state: string;
   version: string;
   domain: string;
 }
