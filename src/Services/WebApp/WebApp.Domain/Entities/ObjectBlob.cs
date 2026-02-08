@@ -2,9 +2,8 @@ namespace WebApp.Domain.Entities;
 
 public enum BlobStorageType
 {
-    Database = 1,
-    S3 = 2,
-    Disk = 3
+    S3 = 1,
+    Disk = 2
 }
 
 /// <summary>
@@ -26,14 +25,9 @@ public class ObjectBlob : BaseEntity
     public BlobStorageType StorageType { get; set; }
     
     /// <summary>
-    /// S3 key or disk path (when StorageType != Database)
+    /// S3 key or disk path
     /// </summary>
-    public string? StorageKey { get; set; }
-    
-    /// <summary>
-    /// Blob data (only when StorageType == Database)
-    /// </summary>
-    public byte[]? BlobData { get; set; }
+    public string StorageKey { get; set; } = string.Empty;
     
     // Navigation
     public ICollection<DeploymentFile> DeploymentFiles { get; set; } = [];
