@@ -8,18 +8,25 @@ namespace WebApp.Gateway.Cache;
 /// </summary>
 public class CachedApp
 {
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string UserId { get; set; } = string.Empty;
-    public AppStatus Status { get; set; }
-    public Guid? LatestBuildId { get; set; }
+    public int Id { get; init; }
+    public required string Slug { get; set; }
+    public required string OwnerId { get; set; }
+    public AppState State { get; set; }
+    
+    // SPA
+    public Guid? SpaDeploymentId { get; init; }
+    public string? SpaExtractedPath { get; init; }
 
-    public CorsSettings CorsSettings { get; set; } = CorsSettings.Default;
-    public RoutingConfig RoutingConfig { get; set; } = RoutingConfig.Default;
-    public AppSettings Settings { get; set; } = AppSettings.Default;
+    public CorsSettings ApiCorsSettings { get; set; }
+    public RoutingConfig RoutingConfig { get; set; }
+    public AppSettings Settings { get; set; }
 
     public List<CachedRoute> Routes { get; set; } = [];
     public List<CachedAuthenticationScheme> AuthenticationSchemes { get; set; } = [];
+    
+    /// <summary>
+    /// Runtime variables for functions.
+    /// </summary>
     public List<CachedVariable> Variables { get; set; } = [];
 }
 

@@ -5,7 +5,7 @@ using WebApp.Domain.Enums;
 using WebApp.Gateway.Cache;
 using WebApp.Infrastructure;
 
-namespace WebApp.Gateway.Middlewares;
+namespace WebApp.Gateway.Middlewares.Api;
 
 public class AuthenticationMiddleware(RequestDelegate next, ILogger<AuthenticationMiddleware> logger)
 {

@@ -8,6 +8,8 @@ using WebApp.Infrastructure.Repositories;
 using WebApp.Gateway;
 using WebApp.Gateway.Cache;
 using WebApp.Gateway.Middlewares;
+using WebApp.Gateway.Middlewares.Api;
+using WebApp.Gateway.Middlewares.Spa;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddLogging(options =>
@@ -46,6 +48,11 @@ builder.Services.AddSingleton(_ =>
 // Function executors - add new IFunctionExecutor implementations here
 builder.Services.AddScoped<IFunctionExecutor, DockerFunctionExecutor>();
 builder.Services.AddScoped<FunctionExecutorFactory>();
+
+// Response handlers - add new IResponseHandler implementations here
+builder.Services.AddScoped<IResponseHandler, StaticResponseHandler>();
+builder.Services.AddScoped<IResponseHandler, FunctionResponseHandler>();
+
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
@@ -70,7 +77,6 @@ if (!app.Environment.IsDevelopment())
     
     app.UseForwardedHeaders(options);
 }
-app.UseRouting();
 app.UseHttpLogging();
 app.UseWhen(context => context.Request.Host.Host == builder.Configuration["Host"], config =>
 {
@@ -84,25 +90,21 @@ app.UseLoggingMiddleware();
 
 app.UseAppResolverMiddleware();
 
-app.UseCorsMiddleware();
-
 app.UseRoutingMiddleware();
 
-app.UseRouteResolverMiddleware();
+app.UseWhen(context => 
+{
+    var route = context.Items["_RoutingConfigRoute"] as RoutingConfigRoute;
+    return route?.Target.Type == RouteTargetType.Static;
+}, appBuilder => appBuilder.UseSpaStaticFileMiddleware());
 
-app.UseAuthenticationMiddleware();
-
-app.UseAuthorizationMiddleware();
-
-app.UseValidationMiddleware();
-
-app.UseWhen(context => ((CachedRoute)context.Items["_CachedRoute"]!).ResponseType == ResponseType.Static,
-    appBuilder => appBuilder.UseStaticResponseMiddleware());
-
-// app.UseWhen(context => ((CachedRoute)context.Items["_CachedRoute"]!).ResponseType == ResponseType.StaticFile,
-//     appBuilder => appBuilder.UseStaticFilesMiddleware());
-
-app.UseWhen(context => ((CachedRoute)context.Items["_CachedRoute"]!).ResponseType == ResponseType.Function,
-    appBuilder => appBuilder.UseFunctionInvokerMiddleware());
+app.UseWhen(context => 
+{
+    var route = context.Items["_RoutingConfigRoute"] as RoutingConfigRoute;
+    return route?.Target.Type == RouteTargetType.Api;
+}, appBuilder =>
+{
+    appBuilder.UseApiMiddleware();
+});
 
 app.Run();

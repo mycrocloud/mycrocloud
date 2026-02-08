@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Cors.Infrastructure;
 using WebApp.Gateway.Cache;
 
-namespace WebApp.Gateway.Middlewares;
+namespace WebApp.Gateway.Middlewares.Api;
 
 public class CorsMiddleware(RequestDelegate next)
 {
@@ -12,21 +12,21 @@ public class CorsMiddleware(RequestDelegate next)
         if (context.Request.IsPreflightRequest())
         {
             context.Response.Headers.Append(CorsConstants.AccessControlAllowOrigin,
-                            string.Join(", ", app.CorsSettings.AllowedOrigins ?? []));
+                            string.Join(", ", app.ApiCorsSettings.AllowedOrigins ?? []));
             context.Response.Headers.Append(CorsConstants.AccessControlAllowMethods,
-                            string.Join(", ", app.CorsSettings.AllowedMethods ?? []));
+                            string.Join(", ", app.ApiCorsSettings.AllowedMethods ?? []));
             context.Response.Headers.Append(CorsConstants.AccessControlAllowHeaders,
-                             string.Join(", ", app.CorsSettings.AllowedHeaders ?? []));
+                             string.Join(", ", app.ApiCorsSettings.AllowedHeaders ?? []));
 
-            if (app.CorsSettings.ExposeHeaders != null)
+            if (app.ApiCorsSettings.ExposeHeaders != null)
             {
                 context.Response.Headers.Append(CorsConstants.AccessControlExposeHeaders,
-                            string.Join(", ", app.CorsSettings.ExposeHeaders));
+                            string.Join(", ", app.ApiCorsSettings.ExposeHeaders));
             }
-            if (app.CorsSettings.MaxAgeSeconds != null)
+            if (app.ApiCorsSettings.MaxAgeSeconds != null)
             {
                 context.Response.Headers.Append(CorsConstants.AccessControlMaxAge,
-                            app.CorsSettings.MaxAgeSeconds.ToString());
+                            app.ApiCorsSettings.MaxAgeSeconds.ToString());
             }
 
             context.Response.StatusCode = StatusCodes.Status204NoContent;

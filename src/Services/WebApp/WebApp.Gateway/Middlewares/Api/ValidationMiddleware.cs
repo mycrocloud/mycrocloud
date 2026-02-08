@@ -3,7 +3,7 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Schema;
 using WebApp.Gateway.Cache;
 
-namespace WebApp.Gateway.Middlewares;
+namespace WebApp.Gateway.Middlewares.Api;
 
 public class ValidationMiddleware(RequestDelegate next)
 {

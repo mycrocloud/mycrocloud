@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Routing.Template;
-using WebApp.Domain.Enums;
 using WebApp.Gateway.Cache;
 
-namespace WebApp.Gateway.Middlewares;
+namespace WebApp.Gateway.Middlewares.Api;
 
 public class RouteResolverMiddleware(RequestDelegate next)
 {

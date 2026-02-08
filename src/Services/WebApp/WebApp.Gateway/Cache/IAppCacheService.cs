@@ -44,7 +44,9 @@ public class AppCacheService(
             .Include(a => a.Routes.Where(r => r.Enabled && r.Status == RouteStatus.Active))
             .Include(a => a.AuthenticationSchemes.Where(s => s.Enabled))
             .Include(a => a.Variables.Where(v => v.Target == VariableTarget.Runtime || v.Target == VariableTarget.All))
-            .SingleOrDefaultAsync(a => a.Name == appName);
+            .Include(a => a.ActiveRelease)
+                .ThenInclude(r => r!.SpaDeployment)
+            .SingleOrDefaultAsync(a => a.Slug == appName);
 
         if (app is null)
             return null;
@@ -83,11 +85,11 @@ public class AppCacheService(
     private static CachedApp MapToCachedApp(App app) => new()
     {
         Id = app.Id,
-        Name = app.Name,
-        UserId = app.UserId,
-        Status = app.Status,
-        LatestBuildId = app.LatestBuildId,
-        CorsSettings = app.CorsSettings ?? CorsSettings.Default,
+        Slug = app.Slug,
+        OwnerId = app.OwnerId,
+        State = app.State,
+        //ActiveSpaExtractedPath = app.ActiveRelease?.SpaDeployment?.ExtractedPath,
+        ApiCorsSettings = app.CorsSettings ?? CorsSettings.Default,
         RoutingConfig = app.RoutingConfig ?? RoutingConfig.Default,
         Settings = app.Settings ?? AppSettings.Default,
         Routes = app.Routes.Select(MapToCachedRoute).ToList(),

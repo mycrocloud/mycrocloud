@@ -1,6 +1,6 @@
 using WebApp.Gateway.Cache;
 
-namespace WebApp.Gateway.Middlewares;
+namespace WebApp.Gateway.Middlewares.Api;
 
 public class AuthorizationMiddleware(RequestDelegate next)
 {

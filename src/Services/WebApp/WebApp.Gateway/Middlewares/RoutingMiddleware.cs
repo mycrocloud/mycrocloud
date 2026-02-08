@@ -1,6 +1,4 @@
 using System.Text.RegularExpressions;
-using Microsoft.AspNetCore.StaticFiles;
-using Microsoft.EntityFrameworkCore;
 using WebApp.Domain.Entities;
 using WebApp.Gateway.Cache;
 using WebApp.Infrastructure;
@@ -18,7 +16,7 @@ public class RoutingMiddleware(RequestDelegate next, ILogger<RoutingMiddleware> 
         var requestPath = context.Request.Path.Value ?? "/";
 
         logger.LogDebug("Routing request: Path={Path}, App={AppName}, UsingCustomConfig={IsCustom}, RouteCount={RouteCount}",
-            requestPath, app.Name, isCustomConfig, config!.Routes.Count);
+            requestPath, app.Slug, isCustomConfig, config!.Routes.Count);
 
         // Find matching route by priority (lower priority number = higher precedence)
         var matchedRoute = config.Routes
@@ -53,7 +51,8 @@ public class RoutingMiddleware(RequestDelegate next, ILogger<RoutingMiddleware> 
                 break;
 
             case RouteTargetType.Static:
-                await HandleStaticRequest(context, app, appDbContext, requestPath, matchedRoute, logger);
+                // Continue to StaticFileMiddleware
+                await next(context);
                 break;
 
             default:
@@ -85,102 +84,7 @@ public class RoutingMiddleware(RequestDelegate next, ILogger<RoutingMiddleware> 
         return requestPath;
     }
 
-    private static async Task HandleStaticRequest(HttpContext context, CachedApp app, AppDbContext appDbContext,
-        string requestPath, RoutingConfigRoute route, ILogger logger)
-    {
-        if (!HttpMethods.IsGet(context.Request.Method))
-        {
-            logger.LogDebug("Static request rejected: Method {Method} not allowed", context.Request.Method);
-            context.Response.StatusCode = 405;
-            return;
-        }
 
-        if (app.LatestBuildId is null)
-        {
-            logger.LogDebug("Static request failed: No build available for app {AppName}", app.Name);
-            context.Response.StatusCode = 404;
-            await context.Response.WriteAsync("No build available");
-            return;
-        }
-
-        var filePath = GetFilePath(requestPath, route);
-        logger.LogDebug("Static request: RequestPath={RequestPath}, ResolvedFilePath={FilePath}", requestPath, filePath ?? "(null)");
-
-        if (filePath is not null)
-        {
-            var file = await FindBuildArtifact(appDbContext, app.LatestBuildId.Value, filePath);
-            if (file is not null)
-            {
-                logger.LogDebug("Serving static file: {FilePath}", filePath);
-                await ServeFile(context, file);
-                return;
-            }
-            logger.LogDebug("File not found: {FilePath}", filePath);
-        }
-
-        // Fallback (for SPA client-side routing, or root path "/")
-        if (!string.IsNullOrEmpty(route.Target.Fallback))
-        {
-            var fallbackPath = route.Target.Fallback.TrimStart('/');
-            logger.LogDebug("Trying fallback: {FallbackPath}", fallbackPath);
-            var fallbackFile = await FindBuildArtifact(appDbContext, app.LatestBuildId.Value, fallbackPath);
-
-            if (fallbackFile is not null)
-            {
-                logger.LogDebug("Serving fallback file: {FallbackPath}", fallbackPath);
-                await ServeFile(context, fallbackFile);
-                return;
-            }
-            logger.LogDebug("Fallback file not found: {FallbackPath}", fallbackPath);
-        }
-
-        logger.LogDebug("Static request: No file found, returning 404");
-        context.Response.StatusCode = 404;
-    }
-
-    private static string? GetFilePath(string requestPath, RoutingConfigRoute route)
-    {
-        var filePath = requestPath;
-
-        // Apply strip prefix if configured
-        if (route.Target.StripPrefix == true)
-        {
-            filePath = StripPrefix(filePath, route.Match.Path);
-        }
-
-        // Apply rewrite if configured
-        if (!string.IsNullOrEmpty(route.Target.Rewrite))
-        {
-            filePath = route.Target.Rewrite;
-        }
-
-        // No file path (root request) - let fallback handle it
-        if (string.IsNullOrEmpty(filePath) || filePath == "/")
-        {
-            return null;
-        }
-
-        return filePath.TrimStart('/');
-    }
-
-    private static async Task<AppBuildArtifact?> FindBuildArtifact(AppDbContext appDbContext, Guid buildId, string path)
-    {
-        return await appDbContext.AppBuildArtifacts
-            .SingleOrDefaultAsync(f => f.BuildId == buildId && f.Path == path);
-    }
-
-    private static async Task ServeFile(HttpContext context, AppBuildArtifact file)
-    {
-        var provider = new FileExtensionContentTypeProvider();
-        if (!provider.TryGetContentType(file.Path, out var contentType))
-        {
-            contentType = "application/octet-stream";
-        }
-
-        context.Response.ContentType = contentType;
-        await context.Response.Body.WriteAsync(file.Content);
-        await context.Response.CompleteAsync();
-    }
 }
 
 public static class RoutingMiddlewareExtensions
