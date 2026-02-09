@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'src/Services/WebApp/WebApp.Domain/**'
+      - 'src/Services/WebApp/Api.Domain/**'
       - 'src/Services/WebApp/WebApp.Infrastructure/**'
       - 'src/Services/WebApp/WebApp.FunctionShared/**'
       - 'src/Services/WebApp/WebApp.FunctionInvoker/**'
