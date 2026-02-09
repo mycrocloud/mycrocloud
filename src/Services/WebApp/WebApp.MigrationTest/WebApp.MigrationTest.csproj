@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\WebApp.Migrations\WebApp.Migrations.csproj" />
+    <ProjectReference Include="..\Api.Migrations\Api.Migrations.csproj" />
   </ItemGroup>
 
 </Project>

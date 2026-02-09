@@ -4,7 +4,7 @@ services:
     environment:
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
     volumes:
-      - ./Services/WebApp/WebApp.Migrations/appsettings.json:/db-migrator/appsettings.json:ro
+      - ./Services/WebApp/Api.Migrations/appsettings.json:/db-migrator/appsettings.json:ro
 
   web:
     image: ghcr.io/mycrocloud/mycrocloud-web:main

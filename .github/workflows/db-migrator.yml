@@ -7,7 +7,7 @@ on:
     paths:
       - "src/Services/WebApp/Api.Domain/**"
       - "src/Services/WebApp/Api.Infrastructure/**"
-      - "src/Services/WebApp/WebApp.Migrations/**"
+      - "src/Services/WebApp/Api.Migrations/**"
 
   workflow_dispatch:
 
@@ -75,7 +75,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ${{ env.WORK_DIR }}
-          file: ${{ env.WORK_DIR }}/WebApp.Migrations/Dockerfile
+          file: ${{ env.WORK_DIR }}/Api.Migrations/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
 

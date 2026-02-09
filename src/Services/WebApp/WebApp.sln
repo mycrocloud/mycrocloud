@@ -12,7 +12,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api", "Api\Api.csproj", "{2
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp.UnitTest", "WebApp.UnitTest\WebApp.UnitTest.csproj", "{F2E289E2-3BAD-4B93-826C-3BD86F1953F0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp.Migrations", "WebApp.Migrations\WebApp.Migrations.csproj", "{85CBCC4B-8565-4E1E-82C8-FC70EB405953}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api.Migrations", "Api.Migrations\Api.Migrations.csproj", "{85CBCC4B-8565-4E1E-82C8-FC70EB405953}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp.MigrationTest", "WebApp.MigrationTest\WebApp.MigrationTest.csproj", "{D2805EAC-CB49-4294-BC60-5B2510F7AFBA}"
 EndProject

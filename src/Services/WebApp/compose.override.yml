@@ -22,7 +22,7 @@ services:
   db-migrator:
     image: mycrocloud-db-migrator
     build:
-      dockerfile: WebApp.Migrations/Dockerfile
+      dockerfile: Api.Migrations/Dockerfile
     depends_on:
       - db
 

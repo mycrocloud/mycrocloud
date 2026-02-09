@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Api.Infrastructure;
-using WebApp.Migrations;
+using Api.Migrations;
 
 namespace WebApp.MigrationTest;
 
