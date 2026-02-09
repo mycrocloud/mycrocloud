@@ -1,21 +1,10 @@
 import { useApiClient } from "@/hooks";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { AppContext } from ".";
-import { useAuth0 } from "@auth0/auth0-react";
-import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -32,47 +21,44 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Play,
   CheckCircle2,
   XCircle,
   Clock,
   Loader2,
+  Rocket,
   ChevronRight,
   ChevronLeft,
-  Timer,
   Search,
   Filter,
-  Rocket,
+  Archive,
   GitBranch,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface IBuild {
+interface IDeployment {
   id: string;
-  name: string;
   status: string;
+  buildId: string | null;
+  buildName: string | null;
   createdAt: string;
-  finishedAt: string;
+  artifactSize: number;
 }
 
-type BuildInputs = {
-  name?: string;
-};
-
-type StatusFilter = "all" | "pending" | "running" | "success" | "failed";
+type StatusFilter = "all" | "pending" | "extracting" | "ready" | "failed" | "archived";
 
 const ITEMS_PER_PAGE = 10;
 
 const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "All Status" },
   { value: "pending", label: "Pending" },
-  { value: "running", label: "Running" },
-  { value: "success", label: "Success" },
+  { value: "extracting", label: "Extracting" },
+  { value: "ready", label: "Ready" },
   { value: "failed", label: "Failed" },
+  { value: "archived", label: "Archived" },
 ];
 
 function getStatusConfig(status: string) {
-  switch (status) {
+  switch (status.toLowerCase()) {
     case "pending":
       return {
         label: "Pending",
@@ -80,18 +66,17 @@ function getStatusConfig(status: string) {
         className:
           "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
       };
-    case "running":
+    case "extracting":
       return {
-        label: "Running",
+        label: "Extracting",
         icon: Loader2,
         className:
           "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
         iconClassName: "animate-spin",
       };
-    case "success":
-    case "done":
+    case "ready":
       return {
-        label: "Success",
+        label: "Ready",
         icon: CheckCircle2,
         className:
           "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
@@ -102,6 +87,13 @@ function getStatusConfig(status: string) {
         icon: XCircle,
         className:
           "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+      };
+    case "archived":
+      return {
+        label: "Archived",
+        icon: Archive,
+        className:
+          "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400",
       };
     default:
       return {
@@ -135,131 +127,92 @@ function formatTimestamp(timestamp: string): string {
   });
 }
 
-function formatDuration(start: string, end: string): string {
-  if (!start) return "-";
-  const endTime = end ? new Date(end).getTime() : Date.now();
-  const diff = endTime - new Date(start).getTime();
-  const seconds = Math.floor(diff / 1000);
-  const minutes = Math.floor(seconds / 60);
-
-  if (minutes === 0) return `${seconds}s`;
-  return `${minutes}m ${seconds % 60}s`;
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
 }
 
-export default function Builds() {
+export default function Deployments() {
   const { app } = useContext(AppContext)!;
   if (!app) throw new Error();
 
-  const { get, post } = useApiClient();
-  const { getAccessTokenSilently } = useAuth0();
+  const { get } = useApiClient();
   const navigate = useNavigate();
 
-  const [builds, setBuilds] = useState<IBuild[]>([]);
+  const [deployments, setDeployments] = useState<IDeployment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showBuildModal, setShowBuildModal] = useState(false);
 
   // Filter & Pagination state
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [currentPage, setCurrentPage] = useState(1);
 
-  const fetchBuilds = useCallback(async () => {
-    const data = await get<IBuild[]>(`/api/apps/${app.id}/builds`);
-    setBuilds(data);
+  const fetchDeployments = useCallback(async () => {
+    const data = await get<IDeployment[]>(`/api/apps/${app.id}/deployments`);
+    setDeployments(data);
     setIsLoading(false);
   }, [app.id, get]);
 
-  // SSE subscription
+  // Initial fetch
+  useEffect(() => {
+    fetchDeployments();
+  }, [fetchDeployments]);
+
+  // SSE subscription for real-time updates
   useEffect(() => {
     let isMounted = true;
-    const evtRef = { current: null as EventSource | null };
+    let intervalId: NodeJS.Timeout;
 
-    (async () => {
-      const accessToken = await getAccessTokenSilently();
-      if (!isMounted) return;
-
-      const evtSource = new EventSource(
-        `/api/apps/${app.id}/builds/stream?access_token=${accessToken}`
-      );
-      evtRef.current = evtSource;
-
-      fetchBuilds();
-
-      evtSource.onmessage = () => {
-        if (!isMounted) return;
-        fetchBuilds();
-      };
-
-      evtSource.onerror = (error) => {
-        console.error("SSE error:", error);
-      };
-    })();
+    // Poll for updates every 5 seconds
+    intervalId = setInterval(() => {
+      if (isMounted) {
+        fetchDeployments();
+      }
+    }, 5000);
 
     return () => {
       isMounted = false;
-
-      if (evtRef.current) {
-        evtRef.current.close();
-        evtRef.current = null;
-      }
+      clearInterval(intervalId);
     };
-  }, [app.id, fetchBuilds, getAccessTokenSilently]);
+  }, [fetchDeployments]);
 
-  // Filter builds
-  const filteredBuilds = useMemo(() => {
-    return builds.filter((build) => {
+  // Filter deployments
+  const filteredDeployments = useMemo(() => {
+    return deployments.filter((deployment) => {
       // Status filter
       if (statusFilter !== "all") {
-        const normalizedStatus = build.status === "done" ? "success" : build.status;
+        const normalizedStatus = deployment.status.toLowerCase();
         if (normalizedStatus !== statusFilter) return false;
       }
 
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        const name = (build.name || build.id).toLowerCase();
-        if (!name.includes(query) && !build.id.toLowerCase().includes(query)) {
+        const buildName = (deployment.buildName || "").toLowerCase();
+        const id = deployment.id.toLowerCase();
+        if (!buildName.includes(query) && !id.includes(query)) {
           return false;
         }
       }
 
       return true;
     });
-  }, [builds, statusFilter, searchQuery]);
+  }, [deployments, statusFilter, searchQuery]);
 
   // Pagination
-  const totalPages = Math.ceil(filteredBuilds.length / ITEMS_PER_PAGE);
-  const paginatedBuilds = useMemo(() => {
+  const totalPages = Math.ceil(filteredDeployments.length / ITEMS_PER_PAGE);
+  const paginatedDeployments = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredBuilds.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredBuilds, currentPage]);
+    return filteredDeployments.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredDeployments, currentPage]);
 
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter, searchQuery]);
-
-  const {
-    register,
-    formState: { errors },
-    handleSubmit,
-    reset,
-  } = useForm<BuildInputs>();
-
-  const onSubmit = async (inputs: BuildInputs) => {
-    try {
-      await post(`/api/apps/${app.id}/builds/build`, inputs);
-      setShowBuildModal(false);
-    } catch {
-      alert("Something went wrong...");
-    }
-  };
-
-  useEffect(() => {
-    if (showBuildModal) {
-      reset();
-    }
-  }, [showBuildModal, reset]);
 
   const hasFilters = statusFilter !== "all" || searchQuery !== "";
 
@@ -268,28 +221,22 @@ export default function Builds() {
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <GitBranch className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-lg font-semibold">Builds</h2>
+          <Rocket className="h-5 w-5 text-muted-foreground" />
+          <h2 className="text-lg font-semibold">Deployments</h2>
           {!isLoading && (
             <Badge variant="secondary" className="ml-2">
-              {builds.length}
+              {deployments.length}
             </Badge>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate("../deployments")}
-          >
-            <Rocket className="mr-2 h-4 w-4" />
-            View Deployments
-          </Button>
-          <Button onClick={() => setShowBuildModal(true)} size="sm">
-            <Play className="mr-2 h-4 w-4" />
-            New Build
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate("../builds")}
+        >
+          <GitBranch className="mr-2 h-4 w-4" />
+          View Builds
+        </Button>
       </div>
 
       {/* Filters */}
@@ -297,7 +244,7 @@ export default function Builds() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search builds..."
+            placeholder="Search deployments..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="h-9 pl-8"
@@ -333,21 +280,21 @@ export default function Builds() {
         )}
       </div>
 
-      {/* Builds Table */}
+      {/* Deployments Table */}
       <div className="flex-1 overflow-hidden rounded-lg border">
         {isLoading ? (
           <div className="flex h-full items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
-        ) : paginatedBuilds.length === 0 ? (
+        ) : paginatedDeployments.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center py-12 text-center">
-            <GitBranch className="h-12 w-12 text-muted-foreground/50" />
+            <Rocket className="h-12 w-12 text-muted-foreground/50" />
             <p className="mt-4 text-sm text-muted-foreground">
-              {hasFilters ? "No builds match filters" : "No builds yet"}
+              {hasFilters ? "No deployments match filters" : "No deployments yet"}
             </p>
             {!hasFilters && (
               <p className="mt-1 text-xs text-muted-foreground">
-                Click "New Build" to start your first build
+                Create a build to generate deployments
               </p>
             )}
           </div>
@@ -355,33 +302,50 @@ export default function Builds() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[300px]">Build</TableHead>
+                <TableHead className="w-[250px]">Deployment</TableHead>
+                <TableHead className="w-[200px]">Build</TableHead>
                 <TableHead className="w-[120px]">Status</TableHead>
-                <TableHead className="w-[120px]">Duration</TableHead>
-                <TableHead>Started</TableHead>
+                <TableHead className="w-[100px]">Size</TableHead>
+                <TableHead>Created</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedBuilds.map((build) => {
-                const statusConfig = getStatusConfig(build.status);
+              {paginatedDeployments.map((deployment) => {
+                const statusConfig = getStatusConfig(deployment.status);
                 const StatusIcon = statusConfig.icon;
 
                 return (
                   <TableRow
-                    key={build.id}
+                    key={deployment.id}
                     className="cursor-pointer"
-                    onClick={() => navigate(build.id)}
+                    onClick={() => navigate(deployment.id)}
                   >
                     <TableCell>
                       <div>
-                        <p className="font-medium">
-                          {build.name || `Build ${build.id.slice(0, 8)}`}
+                        <p className="font-medium font-mono text-sm">
+                          {deployment.id.slice(0, 12)}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {build.id.slice(0, 8)}
+                          ID: {deployment.id.slice(0, 8)}
                         </p>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {deployment.buildName ? (
+                        <div>
+                          <p className="font-medium text-sm">
+                            {deployment.buildName}
+                          </p>
+                          {deployment.buildId && (
+                            <p className="text-xs text-muted-foreground">
+                              {deployment.buildId.slice(0, 8)}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">-</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -398,14 +362,13 @@ export default function Builds() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <span className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Timer className="h-3.5 w-3.5" />
-                        {formatDuration(build.createdAt, build.finishedAt)}
+                      <span className="text-sm text-muted-foreground">
+                        {formatBytes(deployment.artifactSize)}
                       </span>
                     </TableCell>
                     <TableCell>
                       <span className="text-sm text-muted-foreground">
-                        {formatTimestamp(build.createdAt)}
+                        {formatTimestamp(deployment.createdAt)}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -423,7 +386,7 @@ export default function Builds() {
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between">
           <span className="text-sm text-muted-foreground">
-            {filteredBuilds.length} build{filteredBuilds.length !== 1 && "s"}
+            {filteredDeployments.length} deployment{filteredDeployments.length !== 1 && "s"}
           </span>
           <div className="flex items-center gap-2">
             <Button
@@ -450,42 +413,6 @@ export default function Builds() {
           </div>
         </div>
       )}
-
-      {/* New Build Dialog */}
-      <Dialog open={showBuildModal} onOpenChange={setShowBuildModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>New Build</DialogTitle>
-            <DialogDescription>
-              Start a new build for your application
-            </DialogDescription>
-          </DialogHeader>
-          <form id="build-form" onSubmit={handleSubmit(onSubmit)}>
-            <div className="space-y-2">
-              <Label htmlFor="build-name">Build Name</Label>
-              <Input
-                id="build-name"
-                {...register("name")}
-                placeholder="e.g., v1.0.0, feature-update"
-              />
-              {errors.name && (
-                <span className="text-sm text-destructive">
-                  {errors.name.message}
-                </span>
-              )}
-            </div>
-          </form>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowBuildModal(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" form="build-form">
-              <Play className="mr-2 h-4 w-4" />
-              Start Build
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

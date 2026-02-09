@@ -16,6 +16,9 @@ import {
   Package,
   Copy,
   Check,
+  GitBranch,
+  Rocket,
+  ArrowRight,
 } from "lucide-react";
 import {
   Card,
@@ -134,6 +137,7 @@ export default function AppOverview() {
     { to: "routes", label: "Routes", icon: Route },
     { to: "logs", label: "Logs", icon: FileText },
     { to: "builds", label: "Builds", icon: Package },
+    { to: "deployments", label: "Deployments", icon: Package },
     { to: "settings", label: "Settings", icon: Settings },
   ];
 
@@ -251,7 +255,7 @@ export default function AppOverview() {
       </div>
 
       {/* Quick Links */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         {quickLinks.map((link) => {
           const Icon = link.icon;
           return (
@@ -266,6 +270,49 @@ export default function AppOverview() {
           );
         })}
       </div>
+
+      {/* Deployment Flow Info */}
+      <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30">
+        <CardHeader>
+          <CardTitle className="text-base">Deployment Flow</CardTitle>
+          <CardDescription>
+            Understand how your code becomes live
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/50">
+                <GitBranch className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">1. Build</p>
+                <p className="text-xs text-muted-foreground">Compile your code</p>
+              </div>
+            </div>
+            <ArrowRight className="hidden h-5 w-5 text-muted-foreground sm:block" />
+            <div className="flex items-center gap-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/50">
+                <Package className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">2. Artifact</p>
+                <p className="text-xs text-muted-foreground">Package files</p>
+              </div>
+            </div>
+            <ArrowRight className="hidden h-5 w-5 text-muted-foreground sm:block" />
+            <div className="flex items-center gap-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/50">
+                <Rocket className="h-5 w-5 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">3. Deploy</p>
+                <p className="text-xs text-muted-foreground">Extract & serve</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Request Chart */}
       <Card>

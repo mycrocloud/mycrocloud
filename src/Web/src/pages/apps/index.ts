@@ -4,6 +4,8 @@ export { default as AppCreate } from "./Create";
 export { default as AppLog } from "./Log.tsx";
 export { default as AppBuilds } from "./Builds";
 export { default as AppBuildDetails } from "./BuildDetails";
+export { default as AppDeployments } from "./Deployments";
+export { default as AppDeploymentDetails } from "./DeploymentDetails";
 export { default as AppLayout } from "./Layout";
 export { Context as AppContext } from "./Context";
 export type { default as IApp } from "./App";

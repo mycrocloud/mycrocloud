@@ -56,6 +56,7 @@ export default function AppLayout() {
   const isMatch_Routes = part3 === "routes";
   const isMatchLogs = part3 === "logs";
   const isMatchBuilds = part3 === "builds";
+  const isMatchDeployments = part3 === "deployments";
   const isMatchSettings = part3 === "settings";
 
   useEffect(() => {
@@ -120,6 +121,11 @@ export default function AppLayout() {
                 to="builds"
                 label="Builds"
                 isActive={isMatchBuilds}
+              />
+              <NavItem
+                to="deployments"
+                label="Deployments"
+                isActive={isMatchDeployments}
               />
             </NavGroup>
 
