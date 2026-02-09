@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
-using WebApp.Infrastructure;
+using Api.Infrastructure;
 
 namespace Api.Services;
 

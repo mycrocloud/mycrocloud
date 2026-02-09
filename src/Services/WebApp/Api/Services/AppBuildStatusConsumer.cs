@@ -7,7 +7,7 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Api.Domain.Entities;
 using Api.Domain.Messages;
-using WebApp.Infrastructure;
+using Api.Infrastructure;
 using Api.Domain.Services;
 
 namespace Api.Services;

@@ -1,6 +1,6 @@
 using Api.Domain.Services;
 
-namespace WebApp.Infrastructure.Storage;
+namespace Api.Infrastructure.Storage;
 
 public class DiskStorageProvider : IStorageProvider
 {

@@ -5,7 +5,7 @@ using Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Api.Domain.Entities;
-using WebApp.Infrastructure;
+using Api.Infrastructure;
 using Api.Extensions;
 
 namespace Api.Controllers;

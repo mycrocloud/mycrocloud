@@ -3,7 +3,7 @@ using Api.Filters;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Api.Domain.Entities;
-using WebApp.Infrastructure;
+using Api.Infrastructure;
 using Api.Domain.Services;
 using Api.Domain.Repositories;
 

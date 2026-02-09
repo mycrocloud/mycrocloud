@@ -14,7 +14,7 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Api.Domain.Entities;
 using Api.Domain.Messages;
-using WebApp.Infrastructure;
+using Api.Infrastructure;
 
 namespace Api.Controllers;
 

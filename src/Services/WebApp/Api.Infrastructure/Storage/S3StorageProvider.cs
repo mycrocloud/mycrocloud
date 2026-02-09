@@ -3,7 +3,7 @@ using Amazon.S3.Model;
 using Amazon.S3.Util;
 using Api.Domain.Services;
 
-namespace WebApp.Infrastructure.Storage;
+namespace Api.Infrastructure.Storage;
 
 public class S3StorageProvider : IStorageProvider
 {

@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
 using Api.Domain.Entities;
-using WebApp.Infrastructure;
+using Api.Infrastructure;
 
 namespace Api.Services;
 

@@ -4,14 +4,14 @@ WORKDIR /source
 
 # copy csproj and restore as distinct layers
 COPY Api.Domain/Api.Domain.csproj Api.Domain/
-COPY WebApp.Infrastructure/WebApp.Infrastructure.csproj WebApp.Infrastructure/
+COPY Api.Infrastructure/Api.Infrastructure.csproj Api.Infrastructure/
 COPY WebApp.Gateway/WebApp.Gateway.csproj WebApp.Gateway/
 
 RUN dotnet restore WebApp.Gateway/WebApp.Gateway.csproj
 
 # copy and build app and libraries
 COPY Api.Domain/ Api.Domain/
-COPY WebApp.Infrastructure/ WebApp.Infrastructure/
+COPY Api.Infrastructure/ Api.Infrastructure/
 COPY WebApp.Gateway/ WebApp.Gateway/
 
 RUN dotnet publish WebApp.Gateway/WebApp.Gateway.csproj -c Release -o /app

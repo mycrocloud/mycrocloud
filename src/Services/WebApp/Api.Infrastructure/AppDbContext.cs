@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Api.Domain.Entities;
 
-namespace WebApp.Infrastructure;
+namespace Api.Infrastructure;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {

@@ -7,12 +7,12 @@ RUN dotnet tool install --global dotnet-ef --version 8.0.22 \
 ENV PATH="/root/.dotnet/tools:${PATH}"
 
 COPY Api.Domain/*.csproj Api.Domain/
-COPY WebApp.Infrastructure/*.csproj WebApp.Infrastructure/
+COPY Api.Infrastructure/*.csproj Api.Infrastructure/
 COPY WebApp.Migrations/*.csproj WebApp.Migrations/
 
 RUN dotnet restore WebApp.Migrations/WebApp.Migrations.csproj
 
-COPY WebApp.Infrastructure/ WebApp.Infrastructure/
+COPY Api.Infrastructure/ Api.Infrastructure/
 COPY Api.Domain/ Api.Domain/
 COPY WebApp.Migrations/ WebApp.Migrations/
 

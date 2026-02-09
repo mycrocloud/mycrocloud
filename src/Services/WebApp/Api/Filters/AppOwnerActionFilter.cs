@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using WebApp.Infrastructure;
+using Api.Infrastructure;
 using Api.Extensions;
 
 namespace Api.Filters;

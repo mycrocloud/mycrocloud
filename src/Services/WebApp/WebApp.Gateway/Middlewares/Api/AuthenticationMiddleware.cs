@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Api.Domain.Enums;
 using Api.Domain.Models;
-using WebApp.Infrastructure;
+using Api.Infrastructure;
 
 namespace WebApp.Gateway.Middlewares.Api;
 

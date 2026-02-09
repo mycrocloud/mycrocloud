@@ -12,12 +12,12 @@ using Elastic.Transport;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Nest;
 using Api.Authentications;
-using WebApp.Infrastructure;
-using WebApp.Infrastructure.Repositories;
+using Api.Infrastructure;
+using Api.Infrastructure.Repositories;
 using Api.Middlewares;
 using Api.Services;
-using WebApp.Infrastructure.Storage;
-using WebApp.Infrastructure.Services;
+using Api.Infrastructure.Storage;
+using Api.Infrastructure.Services;
 using Amazon.S3;
 
 DotNetEnv.Env.Load();

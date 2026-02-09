@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Api.Domain.Messages;
-using WebApp.Infrastructure;
+using Api.Infrastructure;
 
 namespace Api.Services;
 

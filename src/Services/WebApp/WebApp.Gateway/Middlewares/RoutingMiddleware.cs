@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using Api.Domain.Entities;
 using Api.Domain.Models;
-using WebApp.Infrastructure;
+using Api.Infrastructure;
 
 namespace WebApp.Gateway.Middlewares;
 

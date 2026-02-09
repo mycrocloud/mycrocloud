@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Api.Domain.Entities;
 using Api.Domain.Repositories;
 
-namespace WebApp.Infrastructure.Repositories;
+namespace Api.Infrastructure.Repositories;
 
 public class AppRepository(AppDbContext dbContext) : IAppRepository
 {

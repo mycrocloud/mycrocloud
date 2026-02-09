@@ -3,7 +3,7 @@ using Microsoft.Extensions.Caching.Distributed;
 using System.Text.Json;
 using Api.Domain.Entities;
 using Api.Domain.Enums;
-using WebApp.Infrastructure;
+using Api.Infrastructure;
 using Api.Domain.Models;
 using Api.Domain.Services;
 

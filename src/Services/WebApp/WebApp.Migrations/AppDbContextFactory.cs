@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
-using WebApp.Infrastructure;
+using Api.Infrastructure;
 
 namespace WebApp.Migrations;
 

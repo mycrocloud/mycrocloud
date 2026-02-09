@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Api.Domain.Entities;
-using WebApp.Infrastructure;
+using Api.Infrastructure;
 
 namespace Api.Authentications;
 

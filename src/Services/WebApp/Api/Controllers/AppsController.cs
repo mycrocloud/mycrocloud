@@ -7,7 +7,7 @@ using Api.Domain.Entities;
 using Api.Domain.Enums;
 using Api.Domain.Repositories;
 using Api.Domain.Services;
-using WebApp.Infrastructure;
+using Api.Infrastructure;
 using Api.Extensions;
 using Api.Models.Apps;
 

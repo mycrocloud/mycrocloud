@@ -4,9 +4,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Api.Domain.Services;
-using WebApp.Infrastructure;
-using WebApp.Infrastructure.Services;
-using WebApp.Infrastructure.Storage;
+using Api.Infrastructure;
+using Api.Infrastructure.Services;
+using Api.Infrastructure.Storage;
 using Amazon.S3;
 
 var builder = Host.CreateApplicationBuilder(args);

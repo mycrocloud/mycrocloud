@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using Api.Domain.Entities;
 using Api.Domain.Services;
-using WebApp.Infrastructure;
+using Api.Infrastructure;
 
 namespace Api.Services;
 

@@ -7,7 +7,7 @@ using Api.Domain.Enums;
 using Api.Domain.Models;
 using Api.Domain.Services;
 
-namespace WebApp.Infrastructure.Services;
+namespace Api.Infrastructure.Services;
 
 public class ApiDeploymentService(
     AppDbContext dbContext,

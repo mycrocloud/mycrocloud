@@ -3,15 +3,15 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Api.Domain.Entities;
 using Api.Domain.Repositories;
-using WebApp.Infrastructure;
-using WebApp.Infrastructure.Repositories;
+using Api.Infrastructure;
+using Api.Infrastructure.Repositories;
 using WebApp.Gateway;
 using Api.Domain.Models;
 using WebApp.Gateway.Middlewares;
 using WebApp.Gateway.Middlewares.Api;
 using WebApp.Gateway.Middlewares.Spa;
 using Api.Domain.Services;
-using WebApp.Infrastructure.Storage;
+using Api.Infrastructure.Storage;
 using WebApp.Gateway.Cache;
 using Amazon.S3;
 
