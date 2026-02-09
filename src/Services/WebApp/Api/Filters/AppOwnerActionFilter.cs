@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Api.Infrastructure;
 using Api.Extensions;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Filters;
 
@@ -50,7 +51,9 @@ public class AppOwnerActionFilter(AppDbContext appDbContext,
         
         logger.LogDebug("AppId: {AppId}", appId);
 
-        var app = await appDbContext.Apps.FindAsync(appId);
+        var app = await appDbContext.Apps
+            .Include(a => a.ActiveRelease)
+            .FirstOrDefaultAsync(a => a.Id == appId);
         var isAppOwner = app?.OwnerId == userId;
         logger.LogDebug("IsAppOwner: {IsAppOwner}", isAppOwner);
         if (!isAppOwner)

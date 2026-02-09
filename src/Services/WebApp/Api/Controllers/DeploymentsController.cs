@@ -22,6 +22,9 @@ public class DeploymentsController(
     [HttpGet]
     public async Task<IActionResult> List(int appId)
     {
+        var app = App;
+        var activeDeploymentId = app.ActiveRelease?.SpaDeploymentId;
+        
         var deployments = await appDbContext.SpaDeployments
             .Include(d => d.Build)
             .Include(d => d.Artifact)
@@ -32,7 +35,7 @@ public class DeploymentsController(
         return Ok(deployments.Select(d => new
         {
             d.Id,
-            Status = d.Status.ToString(),
+            IsActive = d.Id == activeDeploymentId,
             d.BuildId,
             BuildName = (string?)null, // AppBuild doesn't have Name property
             d.CreatedAt,
@@ -47,21 +50,62 @@ public class DeploymentsController(
             .Include(d => d.Build)
             .Include(d => d.Artifact)
             .Include(d => d.App)
+                .ThenInclude(a => a.ActiveRelease)
             .FirstOrDefaultAsync(d => d.Id == deploymentId && d.AppId == appId);
         
         if (deployment == null)
             return NotFound();
 
+        var isActive = deployment.Id == deployment.App.ActiveRelease?.SpaDeploymentId;
+
         return Ok(new
         {
             deployment.Id,
-            Status = deployment.Status.ToString(),
+            IsActive = isActive,
             deployment.BuildId,
             BuildName = (string?)null, // AppBuild doesn't have Name property
             deployment.CreatedAt,
             ArtifactSize = deployment.Artifact.BundleSize,
             ArtifactHash = deployment.Artifact.BundleHash,
             ArtifactId = deployment.ArtifactId,
+        });
+    }
+
+    [HttpGet("{deploymentId:guid}/files")]
+    public async Task<IActionResult> GetFiles(int appId, Guid deploymentId, [FromQuery] string? search = null)
+    {
+        var deployment = await appDbContext.SpaDeployments
+            .FirstOrDefaultAsync(d => d.Id == deploymentId && d.AppId == appId);
+        
+        if (deployment == null)
+            return NotFound();
+
+        var query = appDbContext.DeploymentFiles
+            .Include(f => f.Blob)
+            .Where(f => f.DeploymentId == deploymentId);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(f => f.Path.Contains(search));
+        }
+
+        var files = await query
+            .OrderBy(f => f.Path)
+            .Select(f => new
+            {
+                f.Path,
+                f.SizeBytes,
+                f.ETag,
+                ContentType = f.Blob.ContentType,
+                f.CreatedAt
+            })
+            .ToListAsync();
+
+        return Ok(new
+        {
+            TotalFiles = files.Count,
+            TotalSize = files.Sum(f => f.SizeBytes),
+            Files = files
         });
     }
 
