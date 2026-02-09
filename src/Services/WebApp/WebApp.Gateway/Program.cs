@@ -15,6 +15,7 @@ using WebApp.Infrastructure.Storage;
 using WebApp.Gateway.Cache;
 using Amazon.S3;
 
+DotNetEnv.Env.Load();
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddLogging(options =>
 {
