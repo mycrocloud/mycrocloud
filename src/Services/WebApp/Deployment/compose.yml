@@ -1,10 +1,8 @@
+# Base configuration - Common services
 name: deployment
+
 services:
   worker:
-    build:
-      context: ./worker
-      dockerfile: Dockerfile
-    image: mycrocloud-deployment-worker:main
     environment:
       - RABBITMQ_URL=${RABBITMQ_URL}
       - AUTH0_SECRET=${AUTH0_SECRET}
@@ -16,33 +14,23 @@ services:
       - fluentd
 
   fluentd:
-    image: mycrocloud-deployment-fluentd:main
-    build:
-      context: ./fluentd
-      dockerfile: Dockerfile
     environment:
-      - ES_HOST=${ES_HOST:-localhost}
-      - ES_USER=${ES_USER:-elastic}
-      - ES_PASSWORD=${ES_PASSWORD:-changeme}
+      - ES_HOST=localhost
+      - ES_USER=elastic
+      - ES_PASSWORD=${ES_PASSWORD}
       - RABBITMQ_URL=${RABBITMQ_URL}
     volumes:
       - ./fluentd/conf:/fluentd/etc
     ports:
       - "24224:24224"
 
-  # The builder is usually run dynamically by the worker, 
-  # but kept here for image build/test purposes.
   builder:
-    image: mycrocloud-deployment-builder:main
-    build:
-      context: ./builder
-      dockerfile: Dockerfile
     environment:
-      - REPO_URL=${REPO_URL}
-      - WORK_DIR=${WORK_DIR:-.}
-      - OUT_DIR=${OUT_DIR:-dist}
-      - INSTALL_CMD=${INSTALL_CMD:-npm install}
-      - BUILD_CMD=${BUILD_CMD:-npm run build}
+      - REPO_URL=${REPO_URL:-}
+      - WORK_DIR=.
+      - OUT_DIR=dist
+      - INSTALL_CMD=npm install
+      - BUILD_CMD=npm run build
     logging:
       driver: "fluentd"
       options:

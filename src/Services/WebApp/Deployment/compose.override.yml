@@ -1,0 +1,35 @@
+# Development environment overrides (loaded automatically)
+services:
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    image: mycrocloud-deployment-worker:main
+    networks:
+      - default
+      - webapp_default
+
+  fluentd:
+    image: mycrocloud-deployment-fluentd:main
+    build:
+      context: ./fluentd
+      dockerfile: Dockerfile
+    networks:
+      - default
+      - webapp_default
+
+  # The builder is usually run dynamically by the worker, 
+  # but kept here for image build/test purposes.
+  builder:
+    image: mycrocloud-deployment-builder:main
+    build:
+      context: ./builder
+      dockerfile: Dockerfile
+
+networks:
+  default:
+    driver: bridge
+
+  webapp_default:
+    external: true
+    name: webapp_default
