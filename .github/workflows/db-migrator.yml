@@ -43,7 +43,7 @@ jobs:
       - name: Run test
         env:
           ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=mycrocloud;Username=postgres;Password=postgres"
-        run: dotnet test src/Services/WebApp/WebApp.MigrationTest
+        run: dotnet test src/Services/WebApp/Api.MigrationTest
 
   build-and-push-image:
     needs: test-migrations

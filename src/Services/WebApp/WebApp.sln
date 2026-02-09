@@ -14,7 +14,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp.UnitTest", "WebApp.U
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api.Migrations", "Api.Migrations\Api.Migrations.csproj", "{85CBCC4B-8565-4E1E-82C8-FC70EB405953}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp.MigrationTest", "WebApp.MigrationTest\WebApp.MigrationTest.csproj", "{D2805EAC-CB49-4294-BC60-5B2510F7AFBA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api.MigrationTest", "Api.MigrationTest\Api.MigrationTest.csproj", "{D2805EAC-CB49-4294-BC60-5B2510F7AFBA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp.FunctionInvoker", "WebApp.FunctionInvoker\WebApp.FunctionInvoker.csproj", "{552680A7-FE5E-4520-B507-0F53645DF658}"
 EndProject

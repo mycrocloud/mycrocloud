@@ -10,7 +10,7 @@ updates:
       - "src/Services/WebApp/WebApp.FunctionShared"
       - "src/Services/WebApp/Api.Infrastructure"
       - "src/Services/WebApp/Api.Migrations"
-      - "src/Services/WebApp/WebApp.MigrationTest"
+      - "src/Services/WebApp/Api.MigrationTest"
       - "src/Services/WebApp/WebApp.SlackIntegrationApi"
       - "src/Services/WebApp/WebApp.UnitTest"
 

@@ -10,6 +10,6 @@
   <Project Path="WebApp.FunctionInvoker\WebApp.FunctionInvoker.csproj" Type="Classic C#" />
   <Project Path="Api.Infrastructure\Api.Infrastructure.csproj" Type="Classic C#" />
   <Project Path="Api.Migrations\Api.Migrations.csproj" Type="Classic C#" />
-  <Project Path="WebApp.MigrationTest\WebApp.MigrationTest.csproj" Type="Classic C#" />
+  <Project Path="Api.MigrationTest\Api.MigrationTest.csproj" Type="Classic C#" />
   <Project Path="WebApp.UnitTest\WebApp.UnitTest.csproj" Type="Classic C#" />
 </Solution>
