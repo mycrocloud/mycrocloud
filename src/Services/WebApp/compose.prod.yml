@@ -2,8 +2,6 @@
 services:
   db-migrator:
     image: ghcr.io/mycrocloud/mycrocloud-db-migrator:main
-    env_file:
-      - .env.prod
     volumes:
       - ./Services/WebApp/Api.Migrations/appsettings.json:/db-migrator/appsettings.json:ro
 
@@ -14,8 +12,6 @@ services:
 
   api:
     image: ghcr.io/mycrocloud/mycrocloud-api:main
-    env_file:
-      - .env.prod
     environment:
       - ExternalIntegrations__GitHubApp__WebhookSecret=${ExternalIntegrations__GitHubApp__WebhookSecret}
       - Elasticsearch__Password=${Elasticsearch__Password}
@@ -27,8 +23,6 @@ services:
 
   gateway:
     image: ghcr.io/mycrocloud/mycrocloud-gateway:main
-    env_file:
-      - .env.prod
     environment:
       - ConnectionStrings__Redis=${ConnectionStrings__Redis}
     volumes:
