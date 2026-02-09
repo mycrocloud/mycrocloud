@@ -311,13 +311,12 @@ func getOutputBaseDir() string {
 }
 
 func main() {
-	// Load config from .conf or .env
-	confFiles := []string{".conf", ".env"}
-	for _, f := range confFiles {
-		if err := godotenv.Load(f); err == nil {
-			log.Printf("Loaded configuration from %s", f)
-			break
-		}
+	// Load config from .conf first, then .env (with override)
+	if err := godotenv.Load(".conf"); err == nil {
+		log.Printf("Loaded configuration from .conf")
+	}
+	if err := godotenv.Overload(".env"); err == nil {
+		log.Printf("Loaded and overrode configuration from .env")
 	}
 
 	// Load limits from environment
