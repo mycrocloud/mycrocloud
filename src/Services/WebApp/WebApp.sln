@@ -10,8 +10,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api.Infrastructure", "Api.I
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api", "Api\Api.csproj", "{29600606-B003-4920-AF2C-FB5300330BBE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp.UnitTest", "WebApp.UnitTest\WebApp.UnitTest.csproj", "{F2E289E2-3BAD-4B93-826C-3BD86F1953F0}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api.Migrations", "Api.Migrations\Api.Migrations.csproj", "{85CBCC4B-8565-4E1E-82C8-FC70EB405953}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api.MigrationTest", "Api.MigrationTest\Api.MigrationTest.csproj", "{D2805EAC-CB49-4294-BC60-5B2510F7AFBA}"
@@ -45,10 +43,6 @@ Global
 		{29600606-B003-4920-AF2C-FB5300330BBE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{29600606-B003-4920-AF2C-FB5300330BBE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{29600606-B003-4920-AF2C-FB5300330BBE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F2E289E2-3BAD-4B93-826C-3BD86F1953F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F2E289E2-3BAD-4B93-826C-3BD86F1953F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F2E289E2-3BAD-4B93-826C-3BD86F1953F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F2E289E2-3BAD-4B93-826C-3BD86F1953F0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{85CBCC4B-8565-4E1E-82C8-FC70EB405953}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{85CBCC4B-8565-4E1E-82C8-FC70EB405953}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{85CBCC4B-8565-4E1E-82C8-FC70EB405953}.Release|Any CPU.ActiveCfg = Release|Any CPU
