@@ -7,6 +7,10 @@ public class AppBuild : BaseEntity
     public App App { get; set; }
     public string Status { get; set; }
     public DateTime? FinishedAt { get; set; }
+    
+    // Navigation - A build can create the initial deployment,
+    // but the same artifact can be deployed multiple times
+    public ICollection<SpaDeployment> Deployments { get; set; } = [];
 }
 
 public class AppBuildState
