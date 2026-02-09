@@ -4,80 +4,53 @@ import { AppContext } from ".";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   CheckCircle2,
-  XCircle,
-  Clock,
   Loader2,
   ArrowLeft,
   Copy,
   Check,
-  Archive,
   Package,
   FileArchive,
   GitBranch,
   ExternalLink,
   RotateCcw,
+  Clock,
+  ChevronDown,
+  ChevronRight,
+  File,
+  Search,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface IDeployment {
   id: string;
-  status: string;
+  isActive: boolean;
   buildId: string | null;
   buildName: string | null;
   createdAt: string;
   artifactSize: number;
   artifactHash: string;
-  artifactId?: string; // Add artifactId
+  artifactId?: string;
 }
 
-function getStatusConfig(status: string) {
-  switch (status.toLowerCase()) {
-    case "pending":
-      return {
-        label: "Pending",
-        icon: Clock,
-        className:
-          "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
-      };
-    case "extracting":
-      return {
-        label: "Extracting",
-        icon: Loader2,
-        className:
-          "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-        iconClassName: "animate-spin",
-      };
-    case "ready":
-      return {
-        label: "Ready",
-        icon: CheckCircle2,
-        className:
-          "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-      };
-    case "failed":
-      return {
-        label: "Failed",
-        icon: XCircle,
-        className:
-          "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-      };
-    case "archived":
-      return {
-        label: "Archived",
-        icon: Archive,
-        className:
-          "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400",
-      };
-    default:
-      return {
-        label: status,
-        icon: Clock,
-        className:
-          "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400",
-      };
-  }
+interface IDeploymentFile {
+  path: string;
+  sizeBytes: number;
+  eTag: string;
+  contentType: string;
+  createdAt: string;
+}
+
+interface IDeploymentFiles {
+  totalFiles: number;
+  totalSize: number;
+  files: IDeploymentFile[];
 }
 
 function formatTimestamp(timestamp: string): string {
@@ -109,7 +82,11 @@ export default function DeploymentDetails() {
   const navigate = useNavigate();
 
   const [deployment, setDeployment] = useState<IDeployment | null>(null);
+  const [files, setFiles] = useState<IDeploymentFiles | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingFiles, setIsLoadingFiles] = useState(false);
+  const [showFiles, setShowFiles] = useState(false);
+  const [fileSearch, setFileSearch] = useState("");
   const [copied, setCopied] = useState(false);
   const [isRedeploying, setIsRedeploying] = useState(false);
 
@@ -127,9 +104,31 @@ export default function DeploymentDetails() {
     }
   }, [app.id, deploymentId, get]);
 
+  const fetchFiles = useCallback(async () => {
+    if (!showFiles || files) return;
+    
+    setIsLoadingFiles(true);
+    try {
+      const data = await get<IDeploymentFiles>(
+        `/api/apps/${app.id}/deployments/${deploymentId}/files`
+      );
+      setFiles(data);
+    } catch (error) {
+      console.error("Failed to fetch files:", error);
+    } finally {
+      setIsLoadingFiles(false);
+    }
+  }, [app.id, deploymentId, get, showFiles, files]);
+
   useEffect(() => {
     fetchDeployment();
   }, [fetchDeployment]);
+
+  useEffect(() => {
+    if (showFiles) {
+      fetchFiles();
+    }
+  }, [showFiles, fetchFiles]);
 
   // Poll for updates every 5 seconds
   useEffect(() => {
@@ -191,9 +190,6 @@ export default function DeploymentDetails() {
     );
   }
 
-  const statusConfig = getStatusConfig(deployment.status);
-  const StatusIcon = statusConfig.icon;
-
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
@@ -205,7 +201,7 @@ export default function DeploymentDetails() {
               Back
             </Link>
           </Button>
-          {deployment.status === "Ready" && (
+          {deployment.isActive && (
             <Button
               variant="outline"
               size="sm"
@@ -241,17 +237,11 @@ export default function DeploymentDetails() {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge
-            variant="secondary"
-            className={cn("text-sm", statusConfig.className)}
-          >
-            <StatusIcon
-              className={cn("mr-1.5 h-4 w-4", statusConfig.iconClassName)}
-            />
-            {statusConfig.label}
+        {deployment.isActive && (
+          <Badge className="bg-green-600 hover:bg-green-700">
+            Active
           </Badge>
-        </div>
+        )}
       </div>
 
       {/* Content */}
@@ -302,15 +292,15 @@ export default function DeploymentDetails() {
                   <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm font-medium">Status</span>
                 </div>
-                <Badge
-                  variant="secondary"
-                  className={cn("text-sm", statusConfig.className)}
-                >
-                  <StatusIcon
-                    className={cn("mr-1.5 h-3 w-3", statusConfig.iconClassName)}
-                  />
-                  {statusConfig.label}
-                </Badge>
+                {deployment.isActive ? (
+                  <Badge className="bg-green-600 hover:bg-green-700">
+                    Active
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary">
+                    Inactive
+                  </Badge>
+                )}
               </div>
             </div>
           </div>
@@ -384,6 +374,81 @@ export default function DeploymentDetails() {
               </div>
             </div>
           </div>
+
+          {/* Deployment Files */}
+          <Collapsible open={showFiles} onOpenChange={setShowFiles}>
+            <div className="rounded-lg border bg-card">
+              <CollapsibleTrigger className="w-full">
+                <div className="border-b px-4 py-3 flex items-center justify-between hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-semibold">Deployment Files</h2>
+                    {files && (
+                      <Badge variant="secondary" className="text-xs">
+                        {files.totalFiles} files
+                      </Badge>
+                    )}
+                  </div>
+                  {showFiles ? (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </div>
+              </CollapsibleTrigger>
+              
+              <CollapsibleContent>
+                {isLoadingFiles ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : files ? (
+                  <div className="p-4 space-y-3">
+                    {/* Summary */}
+                    <div className="flex items-center justify-between text-sm text-muted-foreground pb-3 border-b">
+                      <span>{files.totalFiles} files</span>
+                      <span>{formatBytes(files.totalSize)}</span>
+                    </div>
+
+                    {/* Search */}
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder="Search files..."
+                        value={fileSearch}
+                        onChange={(e) => setFileSearch(e.target.value)}
+                        className="h-9 pl-8"
+                      />
+                    </div>
+
+                    {/* File List */}
+                    <div className="max-h-96 overflow-y-auto space-y-1">
+                      {files.files
+                        .filter((file) => 
+                          fileSearch === "" || 
+                          file.path.toLowerCase().includes(fileSearch.toLowerCase())
+                        )
+                        .map((file) => (
+                          <div
+                            key={file.path}
+                            className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-muted/50 transition-colors"
+                          >
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <File className="h-4 w-4 text-muted-foreground shrink-0" />
+                              <span className="text-sm font-mono truncate">
+                                {file.path}
+                              </span>
+                            </div>
+                            <span className="text-xs text-muted-foreground shrink-0 ml-2">
+                              {formatBytes(file.sizeBytes)}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                ) : null}
+              </CollapsibleContent>
+            </div>
+          </Collapsible>
         </div>
       </div>
     </div>

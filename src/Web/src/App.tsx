@@ -14,7 +14,6 @@ import {
   AppOverview,
   AppCreate,
   AppLog,
-  AppBuilds,
   AppBuildDetails,
   AppDeployments,
   AppDeploymentDetails,
@@ -78,9 +77,8 @@ function App() {
                     <Route path=":routeId" element={<RouteEdit />} />
                   </Route>
                   <Route path="logs" element={<AppLog />} />
-                  <Route path="builds" element={<AppBuilds />} />
-                  <Route path="builds/:buildId" element={<AppBuildDetails />} />
                   <Route path="deployments" element={<AppDeployments />} />
+                  <Route path="builds/:buildId" element={<AppBuildDetails />} />
                   <Route path="deployments/:deploymentId" element={<AppDeploymentDetails />} />
                   <Route path="settings" element={<AppSettings />}>
                     <Route path="general" element={<GeneralTab />} />
