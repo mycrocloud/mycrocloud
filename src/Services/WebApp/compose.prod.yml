@@ -1,0 +1,65 @@
+# Production environment overrides (use with: docker compose -f compose.yml -f compose.prod.yml up)
+services:
+  db-migrator:
+    image: ghcr.io/mycrocloud/mycrocloud-db-migrator:main
+    env_file:
+      - .env.prod
+    volumes:
+      - ./Services/WebApp/WebApp.Migrations/appsettings.json:/db-migrator/appsettings.json:ro
+
+  web:
+    image: ghcr.io/mycrocloud/mycrocloud-web:main
+    volumes:
+      - ./Web/.env:/usr/share/nginx/html/.env:ro
+
+  api:
+    image: ghcr.io/mycrocloud/mycrocloud-api:main
+    env_file:
+      - .env.prod
+    environment:
+      - ExternalIntegrations__GitHubApp__WebhookSecret=${ExternalIntegrations__GitHubApp__WebhookSecret}
+      - Elasticsearch__Password=${Elasticsearch__Password}
+      - OAuthApps__Slack__SigningSecret=${OAuthApps__Slack__SigningSecret}
+      - ConnectionStrings__Redis=${ConnectionStrings__Redis}
+    volumes:
+      - ./Services/WebApp/WebApp.Api/appsettings.json:/app/appsettings.json:ro
+      - ./Services/WebApp/WebApp.Api/gha-mycrocloud.pem:/app/gha-mycrocloud.pem:ro
+
+  gateway:
+    image: ghcr.io/mycrocloud/mycrocloud-gateway:main
+    env_file:
+      - .env.prod
+    environment:
+      - ConnectionStrings__Redis=${ConnectionStrings__Redis}
+    volumes:
+      - ./Services/WebApp/WebApp.Gateway/appsettings.json:/app/appsettings.json:ro
+      - /srv/function-data:/srv/function-data
+      
+  lb:
+    image: nginx:mainline-alpine3.18-perl
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - CONTROL_PLANE_DOMAIN=${CONTROL_PLANE_DOMAIN:-mycrocloud.info}
+      - DATA_PLANE_DOMAIN=${DATA_PLANE_DOMAIN:-mycrocloud.info}
+    volumes:
+      - ./lb/templates/conf.d:/etc/nginx/templates:ro
+      - ./lb/certs:/etc/nginx/certs:ro
+      - ./lb/includes:/etc/nginx/includes:ro
+      - ./lb/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+    - web
+    - web-editor
+    - api
+    - gateway
+
+  web-editor:
+    image: ghcr.io/mycrocloud/mycrocloud-web-editor:main
+
+networks:
+  default:
+    name: mycrocloud
+    ipam:
+      config:
+        - subnet: 172.18.0.0/16 

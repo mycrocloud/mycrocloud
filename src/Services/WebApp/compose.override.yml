@@ -1,4 +1,15 @@
+# Development environment overrides (loaded automatically)
 services:
+  web:
+    image: mycrocloud-web
+    build:
+      context: ../../Web
+      dockerfile: Dockerfile
+    env_file:
+      - ../../Web/.env.development
+    ports:
+      - "5173:80"
+
   db:
     image: postgres:16.2-alpine
     environment:
@@ -12,8 +23,6 @@ services:
     image: mycrocloud-db-migrator
     build:
       dockerfile: WebApp.Migrations/Dockerfile
-    environment:
-      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
     depends_on:
       - db
 
@@ -21,15 +30,6 @@ services:
     image: mycrocloud-api
     build:
       dockerfile: Api/Dockerfile
-    environment:
-      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
-      - ConnectionStrings__RabbitMq=${ConnectionStrings__RabbitMq}
-      - OAuthApps__Slack__ClientSecret=${OAuthApps__Slack__ClientSecret}
-      - OAuthApps__GitHub__ClientSecret=${OAuthApps__GitHub__ClientSecret}
-      - Slack__SigningSecret=${Slack__SigningSecret}
-      - Slack__LinkSecret=${Slack__LinkSecret}
-      - Storage__S3__AccessKey=${Storage__S3__AccessKey}
-      - Storage__S3__SecretKey=${Storage__S3__SecretKey}
     ports:
       - "8080:8080"
     volumes:
@@ -42,12 +42,7 @@ services:
     image: mycrocloud-gateway
     build:
       dockerfile: WebApp.Gateway/Dockerfile
-    environment:
-      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
-      - Storage__S3__AccessKey=${Storage__S3__AccessKey}
-      - Storage__S3__SecretKey=${Storage__S3__SecretKey}
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/function-data:/tmp/function-data
     ports:
       - "8081:8080"
@@ -63,7 +58,6 @@ services:
       - SEQ_FIRSTRUN_ADMINPASSWORDHASH=QDFtcJLYGKj1Ir6xyrydGr+u6tYcTn33xd4WCe629b6cPQgPXs3UaCYyWkzJaJAyTqNgG89fdTfjF9LQYDkqvdiMsudVmoPJc1Ho3WT0j98w
     volumes:
       - seq_data:/data
-    #restart: "unless-stopped"
 
   redis:
     image: redis:alpine3.21
@@ -86,6 +80,8 @@ services:
     build:
       context: .
       dockerfile: WebApp.FunctionInvoker/Dockerfile
+    env_file:
+      - .env
     volumes:
       - ./WebApp.FunctionInvoker/data:/app/data
     deploy:
