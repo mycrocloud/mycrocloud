@@ -4,14 +4,14 @@ WORKDIR /source
 
 # copy csproj and restore as distinct layers
 COPY Api/Api.csproj Api/
-COPY WebApp.Domain/WebApp.Domain.csproj WebApp.Domain/
+COPY Api.Domain/Api.Domain.csproj Api.Domain/
 COPY WebApp.Infrastructure/WebApp.Infrastructure.csproj WebApp.Infrastructure/
 
 RUN dotnet restore Api/Api.csproj
 
 # copy and build app and libraries
 COPY Api/ Api/
-COPY WebApp.Domain/ WebApp.Domain/
+COPY Api.Domain/ Api.Domain/
 COPY WebApp.Infrastructure/ WebApp.Infrastructure/
 
 ARG COMMIT_HASH

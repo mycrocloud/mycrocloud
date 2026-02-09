@@ -16,7 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\WebApp.Infrastructure\WebApp.Infrastructure.csproj" />
-    <ProjectReference Include="..\WebApp.Domain\WebApp.Domain.csproj" />
+    <ProjectReference Include="..\Api.Domain\Api.Domain.csproj" />
   </ItemGroup>
 
 </Project>

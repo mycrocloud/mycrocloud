@@ -6,14 +6,14 @@ RUN dotnet tool install --global dotnet-ef --version 8.0.22 \
     && echo 'export PATH="$PATH:/root/.dotnet/tools"' >> ~/.bashrc
 ENV PATH="/root/.dotnet/tools:${PATH}"
 
-COPY WebApp.Domain/*.csproj WebApp.Domain/
+COPY Api.Domain/*.csproj Api.Domain/
 COPY WebApp.Infrastructure/*.csproj WebApp.Infrastructure/
 COPY WebApp.Migrations/*.csproj WebApp.Migrations/
 
 RUN dotnet restore WebApp.Migrations/WebApp.Migrations.csproj
 
 COPY WebApp.Infrastructure/ WebApp.Infrastructure/
-COPY WebApp.Domain/ WebApp.Domain/
+COPY Api.Domain/ Api.Domain/
 COPY WebApp.Migrations/ WebApp.Migrations/
 
 RUN dotnet ef migrations bundle \
