@@ -1,15 +1,5 @@
 # Development environment overrides (loaded automatically)
 services:
-  web:
-    image: mycrocloud-web
-    build:
-      context: ../../Web
-      dockerfile: Dockerfile
-    env_file:
-      - ../../Web/.env.development
-    ports:
-      - "5173:80"
-
   db:
     image: postgres:16.2-alpine
     environment:
