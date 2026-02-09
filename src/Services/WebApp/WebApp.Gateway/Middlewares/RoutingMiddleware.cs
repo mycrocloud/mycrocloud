@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
-using WebApp.Domain.Entities;
-using WebApp.Domain.Models;
+using Api.Domain.Entities;
+using Api.Domain.Models;
 using WebApp.Infrastructure;
 
 namespace WebApp.Gateway.Middlewares;

@@ -1,5 +1,5 @@
-﻿using WebApp.Domain.Enums;
-using WebApp.Domain.Models;
+﻿using Api.Domain.Enums;
+using Api.Domain.Models;
 using WebApp.Gateway.Cache;
 
 namespace WebApp.Gateway.Middlewares;

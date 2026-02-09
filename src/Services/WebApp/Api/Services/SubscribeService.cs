@@ -3,7 +3,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using WebApp.Domain.Messages;
+using Api.Domain.Messages;
 using WebApp.Infrastructure;
 
 namespace Api.Services;

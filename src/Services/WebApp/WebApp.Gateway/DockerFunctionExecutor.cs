@@ -1,10 +1,10 @@
 using System.Text.Json;
 using Docker.DotNet;
 using Docker.DotNet.Models;
-using WebApp.Domain.Models;
+using Api.Domain.Models;
 using WebApp.Gateway.Models;
-using WebApp.Domain.Enums;
-using WebApp.Domain.Entities;
+using Api.Domain.Enums;
+using Api.Domain.Entities;
 using File = System.IO.File;
 
 namespace WebApp.Gateway;

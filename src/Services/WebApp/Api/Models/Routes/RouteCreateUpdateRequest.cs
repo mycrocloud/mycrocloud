@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
-using WebApp.Domain.Entities;
-using WebApp.Domain.Enums;
-using Route = WebApp.Domain.Entities.Route;
+using Api.Domain.Entities;
+using Api.Domain.Enums;
+using Route = Api.Domain.Entities.Route;
 
 namespace Api.Models.Routes;
 
@@ -78,9 +78,9 @@ public class ResponseHeader
     [Required] public string Name { get; set; }
     [Required] public string Value { get; set; }
 
-    public WebApp.Domain.Entities.ResponseHeader ToEntity()
+    public Api.Domain.Entities.ResponseHeader ToEntity()
     {
-        return new WebApp.Domain.Entities.ResponseHeader
+        return new Api.Domain.Entities.ResponseHeader
         {
             Name = Name,
             Value = Value

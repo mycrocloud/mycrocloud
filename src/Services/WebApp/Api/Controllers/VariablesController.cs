@@ -2,10 +2,10 @@
 using Api.Filters;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using WebApp.Domain.Entities;
+using Api.Domain.Entities;
 using WebApp.Infrastructure;
-using WebApp.Domain.Services;
-using WebApp.Domain.Repositories;
+using Api.Domain.Services;
+using Api.Domain.Repositories;
 
 namespace Api.Controllers;
 

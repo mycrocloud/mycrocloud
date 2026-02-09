@@ -1,8 +1,8 @@
 ﻿using System.Text.Json;
-using WebApp.Domain.Models;
+using Api.Domain.Models;
 using WebApp.Gateway.Models;
-using WebApp.Domain.Entities;
-using WebApp.Domain.Repositories;
+using Api.Domain.Entities;
+using Api.Domain.Repositories;
 
 namespace WebApp.Gateway.Middlewares;
 

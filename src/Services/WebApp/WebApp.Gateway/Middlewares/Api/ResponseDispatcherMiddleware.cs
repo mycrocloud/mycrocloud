@@ -1,4 +1,4 @@
-using WebApp.Domain.Models;
+using Api.Domain.Models;
 
 namespace WebApp.Gateway.Middlewares.Api;
 

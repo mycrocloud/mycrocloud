@@ -5,10 +5,10 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using WebApp.Domain.Entities;
-using WebApp.Domain.Messages;
+using Api.Domain.Entities;
+using Api.Domain.Messages;
 using WebApp.Infrastructure;
-using WebApp.Domain.Services;
+using Api.Domain.Services;
 
 namespace Api.Services;
 

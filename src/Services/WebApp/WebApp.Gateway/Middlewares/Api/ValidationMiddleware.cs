@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Schema;
-using WebApp.Domain.Models;
+using Api.Domain.Models;
 
 namespace WebApp.Gateway.Middlewares.Api;
 

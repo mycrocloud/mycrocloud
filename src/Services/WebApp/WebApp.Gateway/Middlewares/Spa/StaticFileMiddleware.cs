@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.StaticFiles;
-using WebApp.Domain.Entities;
-using WebApp.Domain.Models;
+using Api.Domain.Entities;
+using Api.Domain.Models;
 using WebApp.Infrastructure;
-using WebApp.Domain.Services;
+using Api.Domain.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Net.Http.Headers;
 

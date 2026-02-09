@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 using Microsoft.EntityFrameworkCore.Migrations;
-using WebApp.Domain.Entities;
+using Api.Domain.Entities;
 
 #nullable disable
 

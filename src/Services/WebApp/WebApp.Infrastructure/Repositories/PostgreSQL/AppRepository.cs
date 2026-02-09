@@ -1,7 +1,7 @@
 using Dapper;
 using Microsoft.Extensions.Options;
-using WebApp.Domain.Entities;
-using WebApp.Domain.Repositories;
+using Api.Domain.Entities;
+using Api.Domain.Repositories;
 using Npgsql;
 
 namespace WebApp.Infrastructure.Repositories.PostgreSql;

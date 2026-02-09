@@ -1,8 +1,8 @@
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
-using WebApp.Domain.Services;
-using WebApp.Domain.Repositories;
+using Api.Domain.Services;
+using Api.Domain.Repositories;
 using Api.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Reflection;

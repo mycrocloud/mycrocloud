@@ -3,10 +3,10 @@ using Api.Models;
 using Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using WebApp.Domain.Entities;
-using WebApp.Domain.Enums;
-using WebApp.Domain.Repositories;
-using WebApp.Domain.Services;
+using Api.Domain.Entities;
+using Api.Domain.Enums;
+using Api.Domain.Repositories;
+using Api.Domain.Services;
 using WebApp.Infrastructure;
 using Api.Extensions;
 using Api.Models.Apps;
@@ -221,21 +221,21 @@ public class AppsController(
     [HttpPost("{appId}/routing-config")]
     public async Task<IActionResult> UpdateRoutingConfig(int appId, [FromBody] UpdateRoutingConfigRequest request)
     {
-        var config = new WebApp.Domain.Entities.RoutingConfig
+        var config = new Api.Domain.Entities.RoutingConfig
         {
             SchemaVersion = request.SchemaVersion,
             Routes = request.Routes.Select(r => new RoutingConfigRoute
             {
                 Name = r.Name,
                 Priority = r.Priority,
-                Match = new WebApp.Domain.Entities.RouteMatch
+                Match = new Api.Domain.Entities.RouteMatch
                 {
-                    Type = (WebApp.Domain.Entities.RouteMatchType)r.Match.Type,
+                    Type = (Api.Domain.Entities.RouteMatchType)r.Match.Type,
                     Path = r.Match.Path
                 },
-                Target = new WebApp.Domain.Entities.RouteTarget
+                Target = new Api.Domain.Entities.RouteTarget
                 {
-                    Type = (WebApp.Domain.Entities.RouteTargetType)r.Target.Type,
+                    Type = (Api.Domain.Entities.RouteTargetType)r.Target.Type,
                     StripPrefix = r.Target.StripPrefix,
                     Rewrite = r.Target.Rewrite,
                     Fallback = r.Target.Fallback
@@ -256,7 +256,7 @@ public class AppsController(
         var app = await appRepository.GetByAppId(appId);
         var config = app.RoutingConfig is { Routes.Count: > 0 }
             ? app.RoutingConfig
-            : WebApp.Domain.Entities.RoutingConfig.Default;
+            : Api.Domain.Entities.RoutingConfig.Default;
 
         return Ok(new
         {

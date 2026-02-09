@@ -3,7 +3,7 @@ using Api.Utils;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Api.Extensions;
-using WebApp.Domain.Entities;
+using Api.Domain.Entities;
 using WebApp.Infrastructure;
 
 namespace Api.Controllers;

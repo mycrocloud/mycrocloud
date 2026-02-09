@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
-using WebApp.Domain.Services;
+using Api.Domain.Services;
 using WebApp.Infrastructure;
 using WebApp.Infrastructure.Services;
 using WebApp.Infrastructure.Storage;

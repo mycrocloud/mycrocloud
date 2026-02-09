@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using WebApp.Domain.Entities;
+using Api.Domain.Entities;
 
 namespace WebApp.Infrastructure;
 

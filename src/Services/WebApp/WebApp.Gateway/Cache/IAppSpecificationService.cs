@@ -1,11 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using System.Text.Json;
-using WebApp.Domain.Entities;
-using WebApp.Domain.Enums;
+using Api.Domain.Entities;
+using Api.Domain.Enums;
 using WebApp.Infrastructure;
-using WebApp.Domain.Models;
-using WebApp.Domain.Services;
+using Api.Domain.Models;
+using Api.Domain.Services;
 
 namespace WebApp.Gateway.Cache;
 

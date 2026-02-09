@@ -1,6 +1,6 @@
-using WebApp.Domain.Models;
+using Api.Domain.Models;
 using WebApp.Gateway.Models;
-using WebApp.Domain.Enums;
+using Api.Domain.Enums;
 
 namespace WebApp.Gateway;
 

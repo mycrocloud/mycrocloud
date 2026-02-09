@@ -1,8 +1,8 @@
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using WebApp.Domain.Enums;
-using WebApp.Domain.Models;
+using Api.Domain.Enums;
+using Api.Domain.Models;
 using WebApp.Infrastructure;
 
 namespace WebApp.Gateway.Middlewares.Api;

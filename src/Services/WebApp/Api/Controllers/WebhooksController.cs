@@ -5,8 +5,8 @@ using Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Api.Models;
-using WebApp.Domain.Entities;
-using WebApp.Domain.Messages;
+using Api.Domain.Entities;
+using Api.Domain.Messages;
 using WebApp.Infrastructure;
 
 namespace Api.Controllers;

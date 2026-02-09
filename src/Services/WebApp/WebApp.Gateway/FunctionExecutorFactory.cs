@@ -1,4 +1,4 @@
-using WebApp.Domain.Enums;
+using Api.Domain.Enums;
 
 namespace WebApp.Gateway;
 

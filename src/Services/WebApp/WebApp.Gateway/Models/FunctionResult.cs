@@ -1,4 +1,4 @@
-using WebApp.Domain.Entities;
+using Api.Domain.Entities;
 
 namespace WebApp.Gateway.Models;
 

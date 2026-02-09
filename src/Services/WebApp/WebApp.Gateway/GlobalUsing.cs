@@ -1,1 +1,1 @@
-﻿global using Route = WebApp.Domain.Entities.Route;
+﻿global using Route = Api.Domain.Entities.Route;

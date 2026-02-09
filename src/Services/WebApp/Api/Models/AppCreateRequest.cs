@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
-using WebApp.Domain.Entities;
-using WebApp.Domain.Enums;
+using Api.Domain.Entities;
+using Api.Domain.Enums;
 
 namespace Api.Models;
 

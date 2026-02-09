@@ -6,7 +6,7 @@ using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
-using WebApp.Domain.Entities;
+using Api.Domain.Entities;
 using WebApp.Infrastructure;
 
 namespace Api.Services;

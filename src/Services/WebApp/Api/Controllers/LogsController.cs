@@ -1,7 +1,7 @@
 ﻿using Api.Filters;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using WebApp.Domain.Repositories;
+using Api.Domain.Repositories;
 
 namespace Api.Controllers;
 

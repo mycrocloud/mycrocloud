@@ -26,7 +26,7 @@ namespace WebApp.Migrations.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("WebApp.Domain.Entities.ApiKey", b =>
+            modelBuilder.Entity("Api.Domain.Entities.ApiKey", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -63,7 +63,7 @@ namespace WebApp.Migrations.Migrations
                     b.ToTable("ApiKeys");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.App", b =>
+            modelBuilder.Entity("Api.Domain.Entities.App", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -104,7 +104,7 @@ namespace WebApp.Migrations.Migrations
                     b.ToTable("Apps");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.AppBuildJob", b =>
+            modelBuilder.Entity("Api.Domain.Entities.AppBuildJob", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("text");
@@ -131,7 +131,7 @@ namespace WebApp.Migrations.Migrations
                     b.ToTable("AppBuildJobs");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.AppIntegration", b =>
+            modelBuilder.Entity("Api.Domain.Entities.AppIntegration", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -175,7 +175,7 @@ namespace WebApp.Migrations.Migrations
                     b.ToTable("AppIntegration");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.AuthenticationScheme", b =>
+            modelBuilder.Entity("Api.Domain.Entities.AuthenticationScheme", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -224,7 +224,7 @@ namespace WebApp.Migrations.Migrations
                     b.ToTable("AuthenticationSchemes");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.File", b =>
+            modelBuilder.Entity("Api.Domain.Entities.File", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -258,7 +258,7 @@ namespace WebApp.Migrations.Migrations
                     b.ToTable("Files");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.Folder", b =>
+            modelBuilder.Entity("Api.Domain.Entities.Folder", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -294,7 +294,7 @@ namespace WebApp.Migrations.Migrations
                     b.ToTable("Folders");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.Log", b =>
+            modelBuilder.Entity("Api.Domain.Entities.Log", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -358,7 +358,7 @@ namespace WebApp.Migrations.Migrations
                     b.ToTable("Logs");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.Object", b =>
+            modelBuilder.Entity("Api.Domain.Entities.Object", b =>
                 {
                     b.Property<int>("AppId")
                         .HasColumnType("integer");
@@ -387,7 +387,7 @@ namespace WebApp.Migrations.Migrations
                     b.ToTable("Objects");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.Route", b =>
+            modelBuilder.Entity("Api.Domain.Entities.Route", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -486,7 +486,7 @@ namespace WebApp.Migrations.Migrations
                     b.ToTable("Routes");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.RouteFolder", b =>
+            modelBuilder.Entity("Api.Domain.Entities.RouteFolder", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -522,7 +522,7 @@ namespace WebApp.Migrations.Migrations
                     b.ToTable("RouteFolders");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.TextStorage", b =>
+            modelBuilder.Entity("Api.Domain.Entities.TextStorage", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -559,7 +559,7 @@ namespace WebApp.Migrations.Migrations
                     b.ToTable("TextStorages");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.UserToken", b =>
+            modelBuilder.Entity("Api.Domain.Entities.UserToken", b =>
                 {
                     b.Property<string>("UserId")
                         .HasColumnType("text");
@@ -584,7 +584,7 @@ namespace WebApp.Migrations.Migrations
                     b.ToTable("UserTokens");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.Variable", b =>
+            modelBuilder.Entity("Api.Domain.Entities.Variable", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -624,9 +624,9 @@ namespace WebApp.Migrations.Migrations
                     b.ToTable("Variables");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.ApiKey", b =>
+            modelBuilder.Entity("Api.Domain.Entities.ApiKey", b =>
                 {
-                    b.HasOne("WebApp.Domain.Entities.App", "App")
+                    b.HasOne("Api.Domain.Entities.App", "App")
                         .WithMany("ApiKeys")
                         .HasForeignKey("AppId")
                         .OnDelete(DeleteBehavior.Cascade);
@@ -634,9 +634,9 @@ namespace WebApp.Migrations.Migrations
                     b.Navigation("App");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.App", b =>
+            modelBuilder.Entity("Api.Domain.Entities.App", b =>
                 {
-                    b.OwnsOne("WebApp.Domain.Entities.AppSettings", "Settings", b1 =>
+                    b.OwnsOne("Api.Domain.Entities.AppSettings", "Settings", b1 =>
                         {
                             b1.Property<int>("AppId")
                                 .HasColumnType("integer");
@@ -666,7 +666,7 @@ namespace WebApp.Migrations.Migrations
                                 .HasForeignKey("AppId");
                         });
 
-                    b.OwnsOne("WebApp.Domain.Entities.CorsSettings", "CorsSettings", b1 =>
+                    b.OwnsOne("Api.Domain.Entities.CorsSettings", "CorsSettings", b1 =>
                         {
                             b1.Property<int>("AppId")
                                 .HasColumnType("integer");
@@ -701,9 +701,9 @@ namespace WebApp.Migrations.Migrations
                     b.Navigation("Settings");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.AppBuildJob", b =>
+            modelBuilder.Entity("Api.Domain.Entities.AppBuildJob", b =>
                 {
-                    b.HasOne("WebApp.Domain.Entities.App", "App")
+                    b.HasOne("Api.Domain.Entities.App", "App")
                         .WithMany()
                         .HasForeignKey("AppId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -712,20 +712,20 @@ namespace WebApp.Migrations.Migrations
                     b.Navigation("App");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.AppIntegration", b =>
+            modelBuilder.Entity("Api.Domain.Entities.AppIntegration", b =>
                 {
-                    b.HasOne("WebApp.Domain.Entities.App", "App")
+                    b.HasOne("Api.Domain.Entities.App", "App")
                         .WithOne("Integration")
-                        .HasForeignKey("WebApp.Domain.Entities.AppIntegration", "AppId")
+                        .HasForeignKey("Api.Domain.Entities.AppIntegration", "AppId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("App");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.AuthenticationScheme", b =>
+            modelBuilder.Entity("Api.Domain.Entities.AuthenticationScheme", b =>
                 {
-                    b.HasOne("WebApp.Domain.Entities.App", "App")
+                    b.HasOne("Api.Domain.Entities.App", "App")
                         .WithMany("AuthenticationSchemes")
                         .HasForeignKey("AppId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -734,9 +734,9 @@ namespace WebApp.Migrations.Migrations
                     b.Navigation("App");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.File", b =>
+            modelBuilder.Entity("Api.Domain.Entities.File", b =>
                 {
-                    b.HasOne("WebApp.Domain.Entities.Folder", "Folder")
+                    b.HasOne("Api.Domain.Entities.Folder", "Folder")
                         .WithMany("Files")
                         .HasForeignKey("FolderId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -745,15 +745,15 @@ namespace WebApp.Migrations.Migrations
                     b.Navigation("Folder");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.Folder", b =>
+            modelBuilder.Entity("Api.Domain.Entities.Folder", b =>
                 {
-                    b.HasOne("WebApp.Domain.Entities.App", "App")
+                    b.HasOne("Api.Domain.Entities.App", "App")
                         .WithMany("Folders")
                         .HasForeignKey("AppId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("WebApp.Domain.Entities.Folder", "Parent")
+                    b.HasOne("Api.Domain.Entities.Folder", "Parent")
                         .WithMany("Children")
                         .HasForeignKey("ParentId");
 
@@ -762,15 +762,15 @@ namespace WebApp.Migrations.Migrations
                     b.Navigation("Parent");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.Log", b =>
+            modelBuilder.Entity("Api.Domain.Entities.Log", b =>
                 {
-                    b.HasOne("WebApp.Domain.Entities.App", "App")
+                    b.HasOne("Api.Domain.Entities.App", "App")
                         .WithMany("Logs")
                         .HasForeignKey("AppId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("WebApp.Domain.Entities.Route", "Route")
+                    b.HasOne("Api.Domain.Entities.Route", "Route")
                         .WithMany("Logs")
                         .HasForeignKey("RouteId")
                         .OnDelete(DeleteBehavior.Cascade);
@@ -780,9 +780,9 @@ namespace WebApp.Migrations.Migrations
                     b.Navigation("Route");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.Object", b =>
+            modelBuilder.Entity("Api.Domain.Entities.Object", b =>
                 {
-                    b.HasOne("WebApp.Domain.Entities.App", "App")
+                    b.HasOne("Api.Domain.Entities.App", "App")
                         .WithMany("Objects")
                         .HasForeignKey("AppId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -791,25 +791,25 @@ namespace WebApp.Migrations.Migrations
                     b.Navigation("App");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.Route", b =>
+            modelBuilder.Entity("Api.Domain.Entities.Route", b =>
                 {
-                    b.HasOne("WebApp.Domain.Entities.App", "App")
+                    b.HasOne("Api.Domain.Entities.App", "App")
                         .WithMany("Routes")
                         .HasForeignKey("AppId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("WebApp.Domain.Entities.File", "File")
+                    b.HasOne("Api.Domain.Entities.File", "File")
                         .WithMany()
                         .HasForeignKey("FileId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("WebApp.Domain.Entities.RouteFolder", "Folder")
+                    b.HasOne("Api.Domain.Entities.RouteFolder", "Folder")
                         .WithMany("Routes")
                         .HasForeignKey("FolderId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.OwnsMany("WebApp.Domain.Entities.ResponseHeader", "ResponseHeaders", b1 =>
+                    b.OwnsMany("Api.Domain.Entities.ResponseHeader", "ResponseHeaders", b1 =>
                         {
                             b1.Property<int>("RouteId")
                                 .HasColumnType("integer");
@@ -843,14 +843,14 @@ namespace WebApp.Migrations.Migrations
                     b.Navigation("ResponseHeaders");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.RouteFolder", b =>
+            modelBuilder.Entity("Api.Domain.Entities.RouteFolder", b =>
                 {
-                    b.HasOne("WebApp.Domain.Entities.App", "App")
+                    b.HasOne("Api.Domain.Entities.App", "App")
                         .WithMany("RouteFolders")
                         .HasForeignKey("AppId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasOne("WebApp.Domain.Entities.RouteFolder", "Parent")
+                    b.HasOne("Api.Domain.Entities.RouteFolder", "Parent")
                         .WithMany("SubFolders")
                         .HasForeignKey("ParentId");
 
@@ -859,9 +859,9 @@ namespace WebApp.Migrations.Migrations
                     b.Navigation("Parent");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.TextStorage", b =>
+            modelBuilder.Entity("Api.Domain.Entities.TextStorage", b =>
                 {
-                    b.HasOne("WebApp.Domain.Entities.App", "App")
+                    b.HasOne("Api.Domain.Entities.App", "App")
                         .WithMany("TextStorages")
                         .HasForeignKey("AppId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -870,9 +870,9 @@ namespace WebApp.Migrations.Migrations
                     b.Navigation("App");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.Variable", b =>
+            modelBuilder.Entity("Api.Domain.Entities.Variable", b =>
                 {
-                    b.HasOne("WebApp.Domain.Entities.App", "App")
+                    b.HasOne("Api.Domain.Entities.App", "App")
                         .WithMany("Variables")
                         .HasForeignKey("AppId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -881,7 +881,7 @@ namespace WebApp.Migrations.Migrations
                     b.Navigation("App");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.App", b =>
+            modelBuilder.Entity("Api.Domain.Entities.App", b =>
                 {
                     b.Navigation("ApiKeys");
 
@@ -904,19 +904,19 @@ namespace WebApp.Migrations.Migrations
                     b.Navigation("Variables");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.Folder", b =>
+            modelBuilder.Entity("Api.Domain.Entities.Folder", b =>
                 {
                     b.Navigation("Children");
 
                     b.Navigation("Files");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.Route", b =>
+            modelBuilder.Entity("Api.Domain.Entities.Route", b =>
                 {
                     b.Navigation("Logs");
                 });
 
-            modelBuilder.Entity("WebApp.Domain.Entities.RouteFolder", b =>
+            modelBuilder.Entity("Api.Domain.Entities.RouteFolder", b =>
                 {
                     b.Navigation("Routes");
 

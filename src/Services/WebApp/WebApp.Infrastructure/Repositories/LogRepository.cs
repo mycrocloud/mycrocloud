@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using WebApp.Domain.Entities;
-using WebApp.Domain.Repositories;
+using Api.Domain.Entities;
+using Api.Domain.Repositories;
 
 namespace WebApp.Infrastructure.Repositories;
 

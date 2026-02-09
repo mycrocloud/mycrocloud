@@ -1,5 +1,5 @@
-using WebApp.Domain.Entities;
-using WebApp.Domain.Models;
+using Api.Domain.Entities;
+using Api.Domain.Models;
 using WebApp.Gateway.Cache;
 
 namespace WebApp.Gateway.Middlewares.Api;
