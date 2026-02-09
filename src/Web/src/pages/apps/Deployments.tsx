@@ -24,12 +24,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   Rocket,
   ChevronRight,
   ChevronLeft,
   Search,
   Loader2,
   Play,
+  GitBranch,
+  ChevronDown,
+  ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +48,19 @@ interface IDeployment {
   buildName: string | null;
   createdAt: string;
   artifactSize: number;
+}
+
+interface ISourceInfo {
+  branch: string;
+  repository: string;
+  repositoryUrl: string;
+  commit: {
+    sha: string;
+    message: string;
+    author: string;
+    date: string;
+    url: string;
+  };
 }
 
 type BuildInputs = {
@@ -80,6 +101,12 @@ export default function DeploymentsList() {
   const [deployments, setDeployments] = useState<IDeployment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showBuildModal, setShowBuildModal] = useState(false);
+
+  // Source info state
+  const [sourceInfo, setSourceInfo] = useState<ISourceInfo | null>(null);
+  const [loadingSourceInfo, setLoadingSourceInfo] = useState(false);
+  const [sourceInfoError, setSourceInfoError] = useState<string | null>(null);
+  const [sourceInfoOpen, setSourceInfoOpen] = useState(false);
 
   // Filter & Pagination state
   const [searchQuery, setSearchQuery] = useState("");
@@ -161,9 +188,28 @@ export default function DeploymentsList() {
     }
   };
 
+  const fetchSourceInfo = async () => {
+    setLoadingSourceInfo(true);
+    setSourceInfoError(null);
+    try {
+      const data = await get<ISourceInfo>(`/api/apps/${app.id}/source-info`);
+      setSourceInfo(data);
+    } catch (error: any) {
+      setSourceInfoError(
+        error.message || "Failed to load source information"
+      );
+    } finally {
+      setLoadingSourceInfo(false);
+    }
+  };
+
   useEffect(() => {
     if (showBuildModal) {
       reset();
+      // Reset source info when modal opens
+      setSourceInfo(null);
+      setSourceInfoError(null);
+      setSourceInfoOpen(false);
     }
   }, [showBuildModal, reset]);
 
@@ -316,18 +362,144 @@ export default function DeploymentsList() {
             </DialogDescription>
           </DialogHeader>
           <form id="build-form" onSubmit={handleSubmit(onSubmit)}>
-            <div className="space-y-2">
-              <Label htmlFor="build-name">Deployment Name (Optional)</Label>
-              <Input
-                id="build-name"
-                {...register("name")}
-                placeholder="e.g., v1.0.0, feature-update"
-              />
-              {errors.name && (
-                <span className="text-sm text-destructive">
-                  {errors.name.message}
-                </span>
-              )}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="build-name">Deployment Name (Optional)</Label>
+                <Input
+                  id="build-name"
+                  {...register("name")}
+                  placeholder="e.g., v1.0.0, feature-update"
+                />
+                {errors.name && (
+                  <span className="text-sm text-destructive">
+                    {errors.name.message}
+                  </span>
+                )}
+              </div>
+
+              {/* Source Information Collapsible */}
+              <Collapsible
+                open={sourceInfoOpen}
+                onOpenChange={setSourceInfoOpen}
+                className="space-y-2"
+              >
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex w-full items-center justify-between p-2 text-sm"
+                    type="button"
+                  >
+                    <div className="flex items-center gap-2">
+                      <GitBranch className="h-4 w-4" />
+                      <span>Source Information (Optional)</span>
+                    </div>
+                    <ChevronDown
+                      className={cn(
+                        "h-4 w-4 transition-transform",
+                        sourceInfoOpen && "rotate-180"
+                      )}
+                    />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-3 rounded-md border p-4">
+                  {!sourceInfo && !sourceInfoError && (
+                    <div className="text-center">
+                      <p className="mb-3 text-sm text-muted-foreground">
+                        Preview the latest commit from your repository
+                      </p>
+                      <Button
+                        onClick={fetchSourceInfo}
+                        disabled={loadingSourceInfo}
+                        size="sm"
+                        variant="outline"
+                        type="button"
+                      >
+                        {loadingSourceInfo ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Loading...
+                          </>
+                        ) : (
+                          <>
+                            <GitBranch className="mr-2 h-4 w-4" />
+                            Load Source Info
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+
+                  {sourceInfoError && (
+                    <div className="rounded-md bg-destructive/10 p-3">
+                      <p className="text-sm text-destructive">
+                        {sourceInfoError}
+                      </p>
+                    </div>
+                  )}
+
+                  {sourceInfo && (
+                    <div className="space-y-3 text-sm">
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground">
+                          Repository
+                        </p>
+                        <a
+                          href={sourceInfo.repositoryUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 font-mono text-sm text-blue-600 hover:underline dark:text-blue-400"
+                        >
+                          {sourceInfo.repository}
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground">
+                          Branch
+                        </p>
+                        <p className="font-mono">{sourceInfo.branch}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground">
+                          Commit
+                        </p>
+                        <a
+                          href={sourceInfo.commit.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 font-mono text-xs text-blue-600 hover:underline dark:text-blue-400"
+                        >
+                          {sourceInfo.commit.sha.slice(0, 8)}
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground">
+                          Message
+                        </p>
+                        <p className="line-clamp-2">
+                          {sourceInfo.commit.message}
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground">
+                            Author
+                          </p>
+                          <p>{sourceInfo.commit.author}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground">
+                            Date
+                          </p>
+                          <p>{formatTimestamp(sourceInfo.commit.date)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CollapsibleContent>
+              </Collapsible>
             </div>
           </form>
           <DialogFooter>

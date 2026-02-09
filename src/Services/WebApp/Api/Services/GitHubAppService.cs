@@ -85,6 +85,39 @@ public class GitHubAppService(HttpClient httpClient, IOptions<GitHubAppOptions> 
 
         return repos;
     }
+
+    public async Task<GitHubCommitInfo> GetLatestCommit(long installationId, string owner, string repo, string branch)
+    {
+        var token = await GetInstallationAccessToken(installationId);
+
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var json = await httpClient.GetStringAsync($"https://api.github.com/repos/{owner}/{repo}/commits/{branch}");
+        var commit = JsonSerializer.Deserialize<GitHubCommitInfo>(json)!;
+
+        return commit;
+    }
+
+    public async Task<GitHubCommitInfo> GetLatestCommitByRepoId(long installationId, long repoId, string branch)
+    {
+        var token = await GetInstallationAccessToken(installationId);
+
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        // Get repo details by ID to extract owner and name
+        var repoJson = await httpClient.GetStringAsync($"https://api.github.com/repositories/{repoId}");
+        var repoDoc = JsonDocument.Parse(repoJson);
+        var fullName = repoDoc.RootElement.GetProperty("full_name").GetString()!;
+        var parts = fullName.Split('/');
+        
+        var json = await httpClient.GetStringAsync($"https://api.github.com/repos/{parts[0]}/{parts[1]}/commits/{branch}");
+        var commitDoc = JsonDocument.Parse(json);
+        var commit = JsonSerializer.Deserialize<GitHubCommitInfo>(json)!;
+        commit.RepositoryFullName = fullName;
+        commit.HtmlUrl = commitDoc.RootElement.GetProperty("html_url").GetString()!;
+
+        return commit;
+    }
 }
 
 public class GitHubAppInstallation
@@ -114,4 +147,29 @@ public class GitHubRepo
     [JsonPropertyName("created_at")] public DateTime CreatedAt { get; set; }
 
     [JsonPropertyName("updated_at")] public DateTime UpdatedAt { get; set; }
+}
+
+public class GitHubCommitInfo
+{
+    [JsonPropertyName("sha")] public string Sha { get; set; }
+
+    [JsonPropertyName("commit")] public GitHubCommitDetail Commit { get; set; }
+
+    [JsonPropertyName("html_url")] public string HtmlUrl { get; set; }
+
+    public string RepositoryFullName { get; set; }
+}
+
+public class GitHubCommitDetail
+{
+    [JsonPropertyName("author")] public GitHubCommitAuthor Author { get; set; }
+
+    [JsonPropertyName("message")] public string Message { get; set; }
+}
+
+public class GitHubCommitAuthor
+{
+    [JsonPropertyName("name")] public string Name { get; set; }
+
+    [JsonPropertyName("date")] public DateTime Date { get; set; }
 }

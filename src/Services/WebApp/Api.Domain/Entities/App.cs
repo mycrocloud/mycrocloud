@@ -60,6 +60,17 @@ public class AppLink : BaseEntity
 
 public class AppBuildConfigs
 {
+    public static readonly AppBuildConfigs Default = new()
+    {
+        Branch = "main",
+        Directory = "",
+        OutDir = "dist",
+        InstallCommand = "npm install",
+        BuildCommand = "npm run build",
+        NodeVersion = "20",
+        Framework = "react"
+    };
+
     public string Branch { get; set; }
     public string Directory { get; set; }
     public string OutDir { get; set; }

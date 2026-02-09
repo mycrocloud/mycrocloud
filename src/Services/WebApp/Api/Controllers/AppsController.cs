@@ -218,6 +218,55 @@ public class AppsController(
         return NoContent();
     }
 
+    [HttpGet("{id:int}/source-info")]
+    public async Task<IActionResult> GetSourceInfo(int id)
+    {
+        var app = await appDbContext.Apps
+            .Include(a => a.Link)
+            .Include(a => a.BuildConfigs)
+            .SingleAsync(a => a.Id == id);
+
+        if (app.Link is null)
+        {
+            return NotFound(new { Message = "No GitHub repository linked" });
+        }
+
+        // Use default branch if BuildConfigs or Branch is null/empty
+        var branch = app.BuildConfigs?.Branch;
+        if (string.IsNullOrEmpty(branch))
+        {
+            branch = AppBuildConfigs.Default.Branch;
+        }
+
+        try
+        {
+            var commitInfo = await githubAppService.GetLatestCommitByRepoId(
+                app.Link.InstallationId,
+                app.Link.RepoId,
+                branch
+            );
+
+            return Ok(new
+            {
+                Branch = branch,
+                Repository = commitInfo.RepositoryFullName,
+                RepositoryUrl = $"https://github.com/{commitInfo.RepositoryFullName}",
+                Commit = new
+                {
+                    Sha = commitInfo.Sha,
+                    Message = commitInfo.Commit.Message,
+                    Author = commitInfo.Commit.Author.Name,
+                    Date = commitInfo.Commit.Author.Date,
+                    Url = commitInfo.HtmlUrl
+                }
+            });
+        }
+        catch (HttpRequestException ex)
+        {
+            return BadRequest(new { Message = $"Failed to fetch commit info: {ex.Message}" });
+        }
+    }
+
     [HttpPost("{appId}/routing-config")]
     public async Task<IActionResult> UpdateRoutingConfig(int appId, [FromBody] UpdateRoutingConfigRequest request)
     {
