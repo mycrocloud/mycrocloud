@@ -76,13 +76,45 @@ public class BuildsController(
             .Where(v => v.AppId == appId && (v.Target == VariableTarget.Build || v.Target == VariableTarget.All))
             .ToDictionaryAsync(v => v.Name, v => v.Value ?? "");
 
+        // Fetch latest commit info from GitHub
+        var config = app.BuildConfigs ?? AppBuildConfigs.Default;
+        var branch = string.IsNullOrEmpty(config.Branch) ? AppBuildConfigs.Default.Branch : config.Branch;
+        
+        GitHubCommitInfo? commitInfo = null;
+        try
+        {
+            commitInfo = await gitHubAppService.GetLatestCommitByRepoId(
+                app.Link.InstallationId,
+                app.Link.RepoId,
+                branch
+            );
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to fetch commit info for build");
+        }
+
         var build = new AppBuild
         {
             Id = Guid.NewGuid(),
             App = app,
             Status = AppBuildState.queued,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            Metadata = new Dictionary<string, string>()
         };
+        
+        // Populate metadata if commit info is available
+        if (commitInfo != null)
+        {
+            if (!string.IsNullOrEmpty(commitInfo.Sha))
+                build.Metadata[BuildMetadataKeys.CommitSha] = commitInfo.Sha;
+            if (!string.IsNullOrEmpty(commitInfo.Commit.Message))
+                build.Metadata[BuildMetadataKeys.CommitMessage] = commitInfo.Commit.Message;
+            if (!string.IsNullOrEmpty(commitInfo.Commit.Author.Name))
+                build.Metadata[BuildMetadataKeys.Author] = commitInfo.Commit.Author.Name;
+        }
+        if (!string.IsNullOrEmpty(branch))
+            build.Metadata[BuildMetadataKeys.Branch] = branch;
 
         appDbContext.AppBuildJobs.Add(build);
 
@@ -93,11 +125,12 @@ public class BuildsController(
             AppId = app.Id,
             BuildId = build.Id,
             ArtifactId = null,
+            Name = request.Name,
             Status = DeploymentStatus.Building
         };
         appDbContext.SpaDeployments.Add(deployment);
 
-        var config = app.BuildConfigs;
+        var buildConfig = app.BuildConfigs ?? AppBuildConfigs.Default;
 
         // TODO: Get limits based on user's subscription plan
         // var planLimits = await GetUserPlanLimits(app.UserId);
@@ -108,12 +141,12 @@ public class BuildsController(
             BuildId = build.Id.ToString(),
             RepoFullName = repo.FullName,
             CloneUrl = $"https://x-access-token:{installationAccessToken}@github.com/{repo.FullName}",
-            Branch = config.Branch,
-            Directory = config.Directory,
-            OutDir = config.OutDir,
-            InstallCommand = config.InstallCommand,
-            BuildCommand = config.BuildCommand,
-            NodeVersion = config.NodeVersion,
+            Branch = buildConfig.Branch,
+            Directory = buildConfig.Directory,
+            OutDir = buildConfig.OutDir,
+            InstallCommand = buildConfig.InstallCommand,
+            BuildCommand = buildConfig.BuildCommand,
+            NodeVersion = buildConfig.NodeVersion,
             EnvVars = buildEnvVars,
             ArtifactsUploadUrl = linkGenerator.GetUriByAction(HttpContext, nameof(BuildsController.UploadArtifacts), BuildsController.Controller, new { appId = app.Id, buildId = build.Id })!,
             Limits = planLimits

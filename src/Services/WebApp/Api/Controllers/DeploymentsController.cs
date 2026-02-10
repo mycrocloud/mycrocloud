@@ -36,10 +36,15 @@ public class DeploymentsController(
         {
             d.Id,
             IsActive = d.Id == activeDeploymentId,
+            d.Name,
+            d.Status,
             d.BuildId,
-            BuildName = (string?)null, // AppBuild doesn't have Name property
+            Build = d.Build != null ? new
+            {
+                Metadata = d.Build.Metadata
+            } : null,
             d.CreatedAt,
-            ArtifactSize = d.Artifact.BundleSize,
+            ArtifactSize = d.Artifact != null ? d.Artifact.BundleSize : (long?)null,
         }));
     }
 
@@ -62,11 +67,16 @@ public class DeploymentsController(
         {
             deployment.Id,
             IsActive = isActive,
+            deployment.Name,
+            deployment.Status,
             deployment.BuildId,
-            BuildName = (string?)null, // AppBuild doesn't have Name property
+            Build = deployment.Build != null ? new
+            {
+                Metadata = deployment.Build.Metadata
+            } : null,
             deployment.CreatedAt,
-            ArtifactSize = deployment.Artifact.BundleSize,
-            ArtifactHash = deployment.Artifact.BundleHash,
+            ArtifactSize = deployment.Artifact?.BundleSize,
+            ArtifactHash = deployment.Artifact?.BundleHash,
             ArtifactId = deployment.ArtifactId,
         });
     }

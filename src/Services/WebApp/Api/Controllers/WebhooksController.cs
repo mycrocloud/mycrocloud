@@ -53,13 +53,45 @@ public class WebhooksController(GitHubAppService gitHubAppService,
         
         foreach (var app in apps)
         {
+            // Fetch latest commit info from GitHub
+            var config = app.BuildConfigs ?? AppBuildConfigs.Default;
+            var branch = string.IsNullOrEmpty(config.Branch) ? AppBuildConfigs.Default.Branch : config.Branch;
+            
+            GitHubCommitInfo? commitInfo = null;
+            try
+            {
+                commitInfo = await gitHubAppService.GetLatestCommitByRepoId(
+                    app.Link!.InstallationId,
+                    app.Link.RepoId,
+                    branch
+                );
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to fetch commit info for webhook build");
+            }
+
             var build = new AppBuild
             {
                 Id = Guid.NewGuid(),
                 App = app,
                 Status = AppBuildState.queued,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                Metadata = new Dictionary<string, string>()
             };
+            
+            // Populate metadata if commit info is available
+            if (commitInfo != null)
+            {
+                if (!string.IsNullOrEmpty(commitInfo.Sha))
+                    build.Metadata[BuildMetadataKeys.CommitSha] = commitInfo.Sha;
+                if (!string.IsNullOrEmpty(commitInfo.Commit.Message))
+                    build.Metadata[BuildMetadataKeys.CommitMessage] = commitInfo.Commit.Message;
+                if (!string.IsNullOrEmpty(commitInfo.Commit.Author.Name))
+                    build.Metadata[BuildMetadataKeys.Author] = commitInfo.Commit.Author.Name;
+            }
+            if (!string.IsNullOrEmpty(branch))
+                build.Metadata[BuildMetadataKeys.Branch] = branch;
 
             appDbContext.AppBuildJobs.Add(build);
 
@@ -74,7 +106,7 @@ public class WebhooksController(GitHubAppService gitHubAppService,
             };
             appDbContext.SpaDeployments.Add(deployment);
 
-            var config = app.BuildConfigs;
+            var buildConfig = app.BuildConfigs ?? AppBuildConfigs.Default;
 
             // TODO: Get limits based on user's subscription plan
             // var planLimits = await GetUserPlanLimits(app.UserId);
@@ -85,11 +117,11 @@ public class WebhooksController(GitHubAppService gitHubAppService,
                 BuildId = build.Id.ToString(),
                 RepoFullName = repoFullName,
                 CloneUrl = cloneUrl.Replace("https://", "https://x-access-token:" + token + "@"),
-                Branch = config.Branch,
-                Directory = config.Directory,
-                OutDir = config.OutDir,
-                InstallCommand = config.InstallCommand,
-                BuildCommand = config.BuildCommand,
+                Branch = buildConfig.Branch,
+                Directory = buildConfig.Directory,
+                OutDir = buildConfig.OutDir,
+                InstallCommand = buildConfig.InstallCommand,
+                BuildCommand = buildConfig.BuildCommand,
                 ArtifactsUploadUrl = linkGenerator.GetUriByAction(HttpContext, nameof(BuildsController.UploadArtifacts), BuildsController.Controller, new { appId = app.Id, buildId = build.Id })!,
                 Limits = planLimits
             };
