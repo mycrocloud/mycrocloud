@@ -2,18 +2,15 @@ using Api.Filters;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Api.Domain.Entities;
-using Api.Domain.Services;
 using Api.Infrastructure;
 using Api.Services;
 
 namespace Api.Controllers;
 
-[Route("apps/{appId:int}/[controller]")]
+[Route("apps/{appId:int}/spa/deployments")]
 [TypeFilter<AppOwnerActionFilter>(Arguments = ["appId"])]
-public class DeploymentsController(
+public class SpaDeploymentsController(
     AppDbContext appDbContext,
-    IApiDeploymentService apiDeploymentService,
-    IAppSpecificationPublisher specPublisher,
     IArtifactExtractionService extractionService
 ) : BaseController
 {
@@ -119,7 +116,7 @@ public class DeploymentsController(
         });
     }
 
-    [HttpPost("spa/redeploy/{artifactId:guid}")]
+    [HttpPost("redeploy/{artifactId:guid}")]
     public async Task<IActionResult> RedeployArtifact(int appId, Guid artifactId)
     {
         var artifact = await appDbContext.Artifacts
@@ -160,22 +157,6 @@ public class DeploymentsController(
         {
             DeploymentId = deployment.Id,
             Message = "Artifact redeployed successfully"
-        });
-    }
-
-    [HttpPost("api/publish")]
-    public async Task<IActionResult> PublishApi()
-    {
-        // 1. Create the versioned snapshot of all active/enabled routes
-        var deploymentId = await apiDeploymentService.CreateDeploymentSnapshotAsync(App.Id);
-
-        // 2. Publish the new AppSpecification to Redis (which now includes the new ApiDeploymentId)
-        await specPublisher.PublishAsync(App.Slug);
-
-        return Ok(new
-        {
-            DeploymentId = deploymentId,
-            Message = "API published successfully"
         });
     }
 }
