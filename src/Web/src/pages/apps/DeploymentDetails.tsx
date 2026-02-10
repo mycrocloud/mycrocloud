@@ -11,21 +11,18 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import {
-  CheckCircle2,
   Loader2,
   ArrowLeft,
-  Copy,
-  Check,
-  Package,
   FileArchive,
   GitBranch,
   ExternalLink,
   RotateCcw,
-  Clock,
   ChevronDown,
   ChevronRight,
   File,
   Search,
+  User,
+  Hash,
 } from "lucide-react";
 
 interface IDeployment {
@@ -37,6 +34,9 @@ interface IDeployment {
   artifactSize: number;
   artifactHash: string;
   artifactId?: string;
+  build?: {
+    metadata: Record<string, string>;
+  };
 }
 
 interface IDeploymentFile {
@@ -73,6 +73,40 @@ function formatBytes(bytes: number): string {
   return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
 }
 
+function getDeploymentTitle(deployment: IDeployment): string {
+  const commitMessage = deployment.build?.metadata?.commitMessage;
+  if (commitMessage) {
+    const firstLine = commitMessage.split('\n')[0];
+    return firstLine.length > 60 ? firstLine.slice(0, 57) + '...' : firstLine;
+  }
+  
+  const branch = deployment.build?.metadata?.branch;
+  if (branch) {
+    return `Deploy from ${branch}`;
+  }
+  
+  return `Deployment ${deployment.id.slice(0, 8)}`;
+}
+
+function getDeploymentSubtitle(deployment: IDeployment): string | null {
+  const commitSha = deployment.build?.metadata?.commitSha;
+  const branch = deployment.build?.metadata?.branch;
+  
+  if (commitSha && branch) {
+    return `${branch} • ${commitSha.slice(0, 8)}`;
+  }
+  
+  if (commitSha) {
+    return commitSha.slice(0, 8);
+  }
+  
+  if (branch) {
+    return branch;
+  }
+  
+  return null;
+}
+
 export default function DeploymentDetails() {
   const { app } = useContext(AppContext)!;
   if (!app) throw new Error();
@@ -86,8 +120,8 @@ export default function DeploymentDetails() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingFiles, setIsLoadingFiles] = useState(false);
   const [showFiles, setShowFiles] = useState(false);
+  const [showBuildDetails, setShowBuildDetails] = useState(false);
   const [fileSearch, setFileSearch] = useState("");
-  const [copied, setCopied] = useState(false);
   const [isRedeploying, setIsRedeploying] = useState(false);
 
   const fetchDeployment = useCallback(async () => {
@@ -129,14 +163,6 @@ export default function DeploymentDetails() {
       fetchFiles();
     }
   }, [showFiles, fetchFiles]);
-
-  const handleCopyId = async () => {
-    if (deployment) {
-      await navigator.clipboard.writeText(deployment.id);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
 
   const handleRedeploy = async () => {
     if (!deployment || !deployment.artifactId) return;
@@ -184,185 +210,189 @@ export default function DeploymentDetails() {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between border-b px-4 py-3">
-        <div className="flex items-center gap-4">
-          <Button asChild variant="ghost" size="sm">
-            <Link to={`/apps/${app.id}/deployments`}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Link>
-          </Button>
-          {deployment.isActive && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRedeploy}
-              disabled={isRedeploying}
-            >
-              {isRedeploying ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <RotateCcw className="mr-2 h-4 w-4" />
-              )}
-              Redeploy
+      <div className="border-b">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3">
+            <Button asChild variant="ghost" size="sm">
+              <Link to={`/apps/${app.id}/deployments`}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back
+              </Link>
             </Button>
-          )}
-          <div>
-            <h1 className="font-semibold">Deployment</h1>
-            <div className="flex items-center gap-2">
-              <p className="text-sm text-muted-foreground font-mono">
-                {deployment.id.slice(0, 12)}
-              </p>
+            {!deployment.isActive && deployment.artifactId && (
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                className="h-6 w-6 p-0"
-                onClick={handleCopyId}
+                onClick={handleRedeploy}
+                disabled={isRedeploying}
               >
-                {copied ? (
-                  <Check className="h-3 w-3 text-green-600" />
+                {isRedeploying ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <Copy className="h-3 w-3" />
+                  <RotateCcw className="mr-2 h-4 w-4" />
                 )}
+                Redeploy
               </Button>
-            </div>
+            )}
           </div>
+          {deployment.isActive && (
+            <Badge className="bg-green-600 hover:bg-green-700">
+              Active
+            </Badge>
+          )}
         </div>
-        {deployment.isActive && (
-          <Badge className="bg-green-600 hover:bg-green-700">
-            Active
-          </Badge>
-        )}
+        <div className="px-4 pb-4">
+          <h1 className="text-2xl font-bold">{getDeploymentTitle(deployment)}</h1>
+          {getDeploymentSubtitle(deployment) && (
+            <p className="text-sm text-muted-foreground mt-1 font-mono">
+              {getDeploymentSubtitle(deployment)}
+            </p>
+          )}
+          <p className="text-sm text-muted-foreground mt-1">
+            {formatTimestamp(deployment.createdAt)}
+          </p>
+        </div>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-auto p-4">
         <div className="mx-auto max-w-4xl space-y-6">
-          {/* Deployment Info */}
-          <div className="rounded-lg border bg-card">
-            <div className="border-b px-4 py-3">
-              <h2 className="font-semibold">Deployment Information</h2>
+          {/* Metrics Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Size Card */}
+            <div className="rounded-lg border bg-card p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <FileArchive className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-muted-foreground">Size</span>
+              </div>
+              <p className="text-2xl font-bold">{formatBytes(deployment.artifactSize)}</p>
             </div>
-            <div className="divide-y">
-              <div className="px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Package className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Deployment ID</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground font-mono">
-                    {deployment.id}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0"
-                    onClick={handleCopyId}
-                  >
-                    {copied ? (
-                      <Check className="h-3 w-3 text-green-600" />
-                    ) : (
-                      <Copy className="h-3 w-3" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Created</span>
-                </div>
-                <span className="text-sm text-muted-foreground">
-                  {formatTimestamp(deployment.createdAt)}
-                </span>
-              </div>
 
-              <div className="px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Status</span>
-                </div>
-                {deployment.isActive ? (
-                  <Badge className="bg-green-600 hover:bg-green-700">
-                    Active
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary">
-                    Inactive
-                  </Badge>
-                )}
+            {/* Files Card */}
+            <div className="rounded-lg border bg-card p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <File className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-muted-foreground">Files</span>
               </div>
+              <p className="text-2xl font-bold">
+                {files ? files.totalFiles : (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 text-2xl font-bold"
+                    onClick={() => setShowFiles(true)}
+                  >
+                    View
+                  </Button>
+                )}
+              </p>
             </div>
+
+            {/* Build Logs Card */}
+            {deployment.buildId && (
+              <div className="rounded-lg border bg-card p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <GitBranch className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-muted-foreground">Build</span>
+                </div>
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                >
+                  <Link to={`/apps/${app.id}/builds/${deployment.buildId}`}>
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    View Logs
+                  </Link>
+                </Button>
+              </div>
+            )}
           </div>
 
-          {/* Build Info */}
-          {deployment.buildId && (
-            <div className="rounded-lg border bg-card">
-              <div className="border-b px-4 py-3">
-                <h2 className="font-semibold">Build Information</h2>
-              </div>
-              <div className="divide-y">
-                <div className="px-4 py-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <GitBranch className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Build Name</span>
+          {/* Build Details (Expandable) */}
+          {deployment.buildId && deployment.build?.metadata && (
+            <Collapsible open={showBuildDetails} onOpenChange={setShowBuildDetails}>
+              <div className="rounded-lg border bg-card">
+                <CollapsibleTrigger className="w-full">
+                  <div className="px-4 py-3 flex items-center justify-between hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <GitBranch className="h-4 w-4 text-muted-foreground" />
+                      <h2 className="font-semibold">Build Details</h2>
+                    </div>
+                    {showBuildDetails ? (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    )}
                   </div>
-                  <span className="text-sm text-muted-foreground">
-                    {deployment.buildName || "-"}
-                  </span>
-                </div>
+                </CollapsibleTrigger>
+                
+                <CollapsibleContent>
+                  <div className="divide-y">
+                    {deployment.build.metadata.commitMessage && (
+                      <div className="px-4 py-3">
+                        <div className="flex items-start gap-2 mb-2">
+                          <File className="h-4 w-4 text-muted-foreground mt-0.5" />
+                          <span className="text-sm font-medium">Commit Message</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap pl-6">
+                          {deployment.build.metadata.commitMessage}
+                        </p>
+                      </div>
+                    )}
 
-                <div className="px-4 py-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Package className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Build ID</span>
+                    {deployment.build.metadata.commitSha && (
+                      <div className="px-4 py-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Hash className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">Commit SHA</span>
+                        </div>
+                        <span className="text-sm text-muted-foreground font-mono">
+                          {deployment.build.metadata.commitSha}
+                        </span>
+                      </div>
+                    )}
+
+                    {deployment.build.metadata.branch && (
+                      <div className="px-4 py-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <GitBranch className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">Branch</span>
+                        </div>
+                        <span className="text-sm text-muted-foreground font-mono">
+                          {deployment.build.metadata.branch}
+                        </span>
+                      </div>
+                    )}
+
+                    {deployment.build.metadata.author && (
+                      <div className="px-4 py-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">Author</span>
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          {deployment.build.metadata.author}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground font-mono">
-                      {deployment.buildId.slice(0, 8)}
-                    </span>
-                    <Button
-                      asChild
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0"
-                    >
-                      <Link to={`/apps/${app.id}/builds/${deployment.buildId}`}>
-                        <ExternalLink className="h-3 w-3" />
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
+                </CollapsibleContent>
               </div>
-            </div>
+            </Collapsible>
           )}
 
-          {/* Artifact Info */}
+          {/* Artifact Hash */}
           <div className="rounded-lg border bg-card">
-            <div className="border-b px-4 py-3">
-              <h2 className="font-semibold">Artifact Information</h2>
-            </div>
-            <div className="divide-y">
-              <div className="px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <FileArchive className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Size</span>
-                </div>
-                <span className="text-sm text-muted-foreground">
-                  {formatBytes(deployment.artifactSize)}
-                </span>
+            <div className="px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileArchive className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Artifact Hash</span>
               </div>
-
-              <div className="px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <FileArchive className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Hash</span>
-                </div>
-                <span className="text-sm text-muted-foreground font-mono">
-                  {deployment.artifactHash.slice(0, 16)}...
-                </span>
-              </div>
+              <span className="text-sm text-muted-foreground font-mono">
+                {deployment.artifactHash.slice(0, 16)}...
+              </span>
             </div>
           </div>
 
@@ -370,12 +400,13 @@ export default function DeploymentDetails() {
           <Collapsible open={showFiles} onOpenChange={setShowFiles}>
             <div className="rounded-lg border bg-card">
               <CollapsibleTrigger className="w-full">
-                <div className="border-b px-4 py-3 flex items-center justify-between hover:bg-muted/50 transition-colors">
+                <div className="px-4 py-3 flex items-center justify-between hover:bg-muted/50 transition-colors">
                   <div className="flex items-center gap-2">
-                    <h2 className="font-semibold">Deployment Files</h2>
+                    <File className="h-4 w-4 text-muted-foreground" />
+                    <h2 className="font-semibold">Files</h2>
                     {files && (
                       <Badge variant="secondary" className="text-xs">
-                        {files.totalFiles} files
+                        {files.totalFiles}
                       </Badge>
                     )}
                   </div>
@@ -394,12 +425,6 @@ export default function DeploymentDetails() {
                   </div>
                 ) : files ? (
                   <div className="p-4 space-y-3">
-                    {/* Summary */}
-                    <div className="flex items-center justify-between text-sm text-muted-foreground pb-3 border-b">
-                      <span>{files.totalFiles} files</span>
-                      <span>{formatBytes(files.totalSize)}</span>
-                    </div>
-
                     {/* Search */}
                     <div className="relative">
                       <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -412,7 +437,7 @@ export default function DeploymentDetails() {
                     </div>
 
                     {/* File List */}
-                    <div className="max-h-96 overflow-y-auto space-y-1">
+                    <div className="max-h-96 overflow-y-auto space-y-0.5">
                       {files.files
                         .filter((file) => 
                           fileSearch === "" || 
@@ -421,15 +446,12 @@ export default function DeploymentDetails() {
                         .map((file) => (
                           <div
                             key={file.path}
-                            className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-muted/50 transition-colors"
+                            className="flex items-center justify-between px-2 py-1.5 rounded text-sm hover:bg-muted/50 transition-colors"
                           >
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              <File className="h-4 w-4 text-muted-foreground shrink-0" />
-                              <span className="text-sm font-mono truncate">
-                                {file.path}
-                              </span>
-                            </div>
-                            <span className="text-xs text-muted-foreground shrink-0 ml-2">
+                            <span className="font-mono truncate flex-1 min-w-0">
+                              {file.path}
+                            </span>
+                            <span className="text-xs text-muted-foreground shrink-0 ml-3">
                               {formatBytes(file.sizeBytes)}
                             </span>
                           </div>
