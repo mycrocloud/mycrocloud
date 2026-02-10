@@ -44,10 +44,14 @@ import { cn } from "@/lib/utils";
 interface IDeployment {
   id: string;
   isActive: boolean;
+  name: string | null;
+  status: string;
   buildId: string | null;
-  buildName: string | null;
+  build: {
+    metadata: Record<string, string>;
+  } | null;
   createdAt: string;
-  artifactSize: number;
+  artifactSize: number | null;
 }
 
 interface ISourceInfo {
@@ -89,6 +93,25 @@ function formatTimestamp(timestamp: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function getDeploymentDisplayName(deployment: IDeployment): string {
+  if (deployment.name) {
+    return deployment.name;
+  }
+  
+  const commitMessage = deployment.build?.metadata?.commitMessage;
+  if (commitMessage) {
+    const firstLine = commitMessage.split('\n')[0];
+    return firstLine.length > 50 ? firstLine.slice(0, 47) + '...' : firstLine;
+  }
+  
+  const commitSha = deployment.build?.metadata?.commitSha;
+  if (commitSha) {
+    return commitSha.slice(0, 8);
+  }
+  
+  return deployment.id.slice(0, 12);
 }
 
 export default function DeploymentsList() {
@@ -147,9 +170,17 @@ export default function DeploymentsList() {
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        const buildName = (deployment.buildName || "").toLowerCase();
+        const name = (deployment.name || "").toLowerCase();
         const id = deployment.id.toLowerCase();
-        if (!buildName.includes(query) && !id.includes(query)) {
+        const commitMessage = (deployment.build?.metadata?.commitMessage || "").toLowerCase();
+        const commitSha = (deployment.build?.metadata?.commitSha || "").toLowerCase();
+        
+        if (
+          !name.includes(query) &&
+          !id.includes(query) &&
+          !commitMessage.includes(query) &&
+          !commitSha.includes(query)
+        ) {
           return false;
         }
       }
@@ -294,9 +325,16 @@ export default function DeploymentsList() {
                   >
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <p className="font-medium font-mono text-sm">
-                          {deployment.id.slice(0, 12)}
-                        </p>
+                        <div>
+                          <p className="font-medium text-sm">
+                            {getDeploymentDisplayName(deployment)}
+                          </p>
+                          {deployment.build?.commitSha && (
+                            <p className="text-xs text-muted-foreground font-mono">
+                              {deployment.build.commitSha.slice(0, 8)}
+                            </p>
+                          )}
+                        </div>
                         {deployment.isActive && (
                           <Badge className="bg-green-600 hover:bg-green-700">
                             Active
