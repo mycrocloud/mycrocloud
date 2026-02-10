@@ -41,6 +41,11 @@ npm run build --prefix src/WebEditor
 docker compose -f src/compose.yml up    # web + web-editor only
 ```
 
+Run services in WebApp after editing code (must run from the WebApp directory so compose.override.yml is picked up).
+```bash
+cd src/Services/WebApp && docker compose build && docker compose up -d
+``` 
+
 ## Architecture Overview
 
 **MycroCloud** is a platform for deploying managed web apps (API, SPA, or Fullstack). It has a **dual-plane** design:
