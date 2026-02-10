@@ -21,14 +21,6 @@ type SystemLimits struct {
 	// Fixed system limits
 	ContainerPidsLimit int64
 	MaxConcurrentJobs  int
-
-	// Input validation limits
-	MaxEnvVars        int
-	MaxEnvKeyLen      int
-	MaxEnvValueLen    int
-	MaxDirectoryLen   int
-	MaxCommandLen     int
-	MaxNodeVersionLen int
 }
 
 // JobLimits contains effective limits for a specific job (from plan, capped by system)
@@ -47,14 +39,7 @@ type JobLimits struct {
 type Limits struct {
 	System SystemLimits
 	// Default job limits (used when plan doesn't specify)
-	DefaultJob JobLimits
-	// Input validation limits (from system)
-	MaxEnvVars        int
-	MaxEnvKeyLen      int
-	MaxEnvValueLen    int
-	MaxDirectoryLen   int
-	MaxCommandLen     int
-	MaxNodeVersionLen int
+	DefaultJob        JobLimits
 	MaxConcurrentJobs int
 }
 
@@ -69,12 +54,6 @@ func DefaultLimits() Limits {
 			MaxArtifactSize:  1 * GB,      // 1GB max
 			ContainerPidsLimit: 512,
 			MaxConcurrentJobs:  3,
-			MaxEnvVars:        50,
-			MaxEnvKeyLen:      256,
-			MaxEnvValueLen:    32 * 1024,
-			MaxDirectoryLen:   512,
-			MaxCommandLen:     4096,
-			MaxNodeVersionLen: 32,
 		},
 		DefaultJob: JobLimits{
 			// Default for free tier
@@ -87,12 +66,6 @@ func DefaultLimits() Limits {
 			MaxArtifactSize:  100 * MB,
 			WarnArtifactSize: 50 * MB,
 		},
-		MaxEnvVars:        50,
-		MaxEnvKeyLen:      256,
-		MaxEnvValueLen:    32 * 1024,
-		MaxDirectoryLen:   512,
-		MaxCommandLen:     4096,
-		MaxNodeVersionLen: 32,
 		MaxConcurrentJobs: 3,
 	}
 }

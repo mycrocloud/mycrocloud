@@ -62,12 +62,6 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 		return err
 	}
 
-	// Validate input
-	if result := ValidateBuildMessage(&buildMsg, limits); !result.IsValid() {
-		log.Printf("Validation failed for build %s: %s", buildMsg.BuildId, result.Error())
-		return fmt.Errorf("validation failed: %s", result.Error())
-	}
-
 	// Get job-specific limits from plan (capped by system max)
 	jobLimits := limits.GetJobLimits(buildMsg.Limits)
 	log.Printf("Job limits: memory=%s, cpu=%d%%, timeout=%ds, artifact=%s",
