@@ -108,11 +108,6 @@ export default function AppLayout() {
                 label="Routes"
                 isActive={isMatch_Routes}
               />
-              <NavItem
-                to="logs"
-                label="Logs"
-                isActive={isMatchLogs}
-              />
             </NavGroup>
 
             <NavGroup label="Pages">
@@ -122,6 +117,12 @@ export default function AppLayout() {
                 isActive={isMatchDeployments}
               />
             </NavGroup>
+
+            <NavItem
+              to="logs"
+              label="Logs"
+              isActive={isMatchLogs}
+            />
 
             <div className="mt-auto pt-4 border-t">
               <NavItem
