@@ -122,7 +122,7 @@ public class WebhooksController(GitHubAppService gitHubAppService,
                 OutDir = buildConfig.OutDir,
                 InstallCommand = buildConfig.InstallCommand,
                 BuildCommand = buildConfig.BuildCommand,
-                ArtifactsUploadUrl = linkGenerator.GetUriByAction(HttpContext, nameof(BuildsController.UploadArtifacts), BuildsController.Controller, new { appId = app.Id, buildId = build.Id })!,
+                ArtifactsUploadPath = linkGenerator.GetPathByAction(HttpContext, nameof(BuildsController.UploadArtifacts), BuildsController.Controller, new { appId = app.Id, buildId = build.Id })!,
                 Limits = planLimits
             };
 

@@ -104,6 +104,54 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 	log.Printf("HOST_OUT_DIR: %s", baseOut)
 	log.Printf("Job output dir: %s", jobOut)
 
+	// Check if artifact file already exists
+	zipPath := filepath.Join(jobOut, buildMsg.OutDir+".zip")
+	if fileInfo, err := os.Stat(zipPath); err == nil && fileInfo.Size() > 0 {
+		log.Printf("Artifact already exists at %s (size: %d bytes), skipping build", zipPath, fileInfo.Size())
+		
+		// Verify artifact size is within limits
+		sizeCheck, err := CheckArtifactSize(zipPath, jobLimits)
+		if err == nil && !sizeCheck.ExceedsHard {
+			// Upload existing artifact
+			shouldUploadArtifacts := os.Getenv("UPLOAD_ARTIFACTS") != "false"
+			if shouldUploadArtifacts {
+				cfg := api_client.Config{
+					Domain:       os.Getenv("AUTH0_DOMAIN"),
+					ClientID:     os.Getenv("AUTH0_CLIENT_ID"),
+					ClientSecret: os.Getenv("AUTH0_SECRET"),
+					Audience:     os.Getenv("AUTH0_AUDIENCE"),
+				}
+				token, err := api_client.GetAccessToken(cfg)
+				if err != nil {
+					log.Printf("Failed to get access token for existing artifact: %v", err)
+					// Continue with rebuild
+				} else {
+					apiBaseURL := os.Getenv("API_BASE_URL")
+					if apiBaseURL == "" {
+						log.Printf("API_BASE_URL not set, cannot upload artifact")
+					} else {
+						uploadURL := strings.TrimSuffix(apiBaseURL, "/") + buildMsg.ArtifactsUploadPath
+						artifactId, err := uploader.UploadArtifacts(uploadURL, jobOut, buildMsg.OutDir, token, "deployment-worker")
+						if err != nil {
+							log.Printf("Failed to upload existing artifact: %v", err)
+							// Continue with rebuild
+						} else {
+							log.Printf("Successfully uploaded existing artifact: %s", artifactId)
+							publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
+								BuildId:    buildMsg.BuildId,
+								Status:     Done,
+								ArtifactId: artifactId,
+							})
+							logFluentd(l, "Finished processing (existing artifact)", buildMsg.BuildId)
+							return nil
+						}
+					}
+				}
+			}
+		}
+		log.Printf("Existing artifact invalid or upload failed, proceeding with rebuild")
+	}
+
 	mounts := []mount.Mount{
 		{
 			Type:   mount.TypeBind,
@@ -267,7 +315,18 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 			return err
 		}
 
-		artifactId, err := uploader.UploadArtifacts(strings.TrimSuffix(buildMsg.ArtifactsUploadUrl, "/"), jobOut, buildMsg.OutDir, token, "deployment-worker")
+		apiBaseURL := os.Getenv("API_BASE_URL")
+		if apiBaseURL == "" {
+			log.Printf("API_BASE_URL not set, cannot upload artifact")
+			publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
+				BuildId: buildMsg.BuildId,
+				Status:  Failed,
+			})
+			return fmt.Errorf("API_BASE_URL not configured")
+		}
+
+		uploadURL := strings.TrimSuffix(apiBaseURL, "/") + buildMsg.ArtifactsUploadPath
+		artifactId, err := uploader.UploadArtifacts(uploadURL, jobOut, buildMsg.OutDir, token, "deployment-worker")
 		if err != nil {
 			publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
 				BuildId: buildMsg.BuildId,
@@ -435,8 +494,8 @@ func main() {
 					job := string(delivery.Body)
 					if err := ProcessJob(ctx, job, chPublisher, fluentdLogger); err != nil {
 						log.Printf("Job failed: %v", err)
-						// Nack and requeue on error (could be transient)
-						if nackErr := delivery.Nack(false, true); nackErr != nil {
+						// Nack without requeue to avoid infinite loop
+						if nackErr := delivery.Nack(false, false); nackErr != nil {
 							log.Printf("Failed to nack message: %v", nackErr)
 						}
 						return

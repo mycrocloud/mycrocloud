@@ -148,7 +148,7 @@ public class BuildsController(
             BuildCommand = buildConfig.BuildCommand,
             NodeVersion = buildConfig.NodeVersion,
             EnvVars = buildEnvVars,
-            ArtifactsUploadUrl = linkGenerator.GetUriByAction(HttpContext, nameof(BuildsController.UploadArtifacts), BuildsController.Controller, new { appId = app.Id, buildId = build.Id })!,
+            ArtifactsUploadPath = linkGenerator.GetPathByAction(HttpContext, nameof(BuildsController.UploadArtifacts), BuildsController.Controller, new { appId = app.Id, buildId = build.Id })!,
             Limits = planLimits
         };
 

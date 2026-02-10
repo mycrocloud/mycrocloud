@@ -85,8 +85,8 @@ public class AppBuildMessage
     [JsonPropertyName("env_vars")]
     public Dictionary<string, string> EnvVars { get; set; } = new();
 
-    [JsonPropertyName("artifacts_upload_url")]
-    public string ArtifactsUploadUrl { get; set; }
+    [JsonPropertyName("artifacts_upload_path")]
+    public string ArtifactsUploadPath { get; set; }
 
     [JsonPropertyName("limits")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
