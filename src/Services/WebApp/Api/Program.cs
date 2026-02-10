@@ -87,11 +87,13 @@ builder.Services.AddAuthorization(options =>
     });
 });
 
+var npgsqlDataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("DefaultConnection"));
+npgsqlDataSourceBuilder.EnableDynamicJson();
+var npgsqlDataSource = npgsqlDataSourceBuilder.Build();
+
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("DefaultConnection"));
-    dataSourceBuilder.EnableDynamicJson(); //TODO: review performance impact
-    options.UseNpgsql(dataSourceBuilder.Build());
+    options.UseNpgsql(npgsqlDataSource);
 });
 builder.Services.AddScoped<IAppRepository, AppRepository>();
 builder.Services.AddScoped<IAppService, AppService>();
