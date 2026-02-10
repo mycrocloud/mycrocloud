@@ -1,24 +1,15 @@
 import { useContext, useEffect, useState } from "react";
-import { useAuth0 } from "@auth0/auth0-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { AppContext } from ".";
 import { OnboardingModal } from "./components/OnboardingModal";
+import { useApiClient } from "@/hooks";
 import {
   Activity,
-  Calendar,
-  Clock,
   ExternalLink,
   Globe,
   Loader2,
-  Route,
-  FileText,
-  Settings,
-  Package,
   Copy,
   Check,
-  GitBranch,
-  Rocket,
-  ArrowRight,
 } from "lucide-react";
 import {
   Card,
@@ -63,7 +54,7 @@ export default function AppOverview() {
   const { app } = useContext(AppContext)!;
   if (!app) throw new Error();
 
-  const { getAccessTokenSilently } = useAuth0();
+  const { get } = useApiClient();
   const [stats, setStats] = useState<LogsStatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -73,7 +64,6 @@ export default function AppOverview() {
     searchParams.get("onboard") === "true"
   );
 
-
   useEffect(() => {
     if (showOnboarding) {
       searchParams.delete("onboard");
@@ -82,29 +72,19 @@ export default function AppOverview() {
     }
   }, [showOnboarding, searchParams, setSearchParams]);
 
-
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const accessToken = await getAccessTokenSilently();
         const today = new Date();
         const sevenDaysAgo = new Date(today);
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
 
         const formatDate = (d: Date) => d.toISOString().split("T")[0];
 
-        const response = await fetch(
-          `/api/apps/${app.id}/logs/stats?accessDateFrom=${formatDate(sevenDaysAgo)}&accessDateTo=${formatDate(today)}`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          }
+        const data = await get<LogsStatsResponse>(
+          `/api/apps/${app.id}/logs/stats?accessDateFrom=${formatDate(sevenDaysAgo)}&accessDateTo=${formatDate(today)}`
         );
-        if (response.ok) {
-          const data = (await response.json()) as LogsStatsResponse;
-          setStats(data);
-        }
+        setStats(data);
       } catch (error) {
         console.error("Failed to fetch stats:", error);
       } finally {
@@ -113,7 +93,7 @@ export default function AppOverview() {
     };
 
     fetchStats();
-  }, [app.id, getAccessTokenSilently]);
+  }, [app.id, get]);
 
   const chartData: ChartData[] = stats?.dailyStats.map((s) => ({
     date: new Date(s.date).toLocaleDateString("en-US", {
@@ -133,192 +113,90 @@ export default function AppOverview() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const quickLinks = [
-    { to: "api/routes", label: "Routes", icon: Route },
-    { to: "logs", label: "Logs", icon: FileText },
-    { to: "builds", label: "Builds", icon: Package },
-    { to: "deployments", label: "Deployments", icon: Package },
-    { to: "settings", label: "Settings", icon: Settings },
-  ];
-
   return (
     <div className="space-y-6 p-4">
-      {/* Domain Banner */}
-      <Card className="bg-muted/30">
-        <CardContent className="flex items-center justify-between py-4">
-          <div className="flex items-center gap-3">
-            <Globe className="h-5 w-5 text-muted-foreground" />
-            <div>
-              <p className="text-sm text-muted-foreground">Your app is live at</p>
+      {/* App Info */}
+      <Card>
+        <CardHeader className="flex flex-row items-start justify-between">
+          <div>
+            <CardTitle>{app.name}</CardTitle>
+            <CardDescription>{app.description || "No description"}</CardDescription>
+          </div>
+          <Badge
+            variant="secondary"
+            className={cn(
+              app.state === "Active"
+                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+            )}
+          >
+            {app.state}
+          </Badge>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2">
+            <div className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-muted-foreground" />
               <a
                 href={`https://${app.domain}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium hover:underline"
+                className="text-sm font-medium hover:underline"
               >
                 {app.domain}
                 <ExternalLink className="ml-1 inline h-3 w-3" />
               </a>
             </div>
+            <Button variant="ghost" size="sm" onClick={handleCopyDomain}>
+              {copied ? (
+                <Check className="h-4 w-4 text-green-500" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+            </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={handleCopyDomain}>
-            {copied ? (
-              <Check className="mr-2 h-4 w-4 text-green-500" />
-            ) : (
-              <Copy className="mr-2 h-4 w-4" />
-            )}
-            {copied ? "Copied" : "Copy"}
-          </Button>
+          <dl className="grid gap-3 text-sm sm:grid-cols-2">
+            <div className="space-y-1">
+              <dt className="text-muted-foreground">Created</dt>
+              <dd>{new Date(app.createdAt).toLocaleString()}</dd>
+            </div>
+            <div className="space-y-1">
+              <dt className="text-muted-foreground">Last updated</dt>
+              <dd>{app.updatedAt ? new Date(app.updatedAt).toLocaleString() : "-"}</dd>
+            </div>
+          </dl>
         </CardContent>
       </Card>
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Status</CardTitle>
-            <Activity className={cn(
-              "h-4 w-4",
-              app.state === "Active" ? "text-green-500" : "text-muted-foreground"
-            )} />
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Badge
-                variant="secondary"
-                className={cn(
-                  app.state === "Active"
-                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                    : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
-                )}
-              >
-                {app.state}
-              </Badge>
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {app.state === "Active" ? "Running normally" : "Currently stopped"}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {loading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                totalRequests.toLocaleString()
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">Last 7 days</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Today</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {loading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                todayRequests.toLocaleString()
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">Requests today</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Created</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {new Date(app.createdAt).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-              })}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {new Date(app.createdAt).getFullYear()}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Links */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        {quickLinks.map((link) => {
-          const Icon = link.icon;
-          return (
-            <Link
-              key={link.to}
-              to={link.to}
-              className="flex items-center gap-2 rounded-lg border bg-card p-3 text-sm transition-colors hover:bg-muted"
-            >
-              <Icon className="h-4 w-4 text-muted-foreground" />
-              {link.label}
-            </Link>
-          );
-        })}
-      </div>
-
-      {/* Deployment Flow Info */}
-      <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30">
-        <CardHeader>
-          <CardTitle className="text-base">Deployment Flow</CardTitle>
-          <CardDescription>
-            Understand how your code becomes live
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/50">
-                <GitBranch className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">1. Build</p>
-                <p className="text-xs text-muted-foreground">Compile your code</p>
-              </div>
-            </div>
-            <ArrowRight className="hidden h-5 w-5 text-muted-foreground sm:block" />
-            <div className="flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/50">
-                <Package className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">2. Artifact</p>
-                <p className="text-xs text-muted-foreground">Package files</p>
-              </div>
-            </div>
-            <ArrowRight className="hidden h-5 w-5 text-muted-foreground sm:block" />
-            <div className="flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/50">
-                <Rocket className="h-5 w-5 text-green-600 dark:text-green-400" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">3. Deploy</p>
-                <p className="text-xs text-muted-foreground">Extract & serve</p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Request Chart */}
+      {/* Traffic */}
       <Card>
         <CardHeader>
-          <CardTitle>Requests Overview</CardTitle>
-          <CardDescription>Daily requests for the last 7 days</CardDescription>
+          <div className="flex items-center justify-between">
+            <CardTitle>Traffic</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div className="flex gap-6 pt-2">
+            <div>
+              <p className="text-2xl font-bold">
+                {loading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  totalRequests.toLocaleString()
+                )}
+              </p>
+              <p className="text-xs text-muted-foreground">Last 7 days</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold">
+                {loading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  todayRequests.toLocaleString()
+                )}
+              </p>
+              <p className="text-xs text-muted-foreground">Today</p>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -366,33 +244,6 @@ export default function AppOverview() {
               </AreaChart>
             </ChartContainer>
           )}
-        </CardContent>
-      </Card>
-
-      {/* App Details */}
-      <Card>
-        <CardHeader>
-          <CardTitle>App Details</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <dl className="grid gap-3 text-sm sm:grid-cols-2">
-            <div className="space-y-1">
-              <dt className="text-muted-foreground">Name</dt>
-              <dd className="font-medium">{app.name}</dd>
-            </div>
-            <div className="space-y-1">
-              <dt className="text-muted-foreground">Description</dt>
-              <dd>{app.description || "-"}</dd>
-            </div>
-            <div className="space-y-1">
-              <dt className="text-muted-foreground">Created</dt>
-              <dd>{new Date(app.createdAt).toLocaleString()}</dd>
-            </div>
-            <div className="space-y-1">
-              <dt className="text-muted-foreground">Last updated</dt>
-              <dd>{app.updatedAt ? new Date(app.updatedAt).toLocaleString() : "-"}</dd>
-            </div>
-          </dl>
         </CardContent>
       </Card>
 
