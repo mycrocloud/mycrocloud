@@ -46,9 +46,17 @@ public class AppBuildStatusConsumer(
             var body = ea.Body.ToArray();
             var message = Encoding.UTF8.GetString(body);
 
-            await ProcessMessage(message);
-            
-            _channel.BasicAck(ea.DeliveryTag, false);
+            try
+            {
+                await ProcessMessage(message);
+                _channel.BasicAck(ea.DeliveryTag, false);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to process message: {Message}", message);
+                // Nack without requeue to avoid infinite loop - should be sent to dead-letter queue
+                _channel.BasicNack(ea.DeliveryTag, false, requeue: false);
+            }
         };
         
         _channel.BasicConsume(queue, autoAck: false, consumer: consumer);
