@@ -130,15 +130,6 @@ export default function DeploymentDetails() {
     }
   }, [showFiles, fetchFiles]);
 
-  // Poll for updates every 5 seconds
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      fetchDeployment();
-    }, 5000);
-
-    return () => clearInterval(intervalId);
-  }, [fetchDeployment]);
-
   const handleCopyId = async () => {
     if (deployment) {
       await navigator.clipboard.writeText(deployment.id);

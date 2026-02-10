@@ -146,24 +146,6 @@ export default function DeploymentsList() {
     fetchDeployments();
   }, [fetchDeployments]);
 
-  // SSE subscription for real-time updates
-  useEffect(() => {
-    let isMounted = true;
-    let intervalId: NodeJS.Timeout;
-
-    // Poll for updates every 5 seconds
-    intervalId = setInterval(() => {
-      if (isMounted) {
-        fetchDeployments();
-      }
-    }, 5000);
-
-    return () => {
-      isMounted = false;
-      clearInterval(intervalId);
-    };
-  }, [fetchDeployments]);
-
   // Filter deployments
   const filteredDeployments = useMemo(() => {
     return deployments.filter((deployment) => {
@@ -214,6 +196,8 @@ export default function DeploymentsList() {
     try {
       await post(`/api/apps/${app.id}/builds/build`, inputs);
       setShowBuildModal(false);
+      // Refresh deployments list after successful build trigger
+      await fetchDeployments();
     } catch {
       alert("Something went wrong...");
     }
@@ -329,9 +313,9 @@ export default function DeploymentsList() {
                           <p className="font-medium text-sm">
                             {getDeploymentDisplayName(deployment)}
                           </p>
-                          {deployment.build?.commitSha && (
+                          {deployment.build?.metadata?.commitSha && (
                             <p className="text-xs text-muted-foreground font-mono">
-                              {deployment.build.commitSha.slice(0, 8)}
+                              {deployment.build.metadata.commitSha.slice(0, 8)}
                             </p>
                           )}
                         </div>
