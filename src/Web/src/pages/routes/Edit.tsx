@@ -28,7 +28,7 @@ export default function RouteEdit() {
 
     const loadRoute = async () => {
       try {
-        const data = await get<IRoute>(`/api/apps/${app.id}/routes/${routeId}`);
+        const data = await get<IRoute>(`/api/apps/${app.id}/api/routes/${routeId}`);
         setRoute(data);
       } catch {
         toast.error("Failed to load route");
@@ -39,7 +39,7 @@ export default function RouteEdit() {
 
   const onSubmit = async (data: RouteCreateUpdateInputs) => {
     try {
-      await send(`/api/apps/${app.id}/routes/${routeId}`, {
+      await send(`/api/apps/${app.id}/api/routes/${routeId}`, {
         method: "PUT",
         body: data,
       });

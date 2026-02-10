@@ -53,7 +53,7 @@ export default function AppLayout() {
   const part3 = pathname.split("/")[3];
 
   const isMatch_Overview = part3 === undefined;
-  const isMatch_Routes = part3 === "routes";
+  const isMatch_Routes = part3 === "api" && pathname.split("/")[4] === "routes";
   const isMatchLogs = part3 === "logs";
   const isMatchSpaDeployments = part3 === "spa" && pathname.split("/")[4] === "deployments";
   const isMatchApiDeployments = part3 === "api" && pathname.split("/")[4] === "deployments";
@@ -105,7 +105,7 @@ export default function AppLayout() {
 
             <NavGroup label="API">
               <NavItem
-                to="routes"
+                to="api/routes"
                 label="Routes"
                 isActive={isMatch_Routes}
               />

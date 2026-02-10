@@ -60,7 +60,7 @@ export default function RouteExplorer() {
     const loadRoutes = async () => {
       setLoading(true);
       try {
-        const items = await get<IRouteFolderRouteItem[]>(`/api/apps/${app.id}/routes`);
+        const items = await get<IRouteFolderRouteItem[]>(`/api/apps/${app.id}/api/routes`);
         setExplorerItems(
           items.map((item) => ({
             ...item,
@@ -108,7 +108,7 @@ export default function RouteExplorer() {
     const isNewFolder = folder.id < 0;
 
     if (isNewFolder) {
-      const newId = await post<number>(`/api/apps/${app.id}/routes/folders`, {
+      const newId = await post<number>(`/api/apps/${app.id}/api/routes/folders`, {
         name,
         parentId: folder.parentId,
       });
@@ -120,7 +120,7 @@ export default function RouteExplorer() {
         )
       );
     } else {
-      await patch(`/api/apps/${app.id}/routes/folders/${folder.id}/rename`, { name });
+      await patch(`/api/apps/${app.id}/api/routes/folders/${folder.id}/rename`, { name });
       setExplorerItems((items) =>
         items.map((item) =>
           item.type === "Folder" && item.id === folder.id
@@ -135,8 +135,8 @@ export default function RouteExplorer() {
     const { type, id, parentId, level } = item;
     const url =
       type === "Route"
-        ? `/api/apps/${app.id}/routes/${id}/clone`
-        : `/api/apps/${app.id}/routes/folders/${id}/duplicate`;
+        ? `/api/apps/${app.id}/api/routes/${id}/clone`
+        : `/api/apps/${app.id}/api/routes/folders/${id}/duplicate`;
 
     if (type === "Folder") {
       const newItems = await post<IRouteFolderRouteItem[]>(url, {});
@@ -168,8 +168,8 @@ export default function RouteExplorer() {
     const { type, id } = item;
     const url =
       type === "Route"
-        ? `/api/apps/${app.id}/routes/${id}`
-        : `/api/apps/${app.id}/routes/folders/${id}`;
+        ? `/api/apps/${app.id}/api/routes/${id}`
+        : `/api/apps/${app.id}/api/routes/folders/${id}`;
 
     await del(url);
 

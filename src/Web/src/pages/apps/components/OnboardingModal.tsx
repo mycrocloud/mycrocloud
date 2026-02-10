@@ -52,7 +52,7 @@ const QUICK_START_CONFIG: Record<string, OnboardingConfig> = {
             title: "Create HTTP Route",
             description: "Define an endpoint and code your serverless function logic.",
             icon: Route,
-            path: "routes/new"
+            path: "api/routes/new"
         },
         secondaryAction: null
     },
@@ -69,7 +69,7 @@ const QUICK_START_CONFIG: Record<string, OnboardingConfig> = {
             title: "Setup API",
             description: "Create serverless routes for your backend.",
             icon: Route,
-            path: "routes/new"
+            path: "api/routes/new"
         }
     }
 };

@@ -12,9 +12,9 @@ export default function RouteIndex() {
   const params = useParams();
   const routeId = params["routeId"] ? parseInt(params["routeId"]) : undefined;
 
-  const newRouteActive = useMatch("/apps/:appId/routes/new/:folderId?");
-  const editRouteActive = useMatch("/apps/:appId/routes/:routeId");
-  const logPageActive = useMatch("/apps/:appId/routes/:routeId/logs");
+  const newRouteActive = useMatch("/apps/:appId/api/routes/new/:folderId?");
+  const editRouteActive = useMatch("/apps/:appId/api/routes/:routeId");
+  const logPageActive = useMatch("/apps/:appId/api/routes/:routeId/logs");
 
   return (
     <RoutesContext.Provider value={{ state, dispatch }}>

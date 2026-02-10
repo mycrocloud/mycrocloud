@@ -74,7 +74,7 @@ function App() {
                   element={<ProtectedPage><AppLayout /></ProtectedPage>}
                 >
                   <Route index element={<AppOverview />} />
-                  <Route path="routes" element={<RouteIndex />}>
+                  <Route path="api/routes" element={<RouteIndex />}>
                     <Route path="new/:folderId?" element={<RouteCreate />} />
                     <Route path=":routeId" element={<RouteEdit />} />
                   </Route>

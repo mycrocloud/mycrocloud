@@ -19,7 +19,7 @@ export default function RouteCreate() {
 
   const onSubmit = async (data: RouteCreateUpdateInputs) => {
     try {
-      const newRoute = await post<IRoute>(`/api/apps/${app.id}/routes`, {
+      const newRoute = await post<IRoute>(`/api/apps/${app.id}/api/routes`, {
         ...data,
         folderId: folderId ? parseInt(folderId) : null,
       });

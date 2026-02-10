@@ -13,9 +13,9 @@ using Route = Api.Domain.Entities.Route;
 
 namespace Api.Controllers;
 
-[Route("apps/{appId:int}/[controller]")]
+[Route("apps/{appId:int}/api/routes")]
 [TypeFilter<AppOwnerActionFilter>(Arguments = ["appId"])]
-public class RoutesController(
+public class ApiRoutesController(
     AppDbContext appDbContext,
     ISubscriptionService subscriptionService,
     IAppCacheInvalidator cacheInvalidator,

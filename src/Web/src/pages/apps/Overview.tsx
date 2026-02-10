@@ -134,7 +134,7 @@ export default function AppOverview() {
   };
 
   const quickLinks = [
-    { to: "routes", label: "Routes", icon: Route },
+    { to: "api/routes", label: "Routes", icon: Route },
     { to: "logs", label: "Logs", icon: FileText },
     { to: "builds", label: "Builds", icon: Package },
     { to: "deployments", label: "Deployments", icon: Package },
