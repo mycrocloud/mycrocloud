@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { AppContext } from ".";
+import { IActiveDeployment } from "./App";
 import { OnboardingModal } from "./components/OnboardingModal";
 import { useApiClient } from "@/hooks";
 import {
@@ -10,6 +11,8 @@ import {
   Loader2,
   Copy,
   Check,
+  Rocket,
+  Route,
 } from "lucide-react";
 import {
   Card,
@@ -49,6 +52,67 @@ const chartConfig = {
     color: "hsl(var(--chart-1))",
   },
 } satisfies ChartConfig;
+
+function DeploymentSlot({
+  label,
+  icon,
+  deployment,
+  linkTo,
+  detail,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  deployment?: IActiveDeployment;
+  linkTo: string;
+  detail?: string;
+}) {
+  if (!deployment) {
+    return (
+      <div className="rounded-lg border border-dashed p-4 text-center">
+        <p className="text-sm text-muted-foreground">No active {label.toLowerCase()} deployment</p>
+        <Link to={linkTo} className="mt-1 inline-block text-xs text-primary hover:underline">
+          View deployments
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      to={`${linkTo}/${deployment.id}`}
+      className="flex items-start gap-3 rounded-lg border p-4 transition-colors hover:bg-muted/50"
+    >
+      <div className="mt-0.5 text-muted-foreground">{icon}</div>
+      <div className="flex-1 space-y-1">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium">{label}</p>
+          <Badge
+            variant="secondary"
+            className={cn(
+              "text-xs",
+              deployment.status === "Ready"
+                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+            )}
+          >
+            {deployment.status}
+          </Badge>
+        </div>
+        {detail && (
+          <p className="text-xs text-muted-foreground">{detail}</p>
+        )}
+        <p className="text-xs text-muted-foreground">
+          {new Date(deployment.createdAt).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </p>
+      </div>
+    </Link>
+  );
+}
 
 export default function AppOverview() {
   const { app } = useContext(AppContext)!;
@@ -165,6 +229,30 @@ export default function AppOverview() {
               <dd>{app.updatedAt ? new Date(app.updatedAt).toLocaleString() : "-"}</dd>
             </div>
           </dl>
+        </CardContent>
+      </Card>
+
+      {/* Deployments */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Active Deployments</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <DeploymentSlot
+              label="API"
+              icon={<Route className="h-4 w-4" />}
+              deployment={app.activeApiDeployment}
+              linkTo="api/deployments"
+            />
+            <DeploymentSlot
+              label="Pages"
+              icon={<Rocket className="h-4 w-4" />}
+              deployment={app.activeSpaDeployment}
+              linkTo="spa/deployments"
+              detail={app.activeSpaDeployment?.name || undefined}
+            />
+          </div>
         </CardContent>
       </Card>
 

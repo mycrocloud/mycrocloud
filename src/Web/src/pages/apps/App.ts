@@ -1,3 +1,10 @@
+export interface IActiveDeployment {
+  id: string;
+  name?: string;
+  status: string;
+  createdAt: string;
+}
+
 export default interface IApp {
   id: number;
   name: string;
@@ -7,6 +14,8 @@ export default interface IApp {
   state: string;
   version: string;
   domain: string;
+  activeSpaDeployment?: IActiveDeployment;
+  activeApiDeployment?: IActiveDeployment;
 }
 
 
