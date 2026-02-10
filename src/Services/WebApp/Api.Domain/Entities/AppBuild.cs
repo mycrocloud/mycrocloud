@@ -8,9 +8,20 @@ public class AppBuild : BaseEntity
     public string Status { get; set; }
     public DateTime? FinishedAt { get; set; }
     
+    // Metadata stored as JSONB in PostgreSQL
+    public Dictionary<string, string> Metadata { get; set; } = new();
+    
     // Navigation - A build can create the initial deployment,
     // but the same artifact can be deployed multiple times
     public ICollection<SpaDeployment> Deployments { get; set; } = [];
+}
+
+public static class BuildMetadataKeys
+{
+    public const string CommitSha = "commitSha";
+    public const string CommitMessage = "commitMessage";
+    public const string Branch = "branch";
+    public const string Author = "author";
 }
 
 public class AppBuildState

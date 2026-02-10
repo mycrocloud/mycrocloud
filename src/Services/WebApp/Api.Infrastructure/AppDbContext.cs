@@ -75,6 +75,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<App>()
             .OwnsOne(app => app.BuildConfigs, builder => { builder.ToJson(); });
 
+        // Configure AppBuild.Metadata to use PostgreSQL JSONB
+        modelBuilder.Entity<AppBuild>()
+            .Property(b => b.Metadata)
+            .HasColumnType("jsonb");
+
         modelBuilder.Entity<Route>().OwnsMany(route => route.ResponseHeaders,
             ownedNavigationBuilder => { ownedNavigationBuilder.ToJson(); });
 
