@@ -100,6 +100,16 @@ public class AppBuildStatusConsumer(
         build.Status = "failed";
         build.UpdatedAt = DateTime.UtcNow;
         build.FinishedAt = DateTime.UtcNow;
+
+        // Update deployment status to Failed if exists
+        var deployment = await appDbContext.SpaDeployments
+            .FirstOrDefaultAsync(d => d.BuildId == message.BuildId);
+        if (deployment != null)
+        {
+            deployment.Status = DeploymentStatus.Failed;
+            deployment.UpdatedAt = DateTime.UtcNow;
+        }
+
         await appDbContext.SaveChangesAsync();
     }
 
@@ -150,16 +160,31 @@ public class AppBuildStatusConsumer(
         logger.LogInformation("Processing artifact {ArtifactId} ({SizeBytes} bytes) for build {BuildId}", 
             artifact.Id, artifact.BundleSize, build.Id);
 
-        // Create SpaDeployment
-        var deployment = new SpaDeployment
+        // Find existing deployment created when build started
+        var deployment = await appDbContext.SpaDeployments
+            .FirstOrDefaultAsync(d => d.BuildId == build.Id);
+
+        if (deployment == null)
         {
-            Id = Guid.NewGuid(),
-            AppId = build.AppId,
-            BuildId = build.Id,
-            ArtifactId = artifact.Id,
-            Status = DeploymentStatus.Pending
-        };
-        appDbContext.SpaDeployments.Add(deployment);
+            logger.LogWarning("No deployment found for build {BuildId}, creating new one", build.Id);
+            deployment = new SpaDeployment
+            {
+                Id = Guid.NewGuid(),
+                AppId = build.AppId,
+                BuildId = build.Id,
+                ArtifactId = artifact.Id,
+                Status = DeploymentStatus.Pending
+            };
+            appDbContext.SpaDeployments.Add(deployment);
+        }
+        else
+        {
+            // Update existing deployment
+            deployment.ArtifactId = artifact.Id;
+            deployment.Status = DeploymentStatus.Pending;
+            deployment.UpdatedAt = DateTime.UtcNow;
+        }
+
         await appDbContext.SaveChangesAsync();
 
         // Extract zip to disk

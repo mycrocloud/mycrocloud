@@ -63,6 +63,17 @@ public class WebhooksController(GitHubAppService gitHubAppService,
 
             appDbContext.AppBuildJobs.Add(build);
 
+            // Create deployment immediately with Building status
+            var deployment = new SpaDeployment
+            {
+                Id = Guid.NewGuid(),
+                AppId = app.Id,
+                BuildId = build.Id,
+                ArtifactId = null,
+                Status = DeploymentStatus.Building
+            };
+            appDbContext.SpaDeployments.Add(deployment);
+
             var config = app.BuildConfigs;
 
             // TODO: Get limits based on user's subscription plan
