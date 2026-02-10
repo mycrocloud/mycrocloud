@@ -55,7 +55,8 @@ export default function AppLayout() {
   const isMatch_Overview = part3 === undefined;
   const isMatch_Routes = part3 === "routes";
   const isMatchLogs = part3 === "logs";
-  const isMatchDeployments = part3 === "deployments";
+  const isMatchSpaDeployments = part3 === "spa" && pathname.split("/")[4] === "deployments";
+  const isMatchApiDeployments = part3 === "api" && pathname.split("/")[4] === "deployments";
   const isMatchSettings = part3 === "settings";
 
   useEffect(() => {
@@ -108,13 +109,18 @@ export default function AppLayout() {
                 label="Routes"
                 isActive={isMatch_Routes}
               />
+              <NavItem
+                to="api/deployments"
+                label="Deployments"
+                isActive={isMatchApiDeployments}
+              />
             </NavGroup>
 
             <NavGroup label="Pages">
               <NavItem
-                to="deployments"
+                to="spa/deployments"
                 label="Deployments"
-                isActive={isMatchDeployments}
+                isActive={isMatchSpaDeployments}
               />
             </NavGroup>
 

@@ -17,6 +17,8 @@ import {
   AppBuildDetails,
   AppDeployments,
   AppDeploymentDetails,
+  AppApiDeployments,
+  AppApiDeploymentDetails,
   AppLayout,
 } from "./pages/apps";
 import AppSettings, { GeneralTab, ApiTab, PagesTab, EnvironmentTab } from "./pages/apps/Settings";
@@ -77,9 +79,11 @@ function App() {
                     <Route path=":routeId" element={<RouteEdit />} />
                   </Route>
                   <Route path="logs" element={<AppLog />} />
-                  <Route path="deployments" element={<AppDeployments />} />
+                  <Route path="spa/deployments" element={<AppDeployments />} />
+                  <Route path="spa/deployments/:deploymentId" element={<AppDeploymentDetails />} />
+                  <Route path="api/deployments" element={<AppApiDeployments />} />
+                  <Route path="api/deployments/:deploymentId" element={<AppApiDeploymentDetails />} />
                   <Route path="builds/:buildId" element={<AppBuildDetails />} />
-                  <Route path="deployments/:deploymentId" element={<AppDeploymentDetails />} />
                   <Route path="settings" element={<AppSettings />}>
                     <Route path="general" element={<GeneralTab />} />
                     <Route path="api" element={<ApiTab />} />

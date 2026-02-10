@@ -136,7 +136,7 @@ export default function DeploymentsList() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const fetchDeployments = useCallback(async () => {
-    const data = await get<IDeployment[]>(`/api/apps/${app.id}/deployments`);
+    const data = await get<IDeployment[]>(`/api/apps/${app.id}/spa/deployments`);
     setDeployments(data);
     setIsLoading(false);
   }, [app.id, get]);
@@ -305,7 +305,7 @@ export default function DeploymentsList() {
                       "cursor-pointer transition-colors hover:bg-muted/50",
                       deployment.isActive && "bg-green-50 dark:bg-green-900/10"
                     )}
-                    onClick={() => navigate(deployment.id)}
+                    onClick={() => navigate(`/apps/${app.id}/spa/deployments/${deployment.id}`)}
                   >
                     <TableCell>
                       <div className="flex items-center gap-2">

@@ -127,7 +127,7 @@ export default function DeploymentDetails() {
   const fetchDeployment = useCallback(async () => {
     try {
       const data = await get<IDeployment>(
-        `/api/apps/${app.id}/deployments/${deploymentId}`
+        `/api/apps/${app.id}/spa/deployments/${deploymentId}`
       );
       setDeployment(data);
       setIsLoading(false);
@@ -144,7 +144,7 @@ export default function DeploymentDetails() {
     setIsLoadingFiles(true);
     try {
       const data = await get<IDeploymentFiles>(
-        `/api/apps/${app.id}/deployments/${deploymentId}/files`
+        `/api/apps/${app.id}/spa/deployments/${deploymentId}/files`
       );
       setFiles(data);
     } catch (error) {
@@ -170,13 +170,13 @@ export default function DeploymentDetails() {
     setIsRedeploying(true);
     try {
       const result = await post<{ deploymentId: string }>(
-        `/api/apps/${app.id}/deployments/spa/redeploy/${deployment.artifactId}`,
+        `/api/apps/${app.id}/spa/deployments/redeploy/${deployment.artifactId}`,
         {}
       );
       
       // Navigate to the new deployment
       if (result.deploymentId) {
-        navigate(`/apps/${app.id}/deployments/${result.deploymentId}`);
+        navigate(`/apps/${app.id}/spa/deployments/${result.deploymentId}`);
       }
     } catch (error) {
       alert("Failed to redeploy. Please try again.");
@@ -198,7 +198,7 @@ export default function DeploymentDetails() {
       <div className="flex h-full flex-col items-center justify-center gap-4">
         <p className="text-muted-foreground">Deployment not found</p>
         <Button asChild variant="outline">
-          <Link to={`/apps/${app.id}/deployments`}>
+          <Link to={`/apps/${app.id}/spa/deployments`}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Deployments
           </Link>
@@ -214,7 +214,7 @@ export default function DeploymentDetails() {
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <Button asChild variant="ghost" size="sm">
-              <Link to={`/apps/${app.id}/deployments`}>
+              <Link to={`/apps/${app.id}/spa/deployments`}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back
               </Link>
