@@ -89,7 +89,9 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+    var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("DefaultConnection"));
+    dataSourceBuilder.EnableDynamicJson(); //TODO: review performance impact
+    options.UseNpgsql(dataSourceBuilder.Build());
 });
 builder.Services.AddScoped<IAppRepository, AppRepository>();
 builder.Services.AddScoped<IAppService, AppService>();
