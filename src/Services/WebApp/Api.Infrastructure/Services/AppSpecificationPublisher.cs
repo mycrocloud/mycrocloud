@@ -26,7 +26,6 @@ public class AppSpecificationPublisher(
             .Include(a => a.Routes.Where(r => r.Enabled && r.Status == RouteStatus.Active))
             .Include(a => a.AuthenticationSchemes.Where(s => s.Enabled))
             .Include(a => a.Variables.Where(v => v.Target == VariableTarget.Runtime || v.Target == VariableTarget.All))
-            .Include(a => a.ActiveRelease)
             .SingleOrDefaultAsync(a => a.Slug == slug);
 
         if (app is null)
@@ -61,7 +60,7 @@ public class AppSpecificationPublisher(
         Slug = app.Slug,
         OwnerId = app.OwnerId,
         State = app.State,
-        SpaDeploymentId = app.ActiveRelease?.SpaDeploymentId,
+        SpaDeploymentId = app.ActiveSpaDeploymentId,
         ApiDeploymentId = app.ActiveApiDeploymentId,
         ApiCorsSettings = app.CorsSettings ?? CorsSettings.Default,
         RoutingConfig = app.RoutingConfig ?? RoutingConfig.Default,

@@ -34,8 +34,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<SpaDeployment> SpaDeployments { get; set; }
     public DbSet<ApiDeployment> ApiDeployments { get; set; }
 
-    public DbSet<Release> Releases { get; set; }
-
     public DbSet<SlackInstallation> SlackInstallations { get; set; }
 
     public DbSet<SlackUserLink> SlackUserLinks { get; set; }
@@ -265,24 +263,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<Release>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasOne(e => e.App)
-                .WithMany(a => a.Releases)
-                .HasForeignKey(e => e.AppId)
-                .OnDelete(DeleteBehavior.Cascade);
-            entity.HasOne(e => e.SpaDeployment)
-                .WithMany()
-                .HasForeignKey(e => e.SpaDeploymentId)
-                .OnDelete(DeleteBehavior.SetNull);
-            entity.HasIndex(e => e.AppId);
-        });
-
         modelBuilder.Entity<App>()
-            .HasOne(a => a.ActiveRelease)
+            .HasOne(a => a.ActiveSpaDeployment)
             .WithMany()
-            .HasForeignKey(a => a.ActiveReleaseId)
+            .HasForeignKey(a => a.ActiveSpaDeploymentId)
             .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<App>()

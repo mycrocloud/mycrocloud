@@ -71,10 +71,16 @@ public class AppsController(
     [HttpGet("{id:int}")]
     public async Task<IActionResult> Get(int id)
     {
-        var app = await appRepository.GetByAppId(id);
-        
+        var app = await appDbContext.Apps
+            .Include(a => a.ActiveSpaDeployment)
+            .Include(a => a.ActiveApiDeployment)
+            .FirstAsync(a => a.Id == id);
+
         Response.Headers.Append(ETagHeader, app.Version.ToString());
-        
+
+        var activeSpa = app.ActiveSpaDeployment;
+        var activeApi = app.ActiveApiDeployment;
+
         return Ok(new
         {
             app.Id,
@@ -84,7 +90,20 @@ public class AppsController(
             State = app.State.ToString(),
             app.CreatedAt,
             app.UpdatedAt,
-            app.Version
+            app.Version,
+            ActiveSpaDeployment = activeSpa != null ? new
+            {
+                activeSpa.Id,
+                activeSpa.Name,
+                Status = activeSpa.Status.ToString(),
+                activeSpa.CreatedAt
+            } : null,
+            ActiveApiDeployment = activeApi != null ? new
+            {
+                activeApi.Id,
+                Status = activeApi.Status.ToString(),
+                activeApi.CreatedAt
+            } : null
         });
     }
 

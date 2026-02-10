@@ -31,14 +31,13 @@ public class App : BaseEntity
 
     public ICollection<AppBuild> AppBuilds { get; set; } = [];
 
-    // Release management
-    public Guid? ActiveReleaseId { get; set; }
-    public Release? ActiveRelease { get; set; }
+    // Active deployments
+    public Guid? ActiveSpaDeploymentId { get; set; }
+    public SpaDeployment? ActiveSpaDeployment { get; set; }
 
     public ICollection<Artifact> Artifacts { get; set; } = [];
     public ICollection<SpaDeployment> SpaDeployments { get; set; } = [];
     public ICollection<ApiDeployment> ApiDeployments { get; set; } = [];
-    public ICollection<Release> Releases { get; set; } = [];
 
     public Guid? ActiveApiDeploymentId { get; set; }
     public ApiDeployment? ActiveApiDeployment { get; set; }

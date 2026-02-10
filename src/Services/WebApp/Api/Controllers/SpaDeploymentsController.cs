@@ -20,7 +20,7 @@ public class SpaDeploymentsController(
     public async Task<IActionResult> List(int appId)
     {
         var app = App;
-        var activeDeploymentId = app.ActiveRelease?.SpaDeploymentId;
+        var activeDeploymentId = app.ActiveSpaDeploymentId;
         
         var deployments = await appDbContext.SpaDeployments
             .Include(d => d.Build)
@@ -52,13 +52,13 @@ public class SpaDeploymentsController(
             .Include(d => d.Build)
             .Include(d => d.Artifact)
             .Include(d => d.App)
-                .ThenInclude(a => a.ActiveRelease)
+                .ThenInclude(a => a.ActiveSpaDeployment)
             .FirstOrDefaultAsync(d => d.Id == deploymentId && d.AppId == appId);
         
         if (deployment == null)
             return NotFound();
 
-        var isActive = deployment.Id == deployment.App.ActiveRelease?.SpaDeploymentId;
+        var isActive = deployment.Id == deployment.App.ActiveSpaDeploymentId;
 
         return Ok(new
         {

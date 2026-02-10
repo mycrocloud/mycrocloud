@@ -212,20 +212,13 @@ public class AppBuildStatusConsumer(
             return;
         }
 
-        // Create and activate release
-        var release = new Release
-        {
-            Id = Guid.NewGuid(),
-            AppId = build.AppId,
-            SpaDeploymentId = deployment.Id
-        };
-        appDbContext.Releases.Add(release);
-        app.ActiveReleaseId = release.Id;
+        // Activate SPA deployment
+        app.ActiveSpaDeploymentId = deployment.Id;
 
         await appDbContext.SaveChangesAsync();
 
-        logger.LogInformation("Created and activated release {ReleaseId} for app {AppId}", 
-            release.Id, build.AppId);
+        logger.LogInformation("Activated SPA deployment {DeploymentId} for app {AppId}", 
+            deployment.Id, build.AppId);
 
         // Invalidate Gateway cache (Old mechanism)
         await cacheInvalidator.InvalidateByIdAsync(build.AppId);
