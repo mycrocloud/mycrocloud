@@ -28,7 +28,7 @@ public class BuildsController(
     [FromKeyedServices("AppBuildLogs_ES8")]
     ElasticsearchClient elasticsearchClient,
     IAppBuildPublisher publisher,
-    RabbitMqService rabbitMqService,
+    BuildOrchestrationService buildOrchestrationService,
     LinkGenerator linkGenerator,
     GitHubAppService gitHubAppService,
     IStorageProvider storageProvider,
@@ -71,92 +71,18 @@ public class BuildsController(
         if (repo is null)
             return BadRequest();
 
-        // Fetch build environment variables
-        var buildEnvVars = await appDbContext.Variables
-            .Where(v => v.AppId == appId && (v.Target == VariableTarget.Build || v.Target == VariableTarget.All))
-            .ToDictionaryAsync(v => v.Name, v => v.Value ?? "");
+        var cloneUrl = $"https://x-access-token:{installationAccessToken}@github.com/{repo.FullName}";
 
-        // Fetch latest commit info from GitHub
-        var config = app.BuildConfigs ?? AppBuildConfigs.Default;
-        var branch = string.IsNullOrEmpty(config.Branch) ? AppBuildConfigs.Default.Branch : config.Branch;
+        // Use template path - service will replace {buildId} with actual value
+        var artifactsUploadPath = $"/apps/{appId}/builds/{{buildId}}/artifacts";
         
-        GitHubCommitInfo? commitInfo = null;
-        try
-        {
-            commitInfo = await gitHubAppService.GetLatestCommitByRepoId(
-                app.Link.InstallationId,
-                app.Link.RepoId,
-                branch
-            );
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Failed to fetch commit info for build");
-        }
-
-        var build = new AppBuild
-        {
-            Id = Guid.NewGuid(),
-            App = app,
-            Status = AppBuildState.queued,
-            CreatedAt = DateTime.UtcNow,
-            Metadata = new Dictionary<string, string>()
-        };
-        
-        // Populate metadata if commit info is available
-        if (commitInfo != null)
-        {
-            if (!string.IsNullOrEmpty(commitInfo.Sha))
-                build.Metadata[BuildMetadataKeys.CommitSha] = commitInfo.Sha;
-            if (!string.IsNullOrEmpty(commitInfo.Commit.Message))
-                build.Metadata[BuildMetadataKeys.CommitMessage] = commitInfo.Commit.Message;
-            if (!string.IsNullOrEmpty(commitInfo.Commit.Author.Name))
-                build.Metadata[BuildMetadataKeys.Author] = commitInfo.Commit.Author.Name;
-        }
-        if (!string.IsNullOrEmpty(branch))
-            build.Metadata[BuildMetadataKeys.Branch] = branch;
-
-        appDbContext.AppBuildJobs.Add(build);
-
-        // Create deployment immediately with Building status
-        var deployment = new SpaDeployment
-        {
-            Id = Guid.NewGuid(),
-            AppId = app.Id,
-            BuildId = build.Id,
-            ArtifactId = null,
-            Name = request.Name,
-            Status = DeploymentStatus.Building
-        };
-        appDbContext.SpaDeployments.Add(deployment);
-
-        var buildConfig = app.BuildConfigs ?? AppBuildConfigs.Default;
-
-        // TODO: Get limits based on user's subscription plan
-        // var planLimits = await GetUserPlanLimits(app.UserId);
-        var planLimits = PlanLimits.Free;
-
-        var message = new AppBuildMessage
-        {
-            BuildId = build.Id.ToString(),
-            RepoFullName = repo.FullName,
-            CloneUrl = $"https://x-access-token:{installationAccessToken}@github.com/{repo.FullName}",
-            Branch = buildConfig.Branch,
-            Directory = buildConfig.Directory,
-            OutDir = buildConfig.OutDir,
-            InstallCommand = buildConfig.InstallCommand,
-            BuildCommand = buildConfig.BuildCommand,
-            NodeVersion = buildConfig.NodeVersion,
-            EnvVars = buildEnvVars,
-            ArtifactsUploadPath = linkGenerator.GetPathByAction(HttpContext, nameof(BuildsController.UploadArtifacts), BuildsController.Controller, new { appId = app.Id, buildId = build.Id })!,
-            Limits = planLimits
-        };
-
-        rabbitMqService.PublishMessage(JsonSerializer.Serialize(message));
-            
-        publisher.Publish(app.Id, build.Status);
-
-        await appDbContext.SaveChangesAsync();
+        await buildOrchestrationService.CreateAndQueueBuildAsync(
+            app,
+            cloneUrl,
+            repo.FullName,
+            artifactsUploadPath,
+            deploymentName: request.Name
+        );
         
         return NoContent();
     }
