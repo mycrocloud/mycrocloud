@@ -6,6 +6,7 @@ public abstract class Deployment : BaseEntity
     public int AppId { get; set; }
     public App App { get; set; } = null!;
     public string? Name { get; set; }
+    public string? Description { get; set; }
     public DeploymentStatus Status { get; set; }
     
     // Navigation
