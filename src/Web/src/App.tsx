@@ -95,11 +95,11 @@ function App() {
               <Route path="integrations">
                 <Route
                   path="callback/github"
-                  element={<IntegrationsGitHubCallback />}
+                  element={<ProtectedPage><IntegrationsGitHubCallback /></ProtectedPage>}
                 />
                 <Route
                   path="slack/oauth/callback"
-                  element={<IntegrationsSlackCallback />}
+                  element={<ProtectedPage><IntegrationsSlackCallback /></ProtectedPage>}
                 />
                 <Route path="slack/link" element={<IntegrationsSlackLink />} />
               </Route>
