@@ -31,10 +31,6 @@ public class LoggingMiddleware(RequestDelegate next)
                 RemoteAddress = context.Connection.RemoteIpAddress?.ToString(),
                 RequestContentLength = context.Request.ContentLength,
                 RequestContentType = context.Request.ContentType,
-                RequestCookie = JsonSerializer.Serialize(context.Request.Cookies.ToDictionary()),
-                RequestFormContent = context.Request.HasFormContentType
-                    ? JsonSerializer.Serialize(context.Request.Form.ToDictionary())
-                    : null,
                 RequestHeaders = JsonSerializer.Serialize(context.Request.Headers.ToDictionary()),
             };
 

@@ -49,8 +49,6 @@ public class LogsController(ILogRepository logRepository) : BaseController
                 l.FunctionLogs,
                 l.RequestContentLength,
                 l.RequestContentType,
-                l.RequestCookie,
-                l.RequestFormContent,
                 l.RequestHeaders
             })
             .ToListAsync();

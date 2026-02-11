@@ -13,8 +13,6 @@ export default interface ILog {
   functionExecutionDuration?: number;
   requestContentLength?: number;
   requestContentType?: string;
-  requestCookie?: string;
-  requestFormContent?: string;
   requestHeaders?: string;
 }
 

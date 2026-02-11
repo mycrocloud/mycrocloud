@@ -16,8 +16,6 @@ public class AccessLog : BaseEntity
     public string RemoteAddress { get; set; }
     public long? RequestContentLength { get; set; }
     public string RequestContentType { get; set; }
-    public string RequestCookie { get; set; }
-    public string RequestFormContent { get; set; }
     public string RequestHeaders { get; set; }
     public ICollection<FunctionLogEntry> FunctionLogs { get; set; }
 }
