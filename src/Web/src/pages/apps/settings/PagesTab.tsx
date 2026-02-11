@@ -238,11 +238,22 @@ function GitHubLinkSection() {
               </DialogContent>
             </Dialog>
           </>
+        ) : installations.length === 0 ? (
+          <div className="flex flex-col items-center gap-4 rounded-lg border border-dashed p-8 text-center">
+            <Github className="h-10 w-10 text-muted-foreground" />
+            <div className="space-y-1">
+              <p className="text-sm font-medium">No GitHub App installed</p>
+              <p className="text-sm text-muted-foreground">
+                Install the GitHub App on your account or organization to connect repositories.
+              </p>
+            </div>
+            <Button onClick={connectGitHub}>
+              <Github className="mr-2 h-4 w-4" />
+              Install GitHub App
+            </Button>
+          </div>
         ) : (
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Connect your app to GitHub to access your repositories.
-            </p>
             <div className="flex flex-wrap items-center gap-3">
               <Select
                 value={installationId?.toString() ?? ""}
