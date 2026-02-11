@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Api.Domain.Entities;
 using Api.Infrastructure;
 using Api.Services;
+using Api.Domain.Services;
 
 namespace Api.Controllers;
 
@@ -11,7 +12,8 @@ namespace Api.Controllers;
 [TypeFilter<AppOwnerActionFilter>(Arguments = ["appId"])]
 public class SpaDeploymentsController(
     AppDbContext appDbContext,
-    IArtifactExtractionService extractionService
+    IArtifactExtractionService extractionService,
+    IStorageProvider storageProvider
 ) : BaseController
 {
     private App App => (HttpContext.Items["App"] as App)!;
@@ -114,6 +116,28 @@ public class SpaDeploymentsController(
             TotalSize = files.Sum(f => f.SizeBytes),
             Files = files
         });
+    }
+
+    [HttpGet("{deploymentId:guid}/download")]
+    public async Task<IActionResult> DownloadArtifact(int appId, Guid deploymentId)
+    {
+        var deployment = await appDbContext.SpaDeployments
+            .Include(d => d.Artifact)
+            .FirstOrDefaultAsync(d => d.Id == deploymentId && d.AppId == appId);
+        
+        if (deployment == null)
+            return NotFound("Deployment not found");
+        
+        if (deployment.ArtifactId == null || deployment.Artifact == null)
+            return NotFound("Artifact not found for this deployment");
+
+        var artifact = deployment.Artifact;
+        var stream = await storageProvider.OpenReadAsync(artifact.StorageKey);
+        
+        // Generate filename from deployment ID or build name
+        var fileName = $"deployment-{deploymentId.ToString()[..8]}.zip";
+        
+        return File(stream, "application/zip", fileName);
     }
 
     [HttpPost("redeploy/{artifactId:guid}")]

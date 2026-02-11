@@ -5,6 +5,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { useAuth0 } from "@auth0/auth0-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -23,6 +24,7 @@ import {
   Search,
   User,
   Hash,
+  Download,
 } from "lucide-react";
 
 interface IDeployment {
@@ -112,6 +114,7 @@ export default function DeploymentDetails() {
   if (!app) throw new Error();
 
   const { get, post } = useApiClient();
+  const { getAccessTokenSilently } = useAuth0();
   const { deploymentId } = useParams();
   const navigate = useNavigate();
 
@@ -185,6 +188,47 @@ export default function DeploymentDetails() {
     }
   };
 
+  const handleDownload = async () => {
+    if (!deployment) return;
+    
+    try {
+      // Get the authentication token
+      const token = await getAccessTokenSilently();
+      
+      // Create download link with authentication
+      const downloadUrl = `/api/apps/${app.id}/spa/deployments/${deploymentId}/download`;
+      
+      // Use fetch to download with authentication header
+      const response = await fetch(downloadUrl, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Download failed');
+      }
+      
+      // Create blob from response
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      
+      // Trigger download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `deployment-${deploymentId?.slice(0, 8)}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert('Failed to download artifact. Please try again.');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -232,6 +276,16 @@ export default function DeploymentDetails() {
                   <RotateCcw className="mr-2 h-4 w-4" />
                 )}
                 Redeploy
+              </Button>
+            )}
+            {deployment.artifactId && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownload}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Download
               </Button>
             )}
           </div>
