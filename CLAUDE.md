@@ -99,3 +99,9 @@ Migrations live in a separate `Api.Migrations` project. Design-time factory in `
 
 ### CI/CD
 GitHub Actions per-service (path-filtered pushes to `main`). Reusable `_build-deploy.yml` workflow: build Docker image → push to `ghcr.io` → SSH + Ansible playbook → `docker compose up`. Secrets from AWS Secrets Manager.
+
+### Documentation project
+The document project lives in other repository:
+```
+../mycrocloud-docs
+```
