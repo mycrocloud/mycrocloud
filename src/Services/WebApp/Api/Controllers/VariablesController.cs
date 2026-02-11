@@ -39,7 +39,7 @@ public class VariablesController(
             variable.Name,
             variable.IsSecret,
             Target = variable.Target.ToString(),
-            variable.Value,
+            Value = variable.IsSecret ? "********" : variable.Value,
             variable.CreatedAt,
             variable.UpdatedAt
         }));
@@ -77,10 +77,21 @@ public class VariablesController(
             variable.Name,
             variable.IsSecret,
             Target = variable.Target.ToString(),
-            variable.Value,
+            Value = variable.IsSecret ? "********" : variable.Value,
             variable.CreatedAt,
             variable.UpdatedAt
         });
+    }
+
+    [HttpGet("{id:int}/reveal")]
+    public async Task<IActionResult> RevealSecret(int appId, int id)
+    {
+        var variable = await appDbContext.Variables.SingleAsync(v => v.AppId == appId && v.Id == id);
+        if (!variable.IsSecret)
+        {
+            return BadRequest(new { error = "This variable is not marked as secret" });
+        }
+        return Ok(new { Value = variable.Value });
     }
 
     [HttpDelete("{id:int}")]

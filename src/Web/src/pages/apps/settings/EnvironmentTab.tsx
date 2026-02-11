@@ -54,6 +54,7 @@ export default function EnvironmentTab() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [visibleSecrets, setVisibleSecrets] = useState<Set<number>>(new Set());
+  const [revealedSecrets, setRevealedSecrets] = useState<Map<number, string>>(new Map());
 
   const {
     register,
@@ -125,16 +126,35 @@ export default function EnvironmentTab() {
     }
   };
 
-  const toggleSecretVisibility = (id: number) => {
-    setVisibleSecrets((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
+  const toggleSecretVisibility = async (id: number) => {
+    const isCurrentlyVisible = visibleSecrets.has(id);
+    
+    if (isCurrentlyVisible) {
+      // Hide the secret
+      setVisibleSecrets((prev) => {
+        const next = new Set(prev);
         next.delete(id);
-      } else {
-        next.add(id);
+        return next;
+      });
+    } else {
+      // Show the secret - fetch the real value if not already fetched
+      if (!revealedSecrets.has(id)) {
+        try {
+          const data = await get<{ value: string }>(`/api/apps/${app.id}/variables/${id}/reveal`);
+          setRevealedSecrets((prev) => new Map(prev).set(id, data.value));
+        } catch (err) {
+          console.error("Failed to reveal secret:", err);
+          toast.error("Failed to reveal secret value");
+          return;
+        }
       }
-      return next;
-    });
+      
+      setVisibleSecrets((prev) => {
+        const next = new Set(prev);
+        next.add(id);
+        return next;
+      });
+    }
   };
 
   const getTargetBadgeClass = (target: VariableTarget) => {
@@ -253,6 +273,8 @@ export default function EnvironmentTab() {
                   <code className="max-w-[200px] truncate text-sm text-muted-foreground">
                     {variable.isSecret && !visibleSecrets.has(variable.id)
                       ? "••••••••"
+                      : variable.isSecret && visibleSecrets.has(variable.id)
+                      ? revealedSecrets.get(variable.id) || variable.value
                       : variable.value}
                   </code>
                   <Button
