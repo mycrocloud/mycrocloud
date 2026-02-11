@@ -3,7 +3,7 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import { AppContext } from ".";
 import { useAuth0 } from "@auth0/auth0-react";
 import BuildLogs from "./BuildLogs";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -15,7 +15,6 @@ import {
   Timer,
   Copy,
   Check,
-  RotateCcw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -99,11 +98,11 @@ export default function BuildDetails() {
   const { get, post } = useApiClient();
   const { getAccessTokenSilently } = useAuth0();
   const { buildId } = useParams();
+  const navigate = useNavigate();
 
   const [build, setBuild] = useState<IBuild | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [isRebuilding, setIsRebuilding] = useState(false);
 
   const fetchBuild = useCallback(async () => {
     const data = await get<IBuild[]>(`/api/apps/${app.id}/builds`);
@@ -153,19 +152,6 @@ export default function BuildDetails() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleRebuild = async () => {
-    setIsRebuilding(true);
-    try {
-      await post(`/api/apps/${app.id}/builds/build`, {
-        name: build?.name ? `${build.name} (rebuild)` : undefined,
-      });
-    } catch {
-      alert("Something went wrong...");
-    } finally {
-      setIsRebuilding(false);
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -178,12 +164,17 @@ export default function BuildDetails() {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
         <p className="text-muted-foreground">Build not found</p>
-        <Button asChild variant="outline">
-          <Link to={`/apps/${app.id}/builds`}>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate(-1)}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Builds
-          </Link>
-        </Button>
+            Go Back
+          </Button>
+          <Button asChild variant="outline">
+            <Link to={`/apps/${app.id}/spa/deployments`}>
+              View Deployments
+            </Link>
+          </Button>
+        </div>
       </div>
     );
   }
@@ -196,11 +187,9 @@ export default function BuildDetails() {
       {/* Header */}
       <div className="flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-4">
-          <Button asChild variant="ghost" size="sm">
-            <Link to={`/apps/${app.id}/builds`}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Builds
-            </Link>
+          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
           </Button>
           <div className="h-6 w-px bg-border" />
           <div>
@@ -231,29 +220,13 @@ export default function BuildDetails() {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRebuild}
-            disabled={isRebuilding}
-          >
-            {isRebuilding ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <RotateCcw className="mr-2 h-4 w-4" />
-            )}
-            Rebuild
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleCopyLink}>
-            {copied ? (
-              <Check className="mr-2 h-4 w-4 text-green-500" />
-            ) : (
-              <Copy className="mr-2 h-4 w-4" />
-            )}
-            {copied ? "Copied!" : "Copy Link"}
-          </Button>
-        </div>
+        <Button variant="outline" size="sm" onClick={handleCopyLink}>
+          {copied ? (
+            <Check className="h-4 w-4 text-green-500" />
+          ) : (
+            <Copy className="h-4 w-4" />
+          )}
+        </Button>
       </div>
 
       {/* Logs - Full Height */}
