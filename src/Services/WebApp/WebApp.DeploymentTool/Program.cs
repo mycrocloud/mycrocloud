@@ -48,6 +48,7 @@ else
 // 3. Add Services
 builder.Services.AddScoped<IAppSpecificationPublisher, AppSpecificationPublisher>();
 builder.Services.AddScoped<IApiDeploymentService, ApiDeploymentService>();
+builder.Services.AddScoped<IOpenApiGenerator, OpenApiGenerator>();
 
 using var host = builder.Build();
 

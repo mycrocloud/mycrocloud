@@ -117,6 +117,7 @@ builder.Services.AddScoped<IAppCacheInvalidator, AppCacheInvalidator>();
 builder.Services.AddScoped<IAppSpecificationPublisher, AppSpecificationPublisher>();
 builder.Services.AddScoped<IArtifactExtractionService, ArtifactExtractionService>();
 builder.Services.AddScoped<IApiDeploymentService, ApiDeploymentService>();
+builder.Services.AddScoped<IOpenApiGenerator, OpenApiGenerator>();
 builder.Services.AddScoped<BuildOrchestrationService>();
 
 // Storage Provider selection (Disk or S3/R2)

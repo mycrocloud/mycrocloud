@@ -4,6 +4,9 @@ import { AppContext } from ".";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -31,6 +34,7 @@ import { cn } from "@/lib/utils";
 
 interface IApiDeployment {
   id: string;
+  name: string;
   isActive: boolean;
   status: string;
   createdAt: string;
@@ -73,6 +77,8 @@ export default function ApiDeploymentsList() {
   const [showPublishDialog, setShowPublishDialog] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [deploymentName, setDeploymentName] = useState("");
+  const [deploymentDescription, setDeploymentDescription] = useState("");
 
   const fetchDeployments = useCallback(async () => {
     const data = await get<IApiDeployment[]>(`/api/apps/${app.id}/api/deployments`);
@@ -93,8 +99,13 @@ export default function ApiDeploymentsList() {
   const handlePublish = async () => {
     setIsPublishing(true);
     try {
-      await post(`/api/apps/${app.id}/api/deployments/publish`, {});
+      await post(`/api/apps/${app.id}/api/deployments/publish`, {
+        name: deploymentName,
+        description: deploymentDescription
+      });
       setShowPublishDialog(false);
+      setDeploymentName("");
+      setDeploymentDescription("");
       await fetchDeployments();
     } catch {
       alert("Failed to publish API. Please try again.");
@@ -160,7 +171,10 @@ export default function ApiDeploymentsList() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <div>
-                          <p className="font-medium text-sm font-mono">
+                          <p className="font-medium text-sm">
+                            {deployment.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground font-mono">
                             {deployment.id.slice(0, 12)}
                           </p>
                         </div>
@@ -234,11 +248,34 @@ export default function ApiDeploymentsList() {
               The new deployment will automatically become active.
             </DialogDescription>
           </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="deployment-name">Deployment Name</Label>
+              <Input
+                id="deployment-name"
+                placeholder="Enter deployment name"
+                value={deploymentName}
+                onChange={(e) => setDeploymentName(e.target.value)}
+                disabled={isPublishing}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="deployment-description">Description (Optional)</Label>
+              <Textarea
+                id="deployment-description"
+                placeholder="Enter deployment description"
+                value={deploymentDescription}
+                onChange={(e) => setDeploymentDescription(e.target.value)}
+                disabled={isPublishing}
+                rows={3}
+              />
+            </div>
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowPublishDialog(false)} disabled={isPublishing}>
               Cancel
             </Button>
-            <Button onClick={handlePublish} disabled={isPublishing}>
+            <Button onClick={handlePublish} disabled={isPublishing || !deploymentName.trim()}>
               {isPublishing ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

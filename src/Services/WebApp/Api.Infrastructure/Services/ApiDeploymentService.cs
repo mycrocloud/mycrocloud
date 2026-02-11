@@ -13,6 +13,7 @@ public class ApiDeploymentService(
     AppDbContext dbContext,
     IStorageProvider storageProvider,
     IAppSpecificationPublisher specPublisher,
+    IOpenApiGenerator openApiGenerator,
     ILogger<ApiDeploymentService> logger) : IApiDeploymentService
 {
     public async Task<int> BootstrapLegacyAppsAsync()
@@ -42,7 +43,7 @@ public class ApiDeploymentService(
         return count;
     }
 
-    public async Task<Guid> CreateDeploymentSnapshotAsync(int appId)
+    public async Task<Guid> CreateDeploymentSnapshotAsync(int appId, string? name = null, string? description = null)
     {
         var app = await dbContext.Apps
             .Include(a => a.Routes.Where(r => r.Enabled && r.Status == RouteStatus.Active))
@@ -54,6 +55,8 @@ public class ApiDeploymentService(
         {
             Id = Guid.NewGuid(),
             AppId = appId,
+            Name = name,
+            Description = description,
             Status = DeploymentStatus.Ready // Marked as Ready immediately for snapshots
         };
 
@@ -82,11 +85,18 @@ public class ApiDeploymentService(
             // 2. Save Metadata (Always exists for a route)
             var metadata = new ApiRouteMetadata
             {
+                Id = route.Id,
+                Name = route.Name,
+                Method = route.Method,
+                Path = route.Path,
+                Description = route.Description,
+                ResponseType = route.ResponseType,
                 ResponseStatusCode = route.ResponseStatusCode,
                 ResponseHeaders = route.ResponseHeaders ?? [],
                 RequestQuerySchema = route.RequestQuerySchema,
                 RequestHeaderSchema = route.RequestHeaderSchema,
                 RequestBodySchema = route.RequestBodySchema,
+                RequireAuthorization = route.RequireAuthorization,
                 FunctionRuntime = route.FunctionRuntime
             };
             
@@ -103,6 +113,68 @@ public class ApiDeploymentService(
                 ETag = metaBlob.ContentHash
             });
         }
+
+        // 3. Generate and save OpenAPI specification
+        var routeMetadataList = app.Routes.Select(route => new ApiRouteMetadata
+        {
+            Id = route.Id,
+            Name = route.Name,
+            Method = route.Method,
+            Path = route.Path,
+            Description = route.Description,
+            ResponseType = route.ResponseType,
+            ResponseStatusCode = route.ResponseStatusCode,
+            ResponseHeaders = route.ResponseHeaders ?? [],
+            RequestQuerySchema = route.RequestQuerySchema,
+            RequestHeaderSchema = route.RequestHeaderSchema,
+            RequestBodySchema = route.RequestBodySchema,
+            RequireAuthorization = route.RequireAuthorization,
+            FunctionRuntime = route.FunctionRuntime
+        }).ToList();
+
+        var openApiSpec = openApiGenerator.GenerateSpecification(app.Slug, app.Slug, routeMetadataList);
+        var openApiContent = System.Text.Encoding.UTF8.GetBytes(openApiSpec);
+        var openApiBlob = await GetOrCreateBlobAsync(openApiContent, "application/json");
+
+        dbContext.DeploymentFiles.Add(new DeploymentFile
+        {
+            Id = Guid.NewGuid(),
+            DeploymentId = deployment.Id,
+            Path = "openapi.json",
+            BlobId = openApiBlob.Id,
+            SizeBytes = openApiContent.Length,
+            ETag = openApiBlob.ContentHash
+        });
+
+        // 4. Generate and save simplified routes.json for UI display
+        var routesSummary = routeMetadataList.Select(r => new
+        {
+            name = r.Name,
+            method = r.Method,
+            path = r.Path,
+            description = r.Description,
+            responseType = r.ResponseType.ToString(),
+            requireAuthorization = r.RequireAuthorization,
+            functionRuntime = r.FunctionRuntime?.ToString()
+        }).ToList();
+
+        var routesJson = JsonSerializer.Serialize(routesSummary, new JsonSerializerOptions 
+        { 
+            WriteIndented = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+        var routesContent = System.Text.Encoding.UTF8.GetBytes(routesJson);
+        var routesBlob = await GetOrCreateBlobAsync(routesContent, "application/json");
+
+        dbContext.DeploymentFiles.Add(new DeploymentFile
+        {
+            Id = Guid.NewGuid(),
+            DeploymentId = deployment.Id,
+            Path = "routes.json",
+            BlobId = routesBlob.Id,
+            SizeBytes = routesContent.Length,
+            ETag = routesBlob.ContentHash
+        });
 
         // Activate the new deployment
         app.ActiveApiDeploymentId = deployment.Id;
