@@ -10,7 +10,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     public DbSet<RouteFolder> RouteFolders { get; set; }
     public DbSet<Route> Routes { get; set; }
-    public DbSet<Log> Logs { get; set; }
+    public DbSet<AccessLog> Logs { get; set; }
     public DbSet<AuthenticationScheme> AuthenticationSchemes { get; set; }
 
     public DbSet<ApiKey> ApiKeys { get; set; }
@@ -103,18 +103,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasOne(r => r.App)
             .WithMany(a => a.AuthenticationSchemes)
             .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<Log>()
-            .HasOne(r => r.App)
-            .WithMany(a => a.Logs)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<Log>()
-            .HasOne(r => r.Route)
-            .WithMany(a => a.Logs)
-            .OnDelete(DeleteBehavior.Cascade);
         
-        modelBuilder.Entity<Log>()
+        modelBuilder.Entity<AccessLog>()
             .OwnsMany(app => app.FunctionLogs, builder => { builder.ToJson(); });
 
         modelBuilder.Entity<RouteFolder>()

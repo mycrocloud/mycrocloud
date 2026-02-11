@@ -4,7 +4,7 @@ namespace Api.Domain.Repositories;
 
 public interface ILogRepository
 {
-    Task Add(Log log);
+    Task Add(AccessLog accessLog);
     Task DeleteByRouteId(int id);
-    Task<IQueryable<Log>> Search(int appId);
+    Task<IQueryable<AccessLog>> Search(int appId);
 }

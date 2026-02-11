@@ -1,14 +1,14 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Api.Domain.Models;
 using WebApp.Gateway.Models;
 using Api.Domain.Entities;
-using Api.Domain.Repositories;
+using WebApp.Gateway.Services;
 
 namespace WebApp.Gateway.Middlewares;
 
 public class LoggingMiddleware(RequestDelegate next)
 {
-    public async Task Invoke(HttpContext context, ILogger<LoggingMiddleware> logger, ILogRepository logRepository)
+    public async Task Invoke(HttpContext context, ILogger<LoggingMiddleware> logger, AccessLogChannel logChannel)
     {
         await next.Invoke(context);
 
@@ -18,7 +18,7 @@ public class LoggingMiddleware(RequestDelegate next)
             var metadata = context.Items["_ApiRouteMetadata"] as ApiRouteMetadata;
             var functionExecutionResult = context.Items["_FunctionExecutionResult"] as FunctionResult;
 
-            await logRepository.Add(new Log
+            var accessLog = new AccessLog
             {
                 AppId = app.Id,
                 RouteId = route?.Id,
@@ -36,7 +36,12 @@ public class LoggingMiddleware(RequestDelegate next)
                     ? JsonSerializer.Serialize(context.Request.Form.ToDictionary())
                     : null,
                 RequestHeaders = JsonSerializer.Serialize(context.Request.Headers.ToDictionary()),
-            });
+            };
+
+            if (!logChannel.Writer.TryWrite(accessLog))
+            {
+                logger.LogWarning("Access log channel is full, dropping log for app {AppId}", app.Id);
+            }
         }
     }
 }

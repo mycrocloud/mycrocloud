@@ -2,9 +2,8 @@ using Docker.DotNet;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Api.Domain.Entities;
-using Api.Domain.Repositories;
 using Api.Infrastructure;
-using Api.Infrastructure.Repositories;
+using WebApp.Gateway.Services;
 using WebApp.Gateway;
 using Api.Domain.Models;
 using WebApp.Gateway.Middlewares;
@@ -14,6 +13,8 @@ using Api.Domain.Services;
 using Api.Infrastructure.Storage;
 using WebApp.Gateway.Cache;
 using Amazon.S3;
+using Api.Domain.Repositories;
+using Api.Infrastructure.Repositories;
 
 DotNetEnv.Env.Load();
 var builder = WebApplication.CreateBuilder(args);
@@ -32,7 +33,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 });
 builder.Services.AddScoped<IAppRepository, AppRepository>();
 builder.Services.AddScoped<IRouteRepository, RouteRepository>();
-builder.Services.AddScoped<ILogRepository, LogRepository>();
+builder.Services.AddSingleton<AccessLogChannel>();
+builder.Services.AddHostedService<AccessLogBackgroundService>();
 builder.Services.AddHttpClient("HttpDocumentRetriever");
 builder.Services.AddStackExchangeRedisCache(options =>
 {

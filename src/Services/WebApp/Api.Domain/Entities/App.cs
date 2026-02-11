@@ -22,7 +22,6 @@ public class App : BaseEntity
 
     public ICollection<RouteFolder> RouteFolders { get; set; }
     public ICollection<Route> Routes { get; set; }
-    public ICollection<Log> Logs { get; set; }
     public ICollection<Variable> Variables { get; set; }
 
     public AppLink Link { get; set; }

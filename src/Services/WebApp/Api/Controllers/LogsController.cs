@@ -41,7 +41,6 @@ public class LogsController(ILogRepository logRepository) : BaseController
                 Timestamp = l.CreatedAt,
                 l.RemoteAddress,
                 l.RouteId,
-                RouteName = l.Route != null ? l.Route.Name : null,
                 l.Method,
                 l.Path,
                 l.StatusCode,

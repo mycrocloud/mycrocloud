@@ -1,14 +1,13 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Api.Domain.Entities;
+﻿using Api.Domain.Entities;
 using Api.Domain.Repositories;
 
 namespace Api.Infrastructure.Repositories;
 
 public class LogRepository(AppDbContext appDbContext) : ILogRepository
 {
-    public async Task Add(Log log)
+    public async Task Add(AccessLog accessLog)
     {
-        await appDbContext.Logs.AddAsync(log);
+        await appDbContext.Logs.AddAsync(accessLog);
         await appDbContext.SaveChangesAsync();
     }
 
@@ -19,10 +18,9 @@ public class LogRepository(AppDbContext appDbContext) : ILogRepository
         await appDbContext.SaveChangesAsync();
     }
 
-    public Task<IQueryable<Log>> Search(int appId)
+    public Task<IQueryable<AccessLog>> Search(int appId)
     {
         return Task.FromResult(appDbContext.Logs
-            .Include(l => l.Route)
             .Where(l => l.AppId == appId));
     }
 }

@@ -32,7 +32,7 @@ public class Route : BaseEntity
     public FunctionRuntime? FunctionRuntime { get; set; }
     
     // Navigation properties
-    public ICollection<Log> Logs { get; set; }
+    public ICollection<AccessLog> Logs { get; set; }
 }
 
 public class ResponseHeader
