@@ -13,13 +13,11 @@ import (
 
 // LogEntry matches the frontend ILogEntry interface shape.
 type LogEntry struct {
-	Log         string `json:"log"`
-	ContainerID string `json:"container_id,omitempty"`
-	Source      string `json:"source"`
-	Tag         string `json:"tag"`
-	Time        string `json:"time"`
-	UUID        string `json:"uuid"`
-	BuildID     string `json:"build_id"`
+	Log    string `json:"log"`
+	Source string `json:"source"`
+	Tag    string `json:"tag"`
+	Time   string `json:"time"`
+	UUID   string `json:"uuid"`
 }
 
 // Collector buffers log lines in memory and publishes each line to RabbitMQ for live SSE.
@@ -42,13 +40,11 @@ func New(buildID string, ch *amqp.Channel) *Collector {
 // Append adds a log line, publishes it to RabbitMQ for live SSE, and buffers it.
 func (c *Collector) Append(line string, source string, tag string, containerID string) {
 	entry := LogEntry{
-		Log:         line,
-		Source:      source,
-		Tag:         tag,
-		Time:        time.Now().UTC().Format(time.RFC3339Nano),
-		UUID:        generateUUID(),
-		BuildID:     c.buildID,
-		ContainerID: containerID,
+		Log:    line,
+		Source: source,
+		Tag:    tag,
+		Time:   time.Now().UTC().Format(time.RFC3339Nano),
+		UUID:   generateUUID(),
 	}
 
 	c.mu.Lock()
