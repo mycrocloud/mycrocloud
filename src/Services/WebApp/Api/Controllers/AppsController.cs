@@ -74,6 +74,8 @@ public class AppsController(
         var app = await appDbContext.Apps
             .Include(a => a.ActiveSpaDeployment)
             .Include(a => a.ActiveApiDeployment)
+            .Include(a => a.Link)
+            .ThenInclude(l => l.GitHubInstallation)
             .FirstAsync(a => a.Id == id);
 
         Response.Headers.Append(ETagHeader, app.Version.ToString());
@@ -103,6 +105,13 @@ public class AppsController(
                 activeApi.Id,
                 Status = activeApi.Status.ToString(),
                 activeApi.CreatedAt
+            } : null,
+            GitIntegration = app.Link != null ? new
+            {
+                Provider = "GitHub",
+                Org = app.Link.GitHubInstallation.AccountLogin,
+                app.Link.RepoId,
+                Repo = app.Link.RepoName
             } : null
         });
     }
@@ -174,28 +183,6 @@ public class AppsController(
         return Ok(app.CorsSettings);
     }
     
-    [HttpGet("{id:int}/link")]
-    public async Task<IActionResult> Link(int id)
-    {
-        var app = await appDbContext.Apps
-            .Include(a => a.Link)
-            .ThenInclude(i => i.GitHubInstallation)
-            .SingleAsync(a => a.Id == id && a.OwnerId == User.GetUserId());
-
-        if (app.Link is not { } link)
-        {
-            return NotFound();
-        }
-        
-        return Ok(new
-        {
-            Type = "GitHub", //TODO: 
-            Org = link.GitHubInstallation.AccountLogin, 
-            link.RepoId,
-            Repo = link.RepoName
-        });
-    }
-
     [HttpPost("{id:int}/link/github")]
     public async Task<IActionResult> ConnectGitHubRepo(int id, GitHubRepoIntegrationRequest request)
     {

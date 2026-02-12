@@ -3,7 +3,7 @@ import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { AppContext } from ".";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,6 +43,8 @@ import {
   Search,
   Filter,
   GitBranch,
+  Github,
+  ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -261,9 +263,38 @@ export default function BuildHistory() {
   }, [showBuildModal, reset]);
 
   const hasFilters = statusFilter !== "all" || searchQuery !== "";
+  const hasGitHubIntegration = !!app.gitIntegration;
 
   return (
     <div className="flex h-full flex-col p-4">
+      {/* GitHub Integration Warning */}
+      {!hasGitHubIntegration && (
+        <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-900 dark:bg-yellow-950/20">
+          <div className="flex items-start gap-3">
+            <Github className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100">
+                GitHub Integration Required
+              </p>
+              <p className="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
+                Connect your GitHub repository in settings to start building and deploying your application.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3 border-yellow-600 text-yellow-700 hover:bg-yellow-100 dark:border-yellow-400 dark:text-yellow-300 dark:hover:bg-yellow-900/30"
+                asChild
+              >
+                <Link to={`/apps/${app.id}/settings/pages`}>
+                  Connect GitHub
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -273,7 +304,12 @@ export default function BuildHistory() {
             </Badge>
           )}
         </div>
-        <Button onClick={() => setShowBuildModal(true)} size="sm">
+        <Button 
+          onClick={() => setShowBuildModal(true)} 
+          size="sm"
+          disabled={!hasGitHubIntegration}
+          title={!hasGitHubIntegration ? "Connect a GitHub repository first" : ""}
+        >
           <Play className="mr-2 h-4 w-4" />
           New Build
         </Button>

@@ -62,7 +62,7 @@ export default function PagesTab() {
 
 function GitHubLinkSection() {
   const { get, post, del } = useApiClient();
-  const { app } = useContext(AppContext)!;
+  const { app, setApp } = useContext(AppContext)!;
   if (!app) throw new Error();
 
   const [loading, setLoading] = useState(true);
@@ -76,14 +76,9 @@ function GitHubLinkSection() {
 
   useEffect(() => {
     (async () => {
-      const [link, installations] = await Promise.all([
-        get<IAppIntegration>(`/api/apps/${app.id}/link`).catch((err) =>
-          err instanceof NotFoundError ? null : Promise.reject(err)
-        ),
-        get<IGitHubInstallation[]>(`/api/integrations/github/installations`),
-      ]);
+      const installations = await get<IGitHubInstallation[]>(`/api/integrations/github/installations`);
 
-      setLink(link);
+      setLink(app.gitIntegration || null);
       setInstallations(installations);
 
       if (installations.length === 1) {
@@ -92,7 +87,7 @@ function GitHubLinkSection() {
 
       setLoading(false);
     })();
-  }, [app.id, get]);
+  }, [app.id, app.gitIntegration, get]);
 
   useEffect(() => {
     if (!installationId) return;
@@ -143,13 +138,17 @@ function GitHubLinkSection() {
 
     await post(`/api/apps/${app.id}/link/github`, { installationId, repoId });
 
-    setLink({
+    const newLink = {
       type: "GitHub",
       org: installations.find((i) => i.installationId === installationId)!
         .accountLogin,
       repoId: repoId,
       repo: repos.find((r) => r.id === repoId)!.name,
-    });
+    };
+    
+    setLink(newLink);
+    // Update app context with new gitIntegration
+    setApp({ ...app, gitIntegration: newLink });
   };
 
   const onDisconnect = async () => {
@@ -157,6 +156,8 @@ function GitHubLinkSection() {
     try {
       await del(`/api/apps/${app.id}/link`);
       setLink(null);
+      // Update app context to remove gitIntegration
+      setApp({ ...app, gitIntegration: null });
       setShowDisconnectDialog(false);
     } finally {
       setDisconnecting(false);

@@ -16,6 +16,7 @@ export default interface IApp {
   domain: string;
   activeSpaDeployment?: IActiveDeployment;
   activeApiDeployment?: IActiveDeployment;
+  gitIntegration: IAppIntegration | null;
 }
 
 
