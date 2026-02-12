@@ -46,7 +46,6 @@ import {
   GitHubRepo,
   IBuildConfig,
   NODE_VERSIONS,
-  FRAMEWORKS,
 } from "./types";
 
 const { GITHUB_APP_NAME } = getConfig();
@@ -350,7 +349,6 @@ const buildConfigSchema = yup.object({
   buildCommand: yup.string().required("Build command is required"),
   outDir: yup.string().required("Output directory is required"),
   nodeVersion: yup.string().default("20"),
-  framework: yup.string().default(""),
 });
 
 function BuildSettingsSection() {
@@ -534,34 +532,6 @@ function BuildSettingsSection() {
                   </Select>
                 )}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="framework">Framework Preset</Label>
-              <Controller
-                name="framework"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    value={field.value || ""}
-                    onValueChange={field.onChange}
-                    disabled={!isEditing}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select framework" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {FRAMEWORKS.map((fw) => (
-                        <SelectItem key={fw.value} value={fw.value || "_none"}>
-                          {fw.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              <p className="text-xs text-muted-foreground">
-                Optional: Auto-fill build settings based on framework
-              </p>
             </div>
           </div>
 

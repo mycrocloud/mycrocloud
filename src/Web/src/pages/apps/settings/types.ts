@@ -57,23 +57,10 @@ export interface IBuildConfig {
   buildCommand: string;
   outDir: string;
   nodeVersion: string;
-  framework: string;
 }
 
 export const NODE_VERSIONS = ["18", "20", "22"] as const;
 export type NodeVersion = (typeof NODE_VERSIONS)[number];
-
-export const FRAMEWORKS = [
-  { value: "", label: "None / Other" },
-  { value: "vite", label: "Vite" },
-  { value: "nextjs", label: "Next.js" },
-  { value: "remix", label: "Remix" },
-  { value: "astro", label: "Astro" },
-  { value: "nuxt", label: "Nuxt" },
-  { value: "sveltekit", label: "SvelteKit" },
-  { value: "gatsby", label: "Gatsby" },
-  { value: "cra", label: "Create React App" },
-] as const;
 
 export type VariableTarget = "Runtime" | "Build" | "All";
 

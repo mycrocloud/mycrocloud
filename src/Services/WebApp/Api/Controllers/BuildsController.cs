@@ -110,12 +110,11 @@ public class BuildsController(
         app.BuildConfigs = new AppBuildConfigs()
         {
             Branch = config.Branch,
-            Directory = config.Directory,
-            InstallCommand = config.InstallCommand,
-            BuildCommand = config.BuildCommand,
-            OutDir = config.OutDir,
-            NodeVersion = config.NodeVersion,
-            Framework = config.Framework,
+            Directory = config.Directory ?? AppBuildConfigs.Default.Directory,
+            InstallCommand = config.InstallCommand ?? AppBuildConfigs.Default.InstallCommand,
+            BuildCommand = config.BuildCommand ?? AppBuildConfigs.Default.BuildCommand,
+            OutDir = config.OutDir ?? AppBuildConfigs.Default.OutDir,
+            NodeVersion = config.NodeVersion ?? AppBuildConfigs.Default.NodeVersion,
         };
 
         await appDbContext.SaveChangesAsync();
