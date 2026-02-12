@@ -19,6 +19,7 @@ type BuildMessage struct {
 	NodeVersion        string            `json:"node_version"`
 	EnvVars            map[string]string `json:"env_vars"`
 	ArtifactsUploadPath string            `json:"artifacts_upload_path"`
+	LogsUploadPath      string            `json:"logs_upload_path"`
 	Limits             *PlanLimits       `json:"limits,omitempty"`
 }
 type BuildStatus int

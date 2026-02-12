@@ -88,6 +88,9 @@ public class AppBuildMessage
     [JsonPropertyName("artifacts_upload_path")]
     public string ArtifactsUploadPath { get; set; }
 
+    [JsonPropertyName("logs_upload_path")]
+    public string LogsUploadPath { get; set; }
+
     [JsonPropertyName("limits")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public PlanLimits? Limits { get; set; }

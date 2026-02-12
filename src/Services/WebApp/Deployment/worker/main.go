@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bufio"
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"mycrocloud/worker/api_client"
-	"mycrocloud/worker/logutil"
+	"mycrocloud/worker/logcollector"
 	"mycrocloud/worker/uploader"
 	"os"
 	"os/signal"
@@ -19,7 +22,6 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
-	"github.com/fluent/fluent-logger-golang/fluent"
 	"github.com/joho/godotenv"
 	"github.com/streadway/amqp"
 )
@@ -27,40 +29,101 @@ import (
 // Global limits loaded from environment
 var limits Limits
 
-func logFluentd(l *fluent.Fluent, msg string, jobID string) {
-	data := map[string]string{
-		"log":      msg,
-		"build_id": jobID,
-	}
-
-	tag := "app.worker"
-
-	err := l.PostWithTime(tag, time.Now(), data)
+// streamContainerLogs reads the Docker multiplexed log stream and feeds each line to the collector.
+func streamContainerLogs(ctx context.Context, cli *client.Client, containerID string, collector *logcollector.Collector) {
+	reader, err := cli.ContainerLogs(ctx, containerID, container.LogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Follow:     true,
+		Timestamps: false,
+	})
 	if err != nil {
-		log.Printf("Failed to send log to fluentd: %v", err)
+		log.Printf("Failed to attach to container logs: %v", err)
+		return
+	}
+	defer reader.Close()
+
+	// Docker multiplexed stream: 8-byte header per frame
+	// byte 0: stream type (1=stdout, 2=stderr)
+	// bytes 4-7: frame size (big-endian uint32)
+	hdr := make([]byte, 8)
+	for {
+		if _, err := io.ReadFull(reader, hdr); err != nil {
+			break
+		}
+		streamType := hdr[0]
+		size := binary.BigEndian.Uint32(hdr[4:8])
+		if size == 0 {
+			continue
+		}
+		payload := make([]byte, size)
+		if _, err := io.ReadFull(reader, payload); err != nil {
+			break
+		}
+
+		source := "stdout"
+		if streamType == 2 {
+			source = "stderr"
+		}
+
+		// Split payload into lines (a single frame may contain multiple lines)
+		scanner := bufio.NewScanner(strings.NewReader(string(payload)))
+		for scanner.Scan() {
+			line := scanner.Text()
+			if line != "" {
+				collector.Append(line, source, "app.builder", containerID)
+			}
+		}
 	}
 }
 
-func getLogConfig() container.LogConfig {
-	addr := stripProtocol(os.Getenv("BUILDER_FLUENTD_ADDRESS"))
-
-	cfg := container.LogConfig{Type: "fluentd"}
-	cfg.Config = map[string]string{
-		"fluentd-address": addr,
-		"tag":             "app.builder",
-		"labels":          "build_id",
+// uploadBuildLogs uploads the collected build logs to the API.
+func uploadBuildLogs(buildMsg BuildMessage, collector *logcollector.Collector) {
+	if buildMsg.LogsUploadPath == "" || collector.Count() == 0 {
+		return
 	}
 
-	log.Printf("Fluentd logging enabled (%s)", addr)
-	return cfg
+	logsData, err := collector.ToJSONL()
+	if err != nil {
+		log.Printf("Failed to serialize logs: %v", err)
+		return
+	}
+
+	cfg := api_client.Config{
+		Domain:       os.Getenv("AUTH0_DOMAIN"),
+		ClientID:     os.Getenv("AUTH0_CLIENT_ID"),
+		ClientSecret: os.Getenv("AUTH0_SECRET"),
+		Audience:     os.Getenv("AUTH0_AUDIENCE"),
+	}
+	token, err := api_client.GetAccessToken(cfg)
+	if err != nil {
+		log.Printf("Failed to get token for log upload: %v", err)
+		return
+	}
+
+	apiBaseURL := os.Getenv("API_BASE_URL")
+	if apiBaseURL == "" {
+		log.Printf("API_BASE_URL not set, cannot upload logs")
+		return
+	}
+
+	logsURL := strings.TrimSuffix(apiBaseURL, "/") + buildMsg.LogsUploadPath
+	if err := uploader.UploadLogs(logsURL, logsData, token, "deployment-worker"); err != nil {
+		log.Printf("Failed to upload logs: %v", err)
+	} else {
+		log.Printf("Uploaded %d log entries", collector.Count())
+	}
 }
 
 // ProcessJob processes a build job and returns an error if it fails
-func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *fluent.Fluent) error {
+func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel) error {
 	var buildMsg BuildMessage
 	if err := json.Unmarshal([]byte(jsonString), &buildMsg); err != nil {
 		return err
 	}
+
+	// Create log collector for this build
+	collector := logcollector.New(buildMsg.BuildId, ch)
 
 	// Get job-specific limits from plan (capped by system max)
 	jobLimits := limits.GetJobLimits(buildMsg.Limits)
@@ -71,7 +134,7 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 		formatBytes(jobLimits.MaxArtifactSize))
 
 	log.Printf("Processing... Id: %s, RepoFullName: %s", buildMsg.BuildId, buildMsg.RepoFullName)
-	logFluentd(l, "Processing", buildMsg.BuildId)
+	collector.Append("Processing build "+buildMsg.BuildId, "stdout", "app.worker", "")
 
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -94,7 +157,7 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 	// Ensure permissions are actually 0777 regardless of umask
 	_ = os.Chmod(jobOut, 0777)
 
-	log.Printf("📦 Starting build job: %s", jobID)
+	log.Printf("Starting build job: %s", jobID)
 	log.Printf("HOST_OUT_DIR: %s", baseOut)
 	log.Printf("Job output dir: %s", jobOut)
 
@@ -102,7 +165,7 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 	zipPath := filepath.Join(jobOut, buildMsg.OutDir+".zip")
 	if fileInfo, err := os.Stat(zipPath); err == nil && fileInfo.Size() > 0 {
 		log.Printf("Artifact already exists at %s (size: %d bytes), skipping build", zipPath, fileInfo.Size())
-		
+
 		// Verify artifact size is within limits
 		sizeCheck, err := CheckArtifactSize(zipPath, jobLimits)
 		if err == nil && !sizeCheck.ExceedsHard {
@@ -131,12 +194,13 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 							// Continue with rebuild
 						} else {
 							log.Printf("Successfully uploaded existing artifact: %s", artifactId)
+							collector.Append("Finished processing (existing artifact)", "stdout", "app.worker", "")
+							uploadBuildLogs(buildMsg, collector)
 							publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
 								BuildId:    buildMsg.BuildId,
 								Status:     Done,
 								ArtifactId: artifactId,
 							})
-							logFluentd(l, "Finished processing (existing artifact)", buildMsg.BuildId)
 							return nil
 						}
 					}
@@ -154,30 +218,11 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 		},
 	}
 
-	logConf := getLogConfig()
-
-	if logConf.Type == "fluentd" {
-		addr := ""
-		if logConf.Config != nil {
-			addr = logConf.Config["fluentd-address"]
-		}
-		if strings.HasPrefix(addr, "unix://") {
-			socketPath := strings.TrimPrefix(addr, "unix://")
-			mounts = append(mounts, mount.Mount{
-				Type:   mount.TypeBind,
-				Source: socketPath,
-				Target: socketPath,
-			})
-			log.Printf("[builder:%s] Configured fluentd socket mount %s", buildMsg.BuildId, socketPath)
-		}
-	}
-
 	autoRemove := os.Getenv("BUILDER_AUTO_REMOVE") != "false"
 
 	// Get secure host config with resource limits
 	hostConfig := GetSecureHostConfig(jobLimits)
 	hostConfig.Mounts = mounts
-	hostConfig.LogConfig = logConf
 	hostConfig.AutoRemove = autoRemove
 
 	// Prepare environment variables for the container
@@ -227,6 +272,13 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 		ContainerId: resp.ID,
 	})
 
+	// Stream container logs in background
+	logsDone := make(chan struct{})
+	go func() {
+		defer close(logsDone)
+		streamContainerLogs(ctx, cli, resp.ID, collector)
+	}()
+
 	// Wait for container with timeout
 	jobTimeout := time.Duration(jobLimits.BuildDuration) * time.Second
 	timeoutCtx, cancel := context.WithTimeout(ctx, jobTimeout)
@@ -241,10 +293,14 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 			// Try to stop container if timeout
 			if timeoutCtx.Err() == context.DeadlineExceeded {
 				log.Printf("Job timeout, stopping container %s", resp.ID)
+				collector.Append("Build timed out", "stderr", "app.worker", "")
 				stopCtx, stopCancel := context.WithTimeout(context.Background(), 10*time.Second)
 				_ = cli.ContainerStop(stopCtx, resp.ID, container.StopOptions{})
 				stopCancel()
 			}
+			// Wait for log streaming to finish
+			<-logsDone
+			uploadBuildLogs(buildMsg, collector)
 			publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
 				BuildId: buildMsg.BuildId,
 				Status:  Failed,
@@ -259,7 +315,12 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 		}
 	}
 
+	// Wait for log streaming to finish
+	<-logsDone
+
 	if containerFailed {
+		collector.Append("Build failed (non-zero exit code)", "stderr", "app.worker", "")
+		uploadBuildLogs(buildMsg, collector)
 		publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
 			BuildId: buildMsg.BuildId,
 			Status:  Failed,
@@ -284,6 +345,8 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 			log.Printf("Warning: artifact size check failed: %v", err)
 		} else if sizeCheck.ExceedsHard {
 			log.Printf("Artifact size exceeds hard limit: %s", sizeCheck.Message)
+			collector.Append("Artifact size exceeds limit: "+sizeCheck.Message, "stderr", "app.worker", "")
+			uploadBuildLogs(buildMsg, collector)
 			publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
 				BuildId: buildMsg.BuildId,
 				Status:  Failed,
@@ -302,6 +365,8 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 
 		token, err := api_client.GetAccessToken(cfg)
 		if err != nil {
+			collector.Append("Failed to get access token: "+err.Error(), "stderr", "app.worker", "")
+			uploadBuildLogs(buildMsg, collector)
 			publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
 				BuildId: buildMsg.BuildId,
 				Status:  Failed,
@@ -312,6 +377,8 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 		apiBaseURL := os.Getenv("API_BASE_URL")
 		if apiBaseURL == "" {
 			log.Printf("API_BASE_URL not set, cannot upload artifact")
+			collector.Append("API_BASE_URL not configured", "stderr", "app.worker", "")
+			uploadBuildLogs(buildMsg, collector)
 			publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
 				BuildId: buildMsg.BuildId,
 				Status:  Failed,
@@ -319,9 +386,12 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 			return fmt.Errorf("API_BASE_URL not configured")
 		}
 
+		collector.Append("Uploading artifact...", "stdout", "app.worker", "")
 		uploadURL := strings.TrimSuffix(apiBaseURL, "/") + buildMsg.ArtifactsUploadPath
 		artifactId, err := uploader.UploadArtifacts(uploadURL, jobOut, buildMsg.OutDir, token, "deployment-worker")
 		if err != nil {
+			collector.Append("Artifact upload failed: "+err.Error(), "stderr", "app.worker", "")
+			uploadBuildLogs(buildMsg, collector)
 			publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
 				BuildId: buildMsg.BuildId,
 				Status:  Failed,
@@ -336,6 +406,9 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 			log.Printf("Cleaned up job output dir: %s", jobOut)
 		}
 
+		collector.Append("Build completed successfully", "stdout", "app.worker", "")
+		uploadBuildLogs(buildMsg, collector)
+
 		// Publish completion message with artifactId
 		publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
 			BuildId:    buildMsg.BuildId,
@@ -343,6 +416,9 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 			ArtifactId: artifactId,
 		})
 	} else {
+		collector.Append("Build completed (upload disabled)", "stdout", "app.worker", "")
+		uploadBuildLogs(buildMsg, collector)
+
 		// Publish completion message without artifactId if upload is disabled
 		publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
 			BuildId: buildMsg.BuildId,
@@ -351,7 +427,6 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel, l *flu
 	}
 
 	log.Printf("Finished processing. Id: %s", buildMsg.BuildId)
-	logFluentd(l, "Finished processing", buildMsg.BuildId)
 	return nil
 }
 
@@ -435,7 +510,20 @@ func main() {
 		false,
 		nil,
 	); err != nil {
-		log.Fatalf("Failed to declare exchange: %v", err)
+		log.Fatalf("Failed to declare events exchange: %v", err)
+	}
+
+	// Declare the log exchange (replaces fluentd → RabbitMQ)
+	if err := chPublisher.ExchangeDeclare(
+		"app.build.logs",
+		"topic",
+		false, // non-durable (matches existing setting)
+		false,
+		false,
+		false,
+		nil,
+	); err != nil {
+		log.Fatalf("Failed to declare logs exchange: %v", err)
 	}
 
 	// Set prefetch to limit concurrent processing
@@ -456,9 +544,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to register consumer: %v", err)
 	}
-
-	fluentdLogger := logutil.NewFluentClient()
-	defer fluentdLogger.Close()
 
 	var wg sync.WaitGroup
 	jobLimit := make(chan struct{}, limits.MaxConcurrentJobs)
@@ -486,7 +571,7 @@ func main() {
 					}()
 
 					job := string(delivery.Body)
-					if err := ProcessJob(ctx, job, chPublisher, fluentdLogger); err != nil {
+					if err := ProcessJob(ctx, job, chPublisher); err != nil {
 						log.Printf("Job failed: %v", err)
 						// Nack without requeue to avoid infinite loop
 						if nackErr := delivery.Nack(false, false); nackErr != nil {

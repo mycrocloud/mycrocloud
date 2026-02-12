@@ -9,16 +9,7 @@ services:
       - default
       - webapp_default
 
-  fluentd:
-    image: mycrocloud-deployment-fluentd:main
-    build:
-      context: ./fluentd
-      dockerfile: Dockerfile
-    networks:
-      - default
-      - webapp_default
-
-  # The builder is usually run dynamically by the worker, 
+  # The builder is usually run dynamically by the worker,
   # but kept here for image build/test purposes.
   builder:
     image: mycrocloud-deployment-builder:main

@@ -3,9 +3,6 @@ services:
   worker:
     image: ghcr.io/mycrocloud/mycrocloud-deployment-worker:main
 
-  fluentd:
-    image: ghcr.io/mycrocloud/mycrocloud-deployment-fluentd:main
-
   builder:
     image: ghcr.io/mycrocloud/mycrocloud-deployment-builder:main
     profiles:

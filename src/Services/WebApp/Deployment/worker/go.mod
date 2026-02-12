@@ -6,7 +6,6 @@ toolchain go1.24.5
 
 require (
 	github.com/docker/docker v28.0.0+incompatible
-	github.com/fluent/fluent-logger-golang v1.10.1
 	github.com/joho/godotenv v1.5.1
 	github.com/streadway/amqp v1.1.0
 )
@@ -26,9 +25,7 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
-	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/tinylib/msgp v1.3.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.56.0 // indirect
 	go.opentelemetry.io/otel v1.31.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.31.0 // indirect

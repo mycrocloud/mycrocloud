@@ -107,6 +107,7 @@ public class BuildOrchestrationService(
             NodeVersion = buildConfig.NodeVersion,
             EnvVars = buildEnvVars,
             ArtifactsUploadPath = finalArtifactsUploadPath,
+            LogsUploadPath = $"/apps/{app.Id}/builds/{build.Id}/logs",
             Limits = planLimits
         };
 

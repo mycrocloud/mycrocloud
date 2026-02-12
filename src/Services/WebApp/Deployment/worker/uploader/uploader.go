@@ -95,6 +95,56 @@ func UploadFile(url, filePath, accessToken, userAgent string) (string, error) {
 	return result.ArtifactId, nil
 }
 
+// UploadLogs uploads a JSONL log file to the API.
+func UploadLogs(url string, logsData []byte, accessToken, userAgent string) error {
+	log.Printf("UploadLogs: %d bytes -> %s", len(logsData), url)
+
+	hash := sha256.Sum256(logsData)
+	contentHash := hex.EncodeToString(hash[:])
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	part, err := writer.CreateFormFile("file", "build.log.jsonl")
+	if err != nil {
+		return fmt.Errorf("create form file: %w", err)
+	}
+	if _, err := part.Write(logsData); err != nil {
+		return fmt.Errorf("write log data: %w", err)
+	}
+	if err := writer.WriteField("contentHash", contentHash); err != nil {
+		return fmt.Errorf("write contentHash: %w", err)
+	}
+	if err := writer.Close(); err != nil {
+		return fmt.Errorf("close writer: %w", err)
+	}
+
+	req, err := http.NewRequest("PUT", url, body)
+	if err != nil {
+		return fmt.Errorf("create request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	if userAgent != "" {
+		req.Header.Set("User-Agent", userAgent)
+	}
+
+	res, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("send request: %w", err)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		respBytes, _ := io.ReadAll(res.Body)
+		return fmt.Errorf("upload failed (%d): %s", res.StatusCode, string(respBytes))
+	}
+
+	log.Printf("Log upload successful")
+	return nil
+}
+
 // UploadArtifacts uploads the zipped artifact file from rootDir to baseURL.
 // The zip file is named {outDir}.zip (e.g., dist.zip, build.zip).
 // Returns the artifactId from the API response.

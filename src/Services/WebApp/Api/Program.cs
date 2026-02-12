@@ -7,10 +7,7 @@ using Api.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Reflection;
 using Api;
-using Elastic.Clients.Elasticsearch;
-using Elastic.Transport;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Nest;
 using Api.Authentications;
 using Api.Infrastructure;
 using Api.Infrastructure.Repositories;
@@ -142,26 +139,6 @@ else
     var storagePath = builder.Configuration["Storage:RootPath"] ?? Path.Combine(builder.Environment.ContentRootPath, "data");
     builder.Services.AddSingleton<IStorageProvider>(new DiskStorageProvider(storagePath));
 }
-
-builder.Services.AddKeyedSingleton("AppBuildLogs_ES7", (_, _) =>
-{
-    var settings = new ConnectionSettings(new Uri(builder.Configuration["Elasticsearch:Host"]!))
-        .BasicAuthentication(builder.Configuration["Elasticsearch:Username"]!,
-            builder.Configuration["Elasticsearch:Password"]!)
-        .DefaultIndex(builder.Configuration["Elasticsearch:BuildLogsIndex"]!);
-
-    return new ElasticClient(settings);
-});
-
-builder.Services.AddKeyedSingleton("AppBuildLogs_ES8", (_, _) =>
-{
-    var settings = new ElasticsearchClientSettings(new Uri(builder.Configuration["Elasticsearch:Host"]!))
-        .Authentication(new BasicAuthentication(builder.Configuration["Elasticsearch:Username"]!,
-            builder.Configuration["Elasticsearch:Password"]!))
-        .DefaultIndex(builder.Configuration["Elasticsearch:BuildLogsIndex"]!);
-
-    return new ElasticsearchClient(settings);
-});
 
 builder.Services.Configure<GitHubAppOptions>(builder.Configuration.GetSection("ExternalIntegrations:GitHubApp"));
 builder.Services.AddHttpClient<GitHubAppService>(client =>

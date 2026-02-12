@@ -10,19 +10,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./worker/.conf:/app/.conf:ro
       - /tmp/build-outputs:/tmp/build-outputs
-    depends_on:
-      - fluentd
-
-  fluentd:
-    environment:
-      - ES_HOST=localhost
-      - ES_USER=elastic
-      - ES_PASSWORD=${ES_PASSWORD}
-      - RABBITMQ_URL=${RABBITMQ_URL}
-    volumes:
-      - ./fluentd/conf:/fluentd/etc
-    ports:
-      - "24224:24224"
 
   builder:
     environment:
@@ -31,9 +18,3 @@ services:
       - OUT_DIR=dist
       - INSTALL_CMD=npm install
       - BUILD_CMD=npm run build
-    logging:
-      driver: "fluentd"
-      options:
-        fluentd-address: host.docker.internal:24224
-        tag: app.builder
-        labels: build_id

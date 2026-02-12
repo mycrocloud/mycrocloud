@@ -4,12 +4,10 @@ using Api.Filters;
 using Api.Models.Builds;
 using Api.Services;
 using Api.Domain.Services;
-using Elastic.Clients.Elasticsearch;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Nest;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Api.Domain.Entities;
@@ -23,10 +21,6 @@ namespace Api.Controllers;
 public class BuildsController(
     AppDbContext appDbContext,
     IConfiguration configuration,
-    [FromKeyedServices("AppBuildLogs_ES7")]
-    ElasticClient elasticClient,
-    [FromKeyedServices("AppBuildLogs_ES8")]
-    ElasticsearchClient elasticsearchClient,
     IAppBuildPublisher publisher,
     BuildOrchestrationService buildOrchestrationService,
     LinkGenerator linkGenerator,
@@ -144,50 +138,22 @@ public class BuildsController(
         var job = await appDbContext.AppBuildJobs
             .SingleAsync(j => j.AppId == appId && j.Id == jobId);
 
-        IReadOnlyCollection<BuildLogDoc> docs;
-        if (configuration["Elasticsearch:Version"] == "v8")
+        if (string.IsNullOrEmpty(job.LogStorageKey) || !await storageProvider.ExistsAsync(job.LogStorageKey))
         {
-            var response = await elasticsearchClient.SearchAsync<BuildLogDoc>(s =>
-                s.Query(q => q
-                    .Match(m => m
-                        .Field("job_id")
-                        .Query(job.Id)
-                    )
-                )
-            );
-
-            if (!response.IsValidResponse)
-            {
-                logger.LogError("Elasticsearch response is not valid: {Error}", response.DebugInformation);
-            }
-            
-            docs = response.Documents;
+            return Ok(Array.Empty<object>());
         }
-        else
-        {
-            var response = await elasticClient.SearchAsync<BuildLogDoc>(s =>
-                s.Query(q => q
-                    .Match(m => m
-                        .Field("job_id")
-                        .Query(job.Id.ToString())
-                    )
-                )
-            );
-            
-            if (!response.IsValid)
-            {
-                logger.LogError("Elasticsearch response is not valid: {Error}", response.DebugInformation);
-            }
 
-            docs = response.Documents;
-        }
-        
-        return Ok(docs.Select(d => new
+        await using var stream = await storageProvider.OpenReadAsync(job.LogStorageKey);
+        using var reader = new StreamReader(stream);
+
+        var logs = new List<JsonElement>();
+        while (await reader.ReadLineAsync() is { } line)
         {
-            d.Timestamp,
-            d.Message,
-            d.Level
-        }));
+            if (string.IsNullOrWhiteSpace(line)) continue;
+            logs.Add(JsonSerializer.Deserialize<JsonElement>(line));
+        }
+
+        return Ok(logs);
     }
     
     [HttpGet("{buildId:guid}/logs/stream")]
@@ -263,6 +229,46 @@ public class BuildsController(
         }
 
         return new EmptyResult();
+    }
+
+    [HttpPut("{buildId:guid}/logs")]
+    [Consumes("multipart/form-data")]
+    [DisableRequestSizeLimit]
+    [DisableAppOwnerActionFilter]
+    [Authorize(Policy = "M2M", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    public async Task<IActionResult> UploadLogs(int appId, Guid buildId, [FromForm] IFormFile file, [FromForm] string contentHash)
+    {
+        var build = await appDbContext.AppBuildJobs
+            .SingleOrDefaultAsync(b => b.AppId == appId && b.Id == buildId);
+
+        if (build == null)
+            return NotFound();
+
+        if (string.IsNullOrEmpty(contentHash))
+            return BadRequest("contentHash is required");
+
+        using var memStream = new MemoryStream();
+        await file.OpenReadStream().CopyToAsync(memStream);
+        var fileBytes = memStream.ToArray();
+
+        var computedHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(fileBytes));
+        if (!computedHash.Equals(contentHash, StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest("Content hash mismatch");
+        }
+
+        var storageKey = $"build-logs/{appId}/{buildId}.jsonl";
+        await using (var saveStream = new MemoryStream(fileBytes))
+        {
+            await storageProvider.SaveAsync(storageKey, saveStream);
+        }
+
+        build.LogStorageKey = storageKey;
+        await appDbContext.SaveChangesAsync();
+
+        logger.LogInformation("Uploaded build logs for build {BuildId} ({SizeBytes} bytes)", buildId, fileBytes.Length);
+
+        return Ok(new { storageKey, sizeBytes = fileBytes.Length });
     }
 
     // Artifact Upload — Phase 1 design
