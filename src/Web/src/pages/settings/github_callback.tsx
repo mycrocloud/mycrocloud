@@ -14,15 +14,13 @@ export default function GitHubCallback() {
   const installation_id = searchParams.get("installation_id");
   const setup_action = searchParams.get("setup_action");
 
-  const navigatePath = useMemo(() => {
-    let pathName = "/";
+  const parsedState = useMemo(() => {
     if (state) {
       try {
-        pathName = JSON.parse(decodeURIComponent(state)).pathname;
-      } catch (error) { }
+        return JSON.parse(atob(state)) as { from?: string; next?: string };
+      } catch { }
     }
-
-    return pathName;
+    return { from: "/" } as { from?: string; next?: string };
   }, [state]);
 
   useEffect(() => {
@@ -37,13 +35,17 @@ export default function GitHubCallback() {
           installation_id: Number(installation_id),
           setup_action,
         });
-        navigate(navigatePath);
+        if (parsedState.next) {
+          navigate(parsedState.next);
+          return;
+        }
+        navigate(parsedState.from || "/");
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to complete GitHub integration");
       }
     })();
 
-  }, [installation_id, setup_action, navigatePath, navigate, post]);
+  }, [installation_id, setup_action, parsedState, navigate, post]);
 
   return (
     <div className="flex min-h-[50vh] items-center justify-center">

@@ -109,9 +109,33 @@ function GitHubLinkSection() {
     })();
   }, [installationId, get]);
 
-  const connectGitHub = async () => {
-    const githubAppUrl = `https://github.com/apps/${GITHUB_APP_NAME}/installations/new?state=foo`;
-    window.location.href = githubAppUrl;
+  const refreshInstallations = async () => {
+    const installations = await get<IGitHubInstallation[]>(
+      `/api/integrations/github/installations`
+    );
+    setInstallations(installations);
+    if (installations.length === 1) {
+      setInstallationId(installations[0].installationId);
+    }
+  };
+
+  const connectGitHub = () => {
+    const state = btoa(JSON.stringify({
+      from: window.location.pathname,
+      next: "/integrations/github/installed",
+    }));
+    const githubAppUrl = `https://github.com/apps/${GITHUB_APP_NAME}/installations/new?state=${state}`;
+    const width = 800;
+    const height = 700;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+    const popup = window.open(githubAppUrl, "github-install", `width=${width},height=${height},left=${left},top=${top}`);
+    const timer = setInterval(() => {
+      if (popup?.closed) {
+        clearInterval(timer);
+        refreshInstallations();
+      }
+    }, 500);
   };
 
   const onConnect = async () => {
