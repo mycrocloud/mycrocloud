@@ -12,6 +12,7 @@ public static class SlackFallbackExtensions
             await next();
 
             if (context.Response.StatusCode == 404 &&
+                !context.Response.HasStarted &&
                 context.Request.IsSlackCommandRequest())
             {
                 context.Response.StatusCode = 200;

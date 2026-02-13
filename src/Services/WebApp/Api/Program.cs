@@ -165,10 +165,8 @@ forwardedHeadersOptions.KnownNetworks.Clear();
 forwardedHeadersOptions.KnownProxies.Clear();
 app.UseForwardedHeaders(forwardedHeadersOptions);
 
-app.UseGlobalExceptionHandler();
-
 app.UseHttpLogging();
-app.UseCors();
+app.UseGlobalExceptionHandler();
 
 app.UseMiddleware<ReadSlackRequestBodyMiddleware>();
 app.UseSlackVerification();
@@ -176,6 +174,7 @@ app.UseSlackCommandRewrite();
 
 app.UseRouting();
 
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
