@@ -3,6 +3,7 @@
   hosts: localhost
   gather_facts: no
   vars:
+    pull_only: false
     secret_name_prefix: "prod/mycrocloud"
     env_files:
       - "api/.env"
@@ -18,6 +19,7 @@
       - "monitoring/prometheus.yml"
   tasks:
     - name: Fetch env files from AWS Secrets Manager
+      when: not (pull_only | bool)
       vars:
         secret_key: "{{ secret_name_prefix }}/{{ item }}"
         secret_value: "{{ lookup('amazon.aws.aws_secret', secret_key) }}"
@@ -27,6 +29,7 @@
       no_log: true
 
     - name: Fetch secret files from AWS Secrets Manager
+      when: not (pull_only | bool)
       vars:
         secret_key: "{{ secret_name_prefix }}/{{ item }}"
         secret_value: "{{ lookup('amazon.aws.aws_secret', secret_key) }}"
@@ -36,6 +39,7 @@
       no_log: true
 
     - name: Fetch template secrets from AWS Secrets Manager
+      when: not (pull_only | bool)
       vars:
         secret_key: "{{ secret_name_prefix }}/{{ item }}"
         secret_value: "{{ lookup('amazon.aws.aws_secret', secret_key) }}"
@@ -50,6 +54,8 @@
   vars:
     src: ../pkg
     deploy_path: /opt/mycrocloud
+    pull_only: false
+    image: ""
     service_group: ""
     services: []
     service_groups:
@@ -68,7 +74,13 @@
         - nginx-exporter
     resolved_services: "{{ service_groups[service_group] | default([]) if (service_group | length > 0 and services | length == 0) else services }}"
   tasks:
+    - name: Pull Docker image
+      ansible.builtin.command:
+        cmd: docker pull {{ image }}
+      when: image | length > 0
+
     - name: Ensure deploy directory exists
+      when: not (pull_only | bool)
       ansible.builtin.file:
         path: "{{ deploy_path }}"
         state: directory
@@ -78,6 +90,7 @@
       become: yes
 
     - name: Sync application files to server
+      when: not (pull_only | bool)
       ansible.builtin.synchronize:
         src: "{{ src }}/"
         dest: "{{ deploy_path }}"
@@ -85,6 +98,7 @@
         delete: yes
 
     - name: Write env files
+      when: not (pull_only | bool)
       ansible.builtin.copy:
         content: "{{ hostvars['localhost']['env_secrets'][item] }}"
         dest: "{{ deploy_path }}/{{ item }}"
@@ -95,6 +109,7 @@
       no_log: true
 
     - name: Write secret files
+      when: not (pull_only | bool)
       ansible.builtin.copy:
         content: "{{ hostvars['localhost']['file_secrets'][item] }}"
         dest: "{{ deploy_path }}/{{ item }}"
@@ -105,6 +120,7 @@
       no_log: true
 
     - name: Generate templated files
+      when: not (pull_only | bool)
       ansible.builtin.template:
         src: "{{ src }}/{{ item }}.j2"
         dest: "{{ deploy_path }}/{{ item }}"
@@ -117,6 +133,7 @@
       no_log: true
 
     - name: Pull and deploy services
+      when: not (pull_only | bool)
       community.docker.docker_compose_v2:
         project_src: "{{ deploy_path }}"
         services: "{{ resolved_services if resolved_services | length > 0 else omit }}"
@@ -125,6 +142,7 @@
       register: deploy_result
 
     - name: Wait for services to be healthy
+      when: not (pull_only | bool)
       ansible.builtin.shell:
         cmd: |
           services_list="{{ resolved_services | join(' ') }}"
@@ -142,12 +160,12 @@
       retries: 5
       delay: 5
       until: health_check.rc == 0
-      when: resolved_services | length >= 0
 
     - name: Reload nginx if dependencies require it
       ansible.builtin.command:
         cmd: docker compose exec lb nginx -s reload
         chdir: "{{ deploy_path }}"
       when:
+        - not (pull_only | bool)
         - (resolved_services | length == 0 or resolved_services | intersect(['api', 'gateway', 'web']) | length > 0)
         - deploy_result.changed | default(false)

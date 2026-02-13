@@ -57,27 +57,13 @@ runs:
         role-to-assume: ${{ inputs.aws-iam-role }}
         aws-region: ${{ inputs.aws-region }}
 
-    - name: Login to GitHub Container Registry on server
-      shell: bash
-      run: |
-        ssh -i ~/.ssh/id_rsa ${{ inputs.ssh-username }}@${{ inputs.ssh-host }} \
-          "echo '${{ inputs.gh-pat }}' | docker login ghcr.io -u github --password-stdin"
-
-    - name: Pull Docker image on server
-      if: ${{ inputs.image != '' }}
-      shell: bash
-      run: |
-        ssh -i ~/.ssh/id_rsa ${{ inputs.ssh-username }}@${{ inputs.ssh-host }} \
-          "docker pull ${{ inputs.image }}"
-
     - name: Deploy
-      if: ${{ inputs.pull-only != 'true' }}
       shell: bash
       working-directory: deploy/scripts
       run: |
         pipx inject ansible-core boto3 botocore
         ansible-galaxy collection install amazon.aws community.docker
-        ansible-playbook -i inventory.yml deploy.yml ${{ inputs.service-group && format('-e "service_group={0}"', inputs.service-group) || '' }} ${{ inputs.service && format('-e "services=[\"{0}\"]"', inputs.service) || '' }}
+        ansible-playbook -i inventory.yml deploy.yml -e "pull_only=${{ inputs.pull-only }}" ${{ inputs.image && format('-e "image={0}"', inputs.image) || '' }} ${{ inputs.service-group && format('-e "service_group={0}"', inputs.service-group) || '' }} ${{ inputs.service && format('-e "services=[\"{0}\"]"', inputs.service) || '' }}
       env:
         ANSIBLE_HOST: ${{ inputs.ssh-host }}
         ANSIBLE_USER: ${{ inputs.ssh-username }}
