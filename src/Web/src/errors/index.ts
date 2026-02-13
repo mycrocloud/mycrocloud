@@ -1,1 +1,0 @@
-export { NotFoundError } from "./notFound";
