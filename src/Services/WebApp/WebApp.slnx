@@ -1,8 +1,10 @@
 ﻿<Solution>
   <Folder Name="/Solution Items/">
-    <File Path="compose.yaml" />
     <File Path="global.json" />
     <File Path=".config\dotnet-tools.json" />
+    <File Path="compose.yml" />
+    <File Path="compose.prod.yml" />
+    <File Path="compose.override.yml" />
   </Folder>
   <Project Path="Api.Domain\Api.Domain.csproj" Type="Classic C#" />
   <Project Path="Api.Infrastructure\Api.Infrastructure.csproj" Type="Classic C#" />
