@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Cors.Infrastructure;
-using WebApp.Gateway.Models;
-using WebApp.Gateway.Utils;
+using MycroCloud.WebApp.Gateway.Models;
+using MycroCloud.WebApp.Gateway.Utils;
 
-namespace WebApp.Gateway.Middlewares.Api;
+namespace MycroCloud.WebApp.Gateway.Middlewares.Api;
 
 public class CorsMiddleware(RequestDelegate next)
 {

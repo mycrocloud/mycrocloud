@@ -1,13 +1,13 @@
 using Docker.DotNet;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
-using WebApp.Gateway.Services;
-using WebApp.Gateway.Middlewares;
-using WebApp.Gateway.Middlewares.Api;
-using WebApp.Gateway.Middlewares.Spa;
 using Amazon.S3;
-using WebApp.Gateway.Models;
-using WebApp.Gateway.Utils;
+using MycroCloud.WebApp.Gateway.Middlewares;
+using MycroCloud.WebApp.Gateway.Middlewares.Api;
+using MycroCloud.WebApp.Gateway.Middlewares.Spa;
+using MycroCloud.WebApp.Gateway.Models;
+using MycroCloud.WebApp.Gateway.Services;
+using MycroCloud.WebApp.Gateway.Utils;
 
 DotNetEnv.Env.Load();
 var builder = WebApplication.CreateBuilder(args);

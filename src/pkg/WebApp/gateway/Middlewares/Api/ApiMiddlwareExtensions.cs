@@ -1,4 +1,4 @@
-namespace WebApp.Gateway.Middlewares.Api;
+namespace MycroCloud.WebApp.Gateway.Middlewares.Api;
 
 public static class ApiMiddlewareExtensions
 {

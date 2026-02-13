@@ -1,6 +1,6 @@
-using WebApp.Gateway.Models;
+using MycroCloud.WebApp.Gateway.Models;
 
-namespace WebApp.Gateway.Services;
+namespace MycroCloud.WebApp.Gateway.Services;
 
 public interface IFunctionExecutor
 {

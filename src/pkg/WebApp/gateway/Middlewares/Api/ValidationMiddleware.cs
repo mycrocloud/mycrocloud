@@ -1,9 +1,9 @@
 ﻿using System.Text.Json;
+using MycroCloud.WebApp.Gateway.Models;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Schema;
-using WebApp.Gateway.Models;
 
-namespace WebApp.Gateway.Middlewares.Api;
+namespace MycroCloud.WebApp.Gateway.Middlewares.Api;
 
 public class ValidationMiddleware(RequestDelegate next)
 {

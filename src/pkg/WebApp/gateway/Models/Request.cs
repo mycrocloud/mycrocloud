@@ -1,4 +1,4 @@
-namespace WebApp.Gateway.Models;
+namespace MycroCloud.WebApp.Gateway.Models;
 
 public class Request
 {

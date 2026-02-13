@@ -1,8 +1,8 @@
-﻿using WebApp.Gateway.Models;
-using WebApp.Gateway.Services;
-using WebApp.Gateway.Utils;
+﻿using MycroCloud.WebApp.Gateway.Models;
+using MycroCloud.WebApp.Gateway.Services;
+using MycroCloud.WebApp.Gateway.Utils;
 
-namespace WebApp.Gateway.Middlewares;
+namespace MycroCloud.WebApp.Gateway.Middlewares;
 
 public class AppResolverMiddleware(RequestDelegate next)
 {

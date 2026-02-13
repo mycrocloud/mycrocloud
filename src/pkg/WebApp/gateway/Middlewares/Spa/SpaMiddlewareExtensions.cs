@@ -1,4 +1,4 @@
-namespace WebApp.Gateway.Middlewares.Spa;
+namespace MycroCloud.WebApp.Gateway.Middlewares.Spa;
 
 public static class SpaMiddlewareExtensions
 {

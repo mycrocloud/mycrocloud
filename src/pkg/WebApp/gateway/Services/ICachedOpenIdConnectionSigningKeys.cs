@@ -3,7 +3,7 @@ using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 
-namespace WebApp.Gateway.Services;
+namespace MycroCloud.WebApp.Gateway.Services;
 
 public interface ICachedOpenIdConnectionSigningKeys
 {

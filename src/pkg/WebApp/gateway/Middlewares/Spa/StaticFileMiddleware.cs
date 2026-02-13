@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Net.Http.Headers;
-using WebApp.Gateway.Models;
-using WebApp.Gateway.Services;
+using MycroCloud.WebApp.Gateway.Models;
+using MycroCloud.WebApp.Gateway.Services;
 
-namespace WebApp.Gateway.Middlewares.Spa;
+namespace MycroCloud.WebApp.Gateway.Middlewares.Spa;
 
 public class StaticFileMiddleware(RequestDelegate next, ILogger<StaticFileMiddleware> logger)
 {

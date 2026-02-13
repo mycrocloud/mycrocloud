@@ -1,6 +1,6 @@
-using WebApp.Gateway.Models;
+using MycroCloud.WebApp.Gateway.Models;
 
-namespace WebApp.Gateway.Middlewares.Api;
+namespace MycroCloud.WebApp.Gateway.Middlewares.Api;
 
 /// <summary>
 /// Middleware that dispatches requests to the appropriate response handler based on the route's ResponseType.

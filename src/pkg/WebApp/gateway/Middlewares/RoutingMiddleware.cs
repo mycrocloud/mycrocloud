@@ -1,8 +1,8 @@
 using System.Text.RegularExpressions;
-using WebApp.Gateway.Models;
-using WebApp.Gateway.Services;
+using MycroCloud.WebApp.Gateway.Models;
+using MycroCloud.WebApp.Gateway.Services;
 
-namespace WebApp.Gateway.Middlewares;
+namespace MycroCloud.WebApp.Gateway.Middlewares;
 
 public class RoutingMiddleware(RequestDelegate next, ILogger<RoutingMiddleware> logger)
 {

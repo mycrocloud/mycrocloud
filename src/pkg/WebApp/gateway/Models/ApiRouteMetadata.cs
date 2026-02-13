@@ -1,4 +1,4 @@
-namespace WebApp.Gateway.Models;
+namespace MycroCloud.WebApp.Gateway.Models;
 
 /// <summary>
 /// Versioned metadata for an API route, stored as a blob in an ApiDeployment.

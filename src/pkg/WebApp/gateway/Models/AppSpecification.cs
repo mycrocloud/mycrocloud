@@ -1,4 +1,4 @@
-namespace WebApp.Gateway.Models;
+namespace MycroCloud.WebApp.Gateway.Models;
 
 /// <summary>
 /// AppSpecification: The immutable definition of an app at a specific release.

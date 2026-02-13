@@ -1,10 +1,10 @@
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using WebApp.Gateway.Models;
-using WebApp.Gateway.Services;
+using MycroCloud.WebApp.Gateway.Models;
+using MycroCloud.WebApp.Gateway.Services;
 
-namespace WebApp.Gateway.Middlewares.Api;
+namespace MycroCloud.WebApp.Gateway.Middlewares.Api;
 
 public class AuthenticationMiddleware(RequestDelegate next, ILogger<AuthenticationMiddleware> logger)
 {

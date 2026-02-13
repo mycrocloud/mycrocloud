@@ -1,7 +1,7 @@
 using Amazon.S3;
 using Amazon.S3.Model;
 
-namespace WebApp.Gateway.Services;
+namespace MycroCloud.WebApp.Gateway.Services;
 
 public class S3StorageProvider : IStorageProvider
 {

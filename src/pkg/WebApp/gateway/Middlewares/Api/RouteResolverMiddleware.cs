@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Routing.Template;
-using WebApp.Gateway.Models;
+using MycroCloud.WebApp.Gateway.Models;
 
-namespace WebApp.Gateway.Middlewares.Api;
+namespace MycroCloud.WebApp.Gateway.Middlewares.Api;
 
 public class RouteResolverMiddleware(RequestDelegate next)
 {

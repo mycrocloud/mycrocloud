@@ -1,6 +1,6 @@
-using WebApp.Gateway.Models;
+using MycroCloud.WebApp.Gateway.Models;
 
-namespace WebApp.Gateway.Middlewares.Api;
+namespace MycroCloud.WebApp.Gateway.Middlewares.Api;
 
 /// <summary>
 /// Interface for handling different types of API responses.

@@ -1,9 +1,9 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
-using WebApp.Gateway.Models;
+using MycroCloud.WebApp.Gateway.Models;
 
-namespace WebApp.Gateway.Services;
+namespace MycroCloud.WebApp.Gateway.Services;
 
 public interface IAppSpecificationService
 {

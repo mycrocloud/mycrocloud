@@ -1,4 +1,4 @@
-namespace WebApp.Gateway.Models;
+namespace MycroCloud.WebApp.Gateway.Models;
 
 /// <summary>
 /// Represents a file within a deployment.

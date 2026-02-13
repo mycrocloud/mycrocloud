@@ -1,11 +1,11 @@
 using System.Text.Json;
 using Docker.DotNet;
 using Docker.DotNet.Models;
-using WebApp.Gateway.Models;
-using WebApp.Gateway.Utils;
+using MycroCloud.WebApp.Gateway.Models;
+using MycroCloud.WebApp.Gateway.Utils;
 using File = System.IO.File;
 
-namespace WebApp.Gateway.Services;
+namespace MycroCloud.WebApp.Gateway.Services;
 
 public class DockerFunctionExecutor(
     [FromKeyedServices("DockerFunctionExecution")] ConcurrentJobQueue jobQueue,

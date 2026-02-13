@@ -1,6 +1,6 @@
-﻿using WebApp.Gateway.Models;
+﻿using MycroCloud.WebApp.Gateway.Models;
 
-namespace WebApp.Gateway.Utils;
+namespace MycroCloud.WebApp.Gateway.Utils;
 
 public static class HttpResponseExtensions
 {

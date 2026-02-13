@@ -1,4 +1,4 @@
-namespace WebApp.Gateway.Services;
+namespace MycroCloud.WebApp.Gateway.Services;
 
 /// <summary>
 /// Generic interface for file storage operations.

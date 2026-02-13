@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace WebApp.Gateway.Services;
+namespace MycroCloud.WebApp.Gateway.Services;
 
 public class ConcurrentJobQueue : IDisposable
 {
