@@ -1,0 +1,19 @@
+# Base configuration - Common services
+name: deployment
+
+services:
+  worker:
+    env_file:
+      - ./worker/.env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./worker/.conf:/app/.conf:ro
+      - /tmp/build-outputs:/tmp/build-outputs
+
+  builder:
+    environment:
+      - REPO_URL=${REPO_URL:-}
+      - WORK_DIR=.
+      - OUT_DIR=dist
+      - INSTALL_CMD=npm install
+      - BUILD_CMD=npm run build

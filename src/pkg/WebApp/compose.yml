@@ -1,0 +1,15 @@
+# Base configuration - Common services
+services:
+  db-migrator:
+    env_file:
+      - ./Api/.env
+
+  api:
+    env_file:
+      - ./Api/.env
+
+  gateway:
+    env_file:
+      - ./WebApp.Gateway/.env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
