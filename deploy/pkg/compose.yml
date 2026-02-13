@@ -18,7 +18,8 @@ services:
     depends_on:
       - web
       - api
-      - webapp-gateway
+      - gateway
+    restart: unless-stopped
   api:
     image: ghcr.io/mycrocloud/mycrocloud-api:main
     volumes:
@@ -26,14 +27,16 @@ services:
       - "./api/gha-mycrocloud.pem:/app/gha-mycrocloud.pem:ro"
     env_file:
       - ./api/.env
+    restart: unless-stopped
   db-migrator:
     image: ghcr.io/mycrocloud/mycrocloud-db-migrator:main
     volumes:
       - "./dbmigrator/appsettings.json:/db-migrator/appsettings.json:ro"
     env_file:
       - ./dbmigrator/.env
-      
+    restart: "no"
   web:
     image: ghcr.io/mycrocloud/mycrocloud-web:main
     volumes:
       - ./web/.env:/usr/share/nginx/html/.env:ro
+    restart: unless-stopped

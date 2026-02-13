@@ -1,4 +1,3 @@
-name: webapp
 services:
   gateway:
     image: ghcr.io/mycrocloud/mycrocloud-gateway:main
@@ -8,7 +7,8 @@ services:
       - ./gateway/appsettings.json:/app/appsettings.json:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - /srv/function-data:/srv/function-data
-  
+    restart: unless-stopped
+
   spa-worker:
     image: ghcr.io/mycrocloud/mycrocloud-deployment-worker:main
     env_file:
@@ -17,3 +17,4 @@ services:
       - ./spa/worker/.conf:/app/.conf:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/build-outputs:/tmp/build-outputs
+    restart: unless-stopped
