@@ -21,7 +21,7 @@ services:
       - gateway
     restart: unless-stopped
   api:
-    image: ghcr.io/mycrocloud/mycrocloud-api:main
+    image: ${REGISTRY}/mycrocloud-api:${TAG}
     volumes:
       - "./api/appsettings.json:/app/appsettings.json:ro"
       - "./api/gha-mycrocloud.pem:/app/gha-mycrocloud.pem:ro"
@@ -29,14 +29,14 @@ services:
       - ./api/.env
     restart: unless-stopped
   db-migrator:
-    image: ghcr.io/mycrocloud/mycrocloud-db-migrator:main
+    image: ${REGISTRY}/mycrocloud-db-migrator:${TAG}
     volumes:
       - "./dbmigrator/appsettings.json:/db-migrator/appsettings.json:ro"
     env_file:
       - ./dbmigrator/.env
     restart: "no"
   web:
-    image: ghcr.io/mycrocloud/mycrocloud-web:main
+    image: ${REGISTRY}/mycrocloud-web:${TAG}
     volumes:
       - ./web/.env:/usr/share/nginx/html/.env:ro
     restart: unless-stopped
