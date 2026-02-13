@@ -20,11 +20,11 @@ on:
         required: false
         type: string
         default: ''
-      namespace:
-        description: 'Deployment namespace'
+      service-group:
+        description: 'Service group for deployment (core, webapp, monitoring)'
         required: false
         type: string
-        default: 'default'
+        default: ''
       pull-only:
         description: 'Only pull image without deploying'
         required: false
@@ -105,7 +105,7 @@ jobs:
       contents: read
     if: ${{ github.ref == 'refs/heads/main' }}
     concurrency:
-      group: deploy-${{ inputs.namespace }}-${{ inputs.service || 'all' }}
+      group: deploy-${{ inputs.service-group || 'all' }}-${{ inputs.service || 'all' }}
       cancel-in-progress: false
 
     steps:
@@ -121,7 +121,7 @@ jobs:
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
           image: ${{ needs.build-and-push-image.outputs.full_image }}
           service: ${{ inputs.service }}
-          namespace: ${{ inputs.namespace }}
+          service-group: ${{ inputs.service-group }}
           pull-only: ${{ inputs.pull-only && 'true' || 'false' }}
           aws-iam-role: ${{ vars.AWS_IAM_ROLE_GITHUB_ACTIONS_ARN }}
           aws-region: ${{ vars.AWS_REGION }}

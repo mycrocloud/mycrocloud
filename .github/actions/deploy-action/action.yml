@@ -33,9 +33,9 @@ inputs:
   pull-only:
     description: 'If true, only pull image without deploying'
     default: 'false'
-  namespace:
-    description: 'Namespace (default or deployment)'
-    default: 'default'
+  service-group:
+    description: 'Service group to deploy (core, webapp, monitoring)'
+    default: ''
   service:
     description: 'Service name to deploy (deploys all if not specified)'
     default: ''
@@ -73,10 +73,11 @@ runs:
     - name: Deploy
       if: ${{ inputs.pull-only != 'true' }}
       shell: bash
-      working-directory: deploy/simple/deploy
+      working-directory: deploy/scripts
       run: |
         pipx inject ansible-core boto3 botocore
-        ansible-playbook -i inventory.yml deploy.yml -e "namespace=${{ inputs.namespace }}" ${{ inputs.service && format('-e "service={0}"', inputs.service) || '' }}
+        ansible-galaxy collection install amazon.aws community.docker
+        ansible-playbook -i inventory.yml deploy.yml ${{ inputs.service-group && format('-e "service_group={0}"', inputs.service-group) || '' }} ${{ inputs.service && format('-e "services=[\"{0}\"]"', inputs.service) || '' }}
       env:
         ANSIBLE_HOST: ${{ inputs.ssh-host }}
         ANSIBLE_USER: ${{ inputs.ssh-username }}

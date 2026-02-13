@@ -3,13 +3,15 @@
   hosts: localhost
   gather_facts: no
   vars:
-    key_prefix: "prod/mycrocloud"
+    env_name: "{{ lookup('env', 'ENV_NAME') | default('prod', true) }}"
+    key_prefix: "{{ env_name }}/mycrocloud"
     env_files:
       - "api/.env"
       - "dbmigrator/.env"
       - "web/.env"
       - "webapp/gateway/.env"
       - "webapp/spa/worker/.env"
+      - "monitoring/seq/.env"
     secret_files:
       - "lb/certs/mycrocloud.info.key"
       - "api/gha-mycrocloud.pem"
@@ -49,15 +51,23 @@
   vars:
     src: ../pkg
     deploy_path: /opt/mycrocloud
-    namespace: default
-    service: all
-    namespaces:
-      default:
-        path: "{{ deploy_path }}"
+    service_group: ""
+    services: []
+    service_groups:
+      core:
+        - lb
+        - api
+        - web
+        - db-migrator
       webapp:
-        path: "{{ deploy_path }}/webapp"
+        - gateway
+        - spa-worker
       monitoring:
-        path: "{{ deploy_path }}/monitoring"
+        - seq
+        - prometheus
+        - node_exporter
+        - nginx-exporter
+    resolved_services: "{{ service_groups[service_group] | default([]) if (service_group | length > 0 and services | length == 0) else services }}"
   tasks:
     - name: Ensure deploy directory exists
       ansible.builtin.file:
@@ -80,6 +90,8 @@
         content: "{{ hostvars['localhost']['env_secrets'][item] }}"
         dest: "{{ deploy_path }}/{{ item }}"
         mode: "0600"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
       loop: "{{ hostvars['localhost']['env_files'] }}"
       no_log: true
 
@@ -88,6 +100,8 @@
         content: "{{ hostvars['localhost']['file_secrets'][item] }}"
         dest: "{{ deploy_path }}/{{ item }}"
         mode: "0600"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
       loop: "{{ hostvars['localhost']['secret_files'] }}"
       no_log: true
 
@@ -96,6 +110,8 @@
         src: "{{ src }}/{{ item }}.j2"
         dest: "{{ deploy_path }}/{{ item }}"
         mode: "0644"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
       vars:
         secret: "{{ hostvars['localhost']['template_secrets_data'][item] }}"
       loop: "{{ template_secrets }}"
@@ -103,13 +119,36 @@
 
     - name: Pull and deploy services
       community.docker.docker_compose_v2:
-        project_src: "{{ namespaces[namespace].path }}"
-        services: "{{ omit if service == 'all' else [service] }}"
+        project_src: "{{ deploy_path }}"
+        services: "{{ resolved_services if resolved_services | length > 0 else omit }}"
         state: present
         pull: always
+      register: deploy_result
+
+    - name: Wait for services to be healthy
+      ansible.builtin.shell:
+        cmd: |
+          services_list="{{ resolved_services | join(' ') }}"
+          for service in $(docker compose ps --format '{{.Service}}'); do
+            if [ -z "$services_list" ] || echo "$services_list" | grep -q "$service"; then
+              status=$(docker compose ps $service --format '{{.Health}}')
+              if [ "$status" != "healthy" ] && [ "$status" != "" ]; then
+                echo "Service $service is $status"
+                exit 1
+              fi
+            fi
+          done
+        chdir: "{{ deploy_path }}"
+      register: health_check
+      retries: 5
+      delay: 5
+      until: health_check.rc == 0
+      when: resolved_services | length >= 0
 
     - name: Reload nginx if dependencies require it
       ansible.builtin.command:
         cmd: docker compose exec lb nginx -s reload
         chdir: "{{ deploy_path }}"
-      when: service in ['api', 'gateway', 'web', 'web-editor']
+      when:
+        - (resolved_services | length == 0 or resolved_services | intersect(['api', 'gateway', 'web']) | length > 0)
+        - deploy_result.changed | default(false)

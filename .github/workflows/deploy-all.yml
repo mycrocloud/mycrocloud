@@ -18,34 +18,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Deploy default namespace
+      - name: Deploy all services
         uses: ./.github/actions/deploy-action
         with:
           ssh-host: ${{ vars.SSH_HOST }}
           ssh-username: ${{ vars.SSH_USERNAME }}
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          aws-iam-role: ${{ vars.AWS_IAM_ROLE_GITHUB_ACTIONS_ARN }}
-          aws-region: ${{ vars.AWS_REGION }}
-          gh-pat: ${{ secrets.CR_PAT }}
-
-      - name: Deploy deployment namespace
-        uses: ./.github/actions/deploy-action
-        with:
-          ssh-host: ${{ vars.SSH_HOST }}
-          ssh-username: ${{ vars.SSH_USERNAME }}
-          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          namespace: deployment
-          aws-iam-role: ${{ vars.AWS_IAM_ROLE_GITHUB_ACTIONS_ARN }}
-          aws-region: ${{ vars.AWS_REGION }}
-          gh-pat: ${{ secrets.CR_PAT }}
-
-      - name: Deploy monitoring namespace
-        uses: ./.github/actions/deploy-action
-        with:
-          ssh-host: ${{ vars.SSH_HOST }}
-          ssh-username: ${{ vars.SSH_USERNAME }}
-          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          namespace: monitoring
           aws-iam-role: ${{ vars.AWS_IAM_ROLE_GITHUB_ACTIONS_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
           gh-pat: ${{ secrets.CR_PAT }}
