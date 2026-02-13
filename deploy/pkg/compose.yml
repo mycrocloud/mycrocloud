@@ -24,7 +24,7 @@ services:
     image: ${REGISTRY}/mycrocloud-api:${TAG}
     volumes:
       - "./api/appsettings.json:/app/appsettings.json:ro"
-      - "./api/gha-mycrocloud.pem:/app/gha-mycrocloud.pem:ro"
+      - "./api/gha-mycrocloud.private-key.pem:/app/gha-mycrocloud.private-key.pem:ro"
     env_file:
       - ./api/.env
     restart: unless-stopped

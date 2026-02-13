@@ -14,7 +14,7 @@
       - "monitoring/seq/.env"
     secret_files:
       - "lb/certs/mycrocloud.info.key"
-      - "api/gha-mycrocloud.pem"
+      - "api/gha-mycrocloud.private-key.pem"
     template_secrets:
       - "monitoring/prometheus.yml"
   tasks:
