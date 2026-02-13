@@ -1,0 +1,19 @@
+name: webapp
+services:
+  gateway:
+    image: ghcr.io/mycrocloud/mycrocloud-gateway:main
+    env_file:
+      - ./gateway/.env
+    volumes:
+      - ./gateway/appsettings.json:/app/appsettings.json:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /srv/function-data:/srv/function-data
+  
+  spa-worker:
+    image: ghcr.io/mycrocloud/mycrocloud-deployment-worker:main
+    env_file:
+      - ./spa/worker/.env
+    volumes:
+      - ./spa/worker/.conf:/app/.conf:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/build-outputs:/tmp/build-outputs

@@ -1,3 +1,4 @@
+name: monitoring
 services:
   seq:
     image: datalust/seq
