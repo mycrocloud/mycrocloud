@@ -47,7 +47,7 @@
   hosts: all
   become: no
   vars:
-    src: app
+    src: ../pkg
     deploy_path: /opt/mycrocloud
     namespace: default
     service: all
