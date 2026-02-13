@@ -6,59 +6,59 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Backend (.NET 8, C# preview)
 ```bash
-# Build the full solution
-dotnet build src/Services/WebApp/WebApp.sln
+# Build API solution (control plane)
+dotnet build src/pkg/api/Api.sln
+
+# Build WebApp solution (data plane + shared libs)
+dotnet build src/pkg/webapp/WebApp.sln
 
 # Run the API (control plane)
-dotnet run --project src/Services/WebApp/Api
+dotnet run --project src/pkg/api/Api
 
 # Run the Gateway (data plane)
-dotnet run --project src/Services/WebApp/WebApp.Gateway
+dotnet run --project src/pkg/webapp/gateway
 
 # Run migration tests (requires live PostgreSQL)
-dotnet test src/Services/WebApp/Api.MigrationTest
+dotnet test src/pkg/api/Api.MigrationTest
 
 # Add EF Core migration
-dotnet ef migrations add <MigrationName> --project src/Services/WebApp/Api.Migrations
-
-# Lint frontend
-npm run lint --prefix src/Web
+dotnet ef migrations add <MigrationName> --project src/pkg/api/Api.Migrations
 ```
 
 ### Frontend (React 19 + Vite + TypeScript)
 ```bash
-# Main web UI
-npm run dev --prefix src/Web        # Dev server
-npm run build --prefix src/Web      # Production build (tsc + vite)
+npm run dev --prefix src/pkg/web        # Dev server
+npm run build --prefix src/pkg/web      # Production build (tsc + vite)
+npm run lint --prefix src/pkg/web       # ESLint
+```
 
-# Code editor widget
-npm run dev --prefix src/WebEditor
-npm run build --prefix src/WebEditor
+### Go Deployment Worker
+```bash
+cd src/pkg/webapp/spa/deployment/worker && go build ./...
 ```
 
 ### Docker Compose (dev)
 ```bash
-docker compose -f src/compose.yml up    # web + web-editor only
-```
+# Frontend only (web + web-editor)
+docker compose -f src/compose.yml up
 
-Run services in WebApp after editing code (must run from the WebApp directory so compose.override.yml is picked up).
-```bash
-cd src/Services/WebApp && docker compose build && docker compose up -d
-``` 
+# Backend services (run from webapp dir so compose.override.yml is picked up)
+cd src/pkg/webapp && docker compose build && docker compose up -d
+
+# Deployment subsystem (worker + builder)
+cd src/pkg/webapp/spa/deployment && docker compose up -d
+```
 
 ## Architecture Overview
 
 **MycroCloud** is a platform for deploying managed web apps (API, SPA, or Fullstack). It has a **dual-plane** design:
 
-- **Control Plane** (`Api` + `Web` + `WebEditor`): Users manage apps, routes, builds, deployments, and integrations
+- **Control Plane** (`Api` + `Web`): Users manage apps, routes, builds, deployments, and integrations
 - **Data Plane** (`WebApp.Gateway`): Serves deployed user apps — routes requests to static content, SPA files (from S3/disk), or executes JS functions via Docker containers
-
-Both planes share `Api.Domain` and `Api.Infrastructure` libraries.
 
 ### Service Topology (Production)
 ```
 Nginx LB ─┬─ web (React SPA)
-           ├─ web-editor (Monaco editor, iframe-embedded)
            ├─ api (ASP.NET Core control plane)
            └─ gateway (ASP.NET Core data plane, caches app specs in Redis)
 
@@ -68,13 +68,20 @@ Deployment subsystem (separate compose):
   fluentd ── aggregates logs → Elasticsearch
 ```
 
-### Key Project Dependencies
+### Project Dependencies
 ```
-Api              → Api.Domain, Api.Infrastructure
-WebApp.Gateway   → Api.Domain, Api.Infrastructure
-Api.Migrations   → Api.Infrastructure
-Api.Infrastructure contains: AppDbContext (EF Core), repositories, storage providers
-Api.Domain contains: entities, repository interfaces, domain services
+src/pkg/api/
+  Api              → Api.Domain, Api.Infrastructure
+  Api.Migrations   → Api.Infrastructure
+  Api.MigrationTest
+
+src/pkg/webapp/
+  WebApp.Gateway           → Api.Domain, Api.Infrastructure (shared from ../api/)
+  WebApp.FunctionInvoker   (standalone console app for JS execution)
+
+Shared libraries:
+  Api.Domain         — entities, enums, repository interfaces, domain services
+  Api.Infrastructure — AppDbContext (EF Core), repositories, storage providers
 ```
 
 ### SPA Build Pipeline
@@ -95,13 +102,13 @@ PostgreSQL with EF Core 8 (Npgsql). Uses JSONB columns, owned JSON entities for 
 Migrations live in a separate `Api.Migrations` project. Design-time factory in `AppDbContextFactory`.
 
 ### Frontend Config Injection
-`window.CONFIG` injected at runtime via Nginx (allows single Docker image across environments). Falls back to `VITE_*` env vars for local dev. See `src/Web/src/config.ts`.
+`window.CONFIG` injected at runtime via Nginx (allows single Docker image across environments). Falls back to `VITE_*` env vars for local dev. See `src/pkg/web/src/config.ts`.
 
 ### CI/CD
 GitHub Actions per-service (path-filtered pushes to `main`). Reusable `_build-deploy.yml` workflow: build Docker image → push to `ghcr.io` → SSH + Ansible playbook → `docker compose up`. Secrets from AWS Secrets Manager.
 
 ### Documentation project
-The document project lives in other repository:
+The documentation project lives in a separate repository:
 ```
 ../mycrocloud-docs
 ```
