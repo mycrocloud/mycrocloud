@@ -20,7 +20,13 @@ terraform {
   }
 }
 
-provider "aws" {}
+provider "aws" {
+  default_tags {
+    tags = {
+      environment = "prod"
+    }
+  }
+}
 
 provider "cloudflare" {
   api_token = var.cloudflare_api_token
