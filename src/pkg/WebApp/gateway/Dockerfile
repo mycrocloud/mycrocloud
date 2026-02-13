@@ -3,7 +3,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /source
 
 # copy csproj and restore as distinct layers
-COPY WebApp.Gateway.csproj .
+COPY Gateway.csproj .
 
 RUN dotnet restore
 
@@ -16,4 +16,4 @@ RUN dotnet publish -c Release -o /app
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 COPY --from=build /app .
-ENTRYPOINT ["dotnet", "WebApp.Gateway.dll"]
+ENTRYPOINT ["dotnet", "MycroCloud.WebApp.Gateway.dll"]
