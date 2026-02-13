@@ -169,8 +169,6 @@ if (!app.Environment.IsDevelopment())
     options.KnownProxies.Clear();
     
     app.UseForwardedHeaders(options);
-    
-    app.UsePathBase("/api");
 }
 
 var behindProxy = builder.Configuration.GetValue<bool>("ASPNETCORE_BEHIND_PROXY");
