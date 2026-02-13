@@ -12,6 +12,7 @@ services:
   db-migrator:
     image: mycrocloud-db-migrator
     build:
+      context: ../api
       dockerfile: Api.Migrations/Dockerfile
     depends_on:
       - db
@@ -19,19 +20,20 @@ services:
   api:
     image: mycrocloud-api
     build:
+      context: ../api
       dockerfile: Api/Dockerfile
     ports:
       - "8080:8080"
     volumes:
-      - "./Api/gha-mycrocloud.private-key.pem:/app/gha-mycrocloud.private-key.pem:ro"
+      - "../api/Api/gha-mycrocloud.private-key.pem:/app/gha-mycrocloud.private-key.pem:ro"
     depends_on:
       rabbitmq:
         condition: service_healthy
-        
+
   gateway:
     image: mycrocloud-gateway
     build:
-      dockerfile: WebApp.Gateway/Dockerfile
+      context: ./gateway
     volumes:
       - /tmp/function-data:/tmp/function-data
     ports:
@@ -64,16 +66,15 @@ services:
       interval: 1s
       timeout: 2s
       retries: 5
-      
+
   function-invoker:
     image: mycrocloud-function-invoker
     build:
-      context: .
-      dockerfile: WebApp.FunctionInvoker/Dockerfile
+      context: ./api/functioninvoker
     env_file:
       - .env
     volumes:
-      - ./WebApp.FunctionInvoker/data:/app/data
+      - ./api/functioninvoker/data:/app/data
     deploy:
       resources:
         limits:

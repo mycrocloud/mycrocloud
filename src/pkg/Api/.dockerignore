@@ -1,4 +1,4 @@
-**/.classpath
+**/.DS_Store
 **/.dockerignore
 **/.env
 **/.git
@@ -8,13 +8,14 @@
 **/.toolstarget
 **/.vs
 **/.vscode
+**/.idea
 **/*.*proj.user
 **/*.dbmdl
 **/*.jfm
-**/azds.yaml
 **/bin
 **/charts
 **/docker-compose*
+**/compose*
 **/Dockerfile*
 **/node_modules
 **/npm-debug.log

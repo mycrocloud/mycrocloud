@@ -41,12 +41,8 @@ services:
       - ./lb/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
     - web
-    - web-editor
     - api
     - gateway
-
-  web-editor:
-    image: ghcr.io/mycrocloud/mycrocloud-web-editor:main
 
 networks:
   default:

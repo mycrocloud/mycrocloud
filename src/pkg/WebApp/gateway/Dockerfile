@@ -3,18 +3,14 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /source
 
 # copy csproj and restore as distinct layers
-COPY Api.Domain/Api.Domain.csproj Api.Domain/
-COPY Api.Infrastructure/Api.Infrastructure.csproj Api.Infrastructure/
-COPY WebApp.Gateway/WebApp.Gateway.csproj WebApp.Gateway/
+COPY WebApp.Gateway.csproj .
 
-RUN dotnet restore WebApp.Gateway/WebApp.Gateway.csproj
+RUN dotnet restore
 
-# copy and build app and libraries
-COPY Api.Domain/ Api.Domain/
-COPY Api.Infrastructure/ Api.Infrastructure/
-COPY WebApp.Gateway/ WebApp.Gateway/
+# copy and build app
+COPY . .
 
-RUN dotnet publish WebApp.Gateway/WebApp.Gateway.csproj -c Release -o /app
+RUN dotnet publish -c Release -o /app
 
 # final stage/image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0

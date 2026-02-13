@@ -1,13 +1,13 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS builder
 WORKDIR /source
 
-COPY WebApp.FunctionInvoker/WebApp.FunctionInvoker.csproj WebApp.FunctionInvoker/
+COPY WebApp.FunctionInvoker.csproj .
 
-RUN dotnet restore WebApp.FunctionInvoker/WebApp.FunctionInvoker.csproj
+RUN dotnet restore
 
-COPY WebApp.FunctionInvoker/ WebApp.FunctionInvoker/
+COPY . .
 
-RUN dotnet publish WebApp.FunctionInvoker/WebApp.FunctionInvoker.csproj -c Release -o /app
+RUN dotnet publish -c Release -o /app
 
 FROM mcr.microsoft.com/dotnet/runtime:8.0
 WORKDIR /app
