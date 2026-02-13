@@ -5,7 +5,6 @@ using Api.Domain.Services;
 using Api.Domain.Repositories;
 using Api.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
-using System.Reflection;
 using Api;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Api.Authentications;
@@ -197,7 +196,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHealthChecks("/healthz");
-app.Map("ping", () => "pong");
 app.Map("me", (ClaimsPrincipal user) =>
     {
         var userId = user.GetUserId();
@@ -209,13 +207,5 @@ app.Map("me", (ClaimsPrincipal user) =>
     })
     .RequireAuthorization();
 
-app.MapGet("_assembly", () =>
-{
-    var assembly = Assembly.GetExecutingAssembly();
-    return new
-    {
-        assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion,
-    };
-}).RequireAuthorization();
 app.UseSlackCommandFallback();
 app.Run();
