@@ -15,8 +15,8 @@ terraform {
   }
 
   backend "s3" {
-    bucket = ""
-    key    = ""
+    bucket = "075313985331-terraform"
+    key    = "mycrocloud-simple-deploy/terraform.tfstate"
   }
 }
 

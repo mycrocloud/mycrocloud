@@ -1,2 +1,0 @@
-bucket = "your-bucket-name"
-key    = "terraform.tfstate"
