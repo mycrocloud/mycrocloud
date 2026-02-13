@@ -157,18 +157,13 @@ if (app.Environment.IsDevelopment())
     app.MapGet("_config", () => builder.Configuration.GetDebugView());
 }
 
-if (!app.Environment.IsDevelopment())
+var forwardedHeadersOptions = new ForwardedHeadersOptions
 {
-    var options = new ForwardedHeadersOptions
-    {
-        ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost
-    };
-
-    options.KnownNetworks.Clear();
-    options.KnownProxies.Clear();
-    
-    app.UseForwardedHeaders(options);
-}
+    ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost
+};
+forwardedHeadersOptions.KnownNetworks.Clear();
+forwardedHeadersOptions.KnownProxies.Clear();
+app.UseForwardedHeaders(forwardedHeadersOptions);
 
 app.UseGlobalExceptionHandler();
 
