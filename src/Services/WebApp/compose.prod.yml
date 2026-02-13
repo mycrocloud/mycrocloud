@@ -12,19 +12,16 @@ services:
 
   api:
     image: ghcr.io/mycrocloud/mycrocloud-api:main
-    environment:
-      - ExternalIntegrations__GitHub__WebhookSecret=${ExternalIntegrations__GitHub__WebhookSecret}
-      - Elasticsearch__Password=${Elasticsearch__Password}
-      - ExternalIntegrations__Slack__SigningSecret=${ExternalIntegrations__Slack__SigningSecret}
-      - ConnectionStrings__Redis=${ConnectionStrings__Redis}
+    env_file:
+      - ./Services/WebApp/WebApp.Api/.env
     volumes:
       - ./Services/WebApp/WebApp.Api/appsettings.json:/app/appsettings.json:ro
       - ./Services/WebApp/WebApp.Api/gha-mycrocloud.pem:/app/gha-mycrocloud.pem:ro
 
   gateway:
     image: ghcr.io/mycrocloud/mycrocloud-gateway:main
-    environment:
-      - ConnectionStrings__Redis=${ConnectionStrings__Redis}
+    env_file:
+      - ./Services/WebApp/WebApp.Gateway/.env
     volumes:
       - ./Services/WebApp/WebApp.Gateway/appsettings.json:/app/appsettings.json:ro
       - /srv/function-data:/srv/function-data

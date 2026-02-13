@@ -1,26 +1,15 @@
 # Base configuration - Common services
 services:
   db-migrator:
-    environment:
-      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
+    env_file:
+      - ./Api/.env
 
   api:
-    environment:
-      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
-      - ConnectionStrings__RabbitMq=${ConnectionStrings__RabbitMq}
-      - ConnectionStrings__Redis=${ConnectionStrings__Redis}
-      - ExternalIntegrations__Slack__ClientSecret=${ExternalIntegrations__Slack__ClientSecret}
-      - OAuthApps__GitHub__ClientSecret=${OAuthApps__GitHub__ClientSecret}
-      - ExternalIntegrations__Slack__SigningSecret=${ExternalIntegrations__Slack__SigningSecret}
-      - ExternalIntegrations__Slack__LinkSecret=${ExternalIntegrations__Slack__LinkSecret}
-      - Storage__S3__AccessKey=${Storage__S3__AccessKey}
-      - Storage__S3__SecretKey=${Storage__S3__SecretKey}
+    env_file:
+      - ./Api/.env
 
   gateway:
-    environment:
-      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
-      - ConnectionStrings__Redis=${ConnectionStrings__Redis}
-      - Storage__S3__AccessKey=${Storage__S3__AccessKey}
-      - Storage__S3__SecretKey=${Storage__S3__SecretKey}
+    env_file:
+      - ./WebApp.Gateway/.env
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
