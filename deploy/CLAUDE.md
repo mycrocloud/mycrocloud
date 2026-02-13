@@ -32,7 +32,7 @@ pkg/                Production compose files, service configs, nginx templates, 
 
 Service paths in `pkg/` mirror `src/pkg/` in the main repo, except `dbmigrator` (source is `src/pkg/api/Api.Migrations`).
 
-Each service may have config files such as `appsettings.json` (checked in, mounted read-only into containers) and `.env.j2` templates (rendered with secrets at deploy time). Secret file paths under `pkg/` match their AWS Secrets Manager names with the `prod/mycrocloud/` prefix — e.g., the secret `prod/mycrocloud/api/.env` is written to `pkg/api/.env` on the server.
+Each service may have config files such as `appsettings.json` (checked in, mounted read-only into containers) and `.env.j2` templates (rendered with secrets at deploy time). Secret file paths under `pkg/` match their AWS Secrets Manager names with the `prod/mycrocloud/` prefix — e.g., the secret `prod/mycrocloud/api/.env` is written to `pkg/api/.env` on the server. The corresponding secret resources are defined in `infra/aws_secrets.tf`. When adding or removing a service's `.env` or secret file, update all three places: `pkg/` config files, `scripts/deploy.yml` secret lists, and `infra/aws_secrets.tf`.
 
 ## Commands
 
