@@ -11,15 +11,19 @@ on:
 
 jobs:
   build-and-deploy:
+    strategy:
+      matrix:
+        node-version: ["20", "22", "24"]
     uses: ./.github/workflows/_build-deploy.yml
     permissions:
       id-token: write
       contents: read
     with:
-      image-name: ${{ github.repository }}-deployment-builder
+      image-name: ${{ github.repository }}-deployment-builder:node${{ matrix.node-version }}
       work-dir: src/Services/WebApp/Deployment/builder
       dockerfile: Dockerfile
       pull-only: true
+      build-args: NODE_VERSION=${{ matrix.node-version }}
     secrets:
       CR_PAT: ${{ secrets.CR_PAT }}
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
