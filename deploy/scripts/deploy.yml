@@ -3,8 +3,7 @@
   hosts: localhost
   gather_facts: no
   vars:
-    env_name: "{{ lookup('env', 'ENV_NAME') | default('prod', true) }}"
-    key_prefix: "{{ env_name }}/mycrocloud"
+    secret_name_prefix: "prod/mycrocloud"
     env_files:
       - "api/.env"
       - "dbmigrator/.env"
@@ -20,7 +19,7 @@
   tasks:
     - name: Fetch env files from AWS Secrets Manager
       vars:
-        secret_key: "{{ key_prefix }}/{{ item }}"
+        secret_key: "{{ secret_name_prefix }}/{{ item }}"
         secret_value: "{{ lookup('amazon.aws.aws_secret', secret_key) }}"
       set_fact:
         env_secrets: "{{ env_secrets | default({}) | combine({item: secret_value}) }}"
@@ -29,7 +28,7 @@
 
     - name: Fetch secret files from AWS Secrets Manager
       vars:
-        secret_key: "{{ key_prefix }}/{{ item }}"
+        secret_key: "{{ secret_name_prefix }}/{{ item }}"
         secret_value: "{{ lookup('amazon.aws.aws_secret', secret_key) }}"
       set_fact:
         file_secrets: "{{ file_secrets | default({}) | combine({item: secret_value}) }}"
@@ -38,7 +37,7 @@
 
     - name: Fetch template secrets from AWS Secrets Manager
       vars:
-        secret_key: "{{ key_prefix }}/{{ item }}"
+        secret_key: "{{ secret_name_prefix }}/{{ item }}"
         secret_value: "{{ lookup('amazon.aws.aws_secret', secret_key) }}"
       set_fact:
         template_secrets_data: "{{ template_secrets_data | default({}) | combine({item: secret_value}) }}"
