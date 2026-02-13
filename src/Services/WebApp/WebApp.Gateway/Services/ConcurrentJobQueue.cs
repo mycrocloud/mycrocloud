@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace WebApp.Gateway;
+namespace WebApp.Gateway.Services;
 
 public class ConcurrentJobQueue : IDisposable
 {

@@ -1,6 +1,4 @@
-using Api.Domain.Entities;
-using Api.Infrastructure;
-using Microsoft.EntityFrameworkCore;
+using WebApp.Gateway.Models;
 
 namespace WebApp.Gateway.Services;
 

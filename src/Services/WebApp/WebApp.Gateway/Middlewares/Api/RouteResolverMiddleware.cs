@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Routing.Template;
-using Api.Domain.Models;
+using WebApp.Gateway.Models;
 
 namespace WebApp.Gateway.Middlewares.Api;
 

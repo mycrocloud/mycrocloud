@@ -1,8 +1,6 @@
-using Api.Domain.Models;
 using WebApp.Gateway.Models;
-using Api.Domain.Enums;
 
-namespace WebApp.Gateway;
+namespace WebApp.Gateway.Services;
 
 public interface IFunctionExecutor
 {

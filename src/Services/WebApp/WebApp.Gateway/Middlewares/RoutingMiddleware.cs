@@ -1,7 +1,6 @@
 using System.Text.RegularExpressions;
-using Api.Domain.Entities;
-using Api.Domain.Models;
-using Api.Infrastructure;
+using WebApp.Gateway.Models;
+using WebApp.Gateway.Services;
 
 namespace WebApp.Gateway.Middlewares;
 
@@ -11,7 +10,7 @@ public class RoutingMiddleware(RequestDelegate next, ILogger<RoutingMiddleware> 
     {
         var app = (AppSpecification)context.Items["_AppSpecification"]!;
         var isCustomConfig = app.RoutingConfig is { Routes.Count: > 0 };
-        var config = isCustomConfig ? app.RoutingConfig : RoutingConfig.Default;
+        var config = isCustomConfig ? app.RoutingConfig : throw new Exception();
 
         var requestPath = context.Request.Path.Value ?? "/";
 

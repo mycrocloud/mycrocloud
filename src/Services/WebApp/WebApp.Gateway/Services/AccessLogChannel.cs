@@ -1,5 +1,5 @@
 using System.Threading.Channels;
-using Api.Domain.Entities;
+using WebApp.Gateway.Models;
 
 namespace WebApp.Gateway.Services;
 

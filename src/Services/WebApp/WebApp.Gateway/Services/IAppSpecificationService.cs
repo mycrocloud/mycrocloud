@@ -1,22 +1,14 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
-using System.Text.Json;
-using Api.Domain.Entities;
-using Api.Domain.Enums;
-using Api.Infrastructure;
-using Api.Domain.Models;
-using Api.Domain.Services;
+using WebApp.Gateway.Models;
 
-namespace WebApp.Gateway.Cache;
+namespace WebApp.Gateway.Services;
 
 public interface IAppSpecificationService
 {
     Task<AppSpecification?> GetBySlugAsync(string slug);
-    Task InvalidateAsync(string slug);
-
-    /// <summary>
-    /// Get content from an API deployment manifest.
-    /// </summary>
+    
     Task<string?> GetApiDeploymentFileContentAsync(Guid? deploymentId, string path);
 
     Task<ApiRouteMetadata?> GetRouteMetadataAsync(Guid? deploymentId, int routeId);
@@ -45,13 +37,6 @@ public class AppSpecificationService(
 
         logger.LogWarning("Cache miss for spec: {Slug}. Spec must be published from API.", slug);
         return null;
-    }
-
-    public async Task InvalidateAsync(string slug)
-    {
-        var cacheKey = $"{CacheKeyPrefix}{slug}";
-        await cache.RemoveAsync(cacheKey);
-        logger.LogInformation("Invalidated spec for app: {Slug}", slug);
     }
 
     public async Task<string?> GetApiDeploymentFileContentAsync(Guid? deploymentId, string path)

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Cors.Infrastructure;
-using Api.Domain.Models;
+using WebApp.Gateway.Models;
+using WebApp.Gateway.Utils;
 
 namespace WebApp.Gateway.Middlewares.Api;
 

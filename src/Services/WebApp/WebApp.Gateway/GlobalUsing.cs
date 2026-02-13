@@ -1,1 +1,1 @@
-﻿global using Route = Api.Domain.Entities.Route;
+﻿

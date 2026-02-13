@@ -1,8 +1,7 @@
 using System.Text.Json;
-using Api.Domain.Models;
 using WebApp.Gateway.Models;
-using Api.Domain.Entities;
 using WebApp.Gateway.Services;
+using WebApp.Gateway.Utils;
 
 namespace WebApp.Gateway.Middlewares;
 
@@ -28,9 +27,9 @@ public class LoggingMiddleware(RequestDelegate next)
                 FunctionLogs = functionExecutionResult?.Logs,
                 FunctionRuntime = metadata?.FunctionRuntime,
                 FunctionExecutionDuration = functionExecutionResult?.Duration,
-                RemoteAddress = context.Connection.RemoteIpAddress?.ToString(),
+                RemoteAddress = context.Connection.RemoteIpAddress!.ToString(),
                 RequestContentLength = context.Request.ContentLength,
-                RequestContentType = context.Request.ContentType,
+                RequestContentType = context.Request.ContentType!,
                 RequestHeaders = JsonSerializer.Serialize(context.Request.Headers.ToDictionary()),
             };
 

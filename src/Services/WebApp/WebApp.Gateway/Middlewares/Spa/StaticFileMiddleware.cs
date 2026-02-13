@@ -1,10 +1,8 @@
 using Microsoft.AspNetCore.StaticFiles;
-using Api.Domain.Entities;
-using Api.Domain.Models;
-using Api.Infrastructure;
-using Api.Domain.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Net.Http.Headers;
+using WebApp.Gateway.Models;
+using WebApp.Gateway.Services;
 
 namespace WebApp.Gateway.Middlewares.Spa;
 

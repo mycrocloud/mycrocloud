@@ -1,38 +1,33 @@
 using Docker.DotNet;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
-using Api.Domain.Entities;
-using Api.Infrastructure;
 using WebApp.Gateway.Services;
-using WebApp.Gateway;
-using Api.Domain.Models;
 using WebApp.Gateway.Middlewares;
 using WebApp.Gateway.Middlewares.Api;
 using WebApp.Gateway.Middlewares.Spa;
-using Api.Domain.Services;
-using Api.Infrastructure.Storage;
-using WebApp.Gateway.Cache;
 using Amazon.S3;
-using Api.Domain.Repositories;
-using Api.Infrastructure.Repositories;
+using WebApp.Gateway.Models;
+using WebApp.Gateway.Utils;
 
 DotNetEnv.Env.Load();
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddLogging(options =>
 {
-    options.AddSeq(builder.Configuration["Logging:Seq:ServerUrl"], builder.Configuration["Logging:Seq:ApiKey"]);
+    options.AddSeq(builder.Configuration["Logging:Seq:ServerUrl"]!, builder.Configuration["Logging:Seq:ApiKey"]);
 });
 builder.Services.AddHttpLogging(_ => { });
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
-        //.LogTo(Console.WriteLine, LogLevel.Information)
-        //.EnableSensitiveDataLogging()
-        ;
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+
+    if (builder.Environment.IsDevelopment())
+    {
+        options.EnableDetailedErrors()
+            .EnableSensitiveDataLogging()
+            ;
+    }
 });
-builder.Services.AddScoped<IAppRepository, AppRepository>();
-builder.Services.AddScoped<IRouteRepository, RouteRepository>();
 builder.Services.AddSingleton<AccessLogChannel>();
 builder.Services.AddHostedService<AccessLogBackgroundService>();
 builder.Services.AddHttpClient("HttpDocumentRetriever");
@@ -59,11 +54,6 @@ if (storageType.Equals("S3", StringComparison.OrdinalIgnoreCase))
 
     builder.Services.AddSingleton<IAmazonS3>(s3Client);
     builder.Services.AddSingleton<IStorageProvider>(new S3StorageProvider(s3Client, builder.Configuration["Storage:S3:BucketName"]!));
-}
-else
-{
-    var storagePath = builder.Configuration["Storage:RootPath"] ?? Path.Combine(builder.Environment.ContentRootPath, "data");
-    builder.Services.AddSingleton<IStorageProvider>(new DiskStorageProvider(storagePath));
 }
 
 builder.Services.AddKeyedSingleton("DockerFunctionExecution", new ConcurrentJobQueue(maxConcurrency: 100));

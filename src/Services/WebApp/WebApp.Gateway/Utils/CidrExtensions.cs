@@ -1,7 +1,7 @@
 using System.Net;
 using IPNetwork = Microsoft.AspNetCore.HttpOverrides.IPNetwork;
 
-namespace WebApp.Gateway;
+namespace WebApp.Gateway.Utils;
 
 public static class CidrExtensions
 {

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Cors.Infrastructure;
 using WebApp.Gateway.Models;
 
-namespace WebApp.Gateway;
+namespace WebApp.Gateway.Utils;
 
 public static class HttpRequestExtensions
 {
@@ -16,8 +16,8 @@ public static class HttpRequestExtensions
         return new Request
         {
             Method = request.Method,
-            Path = request.Path.Value,
-            Params = request.RouteValues.ToDictionary(x => x.Key, x => x.Value?.ToString()),
+            Path = request.Path,
+            Params = request.RouteValues.ToDictionary(x => x.Key, x => x.Value?.ToString())!,
             Query = request.Query.ToDictionary(x => x.Key, x => x.Value.ToString()),
             Headers = request.Headers.ToDictionary(x => x.Key, x => x.Value.ToString()),
             Body = await new StreamReader(request.Body).ReadToEndAsync(),

@@ -1,6 +1,6 @@
 ﻿using WebApp.Gateway.Models;
 
-namespace WebApp.Gateway;
+namespace WebApp.Gateway.Utils;
 
 public static class HttpResponseExtensions
 {

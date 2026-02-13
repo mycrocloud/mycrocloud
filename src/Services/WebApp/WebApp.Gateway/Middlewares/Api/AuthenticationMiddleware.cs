@@ -1,9 +1,8 @@
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Api.Domain.Enums;
-using Api.Domain.Models;
-using Api.Infrastructure;
+using WebApp.Gateway.Models;
+using WebApp.Gateway.Services;
 
 namespace WebApp.Gateway.Middlewares.Api;
 
@@ -48,9 +47,9 @@ public class AuthenticationMiddleware(RequestDelegate next, ILogger<Authenticati
             return;
         }
         var cachedOpenIdConnectionSigningKeys = context.RequestServices.GetService<ICachedOpenIdConnectionSigningKeys>()!;
-        var signingKeys = await cachedOpenIdConnectionSigningKeys.Get(scheme.OpenIdConnectAuthority.TrimEnd('/'));
+        var signingKeys = await cachedOpenIdConnectionSigningKeys.Get(scheme.OpenIdConnectAuthority!.TrimEnd('/'));
         if (!ValidateToken(token, scheme.OpenIdConnectAuthority,
-                scheme.OpenIdConnectAudience,
+                scheme.OpenIdConnectAudience!,
                 signingKeys, out var jwt))
         {
             return;
@@ -80,7 +79,7 @@ public class AuthenticationMiddleware(RequestDelegate next, ILogger<Authenticati
         }
         var appDbContext = context.RequestServices.GetService<AppDbContext>()!;
         var apiKeyEntity = await appDbContext.ApiKeys
-            .Where(k => k.App.Id == app.Id && k.Key == apiKey)
+            .Where(k => k.Id == app.Id && k.Key == apiKey)
             .SingleOrDefaultAsync();
         if (apiKeyEntity is null)
         {
