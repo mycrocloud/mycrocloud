@@ -170,16 +170,6 @@ if (!app.Environment.IsDevelopment())
     app.UseForwardedHeaders(options);
 }
 
-var behindProxy = builder.Configuration.GetValue<bool>("ASPNETCORE_BEHIND_PROXY");
-
-if (behindProxy)
-{
-    app.UseForwardedHeaders(new ForwardedHeadersOptions
-    {
-        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-    });
-}
-
 app.UseGlobalExceptionHandler();
 
 app.UseHttpLogging();
