@@ -1,4 +1,0 @@
-cloudflare_api_token = "<cloudflare_api_token>"
-cloudflare_account_id = "<cloudflare_account_id>"
-cloudflare_zone_id = "<cloudflare_zone_id>" // optional, if empty, the module will create a new zone
-domain = "<your_domain>"
