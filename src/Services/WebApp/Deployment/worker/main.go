@@ -144,8 +144,7 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel) error 
 
 	// Create output directory
 	log.Printf("Creating container")
-	builderImage := os.Getenv("BUILDER_IMAGE")
-	log.Printf("Using builder image: %s", builderImage)
+	log.Printf("Using builder image: %s", buildMsg.BuilderImage)
 
 	jobID := buildMsg.BuildId
 	baseOut := getOutputBaseDir()
@@ -249,7 +248,7 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel) error 
 
 	resp, err := cli.ContainerCreate(ctx,
 		&container.Config{
-			Image:  builderImage,
+			Image:  buildMsg.BuilderImage,
 			Tty:    false,
 			Env:    envVars,
 			Labels: map[string]string{"build_id": buildMsg.BuildId},

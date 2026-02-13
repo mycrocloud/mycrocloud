@@ -65,8 +65,7 @@ public class AppBuildConfigs
         OutDir = "dist",
         InstallCommand = "npm install",
         BuildCommand = "npm run build",
-        NodeVersion = "20",
-        Framework = "react"
+        NodeVersion = "20"
     };
 
     public string Branch { get; set; }
@@ -75,5 +74,4 @@ public class AppBuildConfigs
     public string InstallCommand { get; set; }
     public string BuildCommand { get; set; }
     public string NodeVersion { get; set; }
-    public string Framework { get; set; }
 }

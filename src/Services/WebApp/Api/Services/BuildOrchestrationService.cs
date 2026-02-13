@@ -13,6 +13,7 @@ public class BuildOrchestrationService(
     RabbitMqService rabbitMqService,
     IAppBuildPublisher publisher,
     GitHubAppService gitHubAppService,
+    IConfiguration configuration,
     ILogger<BuildOrchestrationService> logger)
 {
     /// <summary>
@@ -94,6 +95,10 @@ public class BuildOrchestrationService(
         // Replace {buildId} placeholder in path with actual build ID
         var finalArtifactsUploadPath = artifactsUploadPath.Replace("{buildId}", build.Id.ToString());
 
+        // Determine builder image based on Node version
+        var nodeVersion = string.IsNullOrEmpty(buildConfig.NodeVersion) ? "20" : buildConfig.NodeVersion;
+        var builderImage = configuration["Build:BuilderImageTemplate"]!.Replace("{version}", nodeVersion);
+
         var message = new AppBuildMessage
         {
             BuildId = build.Id.ToString(),
@@ -105,6 +110,7 @@ public class BuildOrchestrationService(
             InstallCommand = buildConfig.InstallCommand,
             BuildCommand = buildConfig.BuildCommand,
             NodeVersion = buildConfig.NodeVersion,
+            BuilderImage = builderImage,
             EnvVars = buildEnvVars,
             ArtifactsUploadPath = finalArtifactsUploadPath,
             LogsUploadPath = $"/apps/{app.Id}/builds/{build.Id}/logs",

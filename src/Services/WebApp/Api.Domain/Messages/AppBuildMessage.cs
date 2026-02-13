@@ -82,6 +82,9 @@ public class AppBuildMessage
     [JsonPropertyName("node_version")]
     public string NodeVersion { get; set; }
 
+    [JsonPropertyName("builder_image")]
+    public string BuilderImage { get; set; }
+
     [JsonPropertyName("env_vars")]
     public Dictionary<string, string> EnvVars { get; set; } = new();
 

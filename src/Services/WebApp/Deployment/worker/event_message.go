@@ -17,6 +17,7 @@ type BuildMessage struct {
 	InstallCommand     string            `json:"install_command"`
 	BuildCommand       string            `json:"build_command"`
 	NodeVersion        string            `json:"node_version"`
+	BuilderImage       string            `json:"builder_image"`
 	EnvVars            map[string]string `json:"env_vars"`
 	ArtifactsUploadPath string            `json:"artifacts_upload_path"`
 	LogsUploadPath      string            `json:"logs_upload_path"`
