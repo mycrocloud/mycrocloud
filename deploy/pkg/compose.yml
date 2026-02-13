@@ -1,3 +1,4 @@
+name: mycrocloud
 include:
   - ./monitoring/compose.yml
   - ./webapp/compose.yml

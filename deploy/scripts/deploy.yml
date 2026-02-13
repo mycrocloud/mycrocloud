@@ -3,29 +3,44 @@
   hosts: localhost
   gather_facts: no
   vars:
-    aws_secrets:
-      secrets:
-        key: "prod/mycrocloud/.env"
-        json: true
-      lb_certs_mycrocloud_info_key:
-        key: "prod/mycrocloud/lb/certs/mycrocloud.info.key"
-        json: false
-      Services_WebApp_deployment_dotenv:
-        key: "prod/mycrocloud/Services/WebApp/deployment/.env"
-        json: true
-      Services_WebApp_WebApp_Api_gha_mycrocloud_pem:
-        key: "prod/mycrocloud/Services/WebApp/WebApp.Api/gha-mycrocloud.pem"
-        json: false
-      grafana_cloud:
-        key: "mycrocloud/monitoring/grafana-cloud"
-        json: true
+    key_prefix: "prod/mycrocloud"
+    env_files:
+      - "api/.env"
+      - "dbmigrator/.env"
+      - "web/.env"
+      - "webapp/gateway/.env"
+      - "webapp/spa/worker/.env"
+    secret_files:
+      - "lb/certs/mycrocloud.info.key"
+      - "api/gha-mycrocloud.pem"
+    template_secrets:
+      - "monitoring/prometheus.yml"
   tasks:
-    - name: Fetch all secrets from AWS Secrets Manager
+    - name: Fetch env files from AWS Secrets Manager
       vars:
-        secret_value: "{{ lookup('amazon.aws.aws_secret', item.value.key) }}"
+        secret_key: "{{ key_prefix }}/{{ item }}"
+        secret_value: "{{ lookup('amazon.aws.aws_secret', secret_key) }}"
       set_fact:
-        "{{ item.key }}": "{{ secret_value | from_json if item.value.json else secret_value }}"
-      loop: "{{ aws_secrets | dict2items }}"
+        env_secrets: "{{ env_secrets | default({}) | combine({item: secret_value}) }}"
+      loop: "{{ env_files }}"
+      no_log: true
+
+    - name: Fetch secret files from AWS Secrets Manager
+      vars:
+        secret_key: "{{ key_prefix }}/{{ item }}"
+        secret_value: "{{ lookup('amazon.aws.aws_secret', secret_key) }}"
+      set_fact:
+        file_secrets: "{{ file_secrets | default({}) | combine({item: secret_value}) }}"
+      loop: "{{ secret_files }}"
+      no_log: true
+
+    - name: Fetch template secrets from AWS Secrets Manager
+      vars:
+        secret_key: "{{ key_prefix }}/{{ item }}"
+        secret_value: "{{ lookup('amazon.aws.aws_secret', secret_key) }}"
+      set_fact:
+        template_secrets_data: "{{ template_secrets_data | default({}) | combine({item: secret_value}) }}"
+      loop: "{{ template_secrets }}"
       no_log: true
 
 - name: Deploy
@@ -39,8 +54,8 @@
     namespaces:
       default:
         path: "{{ deploy_path }}"
-      deployment:
-        path: "{{ deploy_path }}/Services/WebApp/deployment"
+      webapp:
+        path: "{{ deploy_path }}/webapp"
       monitoring:
         path: "{{ deploy_path }}/monitoring"
   tasks:
@@ -60,34 +75,31 @@
         recursive: yes
         delete: yes
 
-    - name: Generate templated env files
-      ansible.builtin.template:
-        src: "{{ src }}/{{ item.src }}"
-        dest: "{{ deploy_path }}/{{ item.dest }}"
-        mode: "{{ item.mode | default('0600') }}"
-      vars:
-        secrets: "{{ hostvars['localhost'][item.secrets_var] }}"
-      loop:
-        - { src: ".env.j2", dest: ".env", secrets_var: "secrets" }
-        - { src: "Services/WebApp/deployment/.env.j2", dest: "Services/WebApp/deployment/.env", secrets_var: "Services_WebApp_deployment_dotenv" }
-        - { src: "monitoring/prometheus.yml.j2", dest: "monitoring/prometheus.yml", secrets_var: "grafana_cloud", mode: "0644" }
+    - name: Write env files
+      ansible.builtin.copy:
+        content: "{{ hostvars['localhost']['env_secrets'][item] }}"
+        dest: "{{ deploy_path }}/{{ item }}"
+        mode: "0600"
+      loop: "{{ hostvars['localhost']['env_files'] }}"
       no_log: true
 
     - name: Write secret files
       ansible.builtin.copy:
-        content: "{{ hostvars['localhost'][item.content_var] }}"
-        dest: "{{ deploy_path }}/{{ item.dest }}"
+        content: "{{ hostvars['localhost']['file_secrets'][item] }}"
+        dest: "{{ deploy_path }}/{{ item }}"
         mode: "0600"
-      loop:
-        - { dest: "lb/certs/mycrocloud.info.key", content_var: "lb_certs_mycrocloud_info_key" }
-        - { dest: "Services/WebApp/WebApp.Api/gha-mycrocloud.pem", content_var: "Services_WebApp_WebApp_Api_gha_mycrocloud_pem" }
+      loop: "{{ hostvars['localhost']['secret_files'] }}"
       no_log: true
 
-    - name: Copy Web/.env.example to Web/.env
-      ansible.builtin.copy:
-        src: "{{ deploy_path }}/Web/.env.example"
-        dest: "{{ deploy_path }}/Web/.env"
-        remote_src: true
+    - name: Generate templated files
+      ansible.builtin.template:
+        src: "{{ src }}/{{ item }}.j2"
+        dest: "{{ deploy_path }}/{{ item }}"
+        mode: "0644"
+      vars:
+        secret: "{{ hostvars['localhost']['template_secrets_data'][item] }}"
+      loop: "{{ template_secrets }}"
+      no_log: true
 
     - name: Pull and deploy services
       community.docker.docker_compose_v2:
