@@ -9,6 +9,7 @@ namespace Api.Controllers;
 [TypeFilter<AppOwnerActionFilter>(Arguments = ["appId"])]
 public class LogsController(ILogRepository logRepository) : BaseController
 {
+    [HttpGet]
     public async Task<IActionResult> Search(int appId, [FromQuery]List<int>? routeIds, DateTime? accessDateFrom,
      DateTime? accessDateTo, int page = 1, int pageSize = 50, string? sort = null) {
         var logs = await logRepository.Search(appId);

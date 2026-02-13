@@ -31,7 +31,7 @@ public class SlackVerificationMiddleware(RequestDelegate next)
                 return;
             }
 
-            var slackSigningSecret = configuration["OAuthApps:Slack:SigningSecret"];
+            var slackSigningSecret = configuration.GetSection("ExternalIntegrations:Slack")["SigningSecret"];
             if (string.IsNullOrEmpty(slackSigningSecret))
             {
                 logger.LogError("Missing Slack signing secret");

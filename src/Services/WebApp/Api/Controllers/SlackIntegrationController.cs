@@ -24,7 +24,7 @@ public class SlackIntegrationController(IConfiguration configuration, SlackAppSe
         var userId = User.GetUserId();
         
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.UTF8.GetBytes(configuration["OAuthApps:Slack:LinkSecret"]);
+        var key = Encoding.UTF8.GetBytes(configuration.GetSection("ExternalIntegrations:Slack")["LinkSecret"]);
 
         var validationParams = new TokenValidationParameters
         {

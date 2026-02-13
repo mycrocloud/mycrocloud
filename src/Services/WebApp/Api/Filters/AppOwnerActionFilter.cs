@@ -34,6 +34,8 @@ public class AppOwnerActionFilter(AppDbContext appDbContext,
     private async Task<bool> DoWork(ActionExecutingContext context)
     {
         logger.LogDebug("Executing AppOwnerActionFilter");
+        // Unauthenticated requests pass through — the controller's [Authorize] attribute
+        // handles the 401 rejection. This filter only checks app ownership for authenticated users.
         if (context.HttpContext.User.Identity is null || !context.HttpContext.User.Identity.IsAuthenticated)
         {
             logger.LogDebug("User is not authenticated");

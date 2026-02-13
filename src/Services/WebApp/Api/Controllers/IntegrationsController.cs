@@ -143,10 +143,11 @@ public class IntegrationsController(
     {
         var client = httpClientFactory.CreateClient();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("multipart/form-data"));
+        var slackConfig = configuration.GetSection("ExternalIntegrations:Slack");
         var requestData = new Dictionary<string, string>
         {
-            { "client_id", configuration[$"OAuthApps:Slack:ClientId"]! },
-            { "client_secret", configuration[$"OAuthApps:Slack:ClientSecret"]! },
+            { "client_id", slackConfig["ClientId"]! },
+            { "client_secret", slackConfig["ClientSecret"]! },
             { "code", request.Code },
             { "redirect_uri", request.RedirectUrl}
         };

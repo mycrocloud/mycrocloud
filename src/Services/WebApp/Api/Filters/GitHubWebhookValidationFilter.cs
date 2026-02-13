@@ -14,7 +14,7 @@ public class GitHubWebhookValidationFilter(IConfiguration configuration, ILogger
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
         // Retrieve the secret token from configuration
-        var secret = configuration["ExternalIntegrations:GitHubApp:WebhookSecret"];
+        var secret = configuration["ExternalIntegrations:GitHub:WebhookSecret"];
         if (string.IsNullOrEmpty(secret))
         {
             logger.LogError("GitHub Webhook secret is not configured.");
@@ -68,9 +68,10 @@ public class GitHubWebhookValidationFilter(IConfiguration configuration, ILogger
         return $"sha256={BitConverter.ToString(hashBytes).Replace("-", "").ToLower()}";
     }
 
-    // Verify that the computed hash matches the GitHub signature
     private bool VerifySignature(string computedSignature, string githubSignature)
     {
-        return string.Equals(computedSignature, githubSignature, StringComparison.OrdinalIgnoreCase);
+        return CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(computedSignature),
+            Encoding.UTF8.GetBytes(githubSignature));
     }
 }

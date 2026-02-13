@@ -10,12 +10,12 @@ namespace Api.Services;
 public interface IArtifactExtractionService
 {
     Task<string> ExtractAsync(Guid artifactId, Guid deploymentId, int appId);
-    Task CleanupAsync(string extractedPath);
 }
 
 public class ArtifactExtractionService(
     AppDbContext dbContext,
     IStorageProvider storageProvider,
+    IConfiguration configuration,
     ILogger<ArtifactExtractionService> logger) : IArtifactExtractionService
 {
     public async Task<string> ExtractAsync(Guid artifactId, Guid deploymentId, int appId)
@@ -30,6 +30,10 @@ public class ArtifactExtractionService(
 
         logger.LogInformation("Extracting artifact {ArtifactId} for deployment {DeploymentId}", artifactId, deploymentId);
 
+        var blobStorageType = (configuration["Storage:Type"] ?? "Disk").Equals("S3", StringComparison.OrdinalIgnoreCase)
+            ? BlobStorageType.S3
+            : BlobStorageType.Disk;
+
         using var artifactStream = await storageProvider.OpenReadAsync(artifact.StorageKey);
         using var archive = new ZipArchive(artifactStream, ZipArchiveMode.Read);
 
@@ -41,25 +45,25 @@ public class ArtifactExtractionService(
             using var ms = new MemoryStream();
             await entryStream.CopyToAsync(ms);
             var content = ms.ToArray();
-            
+
             var contentHash = Convert.ToHexString(SHA256.HashData(content)).ToUpperInvariant();
-            
+
             // Check if blob already exists
             var blob = await dbContext.ObjectBlobs.FirstOrDefaultAsync(b => b.ContentHash == contentHash);
-            
+
             if (blob == null)
             {
                 var storageKey = $"blobs/{contentHash.Substring(0, 2)}/{contentHash}";
-                
+
                 ms.Position = 0;
                 await storageProvider.SaveAsync(storageKey, ms);
-                
+
                 blob = new ObjectBlob
                 {
                     Id = Guid.NewGuid(),
                     ContentHash = contentHash,
                     SizeBytes = content.Length,
-                    StorageType = BlobStorageType.Disk,
+                    StorageType = blobStorageType,
                     StorageKey = storageKey
                 };
                 dbContext.ObjectBlobs.Add(blob);
@@ -85,11 +89,5 @@ public class ArtifactExtractionService(
         logger.LogInformation("Extracted {EntryCount} files for deployment {DeploymentId}", archive.Entries.Count, deploymentId);
 
         return "success";
-    }
-
-    public Task CleanupAsync(string extractedPath)
-    {
-        // No-op for now as we don't have ExtractedPath anymore
-        return Task.CompletedTask;
     }
 }

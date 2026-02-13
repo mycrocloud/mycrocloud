@@ -26,6 +26,7 @@ public class BuildsController(
     LinkGenerator linkGenerator,
     GitHubAppService gitHubAppService,
     IStorageProvider storageProvider,
+    RabbitMqService rabbitMqService,
     ILogger<BuildsController> logger): BaseController
 {
     public const string Controller = "Builds";
@@ -168,13 +169,7 @@ public class BuildsController(
         
         var cancellationToken = HttpContext.RequestAborted;
        
-        var factory = new ConnectionFactory
-        {
-            Uri = new Uri(configuration.GetConnectionString("RabbitMq")!),
-        };
-        
-        var connection = factory.CreateConnection();
-        var channel = connection.CreateModel();
+        var channel = rabbitMqService.CreateChannel();
         const string exchange = "app.build.logs";
         
         channel.ExchangeDeclare(exchange: exchange, type: "topic", durable: false); //TODO: confirm durable setting
@@ -213,18 +208,19 @@ public class BuildsController(
             consumer: consumer
         );
         
-        try
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        await using (cancellationToken.Register(() => tcs.TrySetResult()))
         {
-            while (!cancellationToken.IsCancellationRequested)
+            try
             {
-                await Task.Delay(100, cancellationToken);
+                await tcs.Task;
             }
-        }
-        finally
-        {
-            channel.BasicCancel(consumer.ConsumerTags[0]);
-            channel.Close();
-            connection.Close();
+            finally
+            {
+                channel.BasicCancel(consumer.ConsumerTags[0]);
+                channel.Close();
+                channel.Dispose();
+            }
         }
 
         return new EmptyResult();
@@ -328,13 +324,16 @@ public class BuildsController(
         }
 
         // 3. Create Artifact metadata
+        var artifactStorageType = (configuration["Storage:Type"] ?? "Disk").Equals("S3", StringComparison.OrdinalIgnoreCase)
+            ? ArtifactStorageType.S3
+            : ArtifactStorageType.Disk;
         var artifact = new Artifact
         {
             Id = artifactId,
             AppId = appId,
             BundleHash = contentHash.ToUpperInvariant(),
             BundleSize = file.Length,
-            StorageType = ArtifactStorageType.Disk,
+            StorageType = artifactStorageType,
             StorageKey = storageKey,
             Compression = "zip"
         };

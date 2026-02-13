@@ -131,8 +131,6 @@ public class UserSettingsController(AppDbContext dbContext): BaseController
             .Where(t => t.UserId == User.GetUserId() && t.Id == id)
             .ExecuteDeleteAsync();
 
-        await dbContext.SaveChangesAsync();
-
         return NoContent();
     }
 }

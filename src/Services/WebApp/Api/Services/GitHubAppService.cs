@@ -13,11 +13,13 @@ namespace Api.Services;
 public class GitHubAppService(HttpClient httpClient, IOptions<GitHubAppOptions> options)
 {
     private readonly GitHubAppOptions _options = options.Value;
+    private RSA? _cachedRsaKey;
 
     private string GenerateJwt()
     {
         var now = DateTimeOffset.UtcNow;
-        var securityKey = new RsaSecurityKey(ReadPrivateKey(_options.PrivateKeyPath));
+        _cachedRsaKey ??= ReadPrivateKey(_options.PrivateKeyPath);
+        var securityKey = new RsaSecurityKey(_cachedRsaKey);
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256);
 
         var claims = new List<Claim>
@@ -36,7 +38,7 @@ public class GitHubAppService(HttpClient httpClient, IOptions<GitHubAppOptions> 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    private RSA ReadPrivateKey(string path)
+    private static RSA ReadPrivateKey(string path)
     {
         var privateKeyPem = File.ReadAllText(path);
         var rsa = RSA.Create();

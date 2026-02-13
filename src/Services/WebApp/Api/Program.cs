@@ -139,7 +139,7 @@ else
     builder.Services.AddSingleton<IStorageProvider>(new DiskStorageProvider(storagePath));
 }
 
-builder.Services.Configure<GitHubAppOptions>(builder.Configuration.GetSection("ExternalIntegrations:GitHubApp"));
+builder.Services.Configure<GitHubAppOptions>(builder.Configuration.GetSection("ExternalIntegrations:GitHub"));
 builder.Services.AddHttpClient<GitHubAppService>(client =>
 {
     client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("MycroCloud", "1.0.0"));
@@ -154,7 +154,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-    app.MapGet("_config", () => builder.Configuration.GetDebugView());
+    app.MapGet("_config", () => builder.Configuration.GetDebugView()).RequireAuthorization();
 }
 
 var forwardedHeadersOptions = new ForwardedHeadersOptions

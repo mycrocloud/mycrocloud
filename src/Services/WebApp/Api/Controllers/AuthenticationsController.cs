@@ -41,7 +41,7 @@ public class AuthenticationsController(
     }
     
     [HttpPut("schemes/{schemeId:int}")]
-    public async Task<IActionResult> CreateScheme(int appId, int schemeId, AuthenticationScheme scheme)
+    public async Task<IActionResult> UpdateScheme(int appId, int schemeId, AuthenticationScheme scheme)
     {
         var existingScheme = await dbContext.AuthenticationSchemes
             .Where(s => s.AppId == appId && s.Id == schemeId)
@@ -104,23 +104,25 @@ public class AuthenticationsController(
     [HttpPost("schemes/settings")]
     public async Task<IActionResult> Settings(int appId, List<int> schemeIds)
     {
-        var schemes = dbContext.AuthenticationSchemes
-            .Where(s => s.AppId == appId);
+        var schemes = await dbContext.AuthenticationSchemes
+            .Where(s => s.AppId == appId)
+            .ToListAsync();
+
         foreach (var scheme in schemes)
         {
             scheme.Enabled = false;
             scheme.Order = null;
         }
-        
-        var selectedSchemes = schemeIds
-            .Select(schemeId => schemes.Single(s => s.Id == schemeId));
+
         var order = 0;
-        foreach (var scheme in selectedSchemes)
+        foreach (var schemeId in schemeIds)
         {
+            var scheme = schemes.SingleOrDefault(s => s.Id == schemeId);
+            if (scheme is null) continue;
             scheme.Enabled = true;
             scheme.Order = order++;
         }
-        dbContext.AuthenticationSchemes.UpdateRange(schemes);
+
         await dbContext.SaveChangesAsync();
         await cacheInvalidator.InvalidateByIdAsync(appId);
         return NoContent();

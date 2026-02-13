@@ -12,7 +12,7 @@ public class SlackAuthenticationHandler: AuthenticationHandler<SlackAuthenticati
     private readonly SlackAppService _slackAppService;
     private readonly ILogger<SlackAuthenticationHandler> _logger;
 
-    public SlackAuthenticationHandler(IOptionsMonitor<SlackAuthenticationOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock, SlackAppService slackAppService) : base(options, logger, encoder, clock)
+    public SlackAuthenticationHandler(IOptionsMonitor<SlackAuthenticationOptions> options, ILoggerFactory logger, UrlEncoder encoder, SlackAppService slackAppService) : base(options, logger, encoder)
     {
         _slackAppService = slackAppService;
         _logger = logger.CreateLogger<SlackAuthenticationHandler>();

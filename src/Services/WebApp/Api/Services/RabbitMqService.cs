@@ -1,50 +1,57 @@
-﻿using RabbitMQ.Client;
+using RabbitMQ.Client;
 using System.Text;
 
 namespace Api.Services
 {
-    public class RabbitMqService
+    public class RabbitMqService : IDisposable
     {
         private readonly IConnection _connection;
         private readonly IModel _channel;
+        private readonly ILogger<RabbitMqService> _logger;
 
-        public RabbitMqService(IConfiguration configuration)
+        public RabbitMqService(IConfiguration configuration, ILogger<RabbitMqService> logger)
         {
-            // Create a connection factory
+            _logger = logger;
+
             var factory = new ConnectionFactory
             {
                 Uri = new Uri(configuration.GetConnectionString("RabbitMq")!),
             };
 
-            // Create a connection and a channel
             _connection = factory.CreateConnection();
             _channel = _connection.CreateModel();
 
-            // Declare a queue (ensure the queue exists)
-            _channel.QueueDeclare(queue: "job_queue", // Name of the queue
-                durable: true, // Durable queue (persists)
-                exclusive: false, // Not exclusive to one consumer
-                autoDelete: false, // Do not auto-delete the queue
-                arguments: null); // No additional arguments
+            _channel.QueueDeclare(queue: "job_queue",
+                durable: true,
+                exclusive: false,
+                autoDelete: false,
+                arguments: null);
         }
 
-        // Method to publish a message to the RabbitMQ queue
         public void PublishMessage(string message)
         {
             var body = Encoding.UTF8.GetBytes(message);
 
-            _channel.BasicPublish(exchange: "", // Default exchange
-                routingKey: "job_queue", // Queue name
-                basicProperties: null, // No custom properties
-                body: body); // Message body
+            _channel.BasicPublish(exchange: "",
+                routingKey: "job_queue",
+                basicProperties: null,
+                body: body);
 
-            Console.WriteLine($" [x] Sent '{message}'");
+            _logger.LogDebug("Sent message to job_queue: {Message}", message);
         }
 
-        public void Close()
+        /// <summary>
+        /// Creates a new channel from the shared connection.
+        /// Caller is responsible for closing the returned channel.
+        /// </summary>
+        public IModel CreateChannel() => _connection.CreateModel();
+
+        public void Dispose()
         {
             _channel.Close();
+            _channel.Dispose();
             _connection.Close();
+            _connection.Dispose();
         }
     }
 }

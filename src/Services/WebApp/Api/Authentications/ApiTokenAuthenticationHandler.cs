@@ -13,13 +13,9 @@ public class ApiTokenAuthenticationHandler: AuthenticationHandler<ApiTokenAuthen
 {
     private readonly AppDbContext _dbContext;
 
-    public ApiTokenAuthenticationHandler(IOptionsMonitor<ApiTokenAuthenticationOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock, AppDbContext dbContext) : base(options, logger, encoder, clock)
+    public ApiTokenAuthenticationHandler(IOptionsMonitor<ApiTokenAuthenticationOptions> options, ILoggerFactory logger, UrlEncoder encoder, AppDbContext dbContext) : base(options, logger, encoder)
     {
         _dbContext = dbContext;
-    }
-
-    public ApiTokenAuthenticationHandler(IOptionsMonitor<ApiTokenAuthenticationOptions> options, ILoggerFactory logger, UrlEncoder encoder) : base(options, logger, encoder)
-    {
     }
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()

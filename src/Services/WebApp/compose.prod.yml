@@ -13,9 +13,9 @@ services:
   api:
     image: ghcr.io/mycrocloud/mycrocloud-api:main
     environment:
-      - ExternalIntegrations__GitHubApp__WebhookSecret=${ExternalIntegrations__GitHubApp__WebhookSecret}
+      - ExternalIntegrations__GitHub__WebhookSecret=${ExternalIntegrations__GitHub__WebhookSecret}
       - Elasticsearch__Password=${Elasticsearch__Password}
-      - OAuthApps__Slack__SigningSecret=${OAuthApps__Slack__SigningSecret}
+      - ExternalIntegrations__Slack__SigningSecret=${ExternalIntegrations__Slack__SigningSecret}
       - ConnectionStrings__Redis=${ConnectionStrings__Redis}
     volumes:
       - ./Services/WebApp/WebApp.Api/appsettings.json:/app/appsettings.json:ro

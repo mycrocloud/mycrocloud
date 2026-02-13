@@ -9,10 +9,10 @@ services:
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
       - ConnectionStrings__RabbitMq=${ConnectionStrings__RabbitMq}
       - ConnectionStrings__Redis=${ConnectionStrings__Redis}
-      - OAuthApps__Slack__ClientSecret=${OAuthApps__Slack__ClientSecret}
+      - ExternalIntegrations__Slack__ClientSecret=${ExternalIntegrations__Slack__ClientSecret}
       - OAuthApps__GitHub__ClientSecret=${OAuthApps__GitHub__ClientSecret}
-      - Slack__SigningSecret=${Slack__SigningSecret}
-      - Slack__LinkSecret=${Slack__LinkSecret}
+      - ExternalIntegrations__Slack__SigningSecret=${ExternalIntegrations__Slack__SigningSecret}
+      - ExternalIntegrations__Slack__LinkSecret=${ExternalIntegrations__Slack__LinkSecret}
       - Storage__S3__AccessKey=${Storage__S3__AccessKey}
       - Storage__S3__SecretKey=${Storage__S3__SecretKey}
 
