@@ -34,19 +34,19 @@ npm run lint --prefix src/pkg/web       # ESLint
 
 ### Go Deployment Worker
 ```bash
-cd src/pkg/webapp/spa/deployment/worker && go build ./...
+cd src/pkg/webapp/spa/worker && go build ./...
 ```
 
 ### Docker Compose (dev)
 ```bash
-# Frontend only (web + web-editor)
+# Frontend only
 docker compose -f src/compose.yml up
 
 # Backend services (run from webapp dir so compose.override.yml is picked up)
 cd src/pkg/webapp && docker compose build && docker compose up -d
 
 # Deployment subsystem (worker + builder)
-cd src/pkg/webapp/spa/deployment && docker compose up -d
+cd src/pkg/webapp/spa && docker compose up -d
 ```
 
 ## Architecture Overview
@@ -76,12 +76,11 @@ src/pkg/api/
   Api.MigrationTest
 
 src/pkg/webapp/
-  WebApp.Gateway           → Api.Domain, Api.Infrastructure (shared from ../api/)
+  WebApp.Gateway           (self-contained data plane service)
   WebApp.FunctionInvoker   (standalone console app for JS execution)
 
-Shared libraries:
-  Api.Domain         — entities, enums, repository interfaces, domain services
-  Api.Infrastructure — AppDbContext (EF Core), repositories, storage providers
+Api.Domain         — entities, enums, repository interfaces, domain services
+Api.Infrastructure — AppDbContext (EF Core), repositories, storage providers
 ```
 
 ### SPA Build Pipeline
