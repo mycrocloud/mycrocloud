@@ -197,14 +197,6 @@ resource "cloudflare_dns_record" "apex" {
   proxied = true
 }
 
-resource "cloudflare_dns_record" "editor" {
-  zone_id = data.cloudflare_zone.zone.zone_id
-  name    = "editor"
-  type    = "CNAME"
-  ttl     = 1
-  proxied = true
-  content = local.domain
-}
 
 resource "cloudflare_dns_record" "wildcard" {
   zone_id = data.cloudflare_zone.zone.zone_id
