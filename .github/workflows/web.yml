@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "src/Web/**"
+      - "src/pkg/web/**"
 
   workflow_dispatch:
 
@@ -17,7 +17,7 @@ jobs:
       contents: read
     with:
       image-name: ${{ github.repository }}-web
-      work-dir: src/Web
+      work-dir: src/pkg/web
       dockerfile: Dockerfile
       service: web
     secrets:

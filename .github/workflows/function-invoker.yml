@@ -5,10 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'src/Services/WebApp/Api.Domain/**'
-      - 'src/Services/WebApp/Api.Infrastructure/**'
-      - 'src/Services/WebApp/WebApp.FunctionShared/**'
-      - 'src/Services/WebApp/WebApp.FunctionInvoker/**'
+      - 'src/pkg/webapp/api/functioninvoker/**'
 
   workflow_dispatch:
 
@@ -20,8 +17,8 @@ jobs:
       contents: read
     with:
       image-name: ${{ github.repository }}-function-invoker
-      work-dir: src/Services/WebApp
-      dockerfile: WebApp.FunctionInvoker/Dockerfile
+      work-dir: src/pkg/webapp/api/functioninvoker
+      dockerfile: Dockerfile
       pull-only: true
     secrets:
       CR_PAT: ${{ secrets.CR_PAT }}

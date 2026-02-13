@@ -5,16 +5,16 @@ on:
     branches:
       - main
     paths:
-      - "src/Services/WebApp/Api.Domain/**"
-      - "src/Services/WebApp/Api.Infrastructure/**"
-      - "src/Services/WebApp/Api.Migrations/**"
+      - "src/pkg/api/Api.Domain/**"
+      - "src/pkg/api/Api.Infrastructure/**"
+      - "src/pkg/api/Api.Migrations/**"
 
   workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}-db-migrator
-  WORK_DIR: src/Services/WebApp
+  WORK_DIR: src/pkg/api
 
 jobs:
   test-migrations:
@@ -43,7 +43,7 @@ jobs:
       - name: Run test
         env:
           ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=mycrocloud;Username=postgres;Password=postgres"
-        run: dotnet test src/Services/WebApp/Api.MigrationTest
+        run: dotnet test src/pkg/api/Api.MigrationTest
 
   build-and-push-image:
     needs: test-migrations

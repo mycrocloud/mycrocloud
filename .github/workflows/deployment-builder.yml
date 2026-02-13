@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "src/Services/WebApp/Deployment/builder/**"
+      - "src/pkg/webapp/spa/builder/**"
 
   workflow_dispatch:
 
@@ -20,7 +20,7 @@ jobs:
       contents: read
     with:
       image-name: ${{ github.repository }}-deployment-builder:node${{ matrix.node-version }}
-      work-dir: src/Services/WebApp/Deployment/builder
+      work-dir: src/pkg/webapp/spa/builder
       dockerfile: Dockerfile
       pull-only: true
       build-args: NODE_VERSION=${{ matrix.node-version }}
