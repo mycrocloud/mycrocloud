@@ -1,6 +1,0 @@
-services:
-  web:
-    build: pkg/web
-    image: mycrocloud-web
-    ports:
-      - "5173:80"

@@ -1,8 +1,9 @@
-# Base configuration - Common services
-name: deployment
-
 services:
-  worker:
+  spa-worker:
+    image: mycrocloud-deployment-worker:main
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
     env_file:
       - ./worker/.env
     volumes:
@@ -10,7 +11,13 @@ services:
       - ./worker/.conf:/app/.conf:ro
       - /tmp/build-outputs:/tmp/build-outputs
 
+  # The builder is usually run dynamically by the worker,
+  # but kept here for image build/test purposes.
   builder:
+    image: mycrocloud-deployment-builder:main
+    build:
+      context: ./builder
+      dockerfile: Dockerfile
     environment:
       - REPO_URL=${REPO_URL:-}
       - WORK_DIR=.

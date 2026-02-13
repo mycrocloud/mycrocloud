@@ -1,0 +1,20 @@
+services:
+  db-migrator:
+    image: mycrocloud-db-migrator
+    build:
+      context: .
+      dockerfile: Api.Migrations/Dockerfile
+    env_file:
+      - ./Api/.env
+
+  api:
+    image: mycrocloud-api
+    build:
+      context: .
+      dockerfile: Api/Dockerfile
+    env_file:
+      - ./Api/.env
+    ports:
+      - "8080:8080"
+    volumes:
+      - "./Api/gha-mycrocloud.private-key.pem:/app/gha-mycrocloud.private-key.pem:ro"

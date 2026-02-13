@@ -1,15 +1,29 @@
-# Base configuration - Common services
 services:
-  db-migrator:
-    env_file:
-      - ../api/Api/.env
-
-  api:
-    env_file:
-      - ../api/Api/.env
-
   gateway:
+    image: mycrocloud-gateway
+    build:
+      context: ./gateway
     env_file:
       - ./gateway/.env
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/function-data:/tmp/function-data
+    ports:
+      - "8081:8080"
+
+  function-invoker:
+    image: mycrocloud-function-invoker
+    build:
+      context: ./api/functioninvoker
+    env_file:
+      - .env
+    volumes:
+      - ./api/functioninvoker/data:/app/data
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 64M
+          pids: 100
+    profiles:
+      - function-invoker
