@@ -64,12 +64,12 @@ runs:
         echo "${{ inputs.ssh-private-key }}" > ~/.ssh/deploy_key
         chmod 600 ~/.ssh/deploy_key
         cat >> ~/.ssh/config <<EOF
-        Host server
-          User ${{ inputs.server-user }}
-          IdentityFile ~/.ssh/deploy_key
-          StrictHostKeyChecking no
-          ProxyCommand aws ssm start-session --target ${{ inputs.instance-id }} --document-name AWS-StartSSHSession --parameters portNumber=22 --region ${{ inputs.aws-region }}
-        EOF
+Host server
+  User ${{ inputs.server-user }}
+  IdentityFile ~/.ssh/deploy_key
+  StrictHostKeyChecking no
+  ProxyCommand aws ssm start-session --target ${{ inputs.instance-id }} --document-name AWS-StartSSHSession --parameters portNumber=22 --region ${{ inputs.aws-region }}
+EOF
 
     - name: Deploy
       shell: bash
