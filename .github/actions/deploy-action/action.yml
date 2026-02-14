@@ -1,10 +1,10 @@
 name: 'Deploy'
-description: 'Deploy to server via SSH over SSM'
+description: 'Deploy to server via SSH'
 
 inputs:
-  # SSH/SSM Configuration
-  instance-id:
-    description: 'EC2 instance ID for SSM tunnel'
+  # SSH Configuration
+  server-host:
+    description: 'Server hostname or IP'
     required: true
   ssh-private-key:
     description: 'SSH private key'
@@ -21,15 +21,10 @@ inputs:
     description: 'AWS region'
     required: true
 
-  # Container Registry
-  gh-pat:
-    description: 'GitHub Personal Access Token for container registry'
-    required: true
+  # Deploy Configuration
   image:
     description: 'Docker image to pull'
     default: ''
-
-  # Deploy Configuration
   pull-only:
     description: 'If true, only pull image without deploying'
     default: 'false'
@@ -49,30 +44,12 @@ runs:
         role-to-assume: ${{ inputs.aws-iam-role }}
         aws-region: ${{ inputs.aws-region }}
 
-    - name: Install Session Manager plugin
-      shell: bash
-      run: |
-        curl -s "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" -o session-manager-plugin.deb
-        sudo dpkg -i session-manager-plugin.deb
-        rm session-manager-plugin.deb
-        session-manager-plugin --version
-
-    - name: Setup SSH over SSM
+    - name: Setup SSH key
       shell: bash
       env:
         SSH_PRIVATE_KEY: ${{ inputs.ssh-private-key }}
       run: |
-        mkdir -p ~/.ssh
-        printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
-        chmod 600 ~/.ssh/deploy_key
-        printf '%s\n' \
-          "Host server" \
-          "  User ${{ inputs.server-user }}" \
-          "  IdentityFile ~/.ssh/deploy_key" \
-          "  StrictHostKeyChecking no" \
-          "  ProxyCommand aws ssm start-session --target ${{ inputs.instance-id }} --document-name AWS-StartSSHSession --parameters portNumber=22 --region ${{ inputs.aws-region }}" \
-          >> ~/.ssh/config
-        cat ~/.ssh/config
+        install -m 600 -D /dev/stdin ~/.ssh/deploy_key <<< "$SSH_PRIVATE_KEY"
 
     - name: Deploy
       shell: bash
@@ -80,6 +57,6 @@ runs:
       run: |
         pipx inject ansible-core boto3 botocore
         ansible-galaxy collection install amazon.aws community.docker
-        ansible-playbook -i inventory.yml deploy.yml -e "pull_only=${{ inputs.pull-only }}" ${{ inputs.image && format('-e "image={0}"', inputs.image) || '' }} ${{ inputs.service-group && format('-e "service_group={0}"', inputs.service-group) || '' }} ${{ inputs.service && format('-e "services=[\"{0}\"]"', inputs.service) || '' }}
+        ansible-playbook -i inventory.yml deploy.yml -e "server_host=${{ inputs.server-host }}" -e "server_user=${{ inputs.server-user }}" -e "ssh_key_file=~/.ssh/deploy_key" -e "pull_only=${{ inputs.pull-only }}" ${{ inputs.image && format('-e "image={0}"', inputs.image) || '' }} ${{ inputs.service-group && format('-e "service_group={0}"', inputs.service-group) || '' }} ${{ inputs.service && format('-e "services=[\"{0}\"]"', inputs.service) || '' }}
       env:
         AWS_REGION: ${{ inputs.aws-region }}
