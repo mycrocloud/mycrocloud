@@ -11,11 +11,10 @@
       - "webapp/gateway/.env"
       - "webapp/spa/worker/.env"
       - "monitoring/seq/.env"
+      - "monitoring/.env"
     secret_files:
       - "lb/certs/mycrocloud.info.key"
       - "api/gha-mycrocloud.private-key.pem"
-    template_secrets:
-      - "monitoring/prometheus.yml"
   tasks:
     - name: Fetch env files from AWS Secrets Manager
       when: not (pull_only | bool)
@@ -37,15 +36,6 @@
       loop: "{{ secret_files }}"
       no_log: true
 
-    - name: Fetch template secrets from AWS Secrets Manager
-      when: not (pull_only | bool)
-      vars:
-        secret_key: "{{ secret_name_prefix }}/{{ item }}"
-        secret_value: "{{ lookup('amazon.aws.aws_secret', secret_key) }}"
-      set_fact:
-        template_secrets_data: "{{ template_secrets_data | default({}) | combine({item: secret_value}) }}"
-      loop: "{{ template_secrets }}"
-      no_log: true
 
 - name: Deploy
   hosts: all
@@ -128,17 +118,17 @@
       loop: "{{ hostvars['localhost']['secret_files'] }}"
       no_log: true
 
-    - name: Generate templated files
+    # TODO: generalize into a loop like env_files/secret_files
+    - name: Generate prometheus config
       when: not (pull_only | bool)
       ansible.builtin.template:
-        src: "{{ src }}/{{ item }}.j2"
-        dest: "{{ deploy_path }}/{{ item }}"
-        mode: "0644"
+        src: "{{ src }}/monitoring/prometheus.yml.j2"
+        dest: "{{ deploy_path }}/monitoring/prometheus.yml"
+        mode: "0600"
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
       vars:
-        secret: "{{ hostvars['localhost']['template_secrets_data'][item] }}"
-      loop: "{{ template_secrets }}"
+        secrets: "{{ hostvars['localhost']['env_secrets']['monitoring/.env'] | from_json }}"
       no_log: true
 
     - name: Pull and deploy services

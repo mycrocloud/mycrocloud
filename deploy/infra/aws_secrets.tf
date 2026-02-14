@@ -36,7 +36,6 @@ resource "aws_secretsmanager_secret" "api_gha_pem" {
   name = "${local.secret_name_prefix}/api/gha-mycrocloud.private-key.pem"
 }
 
-# template_secrets (referenced in deploy.yml)
-resource "aws_secretsmanager_secret" "prometheus_yml" {
-  name = "${local.secret_name_prefix}/monitoring/prometheus.yml"
+resource "aws_secretsmanager_secret" "monitoring_env" {
+  name = "${local.secret_name_prefix}/monitoring/.env"
 }
