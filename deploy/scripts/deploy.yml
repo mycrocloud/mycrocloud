@@ -150,9 +150,9 @@
       ansible.builtin.shell:
         cmd: |
           services_list="{{ resolved_services | join(' ') }}"
-          for service in $(docker compose ps --format '{{.Service}}'); do
+          for service in $(docker compose ps --format '{{ '{{' }}.Service{{ '}}' }}'); do
             if [ -z "$services_list" ] || echo "$services_list" | grep -q "$service"; then
-              status=$(docker compose ps $service --format '{{.Health}}')
+              status=$(docker compose ps $service --format '{{ '{{' }}.Health{{ '}}' }}')
               if [ "$status" != "healthy" ] && [ "$status" != "" ]; then
                 echo "Service $service is $status"
                 exit 1
