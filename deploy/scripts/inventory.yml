@@ -1,6 +1,3 @@
 all:
   hosts:
     server:
-      ansible_host: "{{ lookup('env', 'EC2_INSTANCE_ID') }}"
-      ansible_connection: aws_ssm
-      ansible_aws_ssm_region: "{{ lookup('env', 'AWS_REGION') }}"

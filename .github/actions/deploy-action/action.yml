@@ -1,11 +1,17 @@
 name: 'Deploy'
-description: 'Deploy to server via SSM - pull images and optionally deploy services'
+description: 'Deploy to server via SSH over SSM'
 
 inputs:
-  # SSM Configuration
+  # SSH/SSM Configuration
   instance-id:
-    description: 'EC2 instance ID for SSM connection'
+    description: 'EC2 instance ID for SSM tunnel'
     required: true
+  ssh-private-key:
+    description: 'SSH private key'
+    required: true
+  server-user:
+    description: 'SSH user'
+    default: 'ubuntu'
 
   # AWS Configuration
   aws-iam-role:
@@ -51,13 +57,26 @@ runs:
         rm session-manager-plugin.deb
         session-manager-plugin --version
 
+    - name: Setup SSH over SSM
+      shell: bash
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ inputs.ssh-private-key }}" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
+        cat >> ~/.ssh/config <<EOF
+        Host server
+          User ${{ inputs.server-user }}
+          IdentityFile ~/.ssh/deploy_key
+          StrictHostKeyChecking no
+          ProxyCommand aws ssm start-session --target ${{ inputs.instance-id }} --document-name AWS-StartSSHSession --parameters portNumber=22 --region ${{ inputs.aws-region }}
+        EOF
+
     - name: Deploy
       shell: bash
       working-directory: deploy/scripts
       run: |
         pipx inject ansible-core boto3 botocore
-        ansible-galaxy collection install amazon.aws community.aws community.docker
+        ansible-galaxy collection install amazon.aws community.docker
         ansible-playbook -i inventory.yml deploy.yml -e "pull_only=${{ inputs.pull-only }}" ${{ inputs.image && format('-e "image={0}"', inputs.image) || '' }} ${{ inputs.service-group && format('-e "service_group={0}"', inputs.service-group) || '' }} ${{ inputs.service && format('-e "services=[\"{0}\"]"', inputs.service) || '' }}
       env:
-        EC2_INSTANCE_ID: ${{ inputs.instance-id }}
         AWS_REGION: ${{ inputs.aws-region }}

@@ -22,6 +22,7 @@ jobs:
         uses: ./.github/actions/deploy-action
         with:
           instance-id: ${{ vars.EC2_INSTANCE_ID }}
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
           aws-iam-role: ${{ vars.AWS_IAM_ROLE_GITHUB_ACTIONS_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
           gh-pat: ${{ secrets.CR_PAT }}

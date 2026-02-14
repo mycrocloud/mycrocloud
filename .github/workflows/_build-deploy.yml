@@ -112,9 +112,9 @@ jobs:
 
       - name: Deploy
         uses: ./.github/actions/deploy-action
-        if: ${{ vars.SSH_DOCKER_DEPLOY == 'true' }}
         with:
           instance-id: ${{ vars.EC2_INSTANCE_ID }}
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
           image: ${{ needs.build-and-push-image.outputs.full_image }}
           service: ${{ inputs.service }}
           service-group: ${{ inputs.service-group }}
