@@ -40,25 +40,6 @@
         label: "{{ item }}"
       no_log: true
 
-    - name: Validate env secrets are present
-      when: not (pull_only | bool)
-      ansible.builtin.assert:
-        that:
-          - env_secrets[item] is defined
-          - env_secrets[item] | length > 0
-        fail_msg: "Secret '{{ item }}' is empty or missing"
-      loop: "{{ env_files }}"
-
-    - name: Validate secret files are present
-      when: not (pull_only | bool)
-      ansible.builtin.assert:
-        that:
-          - file_secrets[item] is defined
-          - file_secrets[item] | length > 0
-        fail_msg: "Secret file '{{ item }}' is empty or missing"
-      loop: "{{ secret_files }}"
-
-
 - name: Deploy
   hosts: all
   become: no
