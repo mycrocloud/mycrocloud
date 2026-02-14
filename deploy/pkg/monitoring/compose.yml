@@ -1,6 +1,6 @@
 services:
   seq:
-    image: datalust/seq
+    image: datalust/seq:2025.2
     volumes:
       - seq-data:/data
     environment:
@@ -10,7 +10,7 @@ services:
     restart: unless-stopped
 
   prometheus:
-    image: prom/prometheus:v3.2
+    image: prom/prometheus:v3.5.1
     container_name: prometheus
     network_mode: "host"
     volumes:
@@ -19,7 +19,7 @@ services:
     restart: unless-stopped
 
   node_exporter:
-    image: prom/node-exporter:v1.9
+    image: prom/node-exporter:v1.10.2
     container_name: node_exporter
     network_mode: "host"
     restart: unless-stopped
