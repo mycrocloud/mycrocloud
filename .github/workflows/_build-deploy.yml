@@ -43,8 +43,6 @@ on:
     secrets:
       CR_PAT:
         required: true
-      SSH_PRIVATE_KEY:
-        required: true
 
 env:
   REGISTRY: ghcr.io
@@ -116,9 +114,7 @@ jobs:
         uses: ./.github/actions/deploy-action
         if: ${{ vars.SSH_DOCKER_DEPLOY == 'true' }}
         with:
-          ssh-host: ${{ vars.SSH_HOST }}
-          ssh-username: ${{ vars.SSH_USERNAME }}
-          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          instance-id: ${{ vars.EC2_INSTANCE_ID }}
           image: ${{ needs.build-and-push-image.outputs.full_image }}
           service: ${{ inputs.service }}
           service-group: ${{ inputs.service-group }}

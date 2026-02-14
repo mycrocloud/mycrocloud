@@ -98,9 +98,7 @@ jobs:
         uses: ./.github/actions/deploy-action
         if: ${{ vars.SSH_DOCKER_DEPLOY == 'true' }}
         with:
-          ssh-host: ${{ vars.SSH_HOST }}
-          ssh-username: ${{ vars.SSH_USERNAME }}
-          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          instance-id: ${{ vars.EC2_INSTANCE_ID }}
           service: db-migrator
           aws-iam-role: ${{ vars.AWS_IAM_ROLE_GITHUB_ACTIONS_ARN }}
           aws-region: ${{ vars.AWS_REGION }}

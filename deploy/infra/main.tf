@@ -321,8 +321,7 @@ resource "aws_iam_policy" "ssm_session" {
         ]
         Resource = [
           "arn:aws:ec2:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:instance/*",
-          "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:session/*",
-          "arn:aws:ssm:${data.aws_region.current.name}::document/AWS-StartSSHSession"
+          "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:session/*"
         ]
       }
     ]

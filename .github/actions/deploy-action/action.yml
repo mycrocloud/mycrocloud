@@ -1,16 +1,10 @@
 name: 'Deploy'
-description: 'Deploy to server via SSH - pull images and optionally deploy services'
+description: 'Deploy to server via SSM - pull images and optionally deploy services'
 
 inputs:
-  # SSH Configuration
-  ssh-host:
-    description: 'SSH host'
-    required: true
-  ssh-username:
-    description: 'SSH username'
-    required: true
-  ssh-key:
-    description: 'SSH private key'
+  # SSM Configuration
+  instance-id:
+    description: 'EC2 instance ID for SSM connection'
     required: true
 
   # AWS Configuration
@@ -43,14 +37,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Install SSH key
-      shell: bash
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ inputs.ssh-key }}" | tr -d '\r' > ~/.ssh/id_rsa
-        chmod 400 ~/.ssh/id_rsa
-        ssh-keyscan -H "${{ inputs.ssh-host }}" > ~/.ssh/known_hosts
-
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v5.1.1
       with:
@@ -65,13 +51,5 @@ runs:
         ansible-galaxy collection install amazon.aws community.docker
         ansible-playbook -i inventory.yml deploy.yml -e "pull_only=${{ inputs.pull-only }}" ${{ inputs.image && format('-e "image={0}"', inputs.image) || '' }} ${{ inputs.service-group && format('-e "service_group={0}"', inputs.service-group) || '' }} ${{ inputs.service && format('-e "services=[\"{0}\"]"', inputs.service) || '' }}
       env:
-        ANSIBLE_HOST: ${{ inputs.ssh-host }}
-        ANSIBLE_USER: ${{ inputs.ssh-username }}
-        ANSIBLE_SSH_PRIVATE_KEY_FILE: "~/.ssh/id_rsa"
+        EC2_INSTANCE_ID: ${{ inputs.instance-id }}
         AWS_REGION: ${{ inputs.aws-region }}
-
-    - name: Cleanup
-      if: always()
-      shell: bash
-      run: |
-        rm -r ~/.ssh
