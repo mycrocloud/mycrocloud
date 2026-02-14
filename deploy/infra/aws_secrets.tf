@@ -36,6 +36,6 @@ resource "aws_secretsmanager_secret" "api_gha_pem" {
   name = "${local.secret_name_prefix}/api/gha-mycrocloud.private-key.pem"
 }
 
-resource "aws_secretsmanager_secret" "monitoring_env" {
-  name = "${local.secret_name_prefix}/monitoring/.env"
+resource "aws_secretsmanager_secret" "monitoring_prometheus_prometheus_yml" {
+  name = "${local.secret_name_prefix}/monitoring/prometheus/prometheus.yml"
 }
