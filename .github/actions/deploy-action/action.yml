@@ -48,7 +48,7 @@ runs:
       working-directory: deploy/scripts
       run: |
         pipx inject ansible-core boto3 botocore
-        ansible-galaxy collection install amazon.aws community.docker
+        ansible-galaxy collection install amazon.aws community.aws community.docker
         ansible-playbook -i inventory.yml deploy.yml -e "pull_only=${{ inputs.pull-only }}" ${{ inputs.image && format('-e "image={0}"', inputs.image) || '' }} ${{ inputs.service-group && format('-e "service_group={0}"', inputs.service-group) || '' }} ${{ inputs.service && format('-e "services=[\"{0}\"]"', inputs.service) || '' }}
       env:
         EC2_INSTANCE_ID: ${{ inputs.instance-id }}
