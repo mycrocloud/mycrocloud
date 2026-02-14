@@ -18,23 +18,37 @@
   tasks:
     - name: Fetch env files from AWS Secrets Manager
       when: not (pull_only | bool)
-      vars:
-        secret_key: "{{ secret_name_prefix }}/{{ item }}"
-        secret_value: "{{ lookup('amazon.aws.aws_secret', secret_key) }}"
-      set_fact:
-        env_secrets: "{{ env_secrets | default({}) | combine({item: secret_value}) }}"
-      loop: "{{ env_files }}"
-      no_log: true
+      block:
+        - name: Log env file being fetched
+          ansible.builtin.debug:
+            msg: "Fetching env file: {{ item }}"
+          loop: "{{ env_files }}"
+
+        - name: Fetch env file values
+          vars:
+            secret_key: "{{ secret_name_prefix }}/{{ item }}"
+            secret_value: "{{ lookup('amazon.aws.aws_secret', secret_key) }}"
+          set_fact:
+            env_secrets: "{{ env_secrets | default({}) | combine({item: secret_value}) }}"
+          loop: "{{ env_files }}"
+          no_log: true
 
     - name: Fetch secret files from AWS Secrets Manager
       when: not (pull_only | bool)
-      vars:
-        secret_key: "{{ secret_name_prefix }}/{{ item }}"
-        secret_value: "{{ lookup('amazon.aws.aws_secret', secret_key) }}"
-      set_fact:
-        file_secrets: "{{ file_secrets | default({}) | combine({item: secret_value}) }}"
-      loop: "{{ secret_files }}"
-      no_log: true
+      block:
+        - name: Log secret file being fetched
+          ansible.builtin.debug:
+            msg: "Fetching secret file: {{ item }}"
+          loop: "{{ secret_files }}"
+
+        - name: Fetch secret file values
+          vars:
+            secret_key: "{{ secret_name_prefix }}/{{ item }}"
+            secret_value: "{{ lookup('amazon.aws.aws_secret', secret_key) }}"
+          set_fact:
+            file_secrets: "{{ file_secrets | default({}) | combine({item: secret_value}) }}"
+          loop: "{{ secret_files }}"
+          no_log: true
 
 
 - name: Deploy
