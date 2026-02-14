@@ -58,5 +58,3 @@ resource "neon_database" "this" {
   name       = var.project_name
   owner_name = neon_role.nphamvn.name
 }
-
-# Import block was moved to root main.tf because it is only allowed in the root module.
