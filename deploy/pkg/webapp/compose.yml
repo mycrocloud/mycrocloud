@@ -1,6 +1,6 @@
 services:
   gateway:
-    image: ${REGISTRY}/mycrocloud-gateway:${TAG}
+    image: ghcr.io/mycrocloud/mycrocloud-gateway:main
     env_file:
       - ./gateway/.env
     volumes:
@@ -10,7 +10,7 @@ services:
     restart: unless-stopped
 
   spa-worker:
-    image: ${REGISTRY}/mycrocloud-deployment-worker:${TAG}
+    image: ghcr.io/mycrocloud/mycrocloud-deployment-worker:main
     env_file:
       - ./spa/worker/.env
     volumes:
