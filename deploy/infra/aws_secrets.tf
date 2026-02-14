@@ -15,10 +15,6 @@ resource "aws_secretsmanager_secret" "dbmigrator_env" {
   name = "${local.secret_name_prefix}/dbmigrator/.env"
 }
 
-resource "aws_secretsmanager_secret" "web_env" {
-  name = "${local.secret_name_prefix}/web/.env"
-}
-
 resource "aws_secretsmanager_secret" "gateway_env" {
   name = "${local.secret_name_prefix}/webapp/gateway/.env"
 }

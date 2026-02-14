@@ -38,5 +38,5 @@ services:
   web:
     image: ${REGISTRY}/mycrocloud-web:${TAG}
     volumes:
-      - ./web/.env:/usr/share/nginx/html/.env:ro
+      - ./web/dotenv:/usr/share/nginx/html/.env:ro
     restart: unless-stopped
