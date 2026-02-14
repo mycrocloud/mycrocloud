@@ -36,6 +36,11 @@ provider "cloudflare" {
   api_token = var.cloudflare_api_token
 }
 
+provider "neon" {
+  api_key = var.neon_api_key
+}
+
+
 module "auth0" {
   source                         = "./modules/auth0"
   domain                         = var.auth0_domain
@@ -284,72 +289,9 @@ resource "aws_iam_role_policy_attachment" "attach" {
   policy_arn = aws_iam_policy.secrets_read.arn
 }
 
-# Database. TODO: Add to separate module and add more resources (e.g. users, databases)
-provider "neon" {
-  api_key = var.neon_api_key
-}
-
-resource "neon_project" "mycrocloud" {
-  name = local.project_name
-}
-
-output "neon_project_id" {
-  value = neon_project.mycrocloud.id 
-}
-
-resource "neon_branch" "main" {
-  project_id = neon_project.mycrocloud.id
-  name       = "main"
-}
-output "neon_branch_id" {
-  value = neon_branch.main.id
-}
-
-resource "neon_endpoint" "primary" {
-  project_id = neon_project.mycrocloud.id
-  branch_id  = neon_branch.main.id
-}
-
-
-resource "neon_role" "api_runtime" {
-  project_id = neon_project.mycrocloud.id
-  branch_id  = neon_branch.main.id
-  name       = "api_runtime"
-}
-
-resource "neon_role" "migrator" {
-  project_id = neon_project.mycrocloud.id
-  branch_id  = neon_branch.main.id
-  name       = "migrator"
-}
-
-resource "neon_role" "webapp_gateway" {
-  project_id = neon_project.mycrocloud.id
-  branch_id  = neon_branch.main.id
-  name       = "webapp_gateway"
-}
-
-resource "neon_role" "monitoring_grafana" {
-  project_id = neon_project.mycrocloud.id
-  branch_id  = neon_branch.main.id
-  name       = "grafana_reader"
-}
-
-# NOTE: Someday change owner from "nphamvn" to something more generic like "admin" or "terraform"
-resource "neon_role" "nphamvn" {
-  project_id = neon_project.mycrocloud.id
-  branch_id  = neon_branch.main.id
-  name       = "nphamvn"
-}
-
-resource "neon_database" "mycrocloud" {
-  project_id = neon_project.mycrocloud.id
-  branch_id  = neon_branch.main.id
-  name       = "${local.project_name}"
-  owner_name = neon_role.nphamvn.name
-}
-
-import {
-  to = neon_database.mycrocloud
-  id = "ancient-firefly-97033462/br-bold-grass-a1vyna8y/mycrocloud"
+# Database.
+module "database" {
+  source       = "./modules/database"
+  neon_api_key = var.neon_api_key
+  project_name = local.project_name
 }

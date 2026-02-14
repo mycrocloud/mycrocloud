@@ -16,7 +16,7 @@ variable "web_origin" {
 }
 
 variable "github_oauth_app_client_id" {
-  type      = string
+  type = string
 }
 
 variable "github_oauth_app_client_secret" {
@@ -25,7 +25,7 @@ variable "github_oauth_app_client_secret" {
 }
 
 variable "google_oauth_app_client_id" {
-  type      = string
+  type = string
 }
 
 variable "google_oauth_app_client_secret" {

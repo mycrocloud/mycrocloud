@@ -37,3 +37,12 @@ output "auth0_build_worker_client_id" {
 output "aws_iam_role_github_actions_arn" {
   value = aws_iam_role.github_actions.arn
 }
+
+# Database
+output "neon_project_id" {
+  value = module.database.project_id
+}
+
+output "neon_branch_id" {
+  value = module.database.branch_id
+}
