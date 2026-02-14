@@ -59,9 +59,11 @@ runs:
 
     - name: Setup SSH over SSM
       shell: bash
+      env:
+        SSH_PRIVATE_KEY: ${{ inputs.ssh-private-key }}
       run: |
         mkdir -p ~/.ssh
-        echo "${{ inputs.ssh-private-key }}" > ~/.ssh/deploy_key
+        printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
         chmod 600 ~/.ssh/deploy_key
         printf '%s\n' \
           "Host server" \
@@ -70,6 +72,7 @@ runs:
           "  StrictHostKeyChecking no" \
           "  ProxyCommand aws ssm start-session --target ${{ inputs.instance-id }} --document-name AWS-StartSSHSession --parameters portNumber=22 --region ${{ inputs.aws-region }}" \
           >> ~/.ssh/config
+        cat ~/.ssh/config
 
     - name: Deploy
       shell: bash
