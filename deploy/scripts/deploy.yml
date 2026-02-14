@@ -5,31 +5,34 @@
   vars:
     pull_only: false
     secret_name_prefix: "prod/mycrocloud"
-    env_files:
-      - "api/.env"
-      - "dbmigrator/.env"
-      - "webapp/gateway/.env"
-      - "webapp/spa/worker/.env"
-      - "monitoring/seq/.env"
-      - "monitoring/.env"
-    secret_files:
+    # Configuration files that are generated from Jinja2 templates (.j2)
+    # The secret name on AWS should match the path without the .j2 extension
+    j2_template_files:
+      - "api/.env.j2"
+      - "dbmigrator/.env.j2"
+      - "webapp/gateway/.env.j2"
+      - "webapp/spa/worker/.env.j2"
+      - "monitoring/seq/.env.j2"
+      - "monitoring/prometheus/prometheus.yml.j2"
+    # Secret files (like certificates or keys) that are written directly to the server as plaintext
+    plaintext_secret_files:
       - "lb/certs/mycrocloud.info.key"
       - "api/gha-mycrocloud.private-key.pem"
   tasks:
     - name: Register file lists as host facts
       when: not (pull_only | bool)
       set_fact:
-        env_files: "{{ env_files }}"
-        secret_files: "{{ secret_files }}"
+        j2_template_files: "{{ j2_template_files }}"
+        plaintext_secret_files: "{{ plaintext_secret_files }}"
 
     - name: Fetch env files from AWS Secrets Manager
       when: not (pull_only | bool)
       vars:
-        secret_key: "{{ secret_name_prefix }}/{{ item }}"
+        secret_key: "{{ secret_name_prefix }}/{{ item | regex_replace('\\.j2$', '') }}"
         secret_value: "{{ lookup('amazon.aws.aws_secret', secret_key) }}"
       set_fact:
-        env_secrets: "{{ env_secrets | default({}) | combine({item: secret_value}) }}"
-      loop: "{{ env_files }}"
+        j2_template_secrets: "{{ j2_template_secrets | default({}) | combine({item: secret_value}) }}"
+      loop: "{{ j2_template_files }}"
       loop_control:
         label: "{{ item }}"
       no_log: true
@@ -40,8 +43,8 @@
         secret_key: "{{ secret_name_prefix }}/{{ item }}"
         secret_value: "{{ lookup('amazon.aws.aws_secret', secret_key) }}"
       set_fact:
-        file_secrets: "{{ file_secrets | default({}) | combine({item: secret_value}) }}"
-      loop: "{{ secret_files }}"
+        plaintext_secret_values: "{{ plaintext_secret_values | default({}) | combine({item: secret_value}) }}"
+      loop: "{{ plaintext_secret_files }}"
       loop_control:
         label: "{{ item }}"
       no_log: true
@@ -105,39 +108,30 @@
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
 
-    - name: Write env files
-      when: not (pull_only | bool)
-      ansible.builtin.copy:
-        content: "{{ hostvars['localhost']['env_secrets'][item] }}"
-        dest: "{{ deploy_path }}/{{ item }}"
-        mode: "0600"
-        owner: "{{ ansible_user }}"
-        group: "{{ ansible_user }}"
-      loop: "{{ hostvars['localhost']['env_files'] }}"
-      no_log: true
-
-    - name: Write secret files
-      when: not (pull_only | bool)
-      ansible.builtin.copy:
-        content: "{{ hostvars['localhost']['file_secrets'][item] }}"
-        dest: "{{ deploy_path }}/{{ item }}"
-        mode: "0600"
-        owner: "{{ ansible_user }}"
-        group: "{{ ansible_user }}"
-      loop: "{{ hostvars['localhost']['secret_files'] }}"
-      no_log: true
-
-    # TODO: generalize into a loop like env_files/secret_files
-    - name: Generate prometheus config
+    # Renders J2 templates using secrets from AWS
+    - name: Render J2 template files
       when: not (pull_only | bool)
       ansible.builtin.template:
-        src: "{{ src }}/monitoring/prometheus.yml.j2"
-        dest: "{{ deploy_path }}/monitoring/prometheus.yml"
+        src: "{{ src }}/{{ item }}"
+        dest: "{{ deploy_path }}/{{ item | regex_replace('\\.j2$', '') }}"
         mode: "0600"
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
+      loop: "{{ hostvars['localhost']['j2_template_files'] }}"
       vars:
-        secrets: "{{ hostvars['localhost']['env_secrets']['monitoring/.env'] | from_json }}"
+        secrets: "{{ hostvars['localhost']['j2_template_secrets'][item] | from_json }}"
+      no_log: true
+
+    # Writes raw secret files (certs, keys) directly to the server
+    - name: Write plaintext secret files
+      when: not (pull_only | bool)
+      ansible.builtin.copy:
+        content: "{{ hostvars['localhost']['plaintext_secret_values'][item] }}"
+        dest: "{{ deploy_path }}/{{ item }}"
+        mode: "0600"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+      loop: "{{ hostvars['localhost']['plaintext_secret_files'] }}"
       no_log: true
 
     - name: Pull and deploy services
