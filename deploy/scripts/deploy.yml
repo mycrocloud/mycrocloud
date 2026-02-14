@@ -5,8 +5,11 @@
   vars:
     pull_only: false
     secret_name_prefix: "prod/mycrocloud"
-    # Configuration files that are generated from Jinja2 templates (.j2)
-    # The secret name on AWS should match the path without the .j2 extension
+    # Secret-to-File Mapping Rules:
+    # 1. J2 Templates: secret "prod/mycrocloud/path/file.ext" maps to "pkg/path/file.ext.j2"
+    #    The .j2 extension is stripped to determine the secret name and destination path.
+    # 2. Plaintext Secrets: secret "prod/mycrocloud/path/file" maps to "pkg/path/file"
+    #    The content is copied as-is to the destination path.
     j2_template_files:
       - "api/.env.j2"
       - "dbmigrator/.env.j2"
@@ -14,7 +17,6 @@
       - "webapp/spa/worker/.env.j2"
       - "monitoring/seq/.env.j2"
       - "monitoring/prometheus/prometheus.yml.j2"
-    # Secret files (like certificates or keys) that are written directly to the server as plaintext
     plaintext_secret_files:
       - "lb/certs/mycrocloud.info.key"
       - "api/gha-mycrocloud.private-key.pem"
