@@ -25,7 +25,7 @@ services:
     restart: unless-stopped
 
   nginx-exporter:
-    image: nginx/nginx-prometheus-exporter:v1.4
+    image: nginx/nginx-prometheus-exporter:1.5.1
     container_name: nginx_exporter
     command:
       - '--nginx.scrape-uri=http://lb:8080/stub_status'
