@@ -16,6 +16,12 @@
       - "lb/certs/mycrocloud.info.key"
       - "api/gha-mycrocloud.private-key.pem"
   tasks:
+    - name: Register file lists as host facts
+      when: not (pull_only | bool)
+      set_fact:
+        env_files: "{{ env_files }}"
+        secret_files: "{{ secret_files }}"
+
     - name: Fetch env files from AWS Secrets Manager
       when: not (pull_only | bool)
       vars:
