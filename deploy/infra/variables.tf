@@ -52,3 +52,8 @@ variable "auth0_google_oauth_app_client_secret" {
   type      = string
   sensitive = true
 }
+
+variable "neon_api_key" {
+  type      = string
+  sensitive = true
+}
