@@ -44,12 +44,10 @@ runs:
         role-to-assume: ${{ inputs.aws-iam-role }}
         aws-region: ${{ inputs.aws-region }}
 
-    - name: Setup SSH key
-      shell: bash
-      env:
-        SSH_PRIVATE_KEY: ${{ inputs.ssh-private-key }}
-      run: |
-        install -m 600 -D /dev/stdin ~/.ssh/deploy_key <<< "$SSH_PRIVATE_KEY"
+    - name: Setup SSH agent
+      uses: webfactory/ssh-agent@v0.9.1
+      with:
+        ssh-private-key: ${{ inputs.ssh-private-key }}
 
     - name: Deploy
       shell: bash
@@ -57,6 +55,6 @@ runs:
       run: |
         pipx inject ansible-core boto3 botocore
         ansible-galaxy collection install amazon.aws community.docker
-        ansible-playbook -i scripts/inventory.yml scripts/deploy.yml -e "server_host=${{ inputs.server-host }}" -e "server_user=${{ inputs.server-user }}" -e "ssh_key_file=~/.ssh/deploy_key" -e "pull_only=${{ inputs.pull-only }}" ${{ inputs.image && format('-e "image={0}"', inputs.image) || '' }} ${{ inputs.service-group && format('-e "service_group={0}"', inputs.service-group) || '' }} ${{ inputs.service && format('-e "services=[\"{0}\"]"', inputs.service) || '' }}
+        ansible-playbook -i scripts/inventory.yml scripts/deploy.yml -e "server_host=${{ inputs.server-host }}" -e "server_user=${{ inputs.server-user }}" -e "pull_only=${{ inputs.pull-only }}" ${{ inputs.image && format('-e "image={0}"', inputs.image) || '' }} ${{ inputs.service-group && format('-e "service_group={0}"', inputs.service-group) || '' }} ${{ inputs.service && format('-e "services=[\"{0}\"]"', inputs.service) || '' }}
       env:
         AWS_REGION: ${{ inputs.aws-region }}
