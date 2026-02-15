@@ -45,7 +45,7 @@ runs:
         aws-region: ${{ inputs.aws-region }}
 
     - name: Setup SSH agent
-      uses: webfactory/ssh-agent@v0.9.1
+      uses: webfactory/ssh-agent@v0.9.0
       with:
         ssh-private-key: ${{ inputs.ssh-private-key }}
 
