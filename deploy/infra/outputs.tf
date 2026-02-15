@@ -39,10 +39,10 @@ output "aws_iam_role_github_actions_arn" {
 }
 
 # Database
-output "neon_project_id" {
-  value = module.database.project_id
-}
+# output "neon_project_id" {
+#   value = module.database.project_id
+# }
 
-output "neon_branch_id" {
-  value = module.database.branch_id
-}
+# output "neon_branch_id" {
+#   value = module.database.branch_id
+# }
