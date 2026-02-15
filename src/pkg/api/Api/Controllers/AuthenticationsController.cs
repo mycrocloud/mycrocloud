@@ -3,6 +3,7 @@ using Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Api.Domain.Entities;
+using Api.Domain.Services;
 using Api.Infrastructure;
 
 namespace Api.Controllers;
@@ -11,7 +12,7 @@ namespace Api.Controllers;
 [TypeFilter<AppOwnerActionFilter>(Arguments = ["appId"])]
 public class AuthenticationsController(
     AppDbContext dbContext,
-    IAppCacheInvalidator cacheInvalidator) : BaseController
+    IAppSpecificationPublisher specPublisher) : BaseController
 {
     [HttpGet("schemes")]
     public async Task<IActionResult> ListSchemes(int appId)
@@ -36,7 +37,7 @@ public class AuthenticationsController(
         scheme.AppId = appId;
         await dbContext.AuthenticationSchemes.AddAsync(scheme);
         await dbContext.SaveChangesAsync();
-        await cacheInvalidator.InvalidateByIdAsync(appId);
+        await specPublisher.InvalidateByIdAsync(appId);
         return Created();
     }
     
@@ -57,7 +58,7 @@ public class AuthenticationsController(
         existingScheme.OpenIdConnectAudience = scheme.OpenIdConnectAudience;
         dbContext.AuthenticationSchemes.Update(existingScheme);
         await dbContext.SaveChangesAsync();
-        await cacheInvalidator.InvalidateByIdAsync(appId);
+        await specPublisher.InvalidateByIdAsync(appId);
         return NoContent();
     }
 
@@ -97,7 +98,7 @@ public class AuthenticationsController(
         }
         dbContext.AuthenticationSchemes.Remove(scheme);
         await dbContext.SaveChangesAsync();
-        await cacheInvalidator.InvalidateByIdAsync(appId);
+        await specPublisher.InvalidateByIdAsync(appId);
         return NoContent();
     }
 
@@ -124,7 +125,7 @@ public class AuthenticationsController(
         }
 
         await dbContext.SaveChangesAsync();
-        await cacheInvalidator.InvalidateByIdAsync(appId);
+        await specPublisher.InvalidateByIdAsync(appId);
         return NoContent();
     }
 }

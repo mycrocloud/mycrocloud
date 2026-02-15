@@ -18,7 +18,6 @@ namespace Api.Controllers;
 public class ApiRoutesController(
     AppDbContext appDbContext,
     ISubscriptionService subscriptionService,
-    IAppCacheInvalidator cacheInvalidator,
     IAppSpecificationPublisher specPublisher
 ) : BaseController
 {
@@ -118,7 +117,6 @@ public class ApiRoutesController(
 
         await appDbContext.Routes.AddAsync(route);
         await appDbContext.SaveChangesAsync();
-        await cacheInvalidator.InvalidateByIdAsync(App.Id);
         await specPublisher.PublishAsync(App.Slug);
 
         return Created(route.Id.ToString(), RouteDetails(route));
@@ -144,7 +142,6 @@ public class ApiRoutesController(
 
         await appDbContext.Routes.AddAsync(route);
         await appDbContext.SaveChangesAsync();
-        await cacheInvalidator.InvalidateByIdAsync(App.Id);
         await specPublisher.PublishAsync(App.Slug);
 
         return Created(route.Id.ToString(), new { route.Id, route.Version });
@@ -165,7 +162,6 @@ public class ApiRoutesController(
         updateRequest.ToUpdateEntity(ref route);
 
         await appDbContext.SaveChangesAsync();
-        await cacheInvalidator.InvalidateByIdAsync(App.Id);
         await specPublisher.PublishAsync(App.Slug);
 
         return NoContent();
@@ -183,7 +179,6 @@ public class ApiRoutesController(
 
         appDbContext.Routes.Remove(route);
         await appDbContext.SaveChangesAsync();
-        await cacheInvalidator.InvalidateByIdAsync(App.Id);
         await specPublisher.PublishAsync(App.Slug);
         return NoContent();
     }

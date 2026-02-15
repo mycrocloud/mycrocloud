@@ -126,7 +126,6 @@ public class AppBuildStatusConsumer(
         using var scope = serviceProvider.CreateScope();
         var appDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var extractionService = scope.ServiceProvider.GetRequiredService<IArtifactExtractionService>();
-        var cacheInvalidator = scope.ServiceProvider.GetRequiredService<IAppCacheInvalidator>();
         var specPublisher = scope.ServiceProvider.GetRequiredService<IAppSpecificationPublisher>();
 
         var build = await appDbContext.AppBuildJobs.FindAsync(message.BuildId);
@@ -219,9 +218,6 @@ public class AppBuildStatusConsumer(
 
         logger.LogInformation("Activated SPA deployment {DeploymentId} for app {AppId}", 
             deployment.Id, build.AppId);
-
-        // Invalidate Gateway cache (Old mechanism)
-        await cacheInvalidator.InvalidateByIdAsync(build.AppId);
 
         // Publish new AppSpecification (New mechanism)
         await specPublisher.PublishAsync(app.Slug);

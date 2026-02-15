@@ -54,6 +54,23 @@ public class AppSpecificationPublisher(
         logger.LogInformation("Invalidated spec for app: {Slug}", slug);
     }
 
+    public async Task InvalidateByIdAsync(int appId)
+    {
+        var slug = await dbContext.Apps
+            .Where(a => a.Id == appId)
+            .Select(a => a.Slug)
+            .SingleOrDefaultAsync();
+
+        if (slug is not null)
+        {
+            await InvalidateAsync(slug);
+        }
+        else
+        {
+            logger.LogWarning("App not found for cache invalidation. AppId: {AppId}", appId);
+        }
+    }
+
     private static AppSpecification MapToSpecification(App app) => new()
     {
         Id = app.Id,

@@ -20,7 +20,6 @@ public class AppsController(
     AppDbContext appDbContext,
     GitHubAppService githubAppService,
     ISubscriptionService subscriptionService,
-    IAppCacheInvalidator cacheInvalidator,
     IAppSpecificationPublisher specPublisher
 ) : BaseController
 {
@@ -140,7 +139,7 @@ public class AppsController(
 
         var oldName = app.Slug;
         await appService.Rename(id, renameRequest.Name);
-        await cacheInvalidator.InvalidateAsync(oldName); // Invalidate old name
+        await specPublisher.InvalidateAsync(oldName); // Invalidate old name
         await specPublisher.InvalidateAsync(oldName); // Invalidate spec with old name
         await specPublisher.PublishAsync(renameRequest.Name); // Publish with new name
         return NoContent();
@@ -151,7 +150,6 @@ public class AppsController(
     {
         await appService.SetState(id, state);
         var app = await appRepository.GetByAppId(id);
-        await cacheInvalidator.InvalidateByIdAsync(id);
         await specPublisher.PublishAsync(app.Slug);
         return NoContent();
     }
@@ -160,7 +158,7 @@ public class AppsController(
     public async Task<IActionResult> Delete(int id)
     {
         var app = await appRepository.GetByAppId(id);
-        await cacheInvalidator.InvalidateByIdAsync(id); // Invalidate before deletion
+        await specPublisher.InvalidateByIdAsync(id); // Invalidate before deletion
         await specPublisher.InvalidateAsync(app.Slug);
         await appService.Delete(id);
         return NoContent();
@@ -171,7 +169,6 @@ public class AppsController(
     {
         await appService.SetCorsSettings(id, settings);
         var app = await appRepository.GetByAppId(id);
-        await cacheInvalidator.InvalidateByIdAsync(id);
         await specPublisher.PublishAsync(app.Slug);
         return NoContent();
     }
@@ -300,7 +297,6 @@ public class AppsController(
 
         await appService.SetRoutingConfig(appId, config);
         var app = await appRepository.GetByAppId(appId);
-        await cacheInvalidator.InvalidateByIdAsync(appId);
         await specPublisher.PublishAsync(app.Slug);
         return NoContent();
     }
