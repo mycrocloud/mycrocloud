@@ -22,3 +22,4 @@ jobs:
       pull-only: true
     secrets:
       CR_PAT: ${{ secrets.CR_PAT }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}

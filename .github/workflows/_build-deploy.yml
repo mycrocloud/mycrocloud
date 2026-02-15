@@ -43,6 +43,8 @@ on:
     secrets:
       CR_PAT:
         required: true
+      SSH_PRIVATE_KEY:
+        required: true
 
 env:
   REGISTRY: ghcr.io
