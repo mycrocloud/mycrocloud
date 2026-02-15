@@ -7,6 +7,11 @@ on:
         description: 'Docker image name (without registry prefix)'
         required: true
         type: string
+      image-tag:
+        description: 'Explicit Docker image tag (optional)'
+        required: false
+        type: string
+        default: ''
       work-dir:
         description: 'Docker build context directory'
         required: true
@@ -51,6 +56,7 @@ jobs:
     uses: ./.github/workflows/_build-image.yml
     with:
       image-name: ${{ inputs.image-name }}
+      image-tag: ${{ inputs.image-tag }}
       work-dir: ${{ inputs.work-dir }}
       dockerfile: ${{ inputs.dockerfile }}
       use-buildx-cache: ${{ inputs.use-buildx-cache }}

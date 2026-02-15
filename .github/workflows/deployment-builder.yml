@@ -19,7 +19,8 @@ jobs:
       id-token: write
       contents: read
     with:
-      image-name: ${{ github.repository }}-deployment-builder:node${{ matrix.node-version }}
+      image-name: ${{ github.repository }}-deployment-builder
+      image-tag: node${{ matrix.node-version }}
       work-dir: src/pkg/webapp/spa/builder
       dockerfile: Dockerfile
       pull-only: true
