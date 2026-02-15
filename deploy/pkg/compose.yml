@@ -28,7 +28,7 @@ services:
     env_file:
       - ./api/.env
     restart: unless-stopped
-  db-migrator:
+  db_migrator:
     image: ghcr.io/mycrocloud/mycrocloud-db-migrator:main
     volumes:
       - "./dbmigrator/appsettings.json:/db-migrator/appsettings.json:ro"

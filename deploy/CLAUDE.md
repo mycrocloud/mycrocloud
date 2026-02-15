@@ -23,11 +23,11 @@ pkg/                Production compose files, service configs, nginx templates, 
   web/              Web frontend config (.env.j2)
   dbmigrator/       DB migration runner config
   webapp/
-    compose.yml     Gateway + spa-worker services
+    compose.yml     Gateway + spa_worker services
     gateway/        Gateway service config
     spa/worker/     SPA deployment worker config
   monitoring/
-    compose.yml     Seq, Prometheus, node_exporter, nginx-exporter
+    compose.yml     Seq, Prometheus, node_exporter, nginx_exporter
 ```
 
 Service paths in `pkg/` mirror `src/pkg/` in the main repo, except `dbmigrator` (source is `src/pkg/api/Api.Migrations`).
@@ -75,9 +75,9 @@ Inventory uses environment variables: `ANSIBLE_HOST`, `ANSIBLE_USER`, `ANSIBLE_S
 
 ### Service Groups
 
-- **core**: lb, api, web, db-migrator
-- **webapp**: gateway, spa-worker
-- **monitoring**: seq, prometheus, node_exporter, nginx-exporter
+- **core**: lb, api, web, db_migrator
+- **webapp**: gateway, spa_worker
+- **monitoring**: seq, prometheus, node_exporter, nginx_exporter
 
 ## Deployment Flow
 

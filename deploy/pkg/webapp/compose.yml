@@ -9,7 +9,7 @@ services:
       - /srv/function-data:/srv/function-data
     restart: unless-stopped
 
-  spa-worker:
+  spa_worker:
     image: ghcr.io/mycrocloud/mycrocloud-deployment-worker:main
     env_file:
       - ./spa/worker/.env

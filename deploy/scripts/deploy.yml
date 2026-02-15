@@ -12,27 +12,30 @@
         - lb
         - api
         - web
-        - db-migrator
+        - db_migrator
       webapp:
         - gateway
-        - spa-worker
+        - spa_worker
       monitoring:
         - seq
         - prometheus
         - node_exporter
-        - nginx-exporter
+        - nginx_exporter
     all_services:
       - lb
       - api
       - web
-      - db-migrator
+      - db_migrator
       - gateway
-      - spa-worker
+      - spa_worker
       - seq
       - prometheus
       - node_exporter
-      - nginx-exporter
-    resolved_services: "{{ service_groups[service_group] | default([]) if (service_group | length > 0 and services | length == 0) else services }}"
+      - nginx_exporter
+    services_input: "{{ (services | from_yaml) if (services is string and services | trim | length > 0) else (services | default([])) }}"
+    selected_services: "{{ [services_input] if services_input is string else (services_input | default([])) }}"
+    resolved_services: "{{ selected_services if selected_services | length > 0 else (service_groups[service_group] | default([])) }}"
+    secret_target_services: "{{ resolved_services if resolved_services | length > 0 else all_services }}"
     # Secret-to-File Mapping Rules:
     # 1. J2 Templates: secret "prod/mycrocloud/path/file.ext" maps to "pkg/path/file.ext.j2"
     #    The .j2 extension is stripped to determine the secret name and destination path.
@@ -43,38 +46,37 @@
       api:
         - "api/.env.j2"
       web: []
-      db-migrator:
+      db_migrator:
         - "dbmigrator/.env.j2"
       gateway:
         - "webapp/gateway/.env.j2"
-      spa-worker:
+      spa_worker:
         - "webapp/spa/worker/.env.j2"
       seq:
         - "monitoring/seq/.env.j2"
       prometheus:
         - "monitoring/prometheus/prometheus.yml.j2"
       node_exporter: []
-      nginx-exporter: []
+      nginx_exporter: []
     service_plaintext_secret_files:
       lb:
         - "lb/certs/mycrocloud.info.key"
       api:
         - "api/gha-mycrocloud.private-key.pem"
       web: []
-      db-migrator: []
+      db_migrator: []
       gateway: []
-      spa-worker: []
+      spa_worker: []
       seq: []
       prometheus: []
       node_exporter: []
-      nginx-exporter: []
+      nginx_exporter: []
   tasks:
     - name: Resolve required secret files for target services
       when: not (pull_only | bool)
       set_fact:
-        target_services: "{{ resolved_services if resolved_services | length > 0 else all_services }}"
-        j2_template_files: "{{ (resolved_services if resolved_services | length > 0 else all_services) | map('extract', service_j2_template_files) | list | flatten | unique }}"
-        plaintext_secret_files: "{{ (resolved_services if resolved_services | length > 0 else all_services) | map('extract', service_plaintext_secret_files) | list | flatten | unique }}"
+        j2_template_files: "{{ secret_target_services | map('extract', service_j2_template_files) | list | flatten | unique }}"
+        plaintext_secret_files: "{{ secret_target_services | map('extract', service_plaintext_secret_files) | list | flatten | unique }}"
 
     - name: Fetch env files from AWS Secrets Manager
       when: not (pull_only | bool)
@@ -115,20 +117,22 @@
         - lb
         - api
         - web
-        - db-migrator
+        - db_migrator
       webapp:
         - gateway
-        - spa-worker
+        - spa_worker
       monitoring:
         - seq
         - prometheus
         - node_exporter
-        - nginx-exporter
+        - nginx_exporter
     # Most rendered secrets stay private (0600). Prometheus config must be
     # world-readable so the prometheus process inside the container can read it.
     template_file_modes:
       monitoring/prometheus/prometheus.yml.j2: "0644"
-    resolved_services: "{{ service_groups[service_group] | default([]) if (service_group | length > 0 and services | length == 0) else services }}"
+    services_input: "{{ (services | from_yaml) if (services is string and services | trim | length > 0) else (services | default([])) }}"
+    selected_services: "{{ [services_input] if services_input is string else (services_input | default([])) }}"
+    resolved_services: "{{ selected_services if selected_services | length > 0 else (service_groups[service_group] | default([])) }}"
   tasks:
     - name: Pull Docker image
       ansible.builtin.command:

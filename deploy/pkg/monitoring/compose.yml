@@ -24,7 +24,7 @@ services:
     network_mode: "host"
     restart: unless-stopped
 
-  nginx-exporter:
+  nginx_exporter:
     image: nginx/nginx-prometheus-exporter:1.5.1
     container_name: nginx_exporter
     command:

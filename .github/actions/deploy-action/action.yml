@@ -32,7 +32,7 @@ inputs:
     description: 'Service group to deploy (core, webapp, monitoring)'
     default: ''
   service:
-    description: 'Service name to deploy (deploys all if not specified)'
+    description: 'Service name to deploy in underscore format (e.g. db_migrator)'
     default: ''
 
 runs:

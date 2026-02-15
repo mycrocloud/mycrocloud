@@ -89,15 +89,22 @@ ansible-playbook -i inventory.yml deploy.yml
 
 ### Selective Deployment
 
-Deploy a specific service:
+Deploy specific services:
 
 ```bash
-ansible-playbook -i inventory.yml deploy.yml -e "service=web"
+ansible-playbook -i inventory.yml deploy.yml -e "services=['web','api']"
 ```
 
-Available service options:
-- `web` - Web application
-- (Add other service names as applicable)
+Deploy by group:
+
+```bash
+ansible-playbook -i inventory.yml deploy.yml -e "service_group=core"
+```
+
+Service names use `underscore` style:
+- `db_migrator`
+- `spa_worker`
+- `nginx_exporter`
 
 ## Verification
 

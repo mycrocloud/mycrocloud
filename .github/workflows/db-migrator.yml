@@ -50,7 +50,7 @@ jobs:
       image-name: ${{ github.repository }}-db-migrator
       work-dir: src/pkg/api
       dockerfile: Api.Migrations/Dockerfile
-      service: db-migrator
+      service: db_migrator
     secrets:
       CR_PAT: ${{ secrets.CR_PAT }}
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
