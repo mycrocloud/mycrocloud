@@ -21,40 +21,15 @@ resource "neon_endpoint" "primary" {
   branch_id  = neon_branch.main.id
 }
 
-resource "neon_role" "api_runtime" {
+resource "neon_role" "db_admin" {
   project_id = neon_project.this.id
   branch_id  = neon_branch.main.id
-  name       = "api_runtime"
-}
-
-resource "neon_role" "migrator" {
-  project_id = neon_project.this.id
-  branch_id  = neon_branch.main.id
-  name       = "migrator"
-}
-
-resource "neon_role" "webapp_gateway" {
-  project_id = neon_project.this.id
-  branch_id  = neon_branch.main.id
-  name       = "webapp_gateway"
-}
-
-resource "neon_role" "monitoring_grafana" {
-  project_id = neon_project.this.id
-  branch_id  = neon_branch.main.id
-  name       = "grafana_reader"
-}
-
-# NOTE: Someday change owner from "nphamvn" to something more generic like "admin" or "terraform"
-resource "neon_role" "nphamvn" {
-  project_id = neon_project.this.id
-  branch_id  = neon_branch.main.id
-  name       = "nphamvn"
+  name       = "db_admin"
 }
 
 resource "neon_database" "this" {
   project_id = neon_project.this.id
   branch_id  = neon_branch.main.id
   name       = var.project_name
-  owner_name = neon_role.nphamvn.name
+  owner_name = neon_role.db_admin.name
 }
