@@ -82,6 +82,16 @@ jobs:
         if: ${{ inputs.use-buildx-cache }}
         uses: docker/setup-buildx-action@v3
 
+      - name: Debug build context paths
+        run: |
+          echo "github.workspace=${{ github.workspace }}"
+          echo "inputs.work-dir=${{ inputs.work-dir }}"
+          echo "inputs.dockerfile=${{ inputs.dockerfile }}"
+          pwd
+          ls -la
+          ls -la "${{ inputs.work-dir }}" || true
+          ls -la "${{ inputs.work-dir }}/${{ inputs.dockerfile }}" || true
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
