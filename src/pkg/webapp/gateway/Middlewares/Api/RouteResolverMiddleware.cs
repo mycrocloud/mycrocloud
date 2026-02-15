@@ -1,16 +1,18 @@
 ﻿using Microsoft.AspNetCore.Routing.Template;
 using MycroCloud.WebApp.Gateway.Models;
+using MycroCloud.WebApp.Gateway.Services;
 
 namespace MycroCloud.WebApp.Gateway.Middlewares.Api;
 
 public class RouteResolverMiddleware(RequestDelegate next)
 {
-    public async Task Invoke(HttpContext context)
+    public async Task Invoke(HttpContext context, IAppSpecificationService appCacheService)
     {
         var app = (AppSpecification)context.Items["_AppSpecification"]!;
+        var apiRoutes = await appCacheService.GetApiRoutesAsync(app.ApiDeploymentId);
         var matchedRoutes = new List<CachedRoute>();
 
-        foreach (var r in app.Routes)
+        foreach (var r in apiRoutes)
         {
             var matcher = new TemplateMatcher(TemplateParser.Parse(r.Path), []);
             if (matcher.TryMatch(context.Request.Path, context.Request.RouteValues) &&

@@ -30,6 +30,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 });
 builder.Services.AddSingleton<AccessLogChannel>();
 builder.Services.AddHostedService<AccessLogBackgroundService>();
+builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient("HttpDocumentRetriever");
 builder.Services.AddStackExchangeRedisCache(options =>
 {
