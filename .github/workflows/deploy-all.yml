@@ -2,6 +2,17 @@ name: Deploy all services
 
 on:
   workflow_dispatch:
+    inputs:
+      service_group:
+        description: Service group to deploy
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - core
+          - webapp
+          - monitoring
 
 jobs:
   deploy:
@@ -11,7 +22,7 @@ jobs:
       contents: read
     if: ${{ github.ref == 'refs/heads/main' }}
     concurrency:
-      group: deploy-all
+      group: deploy-${{ inputs.service_group || 'all' }}
       cancel-in-progress: false
 
     steps:
@@ -23,5 +34,6 @@ jobs:
         with:
           server-host: ${{ vars.SERVER_HOST }}
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          service-group: ${{ inputs.service_group }}
           aws-iam-role: ${{ vars.AWS_IAM_ROLE_GITHUB_ACTIONS_ARN }}
           aws-region: ${{ vars.AWS_REGION }}

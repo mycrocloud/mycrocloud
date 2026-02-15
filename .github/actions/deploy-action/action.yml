@@ -29,7 +29,7 @@ inputs:
     description: 'If true, only pull image without deploying'
     default: 'false'
   service-group:
-    description: 'Service group to deploy (core, webapp, monitoring)'
+    description: 'Service group to deploy (all, core, webapp, monitoring)'
     default: ''
   service:
     description: 'Service name to deploy in underscore format (e.g. db_migrator)'

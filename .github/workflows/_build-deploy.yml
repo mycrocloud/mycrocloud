@@ -21,7 +21,7 @@ on:
         type: string
         default: ''
       service-group:
-        description: 'Service group for deployment (core, webapp, monitoring)'
+        description: 'Service group for deployment (all, core, webapp, monitoring)'
         required: false
         type: string
         default: ''
