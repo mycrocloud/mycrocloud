@@ -75,6 +75,10 @@
         - prometheus
         - node_exporter
         - nginx-exporter
+    # Most rendered secrets stay private (0600). Prometheus config must be
+    # world-readable so the prometheus process inside the container can read it.
+    template_file_modes:
+      monitoring/prometheus/prometheus.yml.j2: "0644"
     resolved_services: "{{ service_groups[service_group] | default([]) if (service_group | length > 0 and services | length == 0) else services }}"
   tasks:
     - name: Pull Docker image
@@ -116,7 +120,7 @@
       ansible.builtin.template:
         src: "{{ src }}/{{ item }}"
         dest: "{{ deploy_path }}/{{ item | regex_replace('\\.j2$', '') }}"
-        mode: "0600"
+        mode: "{{ template_file_modes[item] | default('0600') }}"
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
       loop: "{{ hostvars['localhost']['j2_template_files'] }}"
