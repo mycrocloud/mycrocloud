@@ -101,6 +101,8 @@ Deploy by group:
 ansible-playbook -i inventory.yml deploy.yml -e "service_group=core"
 ```
 
+Default group is `all` when `service_group` and `services` are not set.
+
 Service names use `underscore` style:
 - `db_migrator`
 - `spa_worker`

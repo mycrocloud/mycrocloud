@@ -75,6 +75,7 @@ Inventory uses environment variables: `ANSIBLE_HOST`, `ANSIBLE_USER`, `ANSIBLE_S
 
 ### Service Groups
 
+- **all**: lb, api, web, db_migrator, gateway, spa_worker, seq, prometheus, node_exporter, nginx_exporter
 - **core**: lb, api, web, db_migrator
 - **webapp**: gateway, spa_worker
 - **monitoring**: seq, prometheus, node_exporter, nginx_exporter
