@@ -81,31 +81,31 @@ function getDeploymentTitle(deployment: IDeployment): string {
     const firstLine = commitMessage.split('\n')[0];
     return firstLine.length > 60 ? firstLine.slice(0, 57) + '...' : firstLine;
   }
-  
+
   const branch = deployment.build?.metadata?.branch;
   if (branch) {
     return `Deploy from ${branch}`;
   }
-  
+
   return `Deployment ${deployment.id.slice(0, 8)}`;
 }
 
 function getDeploymentSubtitle(deployment: IDeployment): string | null {
   const commitSha = deployment.build?.metadata?.commitSha;
   const branch = deployment.build?.metadata?.branch;
-  
+
   if (commitSha && branch) {
     return `${branch} • ${commitSha.slice(0, 8)}`;
   }
-  
+
   if (commitSha) {
     return commitSha.slice(0, 8);
   }
-  
+
   if (branch) {
     return branch;
   }
-  
+
   return null;
 }
 
@@ -143,7 +143,7 @@ export default function DeploymentDetails() {
 
   const fetchFiles = useCallback(async () => {
     if (!showFiles || files) return;
-    
+
     setIsLoadingFiles(true);
     try {
       const data = await get<IDeploymentFiles>(
@@ -169,14 +169,14 @@ export default function DeploymentDetails() {
 
   const handleRedeploy = async () => {
     if (!deployment || !deployment.artifactId) return;
-    
+
     setIsRedeploying(true);
     try {
       const result = await post<{ deploymentId: string }>(
         `/api/apps/${app.id}/spa/deployments/redeploy/${deployment.artifactId}`,
         {}
       );
-      
+
       // Navigate to the new deployment
       if (result.deploymentId) {
         navigate(`/apps/${app.id}/spa/deployments/${result.deploymentId}`);
@@ -190,29 +190,29 @@ export default function DeploymentDetails() {
 
   const handleDownload = async () => {
     if (!deployment) return;
-    
+
     try {
       // Get the authentication token
       const token = await getAccessTokenSilently();
-      
+
       // Create download link with authentication
-      const downloadUrl = `/api/apps/${app.id}/spa/deployments/${deploymentId}/download`;
-      
+      const downloadUrl = `/api/apps/${app.id}/spa/builds/${deploymentId}/download`;
+
       // Use fetch to download with authentication header
       const response = await fetch(downloadUrl, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (!response.ok) {
         throw new Error('Download failed');
       }
-      
+
       // Create blob from response
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      
+
       // Trigger download
       const link = document.createElement('a');
       link.href = url;
@@ -220,7 +220,7 @@ export default function DeploymentDetails() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       // Clean up
       window.URL.revokeObjectURL(url);
     } catch (error) {
@@ -355,7 +355,7 @@ export default function DeploymentDetails() {
                   size="sm"
                   className="w-full"
                 >
-                  <Link to={`/apps/${app.id}/builds/${deployment.buildId}`}>
+                  <Link to={`/apps/${app.id}/spa/builds/${deployment.buildId}`}>
                     <ExternalLink className="mr-2 h-4 w-4" />
                     View Logs
                   </Link>
@@ -381,7 +381,7 @@ export default function DeploymentDetails() {
                     )}
                   </div>
                 </CollapsibleTrigger>
-                
+
                 <CollapsibleContent>
                   <div className="divide-y">
                     {deployment.build.metadata.commitMessage && (
@@ -471,7 +471,7 @@ export default function DeploymentDetails() {
                   )}
                 </div>
               </CollapsibleTrigger>
-              
+
               <CollapsibleContent>
                 {isLoadingFiles ? (
                   <div className="flex items-center justify-center py-8">
@@ -493,8 +493,8 @@ export default function DeploymentDetails() {
                     {/* File List */}
                     <div className="max-h-96 overflow-y-auto space-y-0.5">
                       {files.files
-                        .filter((file) => 
-                          fileSearch === "" || 
+                        .filter((file) =>
+                          fileSearch === "" ||
                           file.path.toLowerCase().includes(fileSearch.toLowerCase())
                         )
                         .map((file) => (

@@ -88,7 +88,7 @@ export default function BuildLogs({
       if (!isMounted) return;
 
       const historyLogs = await get<ILogEntry[]>(
-        `/api/apps/${appId}/builds/${buildId}/logs`
+        `/api/apps/${appId}/spa/builds/${buildId}/logs`
       );
 
       historyLogs.forEach((entry) => {
@@ -112,7 +112,7 @@ export default function BuildLogs({
       if (!isMounted) return;
 
       const evtSource = new EventSource(
-        `/api/apps/${appId}/builds/${buildId}/logs/stream?access_token=${accessToken}`
+        `/api/apps/${appId}/spa/builds/${buildId}/logs/stream?access_token=${accessToken}`
       );
 
       evtRef.current = evtSource;

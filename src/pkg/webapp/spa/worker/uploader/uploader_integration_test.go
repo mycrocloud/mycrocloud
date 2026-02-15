@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-var uploadURL = "https://office-api.smashup1805.dpdns.org/apps/1/builds/6fa5fdea-8760-4faf-994c-c94d6f25223c/artifacts" //TODO: fix this
+var uploadURL = "https://office-api.smashup1805.dpdns.org/apps/1/spa/builds/6fa5fdea-8760-4faf-994c-c94d6f25223c/artifacts" //TODO: fix this
 
 func TestUploadFile_Integration(t *testing.T) {
 	if uploadURL == "" {

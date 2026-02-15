@@ -165,7 +165,7 @@ export default function BuildHistory() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const fetchBuilds = useCallback(async () => {
-    const data = await get<IBuild[]>(`/api/apps/${app.id}/builds`);
+    const data = await get<IBuild[]>(`/api/apps/${app.id}/spa/builds`);
     setBuilds(data);
     setIsLoading(false);
   }, [app.id, get]);
@@ -180,7 +180,7 @@ export default function BuildHistory() {
       if (!isMounted) return;
 
       const evtSource = new EventSource(
-        `/api/apps/${app.id}/builds/stream?access_token=${accessToken}`
+        `/api/apps/${app.id}/spa/builds/stream?access_token=${accessToken}`
       );
       evtRef.current = evtSource;
 
@@ -249,7 +249,7 @@ export default function BuildHistory() {
 
   const onSubmit = async (inputs: BuildInputs) => {
     try {
-      await post(`/api/apps/${app.id}/builds/build`, inputs);
+      await post(`/api/apps/${app.id}/spa/builds/build`, inputs);
       setShowBuildModal(false);
     } catch {
       alert("Something went wrong...");
@@ -304,8 +304,8 @@ export default function BuildHistory() {
             </Badge>
           )}
         </div>
-        <Button 
-          onClick={() => setShowBuildModal(true)} 
+        <Button
+          onClick={() => setShowBuildModal(true)}
           size="sm"
           disabled={!hasGitHubIntegration}
           title={!hasGitHubIntegration ? "Connect a GitHub repository first" : ""}

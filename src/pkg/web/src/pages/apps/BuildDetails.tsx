@@ -105,7 +105,7 @@ export default function BuildDetails() {
   const [copied, setCopied] = useState(false);
 
   const fetchBuild = useCallback(async () => {
-    const data = await get<IBuild[]>(`/api/apps/${app.id}/builds`);
+    const data = await get<IBuild[]>(`/api/apps/${app.id}/spa/builds`);
     const found = data.find((b) => b.id === buildId);
     setBuild(found || null);
     setIsLoading(false);
@@ -121,7 +121,7 @@ export default function BuildDetails() {
       if (!isMounted) return;
 
       const evtSource = new EventSource(
-        `/api/apps/${app.id}/builds/stream?access_token=${accessToken}`
+        `/api/apps/${app.id}/spa/builds/stream?access_token=${accessToken}`
       );
       evtRef.current = evtSource;
 

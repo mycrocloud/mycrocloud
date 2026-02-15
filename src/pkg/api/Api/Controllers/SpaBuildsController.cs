@@ -16,21 +16,18 @@ using Api.Infrastructure;
 
 namespace Api.Controllers;
 
-[Route("apps/{appId:int}/[controller]")]
+[Route("apps/{appId:int}/spa/builds")]
 [TypeFilter<AppOwnerActionFilter>(Arguments = ["appId"])]
-public class BuildsController(
+public class SpaBuildsController(
     AppDbContext appDbContext,
     IConfiguration configuration,
     IAppBuildPublisher publisher,
     BuildOrchestrationService buildOrchestrationService,
-    LinkGenerator linkGenerator,
     GitHubAppService gitHubAppService,
     IStorageProvider storageProvider,
     RabbitMqService rabbitMqService,
-    ILogger<BuildsController> logger): BaseController
+    ILogger<SpaBuildsController> logger): BaseController
 {
-    public const string Controller = "Builds";
-
     [HttpGet]
     public async Task<IActionResult> List(int appId)
     {

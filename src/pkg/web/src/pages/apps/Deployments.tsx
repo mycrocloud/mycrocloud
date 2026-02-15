@@ -101,18 +101,18 @@ function getDeploymentDisplayName(deployment: IDeployment): string {
   if (deployment.name) {
     return deployment.name;
   }
-  
+
   const commitMessage = deployment.build?.metadata?.commitMessage;
   if (commitMessage) {
     const firstLine = commitMessage.split('\n')[0];
     return firstLine.length > 50 ? firstLine.slice(0, 47) + '...' : firstLine;
   }
-  
+
   const commitSha = deployment.build?.metadata?.commitSha;
   if (commitSha) {
     return commitSha.slice(0, 8);
   }
-  
+
   return deployment.id.slice(0, 12);
 }
 
@@ -158,7 +158,7 @@ export default function DeploymentsList() {
         const id = deployment.id.toLowerCase();
         const commitMessage = (deployment.build?.metadata?.commitMessage || "").toLowerCase();
         const commitSha = (deployment.build?.metadata?.commitSha || "").toLowerCase();
-        
+
         if (
           !name.includes(query) &&
           !id.includes(query) &&
@@ -196,7 +196,7 @@ export default function DeploymentsList() {
 
   const onSubmit = async (inputs: BuildInputs) => {
     try {
-      await post(`/api/apps/${app.id}/builds/build`, inputs);
+      await post(`/api/apps/${app.id}/spa/builds/build`, inputs);
       setShowBuildModal(false);
       // Refresh deployments list after successful build trigger
       await fetchDeployments();
@@ -243,8 +243,8 @@ export default function DeploymentsList() {
             </Badge>
           )}
         </div>
-        <Button 
-          onClick={() => setShowBuildModal(true)} 
+        <Button
+          onClick={() => setShowBuildModal(true)}
           size="sm"
           disabled={!hasGitHubIntegration}
           title={!hasGitHubIntegration ? "Connect a GitHub repository first" : ""}

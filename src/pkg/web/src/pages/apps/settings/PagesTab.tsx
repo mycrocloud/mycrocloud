@@ -143,7 +143,7 @@ function GitHubLinkSection() {
       repoId: repoId,
       repo: repos.find((r) => r.id === repoId)!.name,
     };
-    
+
     setLink(newLink);
     // Update app context with new gitIntegration
     setApp({ ...app, gitIntegration: newLink });
@@ -374,7 +374,7 @@ function BuildSettingsSection() {
   useEffect(() => {
     (async () => {
       try {
-        const data = await get<IBuildConfig>(`/api/apps/${app.id}/builds/config`);
+        const data = await get<IBuildConfig>(`/api/apps/${app.id}/spa/builds/config`);
         originalData.current = data;
         reset(data);
       } finally {
@@ -386,7 +386,7 @@ function BuildSettingsSection() {
   const onSubmit = async (data: IBuildConfig) => {
     setSaving(true);
     try {
-      await post(`/api/apps/${app.id}/builds/config`, data);
+      await post(`/api/apps/${app.id}/spa/builds/config`, data);
       originalData.current = data;
       toast.success("Build settings saved");
       setIsEditing(false);
