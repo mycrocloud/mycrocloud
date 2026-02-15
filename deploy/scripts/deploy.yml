@@ -155,7 +155,7 @@
         src: "{{ src }}/"
         dest: "{{ deploy_path }}"
         recursive: yes
-        delete: yes
+        delete: "{{ resolved_services | length == 0 }}"
 
     - name: Copy web env file
       when: not (pull_only | bool)
