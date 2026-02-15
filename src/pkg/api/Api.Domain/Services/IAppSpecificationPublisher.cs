@@ -17,4 +17,9 @@ public interface IAppSpecificationPublisher
     /// Removes the AppSpecification from Redis.
     /// </summary>
     Task InvalidateAsync(string slug);
+
+    /// <summary>
+    /// Removes the AppSpecification from Redis by App ID.
+    /// </summary>
+    Task InvalidateByIdAsync(int appId);
 }

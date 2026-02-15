@@ -109,7 +109,6 @@ builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = builder.Configuration.GetConnectionString("Redis");
 });
-builder.Services.AddScoped<IAppCacheInvalidator, AppCacheInvalidator>();
 builder.Services.AddScoped<IAppSpecificationPublisher, AppSpecificationPublisher>();
 builder.Services.AddScoped<IArtifactExtractionService, ArtifactExtractionService>();
 builder.Services.AddScoped<IApiDeploymentService, ApiDeploymentService>();
