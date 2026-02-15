@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
 using MycroCloud.WebApp.Gateway.Models;
 
 namespace MycroCloud.WebApp.Gateway.Services;
@@ -12,10 +13,13 @@ public interface IAppSpecificationService
     Task<string?> GetApiDeploymentFileContentAsync(Guid? deploymentId, string path);
 
     Task<ApiRouteMetadata?> GetRouteMetadataAsync(Guid? deploymentId, int routeId);
+
+    Task<List<CachedRoute>> GetApiRoutesAsync(Guid? deploymentId);
 }
 
 public class AppSpecificationService(
     IDistributedCache cache,
+    Microsoft.Extensions.Caching.Memory.IMemoryCache memoryCache,
     AppDbContext dbContext,
     IStorageProvider storageProvider,
     ILogger<AppSpecificationService> logger) : IAppSpecificationService
@@ -79,5 +83,59 @@ public class AppSpecificationService(
         }
 
         return meta;
+    }
+
+    public async Task<List<CachedRoute>> GetApiRoutesAsync(Guid? deploymentId)
+    {
+        if (deploymentId == null) return [];
+
+        var cacheKey = $"api_routes:{deploymentId}";
+
+        // L1: Memory Cache
+        if (memoryCache.TryGetValue(cacheKey, out List<CachedRoute>? routes) && routes != null)
+        {
+            return routes;
+        }
+
+        // L2: Redis Cache
+        var cached = await cache.GetStringAsync(cacheKey);
+        if (cached is not null)
+        {
+            routes = JsonSerializer.Deserialize<List<CachedRoute>>(cached);
+            if (routes != null)
+            {
+                memoryCache.Set(cacheKey, routes, CacheTtl);
+                return routes;
+            }
+        }
+
+        // Fallback: Storage (routes.json)
+        logger.LogWarning("Cache miss for routes: {DeploymentId}. Loading from storage.", deploymentId);
+        var json = await GetApiDeploymentFileContentAsync(deploymentId, "routes.json");
+        if (json == null) return [];
+
+        try
+        {
+            routes = JsonSerializer.Deserialize<List<CachedRoute>>(json, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            if (routes != null)
+            {
+                await cache.SetStringAsync(cacheKey, json, new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = CacheTtl
+                });
+                memoryCache.Set(cacheKey, routes, CacheTtl);
+                return routes;
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to parse routes.json for deployment {DeploymentId}", deploymentId);
+        }
+
+        return [];
     }
 }

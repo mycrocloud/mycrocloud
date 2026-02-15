@@ -24,7 +24,6 @@ public class AppSpecification
     public RoutingConfig RoutingConfig { get; set; }
     public AppSettings Settings { get; set; }
 
-    public List<CachedRoute> Routes { get; set; } = [];
     public List<CachedAuthenticationScheme> AuthenticationSchemes { get; set; } = [];
     
     /// <summary>

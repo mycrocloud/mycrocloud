@@ -43,6 +43,20 @@ public class AppSpecificationPublisher(
             AbsoluteExpirationRelativeToNow = CacheTtl
         });
 
+        // Pre-warm versioned routes cache
+        if (app.ActiveApiDeploymentId.HasValue)
+        {
+            var routes = app.Routes.Select(MapToCachedRoute).ToList();
+            var routesJson = JsonSerializer.Serialize(routes);
+            var routesCacheKey = $"api_routes:{app.ActiveApiDeploymentId.Value}";
+            await cache.SetStringAsync(routesCacheKey, routesJson, new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = CacheTtl
+            });
+            logger.LogDebug("Pre-warmed route cache for deployment: {DeploymentId} ({RouteCount} routes)", 
+                app.ActiveApiDeploymentId.Value, routes.Count);
+        }
+
         logger.LogInformation("Successfully published spec for app: {Slug} (SPA: {SpaId}, API: {ApiId})", 
             slug, spec.SpaDeploymentId, spec.ApiDeploymentId);
     }
@@ -82,7 +96,6 @@ public class AppSpecificationPublisher(
         ApiCorsSettings = app.CorsSettings ?? CorsSettings.Default,
         RoutingConfig = app.RoutingConfig ?? RoutingConfig.Default,
         Settings = app.Settings ?? AppSettings.Default,
-        Routes = app.Routes.Select(MapToCachedRoute).ToList(),
         AuthenticationSchemes = app.AuthenticationSchemes.Select(MapToCachedAuthScheme).ToList(),
         Variables = app.Variables.Select(MapToCachedVariable).ToList()
     };
