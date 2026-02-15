@@ -1,0 +1,54 @@
+name: Deploy Image
+
+on:
+  workflow_call:
+    inputs:
+      image:
+        description: "Docker image to deploy"
+        required: true
+        type: string
+      service:
+        description: "Service name for deployment"
+        required: false
+        type: string
+        default: ""
+      service-group:
+        description: "Service group for deployment (core, webapp, monitoring)"
+        required: false
+        type: string
+        default: ""
+      pull-only:
+        description: "Only pull image without deploying"
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      SSH_PRIVATE_KEY:
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    if: ${{ github.ref == 'refs/heads/main' }}
+    concurrency:
+      group: deploy-${{ inputs.service-group || 'all' }}-${{ inputs.service || 'all' }}
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Deploy
+        uses: ./.github/actions/deploy-action
+        with:
+          server-host: ${{ vars.SERVER_HOST }}
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          image: ${{ inputs.image }}
+          service: ${{ inputs.service }}
+          service-group: ${{ inputs.service-group }}
+          pull-only: ${{ inputs.pull-only && 'true' || 'false' }}
+          aws-iam-role: ${{ vars.AWS_IAM_ROLE_GITHUB_ACTIONS_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
