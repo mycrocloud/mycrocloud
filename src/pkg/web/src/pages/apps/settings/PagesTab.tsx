@@ -39,7 +39,6 @@ import {
 } from "lucide-react";
 import { useApiClient } from "@/hooks";
 import { getConfig } from "@/config";
-import { NotFoundError } from "@/errors";
 import { IAppIntegration } from "../App";
 import {
   IGitHubInstallation,
@@ -552,4 +551,3 @@ function BuildSettingsSection() {
     </Card>
   );
 }
-

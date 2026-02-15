@@ -13,7 +13,6 @@ import {
   Loader2,
   ArrowLeft,
   GitBranch,
-  File,
   ChevronDown,
   ChevronRight,
   Lock,

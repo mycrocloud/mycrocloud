@@ -95,7 +95,7 @@ export default function BuildDetails() {
   const { app } = useContext(AppContext)!;
   if (!app) throw new Error();
 
-  const { get, post } = useApiClient();
+  const { get } = useApiClient();
   const { getAccessTokenSilently } = useAuth0();
   const { buildId } = useParams();
   const navigate = useNavigate();
