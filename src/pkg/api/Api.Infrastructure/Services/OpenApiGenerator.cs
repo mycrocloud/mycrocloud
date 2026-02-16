@@ -165,8 +165,10 @@ public class OpenApiGenerator : IOpenApiGenerator
         }
 
         // Add responses
-        var statusCode = route.ResponseStatusCode?.ToString() ?? "200";
-        
+        var statusCode = route.ResponseType == ResponseType.Static
+            ? (route.ResponseStatusCode?.ToString() ?? "200")
+            : "200";
+
         object responseContent = route.ResponseType switch
         {
             ResponseType.Static => new Dictionary<string, object>
@@ -222,6 +224,11 @@ public class OpenApiGenerator : IOpenApiGenerator
 
     private string GetResponseDescription(ResponseType responseType, string statusCode)
     {
+        if (responseType == ResponseType.Function)
+        {
+            return "Function execution response";
+        }
+
         return statusCode switch
         {
             "200" => "Successful response",
@@ -232,7 +239,7 @@ public class OpenApiGenerator : IOpenApiGenerator
             "403" => "Forbidden",
             "404" => "Not found",
             "500" => "Internal server error",
-            _ => $"Response with status code {statusCode}"
+            _ => "Static content response"
         };
     }
 }

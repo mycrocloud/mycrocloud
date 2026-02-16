@@ -16,7 +16,7 @@ public class ApiRouteMetadata
     public string Description { get; set; }
     public ResponseType ResponseType { get; set; }
     
-    // Response configuration
+    // Request validation and runtime configuration
     public int? ResponseStatusCode { get; set; }
     public IList<ResponseHeader> ResponseHeaders { get; set; } = [];
     public string? RequestQuerySchema { get; set; }

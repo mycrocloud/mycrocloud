@@ -15,9 +15,6 @@ public class Route : BaseEntity
     public int? ResponseStatusCode { get; set; }
     public IList<ResponseHeader> ResponseHeaders { get; set; }
     public string Response { get; set; }
-    public string ResponseBodyLanguage { get; set; }
-    public string FunctionHandlerMethod { get; set; }
-    public IList<string> FunctionHandlerDependencies { get; set; }
     public string RequestQuerySchema { get; set; }
     public string RequestHeaderSchema { get; set; }
     public string RequestBodySchema { get; set; }
@@ -47,4 +44,3 @@ public enum ResponseType
     StaticFile = 2,
     Function = 3
 }
-

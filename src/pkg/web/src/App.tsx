@@ -92,7 +92,7 @@ function App() {
               >
                 <Route index element={<AppOverview />} />
                 <Route path="api/routes" element={<RouteIndex />}>
-                  <Route path="new/:folderId?" element={<RouteCreate />} />
+                  <Route path="new" element={<RouteCreate />} />
                   <Route path=":routeId" element={<RouteEdit />} />
                 </Route>
                 <Route path="logs" element={<AppLog />} />

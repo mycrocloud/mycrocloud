@@ -76,8 +76,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .Property(b => b.Metadata)
             .HasColumnType("jsonb");
 
-        modelBuilder.Entity<Route>().OwnsMany(route => route.ResponseHeaders,
-            ownedNavigationBuilder => { ownedNavigationBuilder.ToJson(); });
+        modelBuilder.Entity<Route>()
+            .OwnsMany(route => route.ResponseHeaders,
+                ownedNavigationBuilder => { ownedNavigationBuilder.ToJson(); });
 
         modelBuilder.Entity<Route>()
             .Property(r => r.Enabled)
@@ -87,10 +88,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasOne(r => r.App)
             .WithMany(a => a.Routes)
             .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<Route>()
-            .Property(r => r.FunctionHandlerMethod)
-            .HasDefaultValue("handler");
 
         modelBuilder.Entity<AuthenticationScheme>()
             .HasOne(r => r.App)

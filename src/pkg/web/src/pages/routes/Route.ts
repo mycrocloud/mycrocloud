@@ -6,18 +6,22 @@ export default interface IRoute {
   requestQuerySchema?: string;
   requestHeaderSchema?: string;
   requestBodySchema?: string;
-  responseType: string;
-  responseStatusCode?: number;
-  responseHeaders?: IResponseHeader[];
-  responseBodyLanguage?: string;
-  response?: string;
-  functionHandlerDependencies?: string[];
+  response: IRouteResponse;
   requireAuthorization: boolean;
   status: string;
-  fileId?: number;
-  fileName?: string;
-  fileFolderId?: number;
   enabled: boolean;
+}
+
+export interface IRouteResponse {
+  type: "Static" | "Function";
+  staticResponse?: {
+    statusCode?: number;
+    headers?: IResponseHeader[];
+    content?: string;
+  } | null;
+  functionResponse?: {
+    sourceCode?: string;
+  } | null;
 }
 
 export interface IResponseHeader {

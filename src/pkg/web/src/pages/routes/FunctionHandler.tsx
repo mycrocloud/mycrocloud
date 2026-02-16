@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 const SAMPLE_FUNCTION = `function handler(req) {
   return {
     statusCode: 200,
-    headers: { "content-type": "application/json" },
     body: JSON.stringify({ message: "Hello, world!" }),
   }
 }`;
@@ -20,12 +19,12 @@ export default function FunctionHandler() {
     watch,
   } = useFormContext<RouteCreateUpdateInputs>();
 
-  const response = watch("response");
+  const sourceCode = watch("response.functionResponse.sourceCode");
 
   // Initialize with sample if empty
   useEffect(() => {
-    if (!getValues("response")) {
-      setValue("response", SAMPLE_FUNCTION);
+    if (!getValues("response.functionResponse.sourceCode")) {
+      setValue("response.functionResponse.sourceCode", SAMPLE_FUNCTION);
     }
   }, []);
 
@@ -33,19 +32,21 @@ export default function FunctionHandler() {
     <div className="space-y-2">
       <Label>Function Handler</Label>
       <p className="text-xs text-muted-foreground">
-        Write a JavaScript function that returns a response object with statusCode, headers, and body.
+        Write a JavaScript function that returns a response object.
       </p>
 
       <CodeEditor
-        value={response || ""}
-        onChange={(value) => setValue("response", value)}
+        value={sourceCode || ""}
+        onChange={(value) => setValue("response.functionResponse.sourceCode", value)}
         language="javascript"
         height="280px"
         placeholder="function handler(req) { ... }"
       />
 
-      {errors.response && (
-        <p className="text-sm text-destructive">{errors.response.message}</p>
+      {errors.response?.functionResponse?.sourceCode && (
+        <p className="text-sm text-destructive">
+          {errors.response.functionResponse.sourceCode.message}
+        </p>
       )}
     </div>
   );

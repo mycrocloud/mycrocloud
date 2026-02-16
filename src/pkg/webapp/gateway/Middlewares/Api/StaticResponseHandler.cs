@@ -15,9 +15,7 @@ public class StaticResponseHandler(IAppSpecificationService appCacheService, ILo
     {
         var route = (CachedRoute)context.Items["_CachedRoute"]!;
         var metadata = context.Items["_ApiRouteMetadata"] as ApiRouteMetadata;
-
         context.Response.StatusCode = metadata?.ResponseStatusCode ?? 200;
-
         foreach (var header in metadata?.ResponseHeaders ?? [])
         {
             context.Response.Headers.Append(header.Name, header.Value);

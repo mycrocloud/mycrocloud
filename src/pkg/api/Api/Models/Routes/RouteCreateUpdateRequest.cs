@@ -6,29 +6,18 @@ using Route = Api.Domain.Entities.Route;
 
 namespace Api.Models.Routes;
 
-public class RouteCreateUpdateRequest
+public class RouteCreateUpdateRequest : IValidatableObject
 {
     [Required] public string Name { get; set; }
     [Required] public string Method { get; set; }
     [Required] public string Path { get; set; }
-
-    [Required]
-    [JsonConverter(typeof(JsonStringEnumConverter))]
-    public ResponseType ResponseType { get; set; }
-
-    public int? ResponseStatusCode { get; set; }
-    public List<ResponseHeader> ResponseHeaders { get; set; } = [];
-    public string? Response { get; set; }
-    public string? ResponseBodyLanguage { get; set; }
-    public string? FunctionHandler { get; set; }
-    public List<string>? FunctionHandlerDependencies { get; set; }
     public bool RequireAuthorization { get; set; }
     public string? RequestQuerySchema { get; set; }
     public string? RequestHeaderSchema { get; set; }
     public string? RequestBodySchema { get; set; }
-    public int? FileId { get; set; }
 
-    public int? FolderId { get; set; }
+    [Required]
+    public RouteResponseRequest Response { get; set; }
 
     public bool Enabled { get; set; } = true;
 
@@ -42,15 +31,19 @@ public class RouteCreateUpdateRequest
             RequestQuerySchema = RequestQuerySchema,
             RequestHeaderSchema = RequestHeaderSchema,
             RequestBodySchema = RequestBodySchema,
-            ResponseType = ResponseType,
-            ResponseStatusCode = ResponseStatusCode,
-            ResponseHeaders = ResponseHeaders.Select(h => h.ToEntity()).ToList(),
-            ResponseBodyLanguage = ResponseBodyLanguage,
-            Response = Response,
-            FunctionHandlerDependencies = FunctionHandlerDependencies,
+            ResponseType = Response.Type,
+            ResponseStatusCode = Response.Type == ResponseType.Static
+                ? Response.StaticResponse?.StatusCode ?? 200
+                : null,
+            ResponseHeaders = Response.Type == ResponseType.Static
+                ? (Response.StaticResponse?.Headers ?? []).Select(h => h.ToEntity()).ToList()
+                : [],
+            Response = Response.Type == ResponseType.Function
+                ? Response.FunctionResponse?.SourceCode
+                : Response.StaticResponse?.Content,
             RequireAuthorization = RequireAuthorization,
             Enabled = Enabled,
-            FunctionRuntime = ResponseType == ResponseType.Function ? FunctionRuntime.JintInDocker : null
+            FunctionRuntime = Response.Type == ResponseType.Function ? FunctionRuntime.JintInDocker : null
         };
     }
 
@@ -62,25 +55,97 @@ public class RouteCreateUpdateRequest
         route.RequestQuerySchema = RequestQuerySchema;
         route.RequestHeaderSchema = RequestHeaderSchema;
         route.RequestBodySchema = RequestBodySchema;
-        route.ResponseType = ResponseType;
-        route.ResponseStatusCode = ResponseStatusCode;
-        route.ResponseHeaders = ResponseHeaders.Select(h => h.ToEntity()).ToList();
-        route.ResponseBodyLanguage = ResponseBodyLanguage;
-        route.Response = Response;
-        route.FunctionHandlerDependencies = FunctionHandlerDependencies;
+        route.ResponseType = Response.Type;
+        route.ResponseStatusCode = Response.Type == ResponseType.Static
+            ? Response.StaticResponse?.StatusCode ?? 200
+            : null;
+        route.ResponseHeaders = Response.Type == ResponseType.Static
+            ? (Response.StaticResponse?.Headers ?? []).Select(h => h.ToEntity()).ToList()
+            : [];
+        route.Response = Response.Type == ResponseType.Function
+            ? Response.FunctionResponse?.SourceCode
+            : Response.StaticResponse?.Content;
         route.RequireAuthorization = RequireAuthorization;
         route.Enabled = Enabled;
+        route.FunctionRuntime = Response.Type == ResponseType.Function ? FunctionRuntime.JintInDocker : null;
+    }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (Response is null)
+        {
+            yield return new ValidationResult("Response is required.", [nameof(Response)]);
+            yield break;
+        }
+
+        if (Response.Type != ResponseType.Static && Response.Type != ResponseType.Function)
+        {
+            yield return new ValidationResult("Response type must be Static or Function.", [$"{nameof(Response)}.{nameof(RouteResponseRequest.Type)}"]);
+        }
+
+        if (Response.Type == ResponseType.Static)
+        {
+            if (Response.StaticResponse is null)
+            {
+                yield return new ValidationResult("staticResponse is required when response.type is Static.", [$"{nameof(Response)}.{nameof(RouteResponseRequest.StaticResponse)}"]);
+            }
+
+            if (Response.FunctionResponse is not null)
+            {
+                yield return new ValidationResult("functionResponse is not allowed when response.type is Static.", [$"{nameof(Response)}.{nameof(RouteResponseRequest.FunctionResponse)}"]);
+            }
+        }
+
+        if (Response.Type == ResponseType.Function)
+        {
+            if (Response.FunctionResponse is null)
+            {
+                yield return new ValidationResult("functionResponse is required when response.type is Function.", [$"{nameof(Response)}.{nameof(RouteResponseRequest.FunctionResponse)}"]);
+            }
+
+            if (string.IsNullOrWhiteSpace(Response.FunctionResponse?.SourceCode))
+            {
+                yield return new ValidationResult("sourceCode is required when response.type is Function.", [$"{nameof(Response)}.{nameof(RouteResponseRequest.FunctionResponse)}.{nameof(FunctionResponseRequest.SourceCode)}"]);
+            }
+
+            if (Response.StaticResponse is not null)
+            {
+                yield return new ValidationResult("staticResponse is not allowed when response.type is Function.", [$"{nameof(Response)}.{nameof(RouteResponseRequest.StaticResponse)}"]);
+            }
+        }
     }
 }
 
-public class ResponseHeader
+public class RouteResponseRequest
+{
+    [Required]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public ResponseType Type { get; set; }
+
+    public StaticResponseRequest? StaticResponse { get; set; }
+    public FunctionResponseRequest? FunctionResponse { get; set; }
+}
+
+public class StaticResponseRequest
+{
+    public int? StatusCode { get; set; }
+    public List<ResponseHeaderRequest> Headers { get; set; } = [];
+    public string? Content { get; set; }
+}
+
+public class FunctionResponseRequest
+{
+    public string? SourceCode { get; set; }
+}
+
+public class ResponseHeaderRequest
 {
     [Required] public string Name { get; set; }
     [Required] public string Value { get; set; }
 
-    public Api.Domain.Entities.ResponseHeader ToEntity()
+    public ResponseHeader ToEntity()
     {
-        return new Api.Domain.Entities.ResponseHeader
+        return new ResponseHeader
         {
             Name = Name,
             Value = Value

@@ -84,16 +84,28 @@ public class ApiRoutesController(
             route.RequestQuerySchema,
             route.RequestHeaderSchema,
             route.RequestBodySchema,
-            ResponseType= route.ResponseType.ToString(),
-            route.ResponseStatusCode,
-            ResponseHeaders = (route.ResponseHeaders ?? []).Select(h => new
+            Response = new
             {
-                h.Name,
-                h.Value
-            }),
-            route.Response,
-            route.ResponseBodyLanguage,
-            route.FunctionHandlerDependencies,
+                Type = route.ResponseType.ToString(),
+                StaticResponse = route.ResponseType == ResponseType.Static
+                    ? new
+                    {
+                        StatusCode = route.ResponseStatusCode ?? 200,
+                        Headers = (route.ResponseHeaders ?? []).Select(h => new
+                        {
+                            h.Name,
+                            h.Value
+                        }),
+                        Content = route.Response
+                    }
+                    : null,
+                FunctionResponse = route.ResponseType == ResponseType.Function
+                    ? new
+                    {
+                        SourceCode = route.Response
+                    }
+                    : null
+            },
             route.RequireAuthorization,
             Status = route.Status.ToString(),
             route.Enabled,
@@ -132,19 +144,13 @@ public class ApiRoutesController(
         }
 
         var route = createRequest.ToCreateEntity();
-
-        route.Folder = createRequest.FolderId != null
-            ? await appDbContext.RouteFolders.SingleAsync(f =>
-                f.App == App && f.Id == createRequest.FolderId.Value)
-            : null;
-
         route.App = App;
 
         await appDbContext.Routes.AddAsync(route);
         await appDbContext.SaveChangesAsync();
         await specPublisher.PublishAsync(App.Slug);
 
-        return Created(route.Id.ToString(), new { route.Id, route.Version });
+        return Created(route.Id.ToString(), RouteDetails(route));
     }
 
     [HttpPut("{id:int}")]

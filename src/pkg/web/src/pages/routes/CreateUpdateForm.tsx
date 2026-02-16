@@ -59,13 +59,11 @@ export default function RouteCreateUpdate({
       requestHeaderSchema: route?.requestHeaderSchema,
       requestBodySchema: route?.requestBodySchema,
       requireAuthorization: route?.requireAuthorization ?? false,
-      responseType: route?.responseType || "Static",
-      responseStatusCode: route?.responseStatusCode || 200,
-      responseHeaders: route?.responseHeaders?.map(({ name, value }) => ({ name, value })) || [],
-      response: route?.response,
-      responseBodyLanguage: route?.responseBodyLanguage || "plaintext",
-      functionHandlerDependencies: route?.functionHandlerDependencies || [],
-      fileId: route?.fileId,
+      response: route?.response || {
+        type: "Static",
+        staticResponse: { statusCode: 200, headers: [], content: "" },
+        functionResponse: null,
+      },
       enabled: route?.enabled ?? true,
     },
   });
@@ -78,7 +76,7 @@ export default function RouteCreateUpdate({
     setValue,
   } = forms;
 
-  const responseType = watch("responseType");
+  const responseType = watch("response.type");
   const enabled = watch("enabled");
   const url = `https://${app.domain}${watch("path")}`;
 
@@ -253,7 +251,23 @@ export default function RouteCreateUpdate({
                 <Label>Response Type</Label>
                 <Select
                   value={responseType}
-                  onValueChange={(value) => setValue("responseType", value)}
+                  onValueChange={(value) => {
+                    if (value === "Static") {
+                      setValue("response.type", "Static");
+                      setValue("response.functionResponse", null);
+                      setValue("response.staticResponse", {
+                        statusCode: watch("response.staticResponse.statusCode") || 200,
+                        headers: watch("response.staticResponse.headers") || [],
+                        content: watch("response.staticResponse.content") || "",
+                      });
+                    } else {
+                      setValue("response.type", "Function");
+                      setValue("response.staticResponse", null);
+                      setValue("response.functionResponse", {
+                        sourceCode: watch("response.functionResponse.sourceCode") || "",
+                      });
+                    }
+                  }}
                 >
                   <SelectTrigger className="w-40">
                     <SelectValue />
@@ -267,7 +281,7 @@ export default function RouteCreateUpdate({
 
               {responseType === "Static" && <StaticResponse />}
               {responseType === "Function" && <FunctionHandler />}
-              {errors.response && (
+              {!!errors.response && typeof errors.response.message === "string" && (
                 <p className="text-sm text-destructive">{errors.response.message}</p>
               )}
             </CardContent>

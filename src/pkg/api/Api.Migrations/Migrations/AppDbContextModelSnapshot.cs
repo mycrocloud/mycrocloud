@@ -557,14 +557,6 @@ namespace Api.Migrations.Migrations
                     b.Property<int?>("FolderId")
                         .HasColumnType("integer");
 
-                    b.Property<string[]>("FunctionHandlerDependencies")
-                        .HasColumnType("text[]");
-
-                    b.Property<string>("FunctionHandlerMethod")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("handler");
-
                     b.Property<int?>("FunctionRuntime")
                         .HasColumnType("integer");
 
@@ -590,9 +582,6 @@ namespace Api.Migrations.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("Response")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ResponseBodyLanguage")
                         .HasColumnType("text");
 
                     b.Property<int?>("ResponseStatusCode")

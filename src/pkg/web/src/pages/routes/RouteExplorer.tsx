@@ -75,8 +75,8 @@ export default function RouteExplorer() {
   }, [routeId, app.id, get]);
 
   // Handlers
-  const handleNewRouteClick = (folderId: number | null = null) => {
-    navigate(folderId !== null ? `new/${folderId}` : "new");
+  const handleNewRouteClick = () => {
+    navigate("new");
   };
 
   const handleNewFolderClick = (parentId: number | null = null, level: number = 0) => {
@@ -272,7 +272,7 @@ export default function RouteExplorer() {
               <FolderItem
                 item={node}
                 onClick={() => handleFolderClick(node)}
-                onNewRoute={() => handleNewRouteClick(node.id)}
+                onNewRoute={handleNewRouteClick}
                 onNewFolder={() => handleNewFolderClick(node.id, node.level + 1)}
                 onRename={() => handleFolderRenameClick(node)}
                 onDuplicate={() => handleDuplicateClick(node)}

@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useApiClient } from "@/hooks";
 import { AppContext } from "../apps";
@@ -15,14 +15,10 @@ export default function RouteCreate() {
 
   const { dispatch } = useRoutesContext();
   const { post } = useApiClient();
-  const folderId = useParams()["folderId"];
 
   const onSubmit = async (data: RouteCreateUpdateInputs) => {
     try {
-      const newRoute = await post<IRoute>(`/api/apps/${app.id}/api/routes`, {
-        ...data,
-        folderId: folderId ? parseInt(folderId) : null,
-      });
+      const newRoute = await post<IRoute>(`/api/apps/${app.id}/api/routes`, data);
       dispatch({ type: "ADD_ROUTE", payload: newRoute });
       toast.success("Route created");
       navigate(`../${newRoute.id}`);

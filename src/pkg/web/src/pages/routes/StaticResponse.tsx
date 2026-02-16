@@ -11,10 +11,6 @@ const QUICK_ADD_HEADERS = [
   { label: "Plain Text", name: "content-type", value: "text/plain" },
   { label: "CSS", name: "content-type", value: "text/css" },
   { label: "JavaScript", name: "content-type", value: "text/javascript" },
-  { label: "PNG", name: "content-type", value: "image/png" },
-  { label: "JPEG", name: "content-type", value: "image/jpeg" },
-  { label: "SVG", name: "content-type", value: "image/svg+xml" },
-  { label: "PDF", name: "content-type", value: "application/pdf" },
 ];
 
 export default function StaticResponse() {
@@ -25,40 +21,40 @@ export default function StaticResponse() {
   } = useFormContext<RouteCreateUpdateInputs>();
 
   const {
-    fields: responseHeaders,
-    append: addResponseHeader,
-    remove: removeResponseHeader,
-  } = useFieldArray({ control, name: "responseHeaders" });
+    fields: headers,
+    append,
+    remove,
+  } = useFieldArray({ control, name: "response.staticResponse.headers" });
 
   return (
     <div className="space-y-4">
-      {/* Status Code */}
       <div className="space-y-2">
-        <Label htmlFor="responseStatusCode">Status Code</Label>
+        <Label htmlFor="response.staticResponse.statusCode">Status Code</Label>
         <Input
-          id="responseStatusCode"
+          id="response.staticResponse.statusCode"
           type="number"
-          {...register("responseStatusCode")}
+          {...register("response.staticResponse.statusCode")}
           className="w-24"
         />
-        {errors.responseStatusCode && (
-          <p className="text-sm text-destructive">{errors.responseStatusCode.message}</p>
+        {errors.response?.staticResponse?.statusCode && (
+          <p className="text-sm text-destructive">
+            {errors.response.staticResponse.statusCode.message}
+          </p>
         )}
       </div>
 
-      {/* Headers */}
       <div className="space-y-2">
         <Label>Response Headers</Label>
         <div className="space-y-2">
-          {responseHeaders.map((header, index) => (
+          {headers.map((header, index) => (
             <div key={header.id} className="flex items-center gap-2">
               <Input
-                {...register(`responseHeaders.${index}.name`)}
+                {...register(`response.staticResponse.headers.${index}.name`)}
                 placeholder="Header name"
                 className="flex-1"
               />
               <Input
-                {...register(`responseHeaders.${index}.value`)}
+                {...register(`response.staticResponse.headers.${index}.value`)}
                 placeholder="Header value"
                 className="flex-1"
               />
@@ -66,7 +62,7 @@ export default function StaticResponse() {
                 type="button"
                 variant="ghost"
                 size="icon"
-                onClick={() => removeResponseHeader(index)}
+                onClick={() => remove(index)}
                 className="h-9 w-9 text-destructive hover:text-destructive"
               >
                 <X className="h-4 w-4" />
@@ -79,7 +75,7 @@ export default function StaticResponse() {
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => addResponseHeader({ name: "", value: "" })}
+            onClick={() => append({ name: "", value: "" })}
           >
             <Plus className="mr-1 h-3 w-3" />
             Add Header
@@ -90,7 +86,7 @@ export default function StaticResponse() {
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => addResponseHeader({ name: header.name, value: header.value })}
+              onClick={() => append({ name: header.name, value: header.value })}
               className="text-xs"
             >
               {header.label}
@@ -99,17 +95,18 @@ export default function StaticResponse() {
         </div>
       </div>
 
-      {/* Body */}
       <div className="space-y-2">
-        <Label htmlFor="response">Response Body</Label>
+        <Label htmlFor="response.staticResponse.content">Response Content</Label>
         <textarea
-          id="response"
-          {...register("response")}
-          className="h-[280px] w-full resize-none rounded-md border bg-background px-3 py-2 font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          placeholder="Enter response body..."
+          id="response.staticResponse.content"
+          {...register("response.staticResponse.content")}
+          className="h-[240px] w-full resize-none rounded-md border bg-background px-3 py-2 font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          placeholder="Enter static response content..."
         />
-        {errors.response && (
-          <p className="text-sm text-destructive">{errors.response.message}</p>
+        {errors.response?.staticResponse?.content && (
+          <p className="text-sm text-destructive">
+            {errors.response.staticResponse.content.message}
+          </p>
         )}
       </div>
     </div>

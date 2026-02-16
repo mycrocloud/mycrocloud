@@ -10,13 +10,17 @@ export type RouteCreateUpdateInputs = {
   requestQuerySchema?: string | null;
   requestHeaderSchema?: string | null;
   requestBodySchema?: string | null;
-  responseType: string;
-  responseStatusCode?: number;
-  responseHeaders?: HeaderInput[];
-  responseBodyLanguage?: string;
-  response?: string | null;
-  functionHandlerDependencies?: (string | undefined)[];
-  fileId?: number | null;
+  response: {
+    type: string;
+    staticResponse: {
+      statusCode?: number;
+      headers?: HeaderInput[];
+      content?: string | null;
+    } | null;
+    functionResponse: {
+      sourceCode?: string | null;
+    } | null;
+  };
   enabled: boolean;
 };
 
@@ -37,20 +41,59 @@ export const routeCreateUpdateInputsSchema: ObjectSchema<RouteCreateUpdateInputs
     requestQuerySchema: yup.string().nullable(),
     requestHeaderSchema: yup.string().nullable(),
     requestBodySchema: yup.string().nullable(),
-    responseType: yup.string().required(),
-    responseStatusCode: yup.number(),
-    responseHeaders: yup.array().of(
-      yup.object({
-        name: yup.string().required(),
-        value: yup.string().required(),
-      }),
-    ),
-    responseBodyLanguage: yup.string(),
-    response: yup.string().nullable().when("responseType", {
-      is: "Function",
-      then: (schema) => schema.required("Function handler is required"),
-    }),
-    functionHandlerDependencies: yup.array().of(yup.string()),
-    fileId: yup.number().nullable(),
+    response: yup
+      .object({
+        type: yup.string().required().oneOf(["Static", "Function"]),
+        staticResponse: yup
+          .object({
+            statusCode: yup.number().min(100).max(599),
+            headers: yup.array().of(
+              yup.object({
+                name: yup.string().required(),
+                value: yup.string().required(),
+              }),
+            ),
+            content: yup.string().nullable(),
+          })
+          .nullable(),
+        functionResponse: yup
+          .object({
+            sourceCode: yup.string().nullable(),
+          })
+          .nullable(),
+      })
+      .required()
+      .test(
+        "response-shape",
+        "Invalid response configuration",
+        (value, context) => {
+          if (!value) return false;
+          if (value.type === "Static") {
+            if (value.functionResponse) {
+              return context.createError({
+                path: "response.functionResponse",
+                message: "functionResponse is not allowed for Static response",
+              });
+            }
+            return true;
+          }
+          if (value.type === "Function") {
+            if (value.staticResponse) {
+              return context.createError({
+                path: "response.staticResponse",
+                message: "staticResponse is not allowed for Function response",
+              });
+            }
+            if (!value.functionResponse?.sourceCode?.trim()) {
+              return context.createError({
+                path: "response.functionResponse.sourceCode",
+                message: "Function source code is required",
+              });
+            }
+            return true;
+          }
+          return false;
+        },
+      ),
     enabled: yup.boolean().required(),
   });
