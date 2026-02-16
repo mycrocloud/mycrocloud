@@ -60,7 +60,8 @@
       nginx_exporter: []
     service_plaintext_secret_files:
       lb:
-        - "lb/certs/mycrocloud.info.key"
+        - "lb/certs/mycrocloud.online.key"
+        - "lb/certs/mycrocloud.site.key"
       api:
         - "api/gha-mycrocloud.private-key.pem"
       web: []

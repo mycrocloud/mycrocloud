@@ -64,7 +64,10 @@ Before deployment, ensure the following secret files are created and populated:
 
 ### Required Secret Files
 
-- [ ] `prod/mycrocloud/lb/certs/mycrocloud.info.pem` - SSL/TLS certificate for load balancer
+- [ ] `prod/mycrocloud/lb/certs/mycrocloud.online.pem` - SSL/TLS certificate for load balancer
+- [ ] `prod/mycrocloud/lb/certs/mycrocloud.site.pem` - SSL/TLS certificate for data plane load balancer
+- [ ] `prod/mycrocloud/lb/certs/mycrocloud.online.key` - private key for control plane certificate
+- [ ] `prod/mycrocloud/lb/certs/mycrocloud.site.key` - private key for data plane certificate
 - [ ] `prod/mycrocloud/Services/WebApp/deployment/.env` - WebApp deployment environment variables
 - [ ] `prod/mycrocloud/.env` - Main environment configuration
 - [ ] `prod/mycrocloud/Services/WebApp/WebApp.Api/gha-mycrocloud.pem` - GitHub Actions authentication key
@@ -117,7 +120,7 @@ After deployment, verify the services are running:
 ansible all -i inventory.yml -m shell -a "docker ps"
 
 # Test web endpoint
-curl https://mycrocloud.info/health
+curl https://mycrocloud.online/health
 ```
 
 ## Troubleshooting

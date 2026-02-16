@@ -8,8 +8,8 @@ services:
     ports:
       - "443:443"
     environment:
-      - CONTROL_PLANE_DOMAIN=${CONTROL_PLANE_DOMAIN:-mycrocloud.info}
-      - DATA_PLANE_DOMAIN=${DATA_PLANE_DOMAIN:-mycrocloud.info}
+      - CONTROL_PLANE_DOMAIN=${CONTROL_PLANE_DOMAIN:-mycrocloud.online}
+      - DATA_PLANE_DOMAIN=${DATA_PLANE_DOMAIN:-mycrocloud.site}
     volumes:
       - ./lb/templates/conf.d:/etc/nginx/templates:ro
       - ./lb/certs:/etc/nginx/certs:ro

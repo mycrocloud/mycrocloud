@@ -3,6 +3,8 @@ server {
 	listen [::]:443 ssl;
 
 	server_name api.${CONTROL_PLANE_DOMAIN};
+	ssl_certificate /etc/nginx/certs/${CONTROL_PLANE_DOMAIN}.pem;
+	ssl_certificate_key /etc/nginx/certs/${CONTROL_PLANE_DOMAIN}.key;
 
 	location / {
 		proxy_pass http://api:8080;
