@@ -8,6 +8,7 @@ using MycroCloud.WebApp.Gateway.Middlewares.Spa;
 using MycroCloud.WebApp.Gateway.Models;
 using MycroCloud.WebApp.Gateway.Services;
 using MycroCloud.WebApp.Gateway.Utils;
+using StackExchange.Redis;
 
 DotNetEnv.Env.Load();
 var builder = WebApplication.CreateBuilder(args);
@@ -34,7 +35,40 @@ builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient("HttpDocumentRetriever");
 builder.Services.AddStackExchangeRedisCache(options =>
 {
-    options.Configuration = builder.Configuration.GetConnectionString("Redis");
+    var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+
+    if (string.IsNullOrWhiteSpace(redisConnectionString))
+    {
+        throw new InvalidOperationException("ConnectionStrings:Redis is required.");
+    }
+
+    if (redisConnectionString.StartsWith("redis://", StringComparison.OrdinalIgnoreCase) ||
+        redisConnectionString.StartsWith("rediss://", StringComparison.OrdinalIgnoreCase))
+    {
+        var redisUri = new Uri(redisConnectionString);
+        var redisOptions = new ConfigurationOptions
+        {
+            EndPoints = { { redisUri.Host, redisUri.Port > 0 ? redisUri.Port : 6379 } },
+            Ssl = redisUri.Scheme.Equals("rediss", StringComparison.OrdinalIgnoreCase),
+            AbortOnConnectFail = false
+        };
+
+        if (!string.IsNullOrWhiteSpace(redisUri.UserInfo))
+        {
+            var userInfoParts = redisUri.UserInfo.Split(':', 2);
+            redisOptions.User = Uri.UnescapeDataString(userInfoParts[0]);
+            if (userInfoParts.Length == 2)
+            {
+                redisOptions.Password = Uri.UnescapeDataString(userInfoParts[1]);
+            }
+        }
+
+        options.ConfigurationOptions = redisOptions;
+    }
+    else
+    {
+        options.Configuration = redisConnectionString;
+    }
 });
 builder.Services.AddSingleton<ICachedOpenIdConnectionSigningKeys, CachedOpenIdConnectionSigningKeys>();
 builder.Services.AddScoped<IAppSpecificationService, AppSpecificationService>();
