@@ -1,5 +1,4 @@
 using System.IdentityModel.Tokens.Jwt;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MycroCloud.WebApp.Gateway.Models;
 using MycroCloud.WebApp.Gateway.Services;
@@ -25,11 +24,6 @@ public class AuthenticationMiddleware(RequestDelegate next, ILogger<Authenticati
                 case AuthenticationSchemeType.OpenIdConnect:
                 {
                     await AuthenticateOpenIdConnectScheme(context, scheme);
-                    break;
-                }
-                case AuthenticationSchemeType.ApiKey:
-                {
-                    await AuthenticateApiKeyScheme(context, app, scheme);
                     break;
                 }
                 default:
@@ -68,25 +62,6 @@ public class AuthenticationMiddleware(RequestDelegate next, ILogger<Authenticati
         }
         context.Items.Add("_AuthenticatedScheme", scheme);
         context.Items.Add("_OpenIdConnectUser", user);
-    }
-
-    private static async Task AuthenticateApiKeyScheme(HttpContext context, AppSpecification app, CachedAuthenticationScheme scheme)
-    {
-        var apiKey = context.Request.Headers["X-Api-Key"].FirstOrDefault();
-        if (string.IsNullOrEmpty(apiKey))
-        {
-            return;
-        }
-        var appDbContext = context.RequestServices.GetService<AppDbContext>()!;
-        var apiKeyEntity = await appDbContext.ApiKeys
-            .Where(k => k.Id == app.Id && k.Key == apiKey)
-            .SingleOrDefaultAsync();
-        if (apiKeyEntity is null)
-        {
-            return;
-        }
-        context.Items.Add("_AuthenticatedScheme", scheme);
-        context.Items.Add("_ApiKey", apiKeyEntity);
     }
 
     private bool ValidateToken(string token, 

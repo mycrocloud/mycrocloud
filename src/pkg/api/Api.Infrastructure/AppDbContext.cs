@@ -13,8 +13,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<AccessLog> Logs { get; set; }
     public DbSet<AuthenticationScheme> AuthenticationSchemes { get; set; }
 
-    public DbSet<ApiKey> ApiKeys { get; set; }
-
     public DbSet<Variable> Variables { get; set; }
 
     //TODO: re-design?
@@ -93,11 +91,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<Route>()
             .Property(r => r.FunctionHandlerMethod)
             .HasDefaultValue("handler");
-
-        modelBuilder.Entity<ApiKey>()
-            .HasOne(r => r.App)
-            .WithMany(a => a.ApiKeys)
-            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<AuthenticationScheme>()
             .HasOne(r => r.App)

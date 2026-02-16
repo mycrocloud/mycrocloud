@@ -17,7 +17,6 @@ public class App : BaseEntity
 
     // Navigation properties
 
-    public ICollection<ApiKey> ApiKeys { get; set; }
     public ICollection<AuthenticationScheme> AuthenticationSchemes { get; set; }
 
     public ICollection<RouteFolder> RouteFolders { get; set; }
