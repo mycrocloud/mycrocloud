@@ -69,7 +69,7 @@ public class WebhooksController(
 
         foreach (var app in apps)
         {
-            var artifactsUploadPath = $"/apps/{app.Id}/builds/{{buildId}}/artifacts";
+            var artifactsUploadPath = $"/apps/{app.Id}/spa/builds/{{buildId}}/artifacts";
 
             await buildOrchestrationService.CreateAndQueueBuildAsync(
                 app,

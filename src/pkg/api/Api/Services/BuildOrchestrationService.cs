@@ -113,7 +113,7 @@ public class BuildOrchestrationService(
             BuilderImage = builderImage,
             EnvVars = buildEnvVars,
             ArtifactsUploadPath = finalArtifactsUploadPath,
-            LogsUploadPath = $"/apps/{app.Id}/builds/{build.Id}/logs",
+            LogsUploadPath = $"/apps/{app.Id}/spa/builds/{build.Id}/logs",
             Limits = planLimits
         };
 

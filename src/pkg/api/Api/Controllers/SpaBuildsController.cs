@@ -66,7 +66,7 @@ public class SpaBuildsController(
         var cloneUrl = $"https://x-access-token:{installationAccessToken}@github.com/{repo.FullName}";
 
         // Use template path - service will replace {buildId} with actual value
-        var artifactsUploadPath = $"/apps/{appId}/builds/{{buildId}}/artifacts";
+        var artifactsUploadPath = $"/apps/{appId}/spa/builds/{{buildId}}/artifacts";
         
         await buildOrchestrationService.CreateAndQueueBuildAsync(
             app,
