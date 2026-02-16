@@ -29,7 +29,7 @@ resource "aws_secretsmanager_secret" "seq_env" {
 
 # secret_files (referenced in deploy.yml)
 resource "aws_secretsmanager_secret" "lb_certs_key" {
-  name = "${local.secret_name_prefix}/lb/certs/mycrocloud.info.key"
+  name = "${local.secret_name_prefix}/lb/certs/mycrocloud.online.key"
 }
 
 resource "aws_secretsmanager_secret" "api_gha_pem" {

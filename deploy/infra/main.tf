@@ -58,7 +58,8 @@ locals {
 }
 
 locals {
-  domain = "mycrocloud.info"
+  control_plane_domain = "mycrocloud.online"
+  data_plane_domain    = "mycrocloud.site"
 }
 
 data "aws_ami" "ubuntu" {
@@ -195,12 +196,18 @@ resource "aws_instance" "server" {
   }
 }
 
-data "cloudflare_zone" "zone" {
-  zone_id = var.cloudflare_zone_id
+data "cloudflare_zone" "control_plane_zone" {
+  zone_id = var.cloudflare_control_plane_zone_id
 }
 
+data "cloudflare_zone" "data_plane_zone" {
+  count   = var.cloudflare_data_plane_zone_id != "" ? 1 : 0
+  zone_id = var.cloudflare_data_plane_zone_id
+}
+
+
 resource "cloudflare_dns_record" "apex" {
-  zone_id = data.cloudflare_zone.zone.zone_id
+  zone_id = data.cloudflare_zone.control_plane_zone.zone_id
   name    = "@"
   type    = "A"
   ttl     = 1
@@ -210,30 +217,50 @@ resource "cloudflare_dns_record" "apex" {
 
 
 resource "cloudflare_dns_record" "wildcard" {
-  zone_id = data.cloudflare_zone.zone.zone_id
+  zone_id = data.cloudflare_zone.control_plane_zone.zone_id
   name    = "*"
   type    = "CNAME"
   ttl     = 1
   proxied = true
-  content = local.domain
+  content = local.control_plane_domain
 }
 
 resource "cloudflare_dns_record" "api" {
-  zone_id = data.cloudflare_zone.zone.zone_id
+  zone_id = data.cloudflare_zone.control_plane_zone.zone_id
   name    = "api"
   type    = "CNAME"
   ttl     = 1
   proxied = true
-  content = "mycrocloud.info"
+  content = local.control_plane_domain
 }
 
 resource "cloudflare_dns_record" "slack_integration_api" {
-  zone_id = data.cloudflare_zone.zone.zone_id
+  zone_id = data.cloudflare_zone.control_plane_zone.zone_id
   name    = "slack-integration-api"
   type    = "CNAME"
   ttl     = 1
   proxied = true
-  content = local.domain
+  content = local.control_plane_domain
+}
+
+resource "cloudflare_dns_record" "data_plane_wildcard" {
+  count   = var.cloudflare_data_plane_zone_id != "" ? 1 : 0
+  zone_id = data.cloudflare_zone.data_plane_zone[0].zone_id
+  name    = "*"
+  type    = "CNAME"
+  ttl     = 1
+  proxied = true
+  content = local.data_plane_domain
+}
+
+resource "cloudflare_dns_record" "data_plane_apex" {
+  count   = var.cloudflare_data_plane_zone_id != "" ? 1 : 0
+  zone_id = data.cloudflare_zone.data_plane_zone[0].zone_id
+  name    = "@"
+  type    = "A"
+  ttl     = 1
+  proxied = true
+  content = aws_instance.server.public_ip
 }
 
 resource "aws_iam_openid_connect_provider" "github" {
@@ -294,5 +321,5 @@ module "database" {
   source       = "./modules/database"
   neon_api_key = var.neon_api_key
   project_name = local.project_name
-  count = 0 # Temporarily disable database creation.
+  count        = 0 # Temporarily disable database creation.
 }

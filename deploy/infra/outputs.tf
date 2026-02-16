@@ -13,7 +13,15 @@ output "instance_user" {
 
 # DNS
 output "host" {
-  value = data.cloudflare_zone.zone.name
+  value = data.cloudflare_zone.control_plane_zone.name
+}
+
+output "control_plane_host" {
+  value = data.cloudflare_zone.control_plane_zone.name
+}
+
+output "data_plane_host" {
+  value = local.data_plane_domain
 }
 
 # Identity

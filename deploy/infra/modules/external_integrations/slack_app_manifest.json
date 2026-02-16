@@ -17,7 +17,7 @@
       "slash_commands": [
         {
           "command": "/mycrocloud",
-          "url": "https://slack-integration-api.mycrocloud.info/slack/commands",
+          "url": "https://slack-integration-api.mycrocloud.online/slack/commands",
           "description": "Learn how to use MycroCloud integration",
           "usage_hint": "help",
           "should_escape": true
@@ -26,7 +26,7 @@
     },
     "oauth_config": {
       "redirect_urls": [
-        "https://mycrocloud.info/integrations/slack/oauth/callback"
+        "https://mycrocloud.online/integrations/slack/oauth/callback"
       ],
       "scopes": {
         "bot": [

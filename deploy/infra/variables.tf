@@ -3,9 +3,16 @@ variable "public_key" {
   default = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF+PV+eGYi2awncbY+nyqdaKcev4MV5KTcdcgZyZM4NC nam@mycrocloud.info"
 }
 
-variable "cloudflare_zone_id" {
-  type    = string
-  default = "c719907867c6f32aa82a8258adbf337a"
+variable "cloudflare_control_plane_zone_id" {
+  type        = string
+  description = "Cloudflare zone ID for the control plane domain (e.g. mycrocloud.online)"
+  default     = "058b5763ec271908e7b2dcc26417253c"
+}
+
+variable "cloudflare_data_plane_zone_id" {
+  type        = string
+  description = "Cloudflare zone ID for the data plane domain (e.g. mycrocloud.site)"
+  default     = "15409f5c7e9ffa42220f0ebb0a91cfeb"
 }
 
 variable "cloudflare_api_token" {
@@ -30,7 +37,7 @@ variable "auth0_client_secret" {
 
 variable "web_origin" {
   type    = list(string)
-  default = ["https://mycrocloud.info"]
+  default = ["https://mycrocloud.online"]
 }
 
 variable "auth0_github_oauth_app_client_id" {

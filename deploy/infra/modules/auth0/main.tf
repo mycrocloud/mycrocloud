@@ -1,7 +1,3 @@
-locals {
-  domain = "mycrocloud.info"
-}
-
 resource "auth0_client" "web" {
   name                = "Web"
   app_type            = "spa"

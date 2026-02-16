@@ -1,3 +1,5 @@
+cloudflare_control_plane_zone_id = "your_control_plane_zone_id"
+cloudflare_data_plane_zone_id = "your_data_plane_zone_id"
 cloudflare_api_token = "your_cloudflare_api_token"
 auth0_client_secret = "your_auth0_client_secret"
 auth0_github_oauth_app_client_secret = "auth0_github_oauth_app_client_secret"

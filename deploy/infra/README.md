@@ -12,6 +12,9 @@ This folder contains Terraform configurations to create the necessary infrastruc
 1. Ensure that you are in the `infra` directory
 2. Create a `backend.config` file to configure the remote state backend. You can use the provided `backend.config.example` as a template. Then, fill in the required values.
 3. Create a `variables.auto.tfvars` file to define your variables. You can use the provided `variables.auto.tfvars.example` as a template. Then, fill in the required values.
+   Required domain-related variables:
+   - `cloudflare_control_plane_zone_id` for `mycrocloud.online`
+   - `cloudflare_data_plane_zone_id` for `mycrocloud.site`
 4. Intialize terraform and apply the configuration:
    ```bash
    terraform init -backend-config=backend.config && \
