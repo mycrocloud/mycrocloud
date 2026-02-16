@@ -24,3 +24,5 @@ services:
       - OUT_DIR=dist
       - INSTALL_CMD=npm install
       - BUILD_CMD=npm run build
+    profiles:
+      - spa-builder
