@@ -7,4 +7,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 {
     public DbSet<DeploymentFile> DeploymentFiles { get; set; }
     public DbSet<AccessLog> Logs { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<AccessLog>()
+            .OwnsMany(log => log.FunctionLogs, builder => { builder.ToJson(); });
+    }
 }
