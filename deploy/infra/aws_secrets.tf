@@ -32,6 +32,10 @@ resource "aws_secretsmanager_secret" "lb_certs_key" {
   name = "${local.secret_name_prefix}/lb/certs/mycrocloud.online.key"
 }
 
+resource "aws_secretsmanager_secret" "lb_certs_data_plane_key" {
+  name = "${local.secret_name_prefix}/lb/certs/mycrocloud.site.key"
+}
+
 resource "aws_secretsmanager_secret" "api_gha_pem" {
   name = "${local.secret_name_prefix}/api/gha-mycrocloud.private-key.pem"
 }
