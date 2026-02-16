@@ -1,5 +1,5 @@
 import { useApiClient } from "@/hooks";
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { AppContext } from ".";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -74,6 +74,7 @@ type BuildInputs = {
 };
 
 const ITEMS_PER_PAGE = 10;
+const DEPLOYMENTS_POLL_INTERVAL_MS = 1000;
 
 function formatTimestamp(timestamp: string): string {
   if (!timestamp) return "-";
@@ -136,16 +137,31 @@ export default function DeploymentsList() {
   // Filter & Pagination state
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const isFetchingDeploymentsRef = useRef(false);
 
   const fetchDeployments = useCallback(async () => {
-    const data = await get<IDeployment[]>(`/api/apps/${app.id}/spa/deployments`);
-    setDeployments(data);
-    setIsLoading(false);
+    if (isFetchingDeploymentsRef.current) return;
+
+    isFetchingDeploymentsRef.current = true;
+    try {
+      const data = await get<IDeployment[]>(`/api/apps/${app.id}/spa/deployments`);
+      setDeployments(data);
+    } catch (error) {
+      console.error("Failed to fetch deployments:", error);
+    } finally {
+      setIsLoading(false);
+      isFetchingDeploymentsRef.current = false;
+    }
   }, [app.id, get]);
 
-  // Initial fetch
+  // Initial fetch + polling
   useEffect(() => {
     fetchDeployments();
+    const timer = setInterval(fetchDeployments, DEPLOYMENTS_POLL_INTERVAL_MS);
+
+    return () => {
+      clearInterval(timer);
+    };
   }, [fetchDeployments]);
 
   // Filter deployments
