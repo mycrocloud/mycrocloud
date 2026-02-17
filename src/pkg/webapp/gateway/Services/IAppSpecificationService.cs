@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Amazon.S3;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
@@ -46,17 +47,51 @@ public class AppSpecificationService(
     public async Task<string?> GetApiDeploymentFileContentAsync(Guid? deploymentId, string path)
     {
         if (deploymentId == null) return null;
+        var normalizedPath = path.TrimStart('/');
 
         var file = await dbContext.DeploymentFiles
             .AsNoTracking()
             .Include(f => f.Blob)
-            .FirstOrDefaultAsync(f => f.DeploymentId == deploymentId && f.Path == path);
+            .FirstOrDefaultAsync(f =>
+                f.DeploymentId == deploymentId &&
+                (f.Path == path || f.Path == normalizedPath));
 
         if (file == null) return null;
 
-        using var stream = await storageProvider.OpenReadAsync(file.Blob.StorageKey);
-        using var reader = new StreamReader(stream);
-        return await reader.ReadToEndAsync();
+        var retryDelays = new[] { 100, 300, 600 };
+        for (var attempt = 0; attempt < retryDelays.Length; attempt++)
+        {
+            try
+            {
+                using var stream = await storageProvider.OpenReadAsync(file.Blob.StorageKey);
+                using var reader = new StreamReader(stream);
+                return await reader.ReadToEndAsync();
+            }
+            catch (AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound ||
+                                               string.Equals(ex.ErrorCode, "NoSuchKey", StringComparison.OrdinalIgnoreCase))
+            {
+                if (attempt == retryDelays.Length - 1) break;
+
+                logger.LogWarning(ex,
+                    "Storage key not found yet. Retrying read for DeploymentId={DeploymentId}, Path={Path}, StorageKey={StorageKey}, Attempt={Attempt}",
+                    deploymentId, path, file.Blob.StorageKey, attempt + 1);
+                await Task.Delay(retryDelays[attempt]);
+            }
+            catch (FileNotFoundException ex)
+            {
+                if (attempt == retryDelays.Length - 1) break;
+
+                logger.LogWarning(ex,
+                    "Storage file not found yet. Retrying read for DeploymentId={DeploymentId}, Path={Path}, StorageKey={StorageKey}, Attempt={Attempt}",
+                    deploymentId, path, file.Blob.StorageKey, attempt + 1);
+                await Task.Delay(retryDelays[attempt]);
+            }
+        }
+
+        logger.LogError(
+            "Failed to load deployment file content after retries. DeploymentId={DeploymentId}, Path={Path}, StorageKey={StorageKey}",
+            deploymentId, path, file.Blob.StorageKey);
+        return null;
     }
 
     public async Task<ApiRouteMetadata?> GetRouteMetadataAsync(Guid? deploymentId, int routeId)
