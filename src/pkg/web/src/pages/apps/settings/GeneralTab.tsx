@@ -403,16 +403,6 @@ function DeleteSection() {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4">
-              <p className="text-sm font-medium">The following will be deleted:</p>
-              <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                <li>All API routes and configurations</li>
-                <li>All build history and deployments</li>
-                <li>All logs and analytics data</li>
-                <li>All authentication schemes</li>
-              </ul>
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="confirm-name">
                 Type <span className="font-mono font-semibold text-destructive">{app.name}</span> to confirm
