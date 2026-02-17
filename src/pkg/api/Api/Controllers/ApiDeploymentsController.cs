@@ -40,8 +40,16 @@ public class ApiDeploymentsController(
                     .Count(f => f.DeploymentId == d.Id && f.Path.StartsWith("routes/"))
             })
             .ToListAsync();
-        
-        return Ok(deployments);
+
+        return Ok(deployments.Select(d => new
+        {
+            d.Id,
+            d.Name,
+            d.IsActive,
+            Status = d.Status.ToString(),
+            d.CreatedAt,
+            d.RouteCount
+        }));
     }
 
     [HttpGet("{deploymentId:guid}")]
@@ -63,7 +71,7 @@ public class ApiDeploymentsController(
             deployment.Id,
             deployment.Name,
             IsActive = isActive,
-            deployment.Status,
+            Status = deployment.Status.ToString(),
             deployment.CreatedAt,
             RouteCount = routeCount,
             TotalFiles = deployment.Files.Count

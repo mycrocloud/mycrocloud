@@ -36,7 +36,7 @@ public class SpaDeploymentsController(
             d.Id,
             IsActive = d.Id == activeDeploymentId,
             d.Name,
-            d.Status,
+            Status = d.Status.ToString(),
             d.BuildId,
             Build = d.Build != null ? new
             {
@@ -67,7 +67,7 @@ public class SpaDeploymentsController(
             deployment.Id,
             IsActive = isActive,
             deployment.Name,
-            deployment.Status,
+            Status = deployment.Status.ToString(),
             deployment.BuildId,
             Build = deployment.Build != null ? new
             {
