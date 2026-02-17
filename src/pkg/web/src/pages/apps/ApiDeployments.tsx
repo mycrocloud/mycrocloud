@@ -79,7 +79,7 @@ function renderNonActiveStatusBadge(status: string) {
   if (normalized === "failed") {
     return (
       <Badge className="bg-red-600 hover:bg-red-700">
-        Failed
+        Build failed
       </Badge>
     );
   }
