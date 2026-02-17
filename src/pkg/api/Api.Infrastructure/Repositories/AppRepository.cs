@@ -23,6 +23,10 @@ public class AppRepository(AppDbContext dbContext) : IAppRepository
         app.ActiveApiDeploymentId = null;
         await dbContext.SaveChangesAsync();
 
+        await dbContext.Set<AppLink>()
+            .Where(link => link.AppId == appId)
+            .ExecuteDeleteAsync();
+
         await dbContext.SpaDeployments
             .Where(d => d.AppId == appId)
             .ExecuteDeleteAsync();
