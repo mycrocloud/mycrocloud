@@ -355,7 +355,7 @@ function GitHubLinkSection({ onConnected }: { onConnected: () => void }) {
 
 const buildConfigSchema = yup.object({
   branch: yup.string().required("Branch is required"),
-  directory: yup.string().required("Directory is required"),
+  directory: yup.string().default(""),
   installCommand: yup.string().required("Install command is required"),
   buildCommand: yup.string().required("Build command is required"),
   outDir: yup.string().required("Output directory is required"),
@@ -393,10 +393,18 @@ function BuildSettingsSection({
   useEffect(() => {
     (async () => {
       try {
-        const data = await get<IBuildConfig>(`/api/apps/${app.id}/spa/builds/config`);
-        originalData.current = data;
-        setBuildConfig(data);
-        reset(data);
+        const data = await get<IBuildConfig | null>(`/api/apps/${app.id}/spa/builds/config`);
+        const normalizedData: IBuildConfig = {
+          branch: data?.branch ?? "main",
+          directory: data?.directory ?? "",
+          installCommand: data?.installCommand ?? "npm install",
+          buildCommand: data?.buildCommand ?? "npm run build",
+          outDir: data?.outDir ?? "dist",
+          nodeVersion: data?.nodeVersion ?? "20",
+        };
+        originalData.current = normalizedData;
+        setBuildConfig(normalizedData);
+        reset(normalizedData);
       } finally {
         setLoading(false);
       }
@@ -425,6 +433,10 @@ function BuildSettingsSection({
     } finally {
       setSaving(false);
     }
+  };
+
+  const onInvalid = () => {
+    toast.error("Please fix validation errors before saving");
   };
 
   const handleCancel = () => {
@@ -525,7 +537,11 @@ function BuildSettingsSection({
               Configure build settings for deployments from your connected repository.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            id="build-settings-form"
+            onSubmit={handleSubmit(onSubmit, onInvalid)}
+            className="space-y-4"
+          >
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="branch">Branch</Label>
@@ -614,7 +630,7 @@ function BuildSettingsSection({
               <Button type="button" variant="outline" onClick={handleCancel} disabled={saving}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={saving}>
+              <Button type="submit" form="build-settings-form" disabled={saving}>
                 {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save
               </Button>
