@@ -33,8 +33,8 @@ interface IDeployment {
   buildId: string | null;
   buildName: string | null;
   createdAt: string;
-  artifactSize: number;
-  artifactHash: string;
+  artifactSize: number | null;
+  artifactHash: string | null;
   artifactId?: string;
   build?: {
     metadata: Record<string, string>;
@@ -196,7 +196,7 @@ export default function DeploymentDetails() {
       const token = await getAccessTokenSilently();
 
       // Create download link with authentication
-      const downloadUrl = `/api/apps/${app.id}/spa/builds/${deploymentId}/download`;
+      const downloadUrl = `/api/apps/${app.id}/spa/deployments/${deploymentId}/download`;
 
       // Use fetch to download with authentication header
       const response = await fetch(downloadUrl, {
@@ -319,7 +319,9 @@ export default function DeploymentDetails() {
                 <FileArchive className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-medium text-muted-foreground">Size</span>
               </div>
-              <p className="text-2xl font-bold">{formatBytes(deployment.artifactSize)}</p>
+              <p className="text-2xl font-bold">
+                {deployment.artifactSize == null ? "-" : formatBytes(deployment.artifactSize)}
+              </p>
             </div>
 
             {/* Files Card */}
@@ -445,7 +447,7 @@ export default function DeploymentDetails() {
                 <span className="text-sm font-medium">Artifact Hash</span>
               </div>
               <span className="text-sm text-muted-foreground font-mono">
-                {deployment.artifactHash.slice(0, 16)}...
+                {deployment.artifactHash ? `${deployment.artifactHash.slice(0, 16)}...` : "-"}
               </span>
             </div>
           </div>

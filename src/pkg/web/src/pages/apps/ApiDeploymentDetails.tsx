@@ -69,6 +69,7 @@ export default function ApiDeploymentDetails() {
   const [isLoadingRoutes, setIsLoadingRoutes] = useState(false);
   const [showRoutes, setShowRoutes] = useState(false);
   const [isDownloadingOpenApi, setIsDownloadingOpenApi] = useState(false);
+  const isReady = deployment?.status === "Ready";
 
   const fetchDeployment = useCallback(async () => {
     try {
@@ -249,11 +250,17 @@ export default function ApiDeploymentDetails() {
             <p className="text-sm text-muted-foreground mb-4">
               View or download the OpenAPI specification for this deployment
             </p>
+            {!isReady && (
+              <p className="text-xs text-muted-foreground mb-4">
+                OpenAPI is available after deployment status is Ready.
+              </p>
+            )}
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleViewOpenApi}
+                disabled={!isReady}
               >
                 <ExternalLink className="mr-2 h-4 w-4" />
                 View in Swagger UI
@@ -262,7 +269,7 @@ export default function ApiDeploymentDetails() {
                 variant="outline"
                 size="sm"
                 onClick={handleDownloadOpenApi}
-                disabled={isDownloadingOpenApi}
+                disabled={isDownloadingOpenApi || !isReady}
               >
                 {isDownloadingOpenApi ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
