@@ -65,6 +65,28 @@ function formatTimestamp(timestamp: string): string {
   });
 }
 
+function renderNonActiveStatusBadge(status: string) {
+  const normalized = status.toLowerCase();
+
+  if (normalized === "building") {
+    return (
+      <Badge className="bg-blue-600 hover:bg-blue-700">
+        Building
+      </Badge>
+    );
+  }
+
+  if (normalized === "failed") {
+    return (
+      <Badge className="bg-red-600 hover:bg-red-700">
+        Failed
+      </Badge>
+    );
+  }
+
+  return null;
+}
+
 export default function ApiDeploymentsList() {
   const { app } = useContext(AppContext)!;
   if (!app) throw new Error();
@@ -178,10 +200,12 @@ export default function ApiDeploymentsList() {
                             {deployment.id.slice(0, 12)}
                           </p>
                         </div>
-                        {deployment.isActive && (
+                        {deployment.isActive ? (
                           <Badge className="bg-green-600 hover:bg-green-700">
                             Active
                           </Badge>
+                        ) : (
+                          renderNonActiveStatusBadge(deployment.status)
                         )}
                       </div>
                     </TableCell>
