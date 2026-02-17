@@ -95,7 +95,7 @@ function Home() {
           <Button
             size="lg"
             variant="outline"
-            onClick={() => window.open("https://docs.mycrocloud.oneline", "_blank")}
+            onClick={() => window.open("https://docs.mycrocloud.online", "_blank")}
           >
             Documentation
           </Button>
