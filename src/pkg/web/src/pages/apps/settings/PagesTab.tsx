@@ -362,6 +362,17 @@ const buildConfigSchema = yup.object({
   nodeVersion: yup.string().default("20"),
 });
 
+const FRAMEWORK_PRESETS: Record<string, IBuildConfig> = {
+  vite: {
+    branch: "main",
+    directory: "",
+    installCommand: "npm install",
+    buildCommand: "npm run build",
+    outDir: "dist",
+    nodeVersion: "22",
+  },
+};
+
 function BuildSettingsSection({
   autoOpen,
   onAutoOpenHandled,
@@ -385,6 +396,8 @@ function BuildSettingsSection({
     handleSubmit,
     reset,
     control,
+    setValue,
+    clearErrors,
     formState: { errors },
   } = useForm<IBuildConfig>({
     resolver: yupResolver(buildConfigSchema),
@@ -444,6 +457,18 @@ function BuildSettingsSection({
       reset(originalData.current);
     }
     setIsModalOpen(false);
+  };
+
+  const applyPreset = (presetKey: keyof typeof FRAMEWORK_PRESETS) => {
+    const preset = FRAMEWORK_PRESETS[presetKey];
+
+    setValue("branch", preset.branch);
+    setValue("directory", preset.directory);
+    setValue("installCommand", preset.installCommand);
+    setValue("buildCommand", preset.buildCommand);
+    setValue("outDir", preset.outDir);
+    setValue("nodeVersion", preset.nodeVersion);
+    clearErrors();
   };
 
   if (loading) {
@@ -542,6 +567,17 @@ function BuildSettingsSection({
             onSubmit={handleSubmit(onSubmit, onInvalid)}
             className="space-y-4"
           >
+            <div className="flex items-center gap-2 rounded-md border bg-muted/30 p-2">
+              <span className="text-xs text-muted-foreground">Quick Fill:</span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => applyPreset("vite")}
+              >
+                Vite
+              </Button>
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="branch">Branch</Label>
