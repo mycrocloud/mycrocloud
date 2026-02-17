@@ -37,7 +37,7 @@ public class ApiDeploymentsController(
                 d.Status,
                 d.CreatedAt,
                 RouteCount = appDbContext.DeploymentFiles
-                    .Count(f => f.DeploymentId == d.Id && f.Path.StartsWith("routes/"))
+                    .Count(f => f.DeploymentId == d.Id && f.Path.StartsWith("routes/") && f.Path.EndsWith("/meta.json"))
             })
             .ToListAsync();
 
@@ -64,7 +64,7 @@ public class ApiDeploymentsController(
             return NotFound();
 
         var isActive = deployment.Id == deployment.App.ActiveApiDeploymentId;
-        var routeCount = deployment.Files.Count(f => f.Path.StartsWith("routes/"));
+        var routeCount = deployment.Files.Count(f => f.Path.StartsWith("routes/") && f.Path.EndsWith("/meta.json"));
 
         return Ok(new
         {
