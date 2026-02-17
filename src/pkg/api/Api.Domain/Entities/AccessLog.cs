@@ -3,10 +3,11 @@ using Api.Domain.Enums;
 
 namespace Api.Domain.Entities;
 
-public class AccessLog : BaseEntity
+public class AccessLog
 {
     public Guid Id { get; set; }
     public int AppId { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public int? RouteId { get; set; }
     public string Method { get; set; }
     public string Path { get; set; }
