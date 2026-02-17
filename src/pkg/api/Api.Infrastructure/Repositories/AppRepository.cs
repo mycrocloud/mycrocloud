@@ -16,6 +16,21 @@ public class AppRepository(AppDbContext dbContext) : IAppRepository
     public async Task Delete(int appId)
     {
         var app = await dbContext.Apps.FirstAsync(a => a.Id == appId);
+
+        // Break references from App -> Deployment first, then remove deployments.
+        // This avoids FK conflicts during app deletion when artifacts are still linked.
+        app.ActiveSpaDeploymentId = null;
+        app.ActiveApiDeploymentId = null;
+        await dbContext.SaveChangesAsync();
+
+        await dbContext.SpaDeployments
+            .Where(d => d.AppId == appId)
+            .ExecuteDeleteAsync();
+
+        await dbContext.ApiDeployments
+            .Where(d => d.AppId == appId)
+            .ExecuteDeleteAsync();
+
         dbContext.Apps.Remove(app);
         await dbContext.SaveChangesAsync();
     }
