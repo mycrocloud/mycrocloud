@@ -59,7 +59,7 @@ export interface IBuildConfig {
   nodeVersion: string;
 }
 
-export const NODE_VERSIONS = ["18", "20", "22"] as const;
+export const NODE_VERSIONS = ["20", "22", "24"] as const;
 export type NodeVersion = (typeof NODE_VERSIONS)[number];
 
 export type VariableTarget = "Runtime" | "Build" | "All";
