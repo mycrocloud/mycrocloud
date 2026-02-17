@@ -50,15 +50,25 @@ import {
 const { GITHUB_APP_NAME } = getConfig();
 
 export default function PagesTab() {
+  const { app } = useContext(AppContext)!;
+  if (!app) throw new Error();
+
+  const [autoOpenBuildSettings, setAutoOpenBuildSettings] = useState(false);
+
   return (
     <>
-      <GitHubLinkSection />
-      <BuildSettingsSection />
+      <GitHubLinkSection onConnected={() => setAutoOpenBuildSettings(true)} />
+      {app.gitIntegration && (
+        <BuildSettingsSection
+          autoOpen={autoOpenBuildSettings}
+          onAutoOpenHandled={() => setAutoOpenBuildSettings(false)}
+        />
+      )}
     </>
   );
 }
 
-function GitHubLinkSection() {
+function GitHubLinkSection({ onConnected }: { onConnected: () => void }) {
   const { get, post, del } = useApiClient();
   const { app, setApp } = useContext(AppContext)!;
   if (!app) throw new Error();
@@ -147,6 +157,7 @@ function GitHubLinkSection() {
     setLink(newLink);
     // Update app context with new gitIntegration
     setApp({ ...app, gitIntegration: newLink });
+    onConnected();
   };
 
   const onDisconnect = async () => {
@@ -351,14 +362,22 @@ const buildConfigSchema = yup.object({
   nodeVersion: yup.string().default("20"),
 });
 
-function BuildSettingsSection() {
+function BuildSettingsSection({
+  autoOpen,
+  onAutoOpenHandled,
+}: {
+  autoOpen: boolean;
+  onAutoOpenHandled: () => void;
+}) {
   const { get, post } = useApiClient();
   const { app } = useContext(AppContext)!;
   if (!app) throw new Error();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [buildConfig, setBuildConfig] = useState<IBuildConfig | null>(null);
+  const [showReadyHint, setShowReadyHint] = useState(false);
   const originalData = useRef<IBuildConfig | null>(null);
 
   const {
@@ -376,6 +395,7 @@ function BuildSettingsSection() {
       try {
         const data = await get<IBuildConfig>(`/api/apps/${app.id}/spa/builds/config`);
         originalData.current = data;
+        setBuildConfig(data);
         reset(data);
       } finally {
         setLoading(false);
@@ -383,13 +403,22 @@ function BuildSettingsSection() {
     })();
   }, [app.id, get, reset]);
 
+  useEffect(() => {
+    if (autoOpen) {
+      setIsModalOpen(true);
+      onAutoOpenHandled();
+    }
+  }, [autoOpen, onAutoOpenHandled]);
+
   const onSubmit = async (data: IBuildConfig) => {
     setSaving(true);
     try {
       await post(`/api/apps/${app.id}/spa/builds/config`, data);
       originalData.current = data;
+      setBuildConfig(data);
       toast.success("Build settings saved");
-      setIsEditing(false);
+      setShowReadyHint(true);
+      setIsModalOpen(false);
     } catch (err) {
       console.error("Failed to save build settings:", err);
       toast.error("Failed to save build settings");
@@ -402,7 +431,7 @@ function BuildSettingsSection() {
     if (originalData.current) {
       reset(originalData.current);
     }
-    setIsEditing(false);
+    setIsModalOpen(false);
   };
 
   if (loading) {
@@ -425,129 +454,174 @@ function BuildSettingsSection() {
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <GitBranch className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-base">Build Settings</CardTitle>
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <GitBranch className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-base">Build Settings</CardTitle>
+            </div>
+            <CardDescription>
+              Configure how your application is built
+            </CardDescription>
           </div>
-          <CardDescription>
-            Configure how your application is built
-          </CardDescription>
-        </div>
-        {!isEditing && (
-          <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+          <Button variant="outline" size="sm" onClick={() => setIsModalOpen(true)}>
             <Pencil className="mr-2 h-4 w-4" />
             Edit
           </Button>
-        )}
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="branch">Branch</Label>
-              <Input
-                id="branch"
-                {...register("branch")}
-                disabled={!isEditing}
-                placeholder="main"
-              />
-              {errors.branch && (
-                <p className="text-sm text-destructive">{errors.branch.message}</p>
-              )}
+        </CardHeader>
+        <CardContent>
+          {showReadyHint && (
+            <div className="mb-4 flex items-center justify-between rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
+              <span>Ready to create your first deployment.</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-green-800 hover:bg-green-100"
+                onClick={() => setShowReadyHint(false)}
+              >
+                Dismiss
+              </Button>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="directory">Root Directory</Label>
-              <Input
-                id="directory"
-                {...register("directory")}
-                disabled={!isEditing}
-                placeholder="."
-              />
-              {errors.directory && (
-                <p className="text-sm text-destructive">{errors.directory.message}</p>
-              )}
+          )}
+          {buildConfig && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Branch</p>
+                <p className="text-sm font-medium">{buildConfig.branch}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Root Directory</p>
+                <p className="text-sm font-medium">{buildConfig.directory}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Install Command</p>
+                <p className="text-sm font-mono">{buildConfig.installCommand}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Build Command</p>
+                <p className="text-sm font-mono">{buildConfig.buildCommand}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Output Directory</p>
+                <p className="text-sm font-medium">{buildConfig.outDir}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Node.js Version</p>
+                <p className="text-sm font-medium">Node.js {buildConfig.nodeVersion}</p>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="installCommand">Install Command</Label>
-              <Input
-                id="installCommand"
-                {...register("installCommand")}
-                disabled={!isEditing}
-                placeholder="npm ci"
-                className="font-mono text-sm"
-              />
-              {errors.installCommand && (
-                <p className="text-sm text-destructive">{errors.installCommand.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="buildCommand">Build Command</Label>
-              <Input
-                id="buildCommand"
-                {...register("buildCommand")}
-                disabled={!isEditing}
-                placeholder="npm run build"
-                className="font-mono text-sm"
-              />
-              {errors.buildCommand && (
-                <p className="text-sm text-destructive">{errors.buildCommand.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="outDir">Output Directory</Label>
-              <Input
-                id="outDir"
-                {...register("outDir")}
-                disabled={!isEditing}
-                placeholder="dist"
-              />
-              {errors.outDir && (
-                <p className="text-sm text-destructive">{errors.outDir.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="nodeVersion">Node.js Version</Label>
-              <Controller
-                name="nodeVersion"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    value={field.value || "20"}
-                    onValueChange={field.onChange}
-                    disabled={!isEditing}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Node.js version" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {NODE_VERSIONS.map((version) => (
-                        <SelectItem key={version} value={version}>
-                          Node.js {version}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-          </div>
+          )}
+        </CardContent>
+      </Card>
 
-          {isEditing && (
-            <div className="flex gap-2">
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Build Settings</DialogTitle>
+            <DialogDescription>
+              Configure build settings for deployments from your connected repository.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="branch">Branch</Label>
+                <Input
+                  id="branch"
+                  {...register("branch")}
+                  placeholder="main"
+                />
+                {errors.branch && (
+                  <p className="text-sm text-destructive">{errors.branch.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="directory">Root Directory</Label>
+                <Input
+                  id="directory"
+                  {...register("directory")}
+                  placeholder="."
+                />
+                {errors.directory && (
+                  <p className="text-sm text-destructive">{errors.directory.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="installCommand">Install Command</Label>
+                <Input
+                  id="installCommand"
+                  {...register("installCommand")}
+                  placeholder="npm ci"
+                  className="font-mono text-sm"
+                />
+                {errors.installCommand && (
+                  <p className="text-sm text-destructive">{errors.installCommand.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="buildCommand">Build Command</Label>
+                <Input
+                  id="buildCommand"
+                  {...register("buildCommand")}
+                  placeholder="npm run build"
+                  className="font-mono text-sm"
+                />
+                {errors.buildCommand && (
+                  <p className="text-sm text-destructive">{errors.buildCommand.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="outDir">Output Directory</Label>
+                <Input
+                  id="outDir"
+                  {...register("outDir")}
+                  placeholder="dist"
+                />
+                {errors.outDir && (
+                  <p className="text-sm text-destructive">{errors.outDir.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="nodeVersion">Node.js Version</Label>
+                <Controller
+                  name="nodeVersion"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value || "20"}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Node.js version" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {NODE_VERSIONS.map((version) => (
+                          <SelectItem key={version} value={version}>
+                            Node.js {version}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleCancel} disabled={saving}>
+                Cancel
+              </Button>
               <Button type="submit" disabled={saving}>
                 {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save
               </Button>
-              <Button type="button" variant="outline" onClick={handleCancel} disabled={saving}>
-                Cancel
-              </Button>
-            </div>
-          )}
-        </form>
-      </CardContent>
-    </Card>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
