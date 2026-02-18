@@ -10,7 +10,7 @@ public class RouteResolverMiddleware(RequestDelegate next)
     {
         var app = (AppSpecification)context.Items["_AppSpecification"]!;
         var apiRoutes = await appCacheService.GetApiRoutesAsync(app.ApiDeploymentId);
-        var matchedRoutes = new List<CachedRoute>();
+        var matchedRoutes = new List<ApiRouteSummary>();
 
         foreach (var r in apiRoutes)
         {
@@ -34,7 +34,7 @@ public class RouteResolverMiddleware(RequestDelegate next)
         }
 
         var route = matchedRoutes.First();
-        context.Items["_CachedRoute"] = route;
+        context.Items["_ApiRouteSummary"] = route;
         await next(context);
     }
 }

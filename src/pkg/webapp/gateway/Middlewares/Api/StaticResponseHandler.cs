@@ -13,10 +13,10 @@ public class StaticResponseHandler(IAppSpecificationService appCacheService, ILo
 
     public async Task HandleAsync(HttpContext context)
     {
-        var route = (CachedRoute)context.Items["_CachedRoute"]!;
+        var route = (ApiRouteSummary)context.Items["_ApiRouteSummary"]!;
         var metadata = context.Items["_ApiRouteMetadata"] as ApiRouteMetadata;
-        context.Response.StatusCode = metadata?.ResponseStatusCode ?? 200;
-        foreach (var header in metadata?.ResponseHeaders ?? [])
+        context.Response.StatusCode = metadata?.Response.StaticResponse?.StatusCode ?? 200;
+        foreach (var header in metadata?.Response.StaticResponse?.Headers ?? [])
         {
             context.Response.Headers.Append(header.Name, header.Value);
         }

@@ -91,13 +91,26 @@ public class ApiDeploymentService(
                 Path = route.Path,
                 Description = route.Description,
                 ResponseType = route.ResponseType,
-                ResponseStatusCode = route.ResponseStatusCode,
-                ResponseHeaders = route.ResponseHeaders ?? [],
+                Response = new ApiRouteResponseMetadata
+                {
+                    StaticResponse = route.ResponseType == ResponseType.Static
+                        ? new ApiStaticResponseMetadata
+                        {
+                            StatusCode = route.ResponseStatusCode,
+                            Headers = route.ResponseHeaders ?? []
+                        }
+                        : null,
+                    FunctionResponse = route.ResponseType == ResponseType.Function
+                        ? new ApiFunctionResponseMetadata
+                        {
+                            Runtime = route.FunctionRuntime
+                        }
+                        : null
+                },
                 RequestQuerySchema = route.RequestQuerySchema,
                 RequestHeaderSchema = route.RequestHeaderSchema,
                 RequestBodySchema = route.RequestBodySchema,
-                RequireAuthorization = route.RequireAuthorization,
-                FunctionRuntime = route.FunctionRuntime
+                RequireAuthorization = route.RequireAuthorization
             };
             
             var metaContent = System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(metadata));
@@ -123,13 +136,26 @@ public class ApiDeploymentService(
             Path = route.Path,
             Description = route.Description,
             ResponseType = route.ResponseType,
-            ResponseStatusCode = route.ResponseStatusCode,
-            ResponseHeaders = route.ResponseHeaders ?? [],
+            Response = new ApiRouteResponseMetadata
+            {
+                StaticResponse = route.ResponseType == ResponseType.Static
+                    ? new ApiStaticResponseMetadata
+                    {
+                        StatusCode = route.ResponseStatusCode,
+                        Headers = route.ResponseHeaders ?? []
+                    }
+                    : null,
+                FunctionResponse = route.ResponseType == ResponseType.Function
+                    ? new ApiFunctionResponseMetadata
+                    {
+                        Runtime = route.FunctionRuntime
+                    }
+                    : null
+            },
             RequestQuerySchema = route.RequestQuerySchema,
             RequestHeaderSchema = route.RequestHeaderSchema,
             RequestBodySchema = route.RequestBodySchema,
-            RequireAuthorization = route.RequireAuthorization,
-            FunctionRuntime = route.FunctionRuntime
+            RequireAuthorization = route.RequireAuthorization
         }).ToList();
 
         var openApiSpec = openApiGenerator.GenerateSpecification(app.Slug, app.Slug, routeMetadataList);
@@ -155,7 +181,7 @@ public class ApiDeploymentService(
             description = r.Description,
             responseType = r.ResponseType.ToString(),
             requireAuthorization = r.RequireAuthorization,
-            functionRuntime = r.FunctionRuntime?.ToString()
+            functionRuntime = r.Response.FunctionResponse?.Runtime?.ToString()
         }).ToList();
 
         var routesJson = JsonSerializer.Serialize(routesSummary, new JsonSerializerOptions 

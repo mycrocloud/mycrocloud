@@ -8,7 +8,7 @@ public class RouteMetadataMiddleware(RequestDelegate next)
     public async Task InvokeAsync(HttpContext context, IAppSpecificationService appSpecService)
     {
         var app = (AppSpecification)context.Items["_AppSpecification"]!;
-        var route = (CachedRoute)context.Items["_CachedRoute"]!;
+        var route = (ApiRouteSummary)context.Items["_ApiRouteSummary"]!;
 
         if (app.ApiDeploymentId.HasValue)
         {

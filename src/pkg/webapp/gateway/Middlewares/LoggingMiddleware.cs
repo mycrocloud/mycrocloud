@@ -13,7 +13,7 @@ public class LoggingMiddleware(RequestDelegate next)
 
         if (context.Items["_AppSpecification"] is AppSpecification app && !context.Request.IsPreflightRequest())
         {
-            var route = context.Items["_CachedRoute"] as CachedRoute;
+            var route = context.Items["_ApiRouteSummary"] as ApiRouteSummary;
             var metadata = context.Items["_ApiRouteMetadata"] as ApiRouteMetadata;
             var functionExecutionResult = context.Items["_FunctionExecutionResult"] as FunctionResult;
 
@@ -25,7 +25,7 @@ public class LoggingMiddleware(RequestDelegate next)
                 Path = context.Request.Path + context.Request.QueryString,
                 StatusCode = context.Response.StatusCode,
                 FunctionLogs = functionExecutionResult?.Logs,
-                FunctionRuntime = metadata?.FunctionRuntime,
+                FunctionRuntime = metadata?.Response.FunctionResponse?.Runtime,
                 FunctionExecutionDuration = functionExecutionResult?.Duration,
                 RemoteAddress = context.Connection.RemoteIpAddress!.ToString(),
                 RequestContentLength = context.Request.ContentLength,

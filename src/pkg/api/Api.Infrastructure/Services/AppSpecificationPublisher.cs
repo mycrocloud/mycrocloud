@@ -46,7 +46,7 @@ public class AppSpecificationPublisher(
         // Pre-warm versioned routes cache
         if (app.ActiveApiDeploymentId.HasValue)
         {
-            var routes = app.Routes.Select(MapToCachedRoute).ToList();
+            var routes = app.Routes.Select(MapToApiRouteSummary).ToList();
             var routesJson = JsonSerializer.Serialize(routes);
             var routesCacheKey = $"api_routes:{app.ActiveApiDeploymentId.Value}";
             await cache.SetStringAsync(routesCacheKey, routesJson, new DistributedCacheEntryOptions
@@ -100,7 +100,7 @@ public class AppSpecificationPublisher(
         Variables = app.Variables.Select(MapToCachedVariable).ToList()
     };
 
-    private static CachedRoute MapToCachedRoute(Route route) => new()
+    private static ApiRouteSummary MapToApiRouteSummary(Route route) => new()
     {
         Id = route.Id,
         Method = route.Method,

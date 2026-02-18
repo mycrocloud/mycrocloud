@@ -33,7 +33,7 @@ public class AppSpecification
 /// Cached route. Excludes Response (function code or static content) and metadata (headers, schemas).
 /// Only contains enabled and active routes.
 /// </summary>
-public class CachedRoute
+public class ApiRouteSummary
 {
     public int Id { get; set; }
     public string Method { get; set; } = string.Empty;

@@ -9,7 +9,7 @@ public class ValidationMiddleware(RequestDelegate next)
 {
     public async Task InvokeAsync(HttpContext context)
     {
-        var route = (CachedRoute)context.Items["_CachedRoute"]!;
+        var route = (ApiRouteSummary)context.Items["_ApiRouteSummary"]!;
         var metadata = context.Items["_ApiRouteMetadata"] as ApiRouteMetadata;
 
         if (metadata == null || (string.IsNullOrEmpty(metadata.RequestQuerySchema)

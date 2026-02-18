@@ -10,7 +10,7 @@ public class ResponseDispatcherMiddleware(RequestDelegate next, ILogger<Response
 {
     public async Task InvokeAsync(HttpContext context, IEnumerable<IResponseHandler> handlers)
     {
-        var route = (CachedRoute)context.Items["_CachedRoute"]!;
+        var route = (ApiRouteSummary)context.Items["_ApiRouteSummary"]!;
 
         logger.LogDebug("Dispatching response for route {RouteId} with ResponseType {ResponseType}",
             route.Id, route.ResponseType);

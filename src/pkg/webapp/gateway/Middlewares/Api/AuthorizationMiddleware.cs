@@ -6,7 +6,7 @@ public class AuthorizationMiddleware(RequestDelegate next)
 {
     public async Task InvokeAsync(HttpContext context)
     {
-        var route = (CachedRoute)context.Items["_CachedRoute"]!;
+        var route = (ApiRouteSummary)context.Items["_ApiRouteSummary"]!;
         var metadata = context.Items["_ApiRouteMetadata"] as ApiRouteMetadata;
         var authenticatedScheme = context.Items["_AuthenticatedScheme"] as CachedAuthenticationScheme;
         

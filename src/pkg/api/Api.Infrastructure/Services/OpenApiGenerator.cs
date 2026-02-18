@@ -76,7 +76,7 @@ public class OpenApiGenerator : IOpenApiGenerator
             ["tags"] = new[] { ExtractTagFromPath(route.Path) },
             // Custom extensions for MycroCloud-specific metadata
             ["x-response-type"] = route.ResponseType.ToString(),
-            ["x-function-runtime"] = route.FunctionRuntime?.ToString()
+            ["x-function-runtime"] = route.Response.FunctionResponse?.Runtime?.ToString()
         };
 
         // Add parameters (query, path, header)
@@ -166,7 +166,7 @@ public class OpenApiGenerator : IOpenApiGenerator
 
         // Add responses
         var statusCode = route.ResponseType == ResponseType.Static
-            ? (route.ResponseStatusCode?.ToString() ?? "200")
+            ? (route.Response.StaticResponse?.StatusCode?.ToString() ?? "200")
             : "200";
 
         object responseContent = route.ResponseType switch

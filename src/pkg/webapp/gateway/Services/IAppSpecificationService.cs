@@ -15,7 +15,7 @@ public interface IAppSpecificationService
 
     Task<ApiRouteMetadata?> GetRouteMetadataAsync(Guid? deploymentId, int routeId);
 
-    Task<List<CachedRoute>> GetApiRoutesAsync(Guid? deploymentId);
+    Task<List<ApiRouteSummary>> GetApiRoutesAsync(Guid? deploymentId);
 }
 
 public class AppSpecificationService(
@@ -120,14 +120,14 @@ public class AppSpecificationService(
         return meta;
     }
 
-    public async Task<List<CachedRoute>> GetApiRoutesAsync(Guid? deploymentId)
+    public async Task<List<ApiRouteSummary>> GetApiRoutesAsync(Guid? deploymentId)
     {
         if (deploymentId == null) return [];
 
         var cacheKey = $"api_routes:{deploymentId}";
 
         // L1: Memory Cache
-        if (memoryCache.TryGetValue(cacheKey, out List<CachedRoute>? routes) && routes != null)
+        if (memoryCache.TryGetValue(cacheKey, out List<ApiRouteSummary>? routes) && routes != null)
         {
             return routes;
         }
@@ -136,7 +136,7 @@ public class AppSpecificationService(
         var cached = await cache.GetStringAsync(cacheKey);
         if (cached is not null)
         {
-            routes = JsonSerializer.Deserialize<List<CachedRoute>>(cached);
+            routes = JsonSerializer.Deserialize<List<ApiRouteSummary>>(cached);
             if (routes != null)
             {
                 memoryCache.Set(cacheKey, routes, CacheTtl);
@@ -151,7 +151,7 @@ public class AppSpecificationService(
 
         try
         {
-            routes = JsonSerializer.Deserialize<List<CachedRoute>>(json, new JsonSerializerOptions
+            routes = JsonSerializer.Deserialize<List<ApiRouteSummary>>(json, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             });

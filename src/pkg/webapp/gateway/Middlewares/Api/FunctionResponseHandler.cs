@@ -18,10 +18,10 @@ public class FunctionResponseHandler(
     public async Task HandleAsync(HttpContext context)
     {
         var app = (AppSpecification)context.Items["_AppSpecification"]!;
-        var route = (CachedRoute)context.Items["_CachedRoute"]!;
+        var route = (ApiRouteSummary)context.Items["_ApiRouteSummary"]!;
         var metadata = context.Items["_ApiRouteMetadata"] as ApiRouteMetadata;
 
-        var runtime = metadata?.FunctionRuntime;
+        var runtime = metadata?.Response.FunctionResponse?.Runtime;
 
         context.Items["_FunctionRuntime"] = runtime;
 
