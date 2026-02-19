@@ -57,7 +57,7 @@ public class CustomDomainsController(
         var domain = request.Domain.Trim().ToLowerInvariant();
 
         var taken = await dbContext.CustomDomains
-            .AnyAsync(d => d.Domain == domain);
+            .AnyAsync(d => d.Domain == domain); // TODO: check status?
         if (taken)
             return Conflict(new { Message = "This domain is already registered" });
 
