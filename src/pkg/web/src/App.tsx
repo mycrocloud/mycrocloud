@@ -22,7 +22,7 @@ import {
   AppApiDeploymentDetails,
   AppLayout,
 } from "./pages/apps";
-import AppSettings, { GeneralTab, ApiTab, PagesTab, EnvironmentTab } from "./pages/apps/Settings";
+import AppSettings, { GeneralTab, ApiTab, PagesTab, EnvironmentTab, DomainsTab } from "./pages/apps/Settings";
 import { RouteIndex, RouteCreate, RouteEdit } from "./pages/routes";
 import Settings from "./pages/settings";
 import Connections from "./pages/settings/Connections";
@@ -106,6 +106,7 @@ function App() {
                   <Route path="api" element={<ApiTab />} />
                   <Route path="pages" element={<PagesTab />} />
                   <Route path="environment" element={<EnvironmentTab />} />
+                  <Route path="domains" element={<DomainsTab />} />
                 </Route>
               </Route>
             </Route>

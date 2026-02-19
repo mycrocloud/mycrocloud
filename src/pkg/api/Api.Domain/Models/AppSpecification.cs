@@ -30,6 +30,8 @@ public class AppSpecification
     /// Runtime variables for functions.
     /// </summary>
     public List<CachedVariable> Variables { get; set; } = [];
+
+    public List<string> CustomDomains { get; set; } = [];
 }
 
 /// <summary>

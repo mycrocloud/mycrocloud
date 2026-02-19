@@ -1,14 +1,15 @@
 import { useLocation, Link, Outlet, Navigate } from "react-router-dom";
-import { Settings, Globe, FileCode, Key } from "lucide-react";
+import { Settings, Globe, FileCode, Key, Earth } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export { GeneralTab, ApiTab, PagesTab, EnvironmentTab } from "./settings/index";
+export { GeneralTab, ApiTab, PagesTab, EnvironmentTab, DomainsTab } from "./settings/index";
 
 const navItems = [
   { path: "general", label: "General", icon: Settings },
   { path: "api", label: "API", icon: Globe },
   { path: "pages", label: "Pages", icon: FileCode },
   { path: "environment", label: "Environment", icon: Key },
+  { path: "domains", label: "Domains", icon: Earth },
 ];
 
 export default function AppSettings() {

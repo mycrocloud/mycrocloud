@@ -8,15 +8,20 @@ public class AppResolverMiddleware(RequestDelegate next)
 {
     public async Task InvokeAsync(HttpContext context, IAppSpecificationService appCacheService, IConfiguration configuration)
     {
-        var appName = context.Request.Evaluate(configuration["AppNameSource"] ?? "Header:X-App-Name");
+        AppSpecification? appSpec = null;
 
-        if (string.IsNullOrEmpty(appName))
+        var appName = context.Request.Evaluate(configuration["AppNameSource"] ?? "Header:X-App-Name");
+        if (!string.IsNullOrEmpty(appName))
         {
-            await context.Response.WriteNotFound("App not found");
-            return;
+            appSpec = await appCacheService.GetBySlugAsync(appName);
+        }
+        else
+        {
+            // Custom domain resolution — use the Host header directly
+            var hostname = context.Request.Host.Host;
+            appSpec = await appCacheService.GetByCustomDomainAsync(hostname);
         }
 
-        var appSpec = await appCacheService.GetBySlugAsync(appName);
         if (appSpec is null)
         {
             await context.Response.WriteNotFound("App not found");

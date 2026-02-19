@@ -26,6 +26,7 @@ public class AppSpecificationPublisher(
             .Include(a => a.Routes.Where(r => r.Enabled && r.Status == RouteStatus.Active))
             .Include(a => a.AuthenticationSchemes.Where(s => s.Enabled))
             .Include(a => a.Variables.Where(v => v.Target == VariableTarget.Runtime || v.Target == VariableTarget.All))
+            .Include(a => a.CustomDomains.Where(d => d.Status == CustomDomainStatus.Active))
             .SingleOrDefaultAsync(a => a.Slug == slug);
 
         if (app is null)
@@ -57,7 +58,18 @@ public class AppSpecificationPublisher(
                 app.ActiveApiDeploymentId.Value, routes.Count);
         }
 
-        logger.LogInformation("Successfully published spec for app: {Slug} (SPA: {SpaId}, API: {ApiId})", 
+        // Publish custom domain -> slug index entries
+        foreach (var customDomain in spec.CustomDomains)
+        {
+            var domainKey = $"custom_domain:{customDomain}";
+            await cache.SetStringAsync(domainKey, slug, new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = CacheTtl
+            });
+            logger.LogDebug("Published custom domain index: {Domain} -> {Slug}", customDomain, slug);
+        }
+
+        logger.LogInformation("Successfully published spec for app: {Slug} (SPA: {SpaId}, API: {ApiId})",
             slug, spec.SpaDeploymentId, spec.ApiDeploymentId);
     }
 
@@ -85,6 +97,13 @@ public class AppSpecificationPublisher(
         }
     }
 
+    public async Task InvalidateCustomDomainAsync(string domain)
+    {
+        var domainKey = $"custom_domain:{domain}";
+        await cache.RemoveAsync(domainKey);
+        logger.LogInformation("Invalidated custom domain index: {Domain}", domain);
+    }
+
     private static AppSpecification MapToSpecification(App app) => new()
     {
         Id = app.Id,
@@ -97,7 +116,11 @@ public class AppSpecificationPublisher(
         RoutingConfig = app.RoutingConfig ?? RoutingConfig.Default,
         Settings = app.Settings ?? AppSettings.Default,
         AuthenticationSchemes = app.AuthenticationSchemes.Select(MapToCachedAuthScheme).ToList(),
-        Variables = app.Variables.Select(MapToCachedVariable).ToList()
+        Variables = app.Variables.Select(MapToCachedVariable).ToList(),
+        CustomDomains = app.CustomDomains
+            .Where(d => d.Status == CustomDomainStatus.Active)
+            .Select(d => d.Domain)
+            .ToList()
     };
 
     private static ApiRouteSummary MapToApiRouteSummary(Route route) => new()

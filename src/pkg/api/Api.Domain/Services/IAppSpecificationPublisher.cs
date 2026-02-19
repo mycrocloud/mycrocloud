@@ -22,4 +22,9 @@ public interface IAppSpecificationPublisher
     /// Removes the AppSpecification from Redis by App ID.
     /// </summary>
     Task InvalidateByIdAsync(int appId);
+
+    /// <summary>
+    /// Removes a custom domain index entry from Redis.
+    /// </summary>
+    Task InvalidateCustomDomainAsync(string domain);
 }

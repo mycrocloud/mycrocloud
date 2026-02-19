@@ -40,6 +40,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     public DbSet<GitHubInstallation> GitHubInstallations { get; set; }
 
+    public DbSet<CustomDomain> CustomDomains { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<App>()
@@ -239,6 +241,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             entity.HasOne(e => e.App)
                 .WithMany(a => a.ApiDeployments)
+                .HasForeignKey(e => e.AppId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<CustomDomain>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Domain).IsUnique();
+            entity.Property(e => e.Domain).HasMaxLength(253);
+            entity.HasOne(e => e.App)
+                .WithMany(a => a.CustomDomains)
                 .HasForeignKey(e => e.AppId)
                 .OnDelete(DeleteBehavior.Cascade);
         });

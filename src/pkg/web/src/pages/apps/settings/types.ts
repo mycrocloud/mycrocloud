@@ -124,3 +124,16 @@ export interface RoutingConfigFormInput {
   mode: RoutingMode;
   apiPrefix: string;
 }
+
+// Custom Domains
+export type CustomDomainStatus = "Pending" | "Active" | "Failed";
+
+export interface ICustomDomain {
+  id: number;
+  domain: string;
+  status: CustomDomainStatus;
+  verifiedAt?: string;
+  createdAt: string;
+  updatedAt?: string;
+  cnameTarget: string;
+}

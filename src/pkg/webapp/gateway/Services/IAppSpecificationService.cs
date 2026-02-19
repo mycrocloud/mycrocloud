@@ -10,6 +10,8 @@ namespace MycroCloud.WebApp.Gateway.Services;
 public interface IAppSpecificationService
 {
     Task<AppSpecification?> GetBySlugAsync(string slug);
+
+    Task<AppSpecification?> GetByCustomDomainAsync(string hostname);
     
     Task<string?> GetApiDeploymentFileContentAsync(Guid? deploymentId, string path);
 
@@ -28,6 +30,7 @@ public class AppSpecificationService(
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(5);
     private const string CacheKeyPrefix = "app:";
     private const string MetaCacheKeyPrefix = "route_meta:";
+    private const string DomainIndexPrefix = "custom_domain:";
 
     public async Task<AppSpecification?> GetBySlugAsync(string slug)
     {
@@ -42,6 +45,18 @@ public class AppSpecificationService(
 
         logger.LogWarning("Cache miss for spec: {Slug}. Spec must be published from API.", slug);
         return null;
+    }
+
+    public async Task<AppSpecification?> GetByCustomDomainAsync(string hostname)
+    {
+        var indexKey = $"{DomainIndexPrefix}{hostname.ToLowerInvariant()}";
+        var slug = await cache.GetStringAsync(indexKey);
+        if (slug is null)
+        {
+            logger.LogDebug("No custom domain index entry for: {Hostname}", hostname);
+            return null;
+        }
+        return await GetBySlugAsync(slug);
     }
 
     public async Task<string?> GetApiDeploymentFileContentAsync(Guid? deploymentId, string path)
