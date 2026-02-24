@@ -30,11 +30,6 @@ services:
     volumes:
       - seq_data:/data
 
-  redis:
-    image: redis:alpine3.21
-    ports:
-      - "6379:6379"
-
   rabbitmq:
     image: rabbitmq:4.1.5-management-alpine
     ports:

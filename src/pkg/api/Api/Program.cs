@@ -15,7 +15,7 @@ using Api.Services;
 using Api.Infrastructure.Storage;
 using Api.Infrastructure.Services;
 using Amazon.S3;
-using StackExchange.Redis;
+using Microsoft.Extensions.Caching.Distributed;
 
 DotNetEnv.Env.Load();
 var builder = WebApplication.CreateBuilder(args);
@@ -87,6 +87,7 @@ builder.Services.AddAuthorization(options =>
 var npgsqlDataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("DefaultConnection"));
 npgsqlDataSourceBuilder.EnableDynamicJson();
 var npgsqlDataSource = npgsqlDataSourceBuilder.Build();
+builder.Services.AddSingleton(npgsqlDataSource);
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
@@ -105,44 +106,9 @@ builder.Services.AddSingleton<IAppBuildPublisher, InMemoryAppBuildPublisher>();
 builder.Services.AddScoped<SlackAppService>();
 builder.Services.AddHostedService<SubscribeService>();
 
-// Redis cache for Gateway cache invalidation
-builder.Services.AddStackExchangeRedisCache(options =>
-{
-    var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
-
-    if (string.IsNullOrWhiteSpace(redisConnectionString))
-    {
-        throw new InvalidOperationException("ConnectionStrings:Redis is required.");
-    }
-
-    if (redisConnectionString.StartsWith("redis://", StringComparison.OrdinalIgnoreCase) ||
-        redisConnectionString.StartsWith("rediss://", StringComparison.OrdinalIgnoreCase))
-    {
-        var redisUri = new Uri(redisConnectionString);
-        var redisOptions = new ConfigurationOptions
-        {
-            EndPoints = { { redisUri.Host, redisUri.Port > 0 ? redisUri.Port : 6379 } },
-            Ssl = redisUri.Scheme.Equals("rediss", StringComparison.OrdinalIgnoreCase),
-            AbortOnConnectFail = false
-        };
-
-        if (!string.IsNullOrWhiteSpace(redisUri.UserInfo))
-        {
-            var userInfoParts = redisUri.UserInfo.Split(':', 2);
-            redisOptions.User = Uri.UnescapeDataString(userInfoParts[0]);
-            if (userInfoParts.Length == 2)
-            {
-                redisOptions.Password = Uri.UnescapeDataString(userInfoParts[1]);
-            }
-        }
-
-        options.ConfigurationOptions = redisOptions;
-    }
-    else
-    {
-        options.Configuration = redisConnectionString;
-    }
-});
+// Distributed cache backed by PostgreSQL UNLOGGED table
+builder.Services.AddSingleton<IDistributedCache>(sp => new PostgresCacheService(sp.GetRequiredService<Npgsql.NpgsqlDataSource>()));
+builder.Services.AddHostedService<CacheCleanupService>();
 builder.Services.AddScoped<IAppSpecificationPublisher, AppSpecificationPublisher>();
 builder.Services.AddScoped<IArtifactExtractionService, ArtifactExtractionService>();
 builder.Services.AddScoped<IApiDeploymentService, ApiDeploymentService>();
