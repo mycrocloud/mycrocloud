@@ -46,10 +46,12 @@ All calls are synchronous — no Promises or `await`.
 | Total bandwidth | 10 MB |
 | Per-request timeout | 5s |
 | Max redirects | 5 |
+| Max recursion depth | 3 |
 
 ## Security
 
 - Only `http://` and `https://` schemes allowed
 - Private/internal IPs blocked (SSRF protection)
-- `Host`, `Cookie`, `Set-Cookie` headers stripped from requests
+- `Host`, `Cookie`, `Set-Cookie`, `User-Agent` headers stripped from requests
 - Fixed `User-Agent: MycroCloud-FunctionInvoker/1.0`
+- Recursion depth tracked via `X-MycroCloud-Depth` header — functions calling other MyCroCloud functions are limited to 3 levels deep to prevent infinite loops
