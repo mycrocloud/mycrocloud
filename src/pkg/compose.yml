@@ -1,0 +1,13 @@
+name: mycrocloud-dev
+include:
+  - path:
+      - ./api/compose.yml
+      - ./api/compose.override.yml
+  - ./webapp/compose.yml
+  - ./webapp/spa/compose.yml
+services:
+  web:
+    build: ./web
+    image: mycrocloud-web
+    ports:
+      - "5173:80"

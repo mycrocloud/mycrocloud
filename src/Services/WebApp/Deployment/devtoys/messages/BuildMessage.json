@@ -1,9 +1,0 @@
-{
-    "job_id": "cd35b15a-8139-4777-8804-195a2a5246b8",
-    "repo_full_name": "mycrocloud/sample-react-app",
-    "clone_url": "https://github.com/mycrocloud/sample-react-app",
-    "directory": ".",
-    "out_dir": "dist",
-    "install_command": "npm install",
-    "build_command": "npm run build"
-}

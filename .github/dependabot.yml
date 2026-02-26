@@ -2,25 +2,25 @@ version: 2
 updates:
   - package-ecosystem: "nuget"
     directories:
-      - "src/Services/WebApp/WebApp.Admin"
-      - "src/Services/WebApp/WebApp.Api"
-      - "src/Services/WebApp/WebApp.ApiGateway"
-      - "src/Services/WebApp/WebApp.Domain"
-      - "src/Services/WebApp/WebApp.FunctionInvoker"
-      - "src/Services/WebApp/WebApp.FunctionShared"
-      - "src/Services/WebApp/WebApp.Infrastructure"
-      - "src/Services/WebApp/WebApp.Migrations"
-      - "src/Services/WebApp/WebApp.MigrationTest"
-      - "src/Services/WebApp/WebApp.SlackIntegrationApi"
-      - "src/Services/WebApp/WebApp.UnitTest"
-
+      - "src/pkg/api/Api"
+      - "src/pkg/api/Api.Domain"
+      - "src/pkg/api/Api.Infrastructure"
+      - "src/pkg/api/Api.Migrations"
+      - "src/pkg/api/Api.MigrationTest"
+      - "src/pkg/webapp/gateway"
+      - "src/pkg/webapp/api/functioninvoker"
     schedule:
       interval: "daily"
 
   - package-ecosystem: "npm"
     directories:
-      - "src/Web"
-      - "src/WebEditor"
+      - "src/pkg/web"
+    schedule:
+      interval: "daily"
+
+  - package-ecosystem: "gomod"
+    directories:
+      - "src/pkg/webapp/spa/worker"
     schedule:
       interval: "daily"
 

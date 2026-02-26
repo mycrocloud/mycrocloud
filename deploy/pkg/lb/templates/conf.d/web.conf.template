@@ -1,0 +1,45 @@
+server {
+	listen 443 ssl;
+	listen [::]:443 ssl;
+
+	server_name ${CONTROL_PLANE_DOMAIN};
+	ssl_certificate /etc/nginx/certs/${CONTROL_PLANE_DOMAIN}.pem;
+	ssl_certificate_key /etc/nginx/certs/${CONTROL_PLANE_DOMAIN}.key;
+
+	location / {
+		proxy_pass http://web;
+	}
+
+	location /api/ {
+		proxy_pass http://api:8080/;
+		proxy_set_header Host $host;
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_set_header X-Forwarded-Proto $scheme;
+	}
+
+	location ~* /api/.*/stream$ {
+		rewrite ^/api/(.*)$ /$1 break;
+		proxy_pass http://api:8080;
+		proxy_set_header Host $host;
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_set_header X-Forwarded-Proto $scheme;
+
+		# Stream
+		proxy_http_version 1.1;
+		proxy_set_header Connection '';
+
+		# Tắt buffer để không bị nghẽn event
+		proxy_buffering off;
+		proxy_cache off;
+		gzip off;
+
+		# Kết nối SSE là long-poll stream
+		proxy_read_timeout 3600s;
+		proxy_send_timeout 3600s;
+
+		# Cho phép streaming
+		chunked_transfer_encoding on;
+	}
+}

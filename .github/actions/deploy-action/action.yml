@@ -1,76 +1,60 @@
 name: 'Deploy'
 description: 'Deploy to server via SSH'
+
 inputs:
-  ssh-host:
-    description: 'SSH host'
+  # SSH Configuration
+  server-host:
+    description: 'Server hostname or IP'
     required: true
-
-  ssh-username:
-    description: 'SSH username'
-    required: true
-
-  ssh-key:
+  ssh-private-key:
     description: 'SSH private key'
     required: true
+  server-user:
+    description: 'SSH user'
+    default: 'ubuntu'
 
-  work-dir:
-    description: 'Working directory'
+  # AWS Configuration
+  aws-iam-role:
+    description: 'AWS IAM role ARN for GitHub Actions'
+    required: true
+  aws-region:
+    description: 'AWS region'
     required: true
 
-  service:
-    description: 'Service name'
-    required: true
-  
+  # Deploy Configuration
   image:
-    description: 'Image'
+    description: 'Docker image to pull'
+    default: ''
+  pull-only:
+    description: 'If true, only pull image without deploying'
+    default: 'false'
+  service-group:
+    description: 'Service group to deploy (all, core, webapp, monitoring)'
+    default: ''
+  service:
+    description: 'Service name to deploy in underscore format (e.g. db_migrator)'
     default: ''
 
 runs:
   using: composite
   steps:
-    - name: Install SSH key
-      shell: bash
-      run: |
-        mkdir -p ~/.ssh
-        echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
-        chmod 400 ~/.ssh/id_rsa
-        ssh-keyscan -H $SSH_HOST > ~/.ssh/known_hosts
-      env:
-        SSH_HOST: ${{ inputs.ssh-host }}
-        SSH_PRIVATE_KEY: ${{ inputs.ssh-key }}
-    
-    - name: Pull image
-      shell: bash
-      if: ${{ inputs.image != '' }}
-      run: |
-        echo pulling image $IMAGE
-        docker pull $IMAGE
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v5.1.1
+      with:
+        role-to-assume: ${{ inputs.aws-iam-role }}
+        aws-region: ${{ inputs.aws-region }}
 
-      env:
-        IMAGE: ${{ inputs.image }}
+    - name: Setup SSH agent
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ inputs.ssh-private-key }}
 
     - name: Deploy
       shell: bash
-      if: ${{ inputs.image == '' }}
+      working-directory: deploy
       run: |
-        echo deploying $SERVICE
-        ssh $SSH_USERNAME@$SSH_HOST "
-            cd $WORK_DIR \
-              && docker compose down $SERVICE \
-              && docker compose pull $SERVICE \
-              && docker compose up $SERVICE -d
-              
-            if [[ 'api apigateway web-editor web slack-integration-api' =~ (^|[[:space:]])$SERVICE($|[[:space:]]) ]]; then
-              docker compose exec lb nginx -s reload || docker compose restart lb
-            fi
-            "
+        pipx inject ansible-core boto3 botocore
+        ansible-galaxy collection install amazon.aws community.docker
+        ansible-playbook -i scripts/inventory.yml scripts/deploy.yml -e "server_host=${{ inputs.server-host }}" -e "server_user=${{ inputs.server-user }}" -e "pull_only=${{ inputs.pull-only }}" ${{ inputs.image && format('-e "image={0}"', inputs.image) || '' }} ${{ inputs.service-group && format('-e "service_group={0}"', inputs.service-group) || '' }} ${{ inputs.service && format('-e "services=[\"{0}\"]"', inputs.service) || '' }}
       env:
-        SSH_HOST: ${{ inputs.ssh-host }}
-        SSH_USERNAME: ${{ inputs.ssh-username }}
-        WORK_DIR: ${{ inputs.work-dir }}
-        SERVICE: ${{ inputs.service }}
-
-    - name: Cleanup
-      shell: bash
-      run: |
-        rm -r ~/.ssh
+        AWS_REGION: ${{ inputs.aws-region }}

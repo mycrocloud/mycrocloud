@@ -1,0 +1,10 @@
+server {
+    listen 8080;
+    server_name localhost;
+
+    location /stub_status {
+        stub_status;
+        allow 172.18.0.0/16;  # Allow from mycrocloud network
+        deny all;
+    }
+}

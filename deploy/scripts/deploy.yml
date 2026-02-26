@@ -1,0 +1,233 @@
+---
+- name: Fetch AWS secrets
+  hosts: localhost
+  gather_facts: no
+  vars:
+    pull_only: false
+    service_group: ""
+    services: []
+    secret_name_prefix: "prod/mycrocloud"
+    service_groups:
+      core:
+        - lb
+        - api
+        - web
+        - db_migrator
+      webapp:
+        - gateway
+        - spa_worker
+      monitoring:
+        - seq
+        - prometheus
+        - node_exporter
+        - nginx_exporter
+    all_services:
+      - lb
+      - api
+      - web
+      - db_migrator
+      - gateway
+      - spa_worker
+      - seq
+      - prometheus
+      - node_exporter
+      - nginx_exporter
+    services_input: "{{ (services | from_yaml) if (services is string and services | trim | length > 0) else (services | default([])) }}"
+    selected_services: "{{ [services_input] if services_input is string else (services_input | default([])) }}"
+    resolved_services: "{{ selected_services if selected_services | length > 0 else (service_groups[service_group] | default([])) }}"
+    secret_target_services: "{{ resolved_services if resolved_services | length > 0 else all_services }}"
+    # Secret-to-File Mapping Rules:
+    # 1. J2 Templates: secret "prod/mycrocloud/path/file.ext" maps to "pkg/path/file.ext.j2"
+    #    The .j2 extension is stripped to determine the secret name and destination path.
+    # 2. Plaintext Secrets: secret "prod/mycrocloud/path/file" maps to "pkg/path/file"
+    #    The content is copied as-is to the destination path.
+    service_j2_template_files:
+      lb: []
+      api:
+        - "api/.env.j2"
+      web: []
+      db_migrator:
+        - "dbmigrator/.env.j2"
+      gateway:
+        - "webapp/gateway/.env.j2"
+      spa_worker:
+        - "webapp/spa/worker/.env.j2"
+      seq:
+        - "monitoring/seq/.env.j2"
+      prometheus:
+        - "monitoring/prometheus/prometheus.yml.j2"
+      node_exporter: []
+      nginx_exporter: []
+    service_plaintext_secret_files:
+      lb:
+        - "lb/certs/mycrocloud.online.key"
+        - "lb/certs/mycrocloud.site.key"
+      api:
+        - "api/gha-mycrocloud.private-key.pem"
+      web: []
+      db_migrator: []
+      gateway: []
+      spa_worker: []
+      seq: []
+      prometheus: []
+      node_exporter: []
+      nginx_exporter: []
+  tasks:
+    - name: Resolve required secret files for target services
+      when: not (pull_only | bool)
+      set_fact:
+        j2_template_files: "{{ secret_target_services | map('extract', service_j2_template_files) | list | flatten | unique }}"
+        plaintext_secret_files: "{{ secret_target_services | map('extract', service_plaintext_secret_files) | list | flatten | unique }}"
+
+    - name: Fetch env files from AWS Secrets Manager
+      when: not (pull_only | bool)
+      vars:
+        secret_key: "{{ secret_name_prefix }}/{{ item | regex_replace('\\.j2$', '') }}"
+        secret_value: "{{ lookup('amazon.aws.aws_secret', secret_key) }}"
+      set_fact:
+        j2_template_secrets: "{{ j2_template_secrets | default({}) | combine({item: secret_value}) }}"
+      loop: "{{ j2_template_files }}"
+      loop_control:
+        label: "{{ item }}"
+      no_log: true
+
+    - name: Fetch secret files from AWS Secrets Manager
+      when: not (pull_only | bool)
+      vars:
+        secret_key: "{{ secret_name_prefix }}/{{ item }}"
+        secret_value: "{{ lookup('amazon.aws.aws_secret', secret_key) }}"
+      set_fact:
+        plaintext_secret_values: "{{ plaintext_secret_values | default({}) | combine({item: secret_value}) }}"
+      loop: "{{ plaintext_secret_files }}"
+      loop_control:
+        label: "{{ item }}"
+      no_log: true
+
+- name: Deploy
+  hosts: all
+  become: no
+  vars:
+    src: ../pkg
+    deploy_path: /opt/mycrocloud
+    pull_only: false
+    image: ""
+    service_group: ""
+    services: []
+    service_groups:
+      core:
+        - lb
+        - api
+        - web
+        - db_migrator
+      webapp:
+        - gateway
+        - spa_worker
+      monitoring:
+        - seq
+        - prometheus
+        - node_exporter
+        - nginx_exporter
+    # Most rendered secrets stay private (0600). Prometheus config must be
+    # world-readable so the prometheus process inside the container can read it.
+    template_file_modes:
+      monitoring/prometheus/prometheus.yml.j2: "0644"
+    services_input: "{{ (services | from_yaml) if (services is string and services | trim | length > 0) else (services | default([])) }}"
+    selected_services: "{{ [services_input] if services_input is string else (services_input | default([])) }}"
+    resolved_services: "{{ selected_services if selected_services | length > 0 else (service_groups[service_group] | default([])) }}"
+  tasks:
+    - name: Pull Docker image
+      ansible.builtin.command:
+        cmd: docker pull {{ image }}
+      when: image | length > 0
+
+    - name: Ensure deploy directory exists
+      when: not (pull_only | bool)
+      ansible.builtin.file:
+        path: "{{ deploy_path }}"
+        state: directory
+        mode: "0755"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+      become: yes
+
+    - name: Sync application files to server
+      when: not (pull_only | bool)
+      ansible.builtin.synchronize:
+        src: "{{ src }}/"
+        dest: "{{ deploy_path }}"
+        recursive: yes
+        delete: "{{ resolved_services | length == 0 }}"
+
+    - name: Copy web env file
+      when: not (pull_only | bool)
+      ansible.builtin.copy:
+        src: "{{ deploy_path }}/web/dotenv"
+        dest: "{{ deploy_path }}/web/.env"
+        remote_src: yes
+        mode: "0644"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+
+    # Renders J2 templates using secrets from AWS
+    - name: Render J2 template files
+      when: not (pull_only | bool)
+      ansible.builtin.template:
+        src: "{{ src }}/{{ item }}"
+        dest: "{{ deploy_path }}/{{ item | regex_replace('\\.j2$', '') }}"
+        mode: "{{ template_file_modes[item] | default('0600') }}"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+      loop: "{{ hostvars['localhost']['j2_template_files'] }}"
+      vars:
+        secrets: "{{ hostvars['localhost']['j2_template_secrets'][item] | from_json }}"
+      no_log: true
+
+    # Writes raw secret files (certs, keys) directly to the server
+    - name: Write plaintext secret files
+      when: not (pull_only | bool)
+      ansible.builtin.copy:
+        content: "{{ hostvars['localhost']['plaintext_secret_values'][item] }}"
+        dest: "{{ deploy_path }}/{{ item }}"
+        mode: "0600"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+      loop: "{{ hostvars['localhost']['plaintext_secret_files'] }}"
+      no_log: true
+
+    - name: Pull and deploy services
+      when: not (pull_only | bool)
+      community.docker.docker_compose_v2:
+        project_src: "{{ deploy_path }}"
+        services: "{{ resolved_services if resolved_services | length > 0 else omit }}"
+        state: present
+        pull: always
+      register: deploy_result
+
+    - name: Wait for services to be healthy
+      when: not (pull_only | bool)
+      ansible.builtin.shell:
+        cmd: |
+          services_list="{{ resolved_services | join(' ') }}"
+          for service in $(docker compose ps --format '{{ '{{' }}.Service{{ '}}' }}'); do
+            if [ -z "$services_list" ] || echo "$services_list" | grep -q "$service"; then
+              status=$(docker compose ps $service --format '{{ '{{' }}.Health{{ '}}' }}')
+              if [ "$status" != "healthy" ] && [ "$status" != "" ]; then
+                echo "Service $service is $status"
+                exit 1
+              fi
+            fi
+          done
+        chdir: "{{ deploy_path }}"
+      register: health_check
+      retries: 5
+      delay: 5
+      until: health_check.rc == 0
+
+    - name: Reload nginx if dependencies require it
+      ansible.builtin.command:
+        cmd: docker compose exec lb nginx -s reload
+        chdir: "{{ deploy_path }}"
+      when:
+        - not (pull_only | bool)
+        - (resolved_services | length == 0 or resolved_services | intersect(['api', 'gateway', 'web']) | length > 0)
+        - deploy_result.changed | default(false)

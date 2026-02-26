@@ -1,0 +1,6 @@
+all:
+  hosts:
+    server:
+      ansible_host: "{{ server_host }}"
+      ansible_user: "{{ server_user | default('ubuntu') }}"
+      ansible_ssh_common_args: '-o StrictHostKeyChecking=no'

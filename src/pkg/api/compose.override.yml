@@ -1,0 +1,46 @@
+# Infrastructure services for local development
+services:
+  db:
+    image: postgres:16.2-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  db-migrator:
+    depends_on:
+      - db
+
+  api:
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  seq:
+    image: datalust/seq
+    ports:
+      - "8000:80"
+      - "5341:5341"
+    environment:
+      - ACCEPT_EULA=Y
+      # 7Wy6ttuopDvTau
+      - SEQ_FIRSTRUN_ADMINPASSWORDHASH=QDFtcJLYGKj1Ir6xyrydGr+u6tYcTn33xd4WCe629b6cPQgPXs3UaCYyWkzJaJAyTqNgG89fdTfjF9LQYDkqvdiMsudVmoPJc1Ho3WT0j98w
+    volumes:
+      - seq_data:/data
+
+  rabbitmq:
+    image: rabbitmq:4.1.5-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "check_running" ]
+      interval: 1s
+      timeout: 2s
+      retries: 5
+
+volumes:
+  db_data:
+  seq_data:

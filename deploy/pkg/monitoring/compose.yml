@@ -1,0 +1,38 @@
+services:
+  seq:
+    image: datalust/seq:2025.2
+    volumes:
+      - seq-data:/data
+    environment:
+      - ACCEPT_EULA=Y
+    env_file:
+      - ./seq/.env
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.5.1
+    container_name: prometheus
+    network_mode: "host"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    restart: unless-stopped
+
+  node_exporter:
+    image: prom/node-exporter:v1.10.2
+    container_name: node_exporter
+    network_mode: "host"
+    restart: unless-stopped
+
+  nginx_exporter:
+    image: nginx/nginx-prometheus-exporter:1.5.1
+    container_name: nginx_exporter
+    command:
+      - '--nginx.scrape-uri=http://lb:8080/stub_status'
+    ports:
+      - "9113:9113"
+    restart: unless-stopped
+
+volumes:
+  seq-data:
+  prometheus_data:

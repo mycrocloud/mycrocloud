@@ -1,0 +1,76 @@
+name: Build and Deploy
+
+on:
+  workflow_call:
+    inputs:
+      image-name:
+        description: 'Docker image name (without registry prefix)'
+        required: true
+        type: string
+      image-tag:
+        description: 'Explicit Docker image tag (optional)'
+        required: false
+        type: string
+        default: ''
+      work-dir:
+        description: 'Docker build context directory'
+        required: true
+        type: string
+      dockerfile:
+        description: 'Path to Dockerfile (relative to work-dir)'
+        required: true
+        type: string
+      service:
+        description: 'Service name for deployment'
+        required: false
+        type: string
+        default: ''
+      service-group:
+        description: 'Service group for deployment (all, core, webapp, monitoring)'
+        required: false
+        type: string
+        default: ''
+      pull-only:
+        description: 'Only pull image without deploying'
+        required: false
+        type: boolean
+        default: false
+      use-buildx-cache:
+        description: 'Enable Docker Buildx caching'
+        required: false
+        type: boolean
+        default: true
+      build-args:
+        description: 'Additional build arguments'
+        required: false
+        type: string
+        default: ''
+    secrets:
+      CR_PAT:
+        required: true
+      SSH_PRIVATE_KEY:
+        required: true
+
+jobs:
+  build-and-push-image:
+    uses: ./.github/workflows/_build-image.yml
+    with:
+      image-name: ${{ inputs.image-name }}
+      image-tag: ${{ inputs.image-tag }}
+      work-dir: ${{ inputs.work-dir }}
+      dockerfile: ${{ inputs.dockerfile }}
+      use-buildx-cache: ${{ inputs.use-buildx-cache }}
+      build-args: ${{ inputs.build-args }}
+    secrets:
+      CR_PAT: ${{ secrets.CR_PAT }}
+
+  deploy:
+    uses: ./.github/workflows/_deploy-image.yml
+    needs: build-and-push-image
+    with:
+      image: ${{ needs.build-and-push-image.outputs.full_image }}
+      service: ${{ inputs.service }}
+      service-group: ${{ inputs.service-group }}
+      pull-only: ${{ inputs.pull-only }}
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
