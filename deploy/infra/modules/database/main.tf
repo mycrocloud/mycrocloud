@@ -9,6 +9,7 @@ terraform {
 
 resource "neon_project" "this" {
   name = var.project_name
+  pg_version = "18"
 }
 
 resource "neon_branch" "main" {
