@@ -10,6 +10,7 @@ terraform {
 resource "neon_project" "this" {
   name = var.project_name
   pg_version = "18"
+  history_retention_seconds = 21600 # TODO: confirm this value
 }
 
 resource "neon_branch" "main" {
