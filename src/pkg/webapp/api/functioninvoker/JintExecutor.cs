@@ -116,14 +116,13 @@ public class JintExecutor
         });
         
         // Fetch
-        var proxyFetch = new FetchProxy(50);
+        var fetchOptions = new FetchOptions();
+        var proxyFetch = new FetchProxy(fetchOptions);
         _engine.SetValue("fetch", new Func<JsValue, JsValue?, JsValue>((input, init) =>
         {
             var request = Mapper.MapRequest(input, init);
-            
             var response = proxyFetch.Fetch(request).Result;
-            
-            return Mapper.MapResponse(response);
+            return Mapper.MapResponse(response, _engine);
         }));
     }
 
