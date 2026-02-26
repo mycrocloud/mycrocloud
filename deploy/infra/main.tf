@@ -308,4 +308,5 @@ module "database" {
   source       = "./modules/database"
   neon_api_key = var.neon_api_key
   project_name = local.project_name
+  count = 0
 }
