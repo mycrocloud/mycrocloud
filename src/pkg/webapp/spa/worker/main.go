@@ -26,6 +26,8 @@ import (
 	"github.com/streadway/amqp"
 )
 
+const buildQueueName = "build_queue"
+
 // Global limits loaded from environment
 var limits Limits
 
@@ -483,7 +485,7 @@ func main() {
 	defer chConsumer.Close()
 
 	qBuildJob, err := chConsumer.QueueDeclare(
-		"job_queue",
+		buildQueueName,
 		true,  // durable
 		false, // delete when unused
 		false, // exclusive

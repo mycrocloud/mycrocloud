@@ -10,7 +10,7 @@ namespace Api.Services;
 
 public class BuildOrchestrationService(
     AppDbContext appDbContext,
-    RabbitMqService rabbitMqService,
+    BuildQueuePublisher buildQueuePublisher,
     IAppBuildPublisher publisher,
     GitHubAppService gitHubAppService,
     IConfiguration configuration,
@@ -117,7 +117,7 @@ public class BuildOrchestrationService(
             Limits = planLimits
         };
 
-        rabbitMqService.PublishMessage(JsonSerializer.Serialize(message));
+        buildQueuePublisher.PublishMessage(JsonSerializer.Serialize(message));
             
         publisher.Publish(app.Id, build.Status);
 

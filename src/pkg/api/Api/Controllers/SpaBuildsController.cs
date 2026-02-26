@@ -25,7 +25,7 @@ public class SpaBuildsController(
     BuildOrchestrationService buildOrchestrationService,
     GitHubAppService gitHubAppService,
     IStorageProvider storageProvider,
-    RabbitMqService rabbitMqService,
+    RabbitMqConnectionFactory rabbitMqConnectionFactory,
     ILogger<SpaBuildsController> logger): BaseController
 {
     [HttpGet]
@@ -166,7 +166,7 @@ public class SpaBuildsController(
         
         var cancellationToken = HttpContext.RequestAborted;
        
-        var channel = rabbitMqService.CreateChannel();
+        var channel = rabbitMqConnectionFactory.CreateChannel();
         const string exchange = "app.build.logs";
         
         channel.ExchangeDeclare(exchange: exchange, type: "topic", durable: false); //TODO: confirm durable setting
