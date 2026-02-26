@@ -3,6 +3,8 @@ using System.Net.Sockets;
 
 namespace WebApp.FunctionInvoker.Apis.Fetch;
 
+public record FetchResult(HttpResponseMessage Response, string Body);
+
 public class FetchProxy : IDisposable
 {
     private readonly FetchOptions _options;
@@ -32,14 +34,14 @@ public class FetchProxy : IDisposable
         };
     }
 
-    public async Task<HttpResponseMessage> Fetch(HttpRequestMessage request)
+    public async Task<FetchResult> Fetch(HttpRequestMessage request)
     {
         PreFetch(request);
 
         HttpResponseMessage response;
         try
         {
-            response = await _httpClient.SendAsync(request);
+            response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
         }
         catch (TaskCanceledException)
         {
@@ -47,8 +49,8 @@ public class FetchProxy : IDisposable
                 $"Request to {request.RequestUri?.Host} timed out after {_options.TimeoutPerRequestSeconds}s");
         }
 
-        PostFetch(response);
-        return response;
+        var body = await ReadBodyBounded(response);
+        return new FetchResult(response, body);
     }
 
     private void PreFetch(HttpRequestMessage request)
@@ -72,20 +74,35 @@ public class FetchProxy : IDisposable
         }
     }
 
-    private void PostFetch(HttpResponseMessage response)
+    private async Task<string> ReadBodyBounded(HttpResponseMessage response)
     {
-        var contentLength = response.Content.Headers.ContentLength ?? 0;
-
-        // Per-response size limit
-        if (contentLength > _options.MaxResponseBodyBytes)
+        // Check Content-Length header first (fast reject)
+        var declaredLength = response.Content.Headers.ContentLength;
+        if (declaredLength > _options.MaxResponseBodyBytes)
             throw new FetchSizeLimitException(
-                $"Response body size {contentLength} exceeds limit of {_options.MaxResponseBodyBytes} bytes");
+                $"Response body size {declaredLength} exceeds limit of {_options.MaxResponseBodyBytes} bytes");
 
-        // Total bandwidth cap
-        _totalBytesReceived += contentLength;
-        if (_totalBytesReceived > _options.MaxTotalBytes)
+        // Read with actual byte counting (handles chunked/missing Content-Length)
+        await using var stream = await response.Content.ReadAsStreamAsync();
+        var maxBytes = (int)Math.Min(_options.MaxResponseBodyBytes, _options.MaxTotalBytes - _totalBytesReceived);
+        if (maxBytes <= 0)
             throw new FetchSizeLimitException(
                 $"Total fetch bandwidth {_totalBytesReceived} exceeds limit of {_options.MaxTotalBytes} bytes");
+
+        // Read up to maxBytes + 1 to detect overflow
+        var buffer = new byte[maxBytes + 1];
+        var totalRead = 0;
+        int bytesRead;
+        while ((bytesRead = await stream.ReadAsync(buffer.AsMemory(totalRead, buffer.Length - totalRead))) > 0)
+        {
+            totalRead += bytesRead;
+            if (totalRead > maxBytes)
+                throw new FetchSizeLimitException(
+                    $"Response body exceeds limit of {_options.MaxResponseBodyBytes} bytes");
+        }
+
+        _totalBytesReceived += totalRead;
+        return System.Text.Encoding.UTF8.GetString(buffer, 0, totalRead);
     }
 
     private static async ValueTask<Stream> SsrfSafeConnectAsync(

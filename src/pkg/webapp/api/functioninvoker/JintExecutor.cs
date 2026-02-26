@@ -7,9 +7,10 @@ using Console = WebApp.FunctionInvoker.Apis.Console.Console;
 
 namespace WebApp.FunctionInvoker;
 
-public class JintExecutor
+public class JintExecutor : IDisposable
 {
     private readonly Engine _engine = new();
+    private FetchProxy? _fetchProxy;
     public Console Console { get; set; }
 
     private readonly List<string> _scripts =
@@ -117,12 +118,12 @@ public class JintExecutor
         
         // Fetch
         var fetchOptions = new FetchOptions();
-        var proxyFetch = new FetchProxy(fetchOptions);
+        _fetchProxy = new FetchProxy(fetchOptions);
         _engine.SetValue("fetch", new Func<JsValue, JsValue?, JsValue>((input, init) =>
         {
             var request = Mapper.MapRequest(input, init);
-            var response = proxyFetch.Fetch(request).Result;
-            return Mapper.MapResponse(response, _engine);
+            var result = _fetchProxy.Fetch(request).GetAwaiter().GetResult();
+            return Mapper.MapResponse(result, _engine);
         }));
     }
 
@@ -191,5 +192,10 @@ public class JintExecutor
         }
 
         return result;
+    }
+
+    public void Dispose()
+    {
+        _fetchProxy?.Dispose();
     }
 }

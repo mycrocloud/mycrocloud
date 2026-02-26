@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Text.Json;
 using WebApp.FunctionInvoker;
 using WebApp.FunctionInvoker.Apis.Fetch;
@@ -7,7 +7,7 @@ var result = new Result();
 var startingTimestamp = Stopwatch.GetTimestamp();
 try
 {
-    var executor = new JintExecutor();
+    using var executor = new JintExecutor();
     executor.Initialize();
     var console = executor.Console;
 
@@ -22,9 +22,21 @@ try
     {
         console.Error("Execution timed out.");
     }
-    catch (CountLimitException ex)
+    catch (CountLimitException)
     {
-        console.Error("CountLimitException");
+        console.Error("Fetch request limit exceeded (max 50 requests per execution).");
+    }
+    catch (FetchSecurityException ex)
+    {
+        console.Error("Fetch security error: " + ex.Message);
+    }
+    catch (FetchSizeLimitException ex)
+    {
+        console.Error("Fetch size limit error: " + ex.Message);
+    }
+    catch (FetchTimeoutException ex)
+    {
+        console.Error("Fetch timeout: " + ex.Message);
     }
     catch (Exception ex)
     {

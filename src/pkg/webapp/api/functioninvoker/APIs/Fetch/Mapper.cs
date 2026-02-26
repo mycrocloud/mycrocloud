@@ -13,7 +13,7 @@ public static class Mapper
 
     private static readonly HashSet<string> ForbiddenRequestHeaders = new(StringComparer.OrdinalIgnoreCase)
     {
-        "Host", "Cookie", "Set-Cookie"
+        "Host", "Cookie", "Set-Cookie", "User-Agent"
     };
 
     public static HttpRequestMessage MapRequest(JsValue input, JsValue? init = null)
@@ -80,9 +80,10 @@ public static class Mapper
         return request;
     }
 
-    public static JsValue MapResponse(HttpResponseMessage response, Engine engine)
+    public static JsValue MapResponse(FetchResult fetchResult, Engine engine)
     {
-        var body = response.Content.ReadAsStringAsync().Result;
+        var response = fetchResult.Response;
+        var body = fetchResult.Body;
         var statusCode = (int)response.StatusCode;
 
         // Build headers dictionary
