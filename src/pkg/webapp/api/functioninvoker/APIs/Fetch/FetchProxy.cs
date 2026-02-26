@@ -72,6 +72,14 @@ public class FetchProxy : IDisposable
                 throw new FetchSizeLimitException(
                     $"Request body size {contentLength} exceeds limit of {_options.MaxRequestBodyBytes} bytes");
         }
+
+        // Recursion depth — inject header so downstream Gateway can track depth
+        var nextDepth = _options.CurrentDepth + 1;
+        if (nextDepth > _options.MaxRecursionDepth)
+            throw new FetchSecurityException(
+                $"Fetch recursion depth {nextDepth} exceeds limit of {_options.MaxRecursionDepth}. " +
+                "A function cannot call other MycroCloud functions beyond this depth.");
+        request.Headers.TryAddWithoutValidation(FetchOptions.DepthHeaderName, nextDepth.ToString());
     }
 
     private async Task<string> ReadBodyBounded(HttpResponseMessage response)

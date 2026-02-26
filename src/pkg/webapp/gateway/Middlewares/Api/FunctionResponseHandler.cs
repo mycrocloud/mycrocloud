@@ -15,8 +15,21 @@ public class FunctionResponseHandler(
 {
     public ResponseType SupportedType => ResponseType.Function;
 
+    private const int MaxFunctionDepth = 3;
+
     public async Task HandleAsync(HttpContext context)
     {
+        // Reject recursive function calls that exceed max depth
+        if (context.Request.Headers.TryGetValue("X-MycroCloud-Depth", out var depthHeader)
+            && int.TryParse(depthHeader.FirstOrDefault(), out var depth)
+            && depth > MaxFunctionDepth)
+        {
+            logger.LogWarning("Function recursion depth {Depth} exceeds limit {MaxDepth}", depth, MaxFunctionDepth);
+            context.Response.StatusCode = 508; // Loop Detected
+            await context.Response.WriteAsync("Function recursion depth limit exceeded.");
+            return;
+        }
+
         var app = (AppSpecification)context.Items["_AppSpecification"]!;
         var route = (ApiRouteSummary)context.Items["_ApiRouteSummary"]!;
         var metadata = context.Items["_ApiRouteMetadata"] as ApiRouteMetadata;

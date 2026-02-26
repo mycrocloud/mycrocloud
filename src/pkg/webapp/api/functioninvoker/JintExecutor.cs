@@ -117,7 +117,9 @@ public class JintExecutor : IDisposable
         });
         
         // Fetch
-        var fetchOptions = new FetchOptions();
+        var currentDepth = int.TryParse(
+            Environment.GetEnvironmentVariable(FetchOptions.DepthEnvVarName), out var d) ? d : 0;
+        var fetchOptions = new FetchOptions { CurrentDepth = currentDepth };
         _fetchProxy = new FetchProxy(fetchOptions);
         _engine.SetValue("fetch", new Func<JsValue, JsValue?, JsValue>((input, init) =>
         {

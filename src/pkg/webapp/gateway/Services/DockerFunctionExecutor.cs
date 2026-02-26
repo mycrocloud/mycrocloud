@@ -36,6 +36,15 @@ public class DockerFunctionExecutor(
         // Use cached variables
         var env = app.Variables.Select(v => $"{v.Name}={v.Value}").ToList();
 
+        // Propagate recursion depth
+        var currentDepth = 0;
+        if (context.Request.Headers.TryGetValue("X-MycroCloud-Depth", out var depthHeader)
+            && int.TryParse(depthHeader.FirstOrDefault(), out var parsedDepth))
+        {
+            currentDepth = parsedDepth;
+        }
+        env.Add($"MYCROCLOUD_FUNCTION_DEPTH={currentDepth}");
+
         try
         {
             result = await jobQueue.EnqueueAsync(async token =>
