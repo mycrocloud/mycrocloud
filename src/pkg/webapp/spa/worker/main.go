@@ -159,7 +159,7 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel) error 
 	_ = os.Chmod(jobOut, 0777)
 
 	log.Printf("Starting build job: %s", jobID)
-	log.Printf("HOST_OUT_DIR: %s", baseOut)
+	log.Printf("BUILD_OUTPUT_DIR: %s", baseOut)
 	log.Printf("Job output dir: %s", jobOut)
 
 	// Check if artifact file already exists
@@ -432,9 +432,9 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel) error 
 }
 
 func getOutputBaseDir() string {
-	dir := os.Getenv("HOST_OUT_DIR")
+	dir := os.Getenv("BUILD_OUTPUT_DIR")
 	if dir == "" {
-		log.Fatal("HOST_OUT_DIR must be set")
+		log.Fatal("BUILD_OUTPUT_DIR must be set")
 	}
 	return dir
 }
