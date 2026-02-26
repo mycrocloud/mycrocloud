@@ -15,7 +15,7 @@ resource "neon_project" "this" {
 
 resource "neon_branch" "main" {
   project_id = neon_project.this.id
-  name       = "main"
+  name       = "production"
 }
 
 resource "neon_endpoint" "primary" {
