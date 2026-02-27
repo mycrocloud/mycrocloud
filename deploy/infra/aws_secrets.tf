@@ -23,6 +23,10 @@ resource "aws_secretsmanager_secret" "spa_worker_env" {
   name = "${local.secret_name_prefix}/webapp/spa/worker/.env"
 }
 
+resource "aws_secretsmanager_secret" "alloy_env" {
+  name = "${local.secret_name_prefix}/monitoring/alloy/.env"
+}
+
 # secret_files (referenced in deploy.yml)
 resource "aws_secretsmanager_secret" "lb_certs_key" {
   name = "${local.secret_name_prefix}/lb/certs/mycrocloud.online.key"
