@@ -357,7 +357,7 @@ export default function DeploymentDetails() {
                   size="sm"
                   className="w-full"
                 >
-                  <Link to={`/apps/${app.id}/spa/builds/${deployment.buildId}`}>
+                  <Link to={`/apps/${app.id}/builds/${deployment.buildId}`}>
                     <ExternalLink className="mr-2 h-4 w-4" />
                     View Logs
                   </Link>
