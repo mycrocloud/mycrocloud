@@ -20,7 +20,7 @@ public class SubscribeService(IServiceScopeFactory serviceScopeFactory, IConfigu
         var connection = factory.CreateConnection();
         var channel = connection.CreateModel();
         
-        const string exchange = "app.build.events";
+        const string exchange = RabbitMqNames.BuildEventsExchange;
         const string queue = "slack_integration_api." + exchange;
         
         channel.ExchangeDeclare(exchange, ExchangeType.Fanout, durable: true);

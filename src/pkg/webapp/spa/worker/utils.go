@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"mycrocloud/worker/mqnames"
 	"os"
 	"strings"
 
@@ -17,7 +18,7 @@ func publishJobStatusChangedEventMessage(ch *amqp.Channel, message BuildStatusCh
 	}
 
 	err = ch.Publish(
-		"app.build.events",
+		mqnames.BuildEventsExchange,
 		"",
 		false,
 		false,

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"mycrocloud/worker/mqnames"
 	"sync"
 	"time"
 
@@ -57,9 +58,9 @@ func (c *Collector) Append(line string, source string, tag string, containerID s
 		return
 	}
 
-	routingKey := fmt.Sprintf("app.build.logs.%s", c.buildID)
+	routingKey := fmt.Sprintf("%s.%s", mqnames.BuildLogsExchange, c.buildID)
 	if err := c.ch.Publish(
-		"app.build.logs",
+		mqnames.BuildLogsExchange,
 		routingKey,
 		false,
 		false,

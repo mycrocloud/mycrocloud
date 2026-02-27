@@ -167,7 +167,7 @@ public class SpaBuildsController(
         var cancellationToken = HttpContext.RequestAborted;
        
         var channel = rabbitMqConnectionFactory.CreateChannel();
-        const string exchange = "app.build.logs";
+        const string exchange = RabbitMqNames.BuildLogsExchange;
         
         channel.ExchangeDeclare(exchange: exchange, type: "topic", durable: false); //TODO: confirm durable setting
         

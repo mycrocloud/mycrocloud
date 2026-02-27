@@ -10,6 +10,7 @@ import (
 	"log"
 	"mycrocloud/worker/api_client"
 	"mycrocloud/worker/logcollector"
+	"mycrocloud/worker/mqnames"
 	"mycrocloud/worker/uploader"
 	"os"
 	"os/signal"
@@ -26,7 +27,6 @@ import (
 	"github.com/streadway/amqp"
 )
 
-const buildQueueName = "build_queue"
 
 // Global limits loaded from environment
 var limits Limits
@@ -485,7 +485,7 @@ func main() {
 	defer chConsumer.Close()
 
 	qBuildJob, err := chConsumer.QueueDeclare(
-		buildQueueName,
+		mqnames.BuildQueue,
 		true,  // durable
 		false, // delete when unused
 		false, // exclusive
@@ -503,7 +503,7 @@ func main() {
 	defer chPublisher.Close()
 
 	if err := chPublisher.ExchangeDeclare(
-		"app.build.events",
+		mqnames.BuildEventsExchange,
 		"fanout",
 		true,
 		false,
@@ -516,7 +516,7 @@ func main() {
 
 	// Declare the log exchange (replaces fluentd → RabbitMQ)
 	if err := chPublisher.ExchangeDeclare(
-		"app.build.logs",
+		mqnames.BuildLogsExchange,
 		"topic",
 		false, // non-durable (matches existing setting)
 		false,

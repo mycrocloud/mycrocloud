@@ -1,5 +1,6 @@
 using RabbitMQ.Client;
 using System.Text;
+using Api.Domain.Messages;
 
 namespace Api.Services
 {
@@ -33,7 +34,7 @@ namespace Api.Services
 
     public class BuildQueuePublisher : IDisposable
     {
-        private const string BuildQueueName = "build_queue";
+        private const string BuildQueueName = RabbitMqNames.BuildQueue;
         private readonly Lazy<IModel> _channel;
         private readonly ILogger<BuildQueuePublisher> _logger;
 

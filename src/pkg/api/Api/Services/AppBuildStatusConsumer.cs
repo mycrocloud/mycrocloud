@@ -31,7 +31,7 @@ public class AppBuildStatusConsumer(
         _connection = factory.CreateConnection();
         _channel = _connection.CreateModel();
         
-        const string exchange = "app.build.events";
+        const string exchange = RabbitMqNames.BuildEventsExchange;
         const string queue = "api." + exchange;
         
         _channel.ExchangeDeclare(exchange, ExchangeType.Fanout, durable: true);
