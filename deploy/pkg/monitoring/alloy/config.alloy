@@ -5,7 +5,7 @@ discovery.docker "containers" {
 loki.source.docker "containers" {
   host       = "unix:///var/run/docker.sock"
   targets    = discovery.docker.containers.targets
-  labels     = {job = "docker", cluster = sys.env("GRAFANA_CLOUD_CLUSTER")}
+  labels     = {job = "docker"}
   forward_to = [loki.write.grafana_cloud.receiver]
 }
 
@@ -19,7 +19,4 @@ loki.write "grafana_cloud" {
     }
   }
 
-  external_labels = {
-    environment = sys.env("GRAFANA_CLOUD_ENVIRONMENT"),
-  }
 }
