@@ -61,6 +61,12 @@ variable "grafana_cloud_stack_slug" {
   default     = "mycrocloud"
 }
 
+variable "grafana_cloud_region_slug" {
+  type        = string
+  description = "Grafana Cloud region slug for stack creation (for example: us)."
+  default     = "us"
+}
+
 variable "grafana_cloud_access_policy_token" {
   type        = string
   description = "Grafana Cloud access policy token with permission to manage stack access policies/tokens."

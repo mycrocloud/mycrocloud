@@ -6,3 +6,5 @@ auth0_github_oauth_app_client_secret = "auth0_github_oauth_app_client_secret"
 auth0_google_oauth_app_client_secret = "auth0_google_oauth_app_client_secret"
 
 grafana_cloud_access_policy_token = "your_grafana_cloud_access_policy_token"
+# Optional override:
+# grafana_cloud_region_slug = "us"

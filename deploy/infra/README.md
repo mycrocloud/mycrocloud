@@ -24,6 +24,7 @@ This folder contains Terraform configurations to create the necessary infrastruc
 ## Grafana Cloud
 
 Terraform manages Grafana Cloud logging credentials and:
+- create/manage Grafana Cloud stack `mycrocloud`
 - create a Grafana Cloud access policy and token for log writes (`logs:write`)
 - write `prod/mycrocloud/monitoring/alloy/.env` in AWS Secrets Manager
 
@@ -31,4 +32,4 @@ Required variables:
 - `grafana_cloud_access_policy_token`
 
 Terraform reads Loki URL and Loki username from the stack automatically.
-The stack slug defaults to `mycrocloud` and can be overridden if needed.
+The stack slug defaults to `mycrocloud` and region defaults to `us` (both overridable).

@@ -1,25 +1,35 @@
+resource "grafana_cloud_stack" "this" {
+  provider          = grafana.cloud
+  name              = local.project_name
+  slug              = var.grafana_cloud_stack_slug
+  region_slug       = var.grafana_cloud_region_slug
+  delete_protection = true
+}
+
 data "grafana_cloud_stack" "this" {
   provider = grafana.cloud
-  slug     = var.grafana_cloud_stack_slug
+  slug     = grafana_cloud_stack.this.slug
+
+  depends_on = [grafana_cloud_stack.this]
 }
 
 resource "grafana_cloud_access_policy" "alloy_logs_write" {
   provider = grafana.cloud
   name     = "${local.project_name}-alloy-logs-write"
-  region   = data.grafana_cloud_stack.this.region_slug
+  region   = grafana_cloud_stack.this.region_slug
 
   scopes = ["logs:write"]
 
   realm {
     type       = "stack"
-    identifier = data.grafana_cloud_stack.this.id
+    identifier = grafana_cloud_stack.this.id
   }
 }
 
 resource "grafana_cloud_access_policy_token" "alloy_logs_write" {
   provider         = grafana.cloud
   name             = "${local.project_name}-alloy-logs-write-token"
-  region           = data.grafana_cloud_stack.this.region_slug
+  region           = grafana_cloud_stack.this.region_slug
   access_policy_id = grafana_cloud_access_policy.alloy_logs_write.policy_id
 }
 
