@@ -13,9 +13,6 @@ terraform {
       source = "auth0/auth0"
     }
 
-    neon = {
-      source = "kislerdm/neon"
-    }
   }
 
   backend "s3" {
@@ -34,10 +31,6 @@ provider "aws" {
 
 provider "cloudflare" {
   api_token = var.cloudflare_api_token
-}
-
-provider "neon" {
-  api_key = var.neon_api_key
 }
 
 
@@ -301,12 +294,4 @@ resource "aws_iam_policy" "secrets_read" {
 resource "aws_iam_role_policy_attachment" "attach" {
   role       = aws_iam_role.github_actions.name
   policy_arn = aws_iam_policy.secrets_read.arn
-}
-
-# Database.
-module "database" {
-  source       = "./modules/database"
-  neon_api_key = var.neon_api_key
-  project_name = local.project_name
-  count = 0
 }
