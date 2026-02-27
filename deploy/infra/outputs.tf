@@ -26,7 +26,7 @@ output "data_plane_host" {
 
 # Identity
 output "auth0_domain" {
-  value = module.auth0.domain
+  value = var.auth0_domain
 }
 
 output "auth0_web_client_id" {
@@ -46,11 +46,3 @@ output "aws_iam_role_github_actions_arn" {
   value = aws_iam_role.github_actions.arn
 }
 
-# Database
-# output "neon_project_id" {
-#   value = module.database.project_id
-# }
-
-# output "neon_branch_id" {
-#   value = module.database.branch_id
-# }

@@ -6,11 +6,13 @@ terraform {
     }
 
     cloudflare = {
-      source = "cloudflare/cloudflare"
+      source  = "cloudflare/cloudflare"
+      version = "~> 5.17"
     }
 
     auth0 = {
-      source = "auth0/auth0"
+      source  = "auth0/auth0"
+      version = "~> 1.40"
     }
   }
 
@@ -30,4 +32,10 @@ provider "aws" {
 
 provider "cloudflare" {
   api_token = var.cloudflare_api_token
+}
+
+provider "auth0" {
+  domain        = var.auth0_domain
+  client_id     = var.auth0_client_id
+  client_secret = var.auth0_client_secret
 }

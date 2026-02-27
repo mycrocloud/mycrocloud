@@ -12,6 +12,8 @@ resource "aws_iam_openid_connect_provider" "github" {
 }
 
 resource "aws_iam_role" "github_actions" {
+  name = "${local.project_name}-github-actions"
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -33,6 +35,7 @@ resource "aws_iam_role" "github_actions" {
 }
 
 resource "aws_iam_policy" "secrets_read" {
+  name   = "${local.project_name}-secrets-read"
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -51,4 +54,28 @@ resource "aws_iam_policy" "secrets_read" {
 resource "aws_iam_role_policy_attachment" "attach" {
   role       = aws_iam_role.github_actions.name
   policy_arn = aws_iam_policy.secrets_read.arn
+}
+
+# EC2 instance profile — grants SSM Session Manager access (replaces SSH)
+resource "aws_iam_role" "server" {
+  name = "${local.project_name}-server"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "ec2.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "server_ssm" {
+  role       = aws_iam_role.server.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+resource "aws_iam_instance_profile" "server" {
+  name = "${local.project_name}-server"
+  role = aws_iam_role.server.name
 }
