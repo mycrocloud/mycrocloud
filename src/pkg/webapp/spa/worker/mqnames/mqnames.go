@@ -1,7 +1,7 @@
 package mqnames
 
 const (
-	BuildQueue          = "build_queue"
-	BuildEventsExchange = "app.build.events"
-	BuildLogsExchange   = "app.build.logs"
+	SpaBuildJobQueue       = "webapp.spa.build.jobs"
+	SpaBuildStatusExchange = "webapp.spa.build.status"
+	SpaBuildLogsExchange   = "webapp.spa.build.logs"
 )

@@ -58,9 +58,9 @@ func (c *Collector) Append(line string, source string, tag string, containerID s
 		return
 	}
 
-	routingKey := fmt.Sprintf("%s.%s", mqnames.BuildLogsExchange, c.buildID)
+	routingKey := fmt.Sprintf("%s.%s", mqnames.SpaBuildLogsExchange, c.buildID)
 	if err := c.ch.Publish(
-		mqnames.BuildLogsExchange,
+		mqnames.SpaBuildLogsExchange,
 		routingKey,
 		false,
 		false,

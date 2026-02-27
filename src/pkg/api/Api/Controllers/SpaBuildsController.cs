@@ -167,27 +167,27 @@ public class SpaBuildsController(
         var cancellationToken = HttpContext.RequestAborted;
        
         var channel = rabbitMqConnectionFactory.CreateChannel();
-        const string exchange = RabbitMqNames.BuildLogsExchange;
-        
-        channel.ExchangeDeclare(exchange: exchange, type: "topic", durable: false); //TODO: confirm durable setting
-        
+        const string logsExchange = RabbitMqNames.SpaBuildLogsExchange;
+
+        channel.ExchangeDeclare(exchange: logsExchange, type: "topic", durable: false); //TODO: confirm durable setting
+
         var requestId = HttpContext.TraceIdentifier;
-        var queueName = exchange + $".{build.Id}_{requestId}"; // unique queue name per request
-        
+        var logsQueue = logsExchange + $".{build.Id}_{requestId}"; // unique queue name per request
+
         channel.QueueDeclare(
-            queue: queueName,
+            queue: logsQueue,
             durable: false,
             exclusive: true,
             autoDelete: true
         );
 
-        var rk = exchange + $".{build.Id.ToString()}";
+        var routingKey = logsExchange + $".{build.Id.ToString()}";
         channel.QueueBind(
-            queue: queueName,
-            exchange: exchange,
-            routingKey: rk
+            queue: logsQueue,
+            exchange: logsExchange,
+            routingKey: routingKey
         );
-        
+
         var consumer = new EventingBasicConsumer(channel);
         consumer.Received += async (_, ea) =>
         {
@@ -196,11 +196,11 @@ public class SpaBuildsController(
             await Response.WriteAsync($"data: {json}\n\n", cancellationToken: cancellationToken);
             await Response.Body.FlushAsync(cancellationToken);
         };
-        
-        logger.LogInformation("Listening for build logs. exchange: {exchange}, queueName: {queueName}, routingKey: {routingKey}", exchange, queueName, rk);
-        
+
+        logger.LogInformation("Listening for build logs. exchange: {Exchange}, queue: {Queue}, routingKey: {RoutingKey}", logsExchange, logsQueue, routingKey);
+
         channel.BasicConsume(
-            queue: queueName,
+            queue: logsQueue,
             autoAck: true,
             consumer: consumer
         );

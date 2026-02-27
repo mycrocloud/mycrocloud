@@ -485,7 +485,7 @@ func main() {
 	defer chConsumer.Close()
 
 	qBuildJob, err := chConsumer.QueueDeclare(
-		mqnames.BuildQueue,
+		mqnames.SpaBuildJobQueue,
 		true,  // durable
 		false, // delete when unused
 		false, // exclusive
@@ -503,7 +503,7 @@ func main() {
 	defer chPublisher.Close()
 
 	if err := chPublisher.ExchangeDeclare(
-		mqnames.BuildEventsExchange,
+		mqnames.SpaBuildStatusExchange,
 		"fanout",
 		true,
 		false,
@@ -516,7 +516,7 @@ func main() {
 
 	// Declare the log exchange (replaces fluentd → RabbitMQ)
 	if err := chPublisher.ExchangeDeclare(
-		mqnames.BuildLogsExchange,
+		mqnames.SpaBuildLogsExchange,
 		"topic",
 		false, // non-durable (matches existing setting)
 		false,

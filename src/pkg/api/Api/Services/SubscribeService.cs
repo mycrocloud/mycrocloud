@@ -20,12 +20,12 @@ public class SubscribeService(IServiceScopeFactory serviceScopeFactory, IConfigu
         var connection = factory.CreateConnection();
         var channel = connection.CreateModel();
         
-        const string exchange = RabbitMqNames.BuildEventsExchange;
-        const string queue = "slack_integration_api." + exchange;
-        
-        channel.ExchangeDeclare(exchange, ExchangeType.Fanout, durable: true);
-        channel.QueueDeclare(queue, durable: true, exclusive: false, autoDelete: false, arguments: null);
-        channel.QueueBind(queue, exchange, routingKey: "");
+        const string statusExchange = RabbitMqNames.SpaBuildStatusExchange;
+        const string slackQueue = "slack_integration_api." + statusExchange;
+
+        channel.ExchangeDeclare(statusExchange, ExchangeType.Fanout, durable: true);
+        channel.QueueDeclare(slackQueue, durable: true, exclusive: false, autoDelete: false, arguments: null);
+        channel.QueueBind(slackQueue, statusExchange, routingKey: "");
         
         var consumer = new EventingBasicConsumer(channel);
         
@@ -48,7 +48,7 @@ public class SubscribeService(IServiceScopeFactory serviceScopeFactory, IConfigu
             }
         };
 
-        channel.BasicConsume(queue, autoAck: false, consumer: consumer);
+        channel.BasicConsume(slackQueue, autoAck: false, consumer: consumer);
 
         return Task.CompletedTask;
     }

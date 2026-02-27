@@ -34,7 +34,6 @@ namespace Api.Services
 
     public class BuildQueuePublisher : IDisposable
     {
-        private const string BuildQueueName = RabbitMqNames.BuildQueue;
         private readonly Lazy<IModel> _channel;
         private readonly ILogger<BuildQueuePublisher> _logger;
 
@@ -48,7 +47,7 @@ namespace Api.Services
         {
             var channel = _channel.Value;
 
-            channel.QueueDeclare(queue: BuildQueueName,
+            channel.QueueDeclare(queue: RabbitMqNames.SpaBuildJobQueue,
                 durable: true,
                 exclusive: false,
                 autoDelete: false,
@@ -57,11 +56,11 @@ namespace Api.Services
             var body = Encoding.UTF8.GetBytes(message);
 
             channel.BasicPublish(exchange: "",
-                routingKey: BuildQueueName,
+                routingKey: RabbitMqNames.SpaBuildJobQueue,
                 basicProperties: null,
                 body: body);
 
-            _logger.LogDebug("Sent message to build_queue: {Message}", message);
+            _logger.LogDebug("Sent message to {Queue}: {Message}", RabbitMqNames.SpaBuildJobQueue, message);
         }
 
         public void Dispose()

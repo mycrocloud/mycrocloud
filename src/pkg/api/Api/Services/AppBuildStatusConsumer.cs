@@ -31,12 +31,12 @@ public class AppBuildStatusConsumer(
         _connection = factory.CreateConnection();
         _channel = _connection.CreateModel();
         
-        const string exchange = RabbitMqNames.BuildEventsExchange;
-        const string queue = "api." + exchange;
-        
-        _channel.ExchangeDeclare(exchange, ExchangeType.Fanout, durable: true);
-        _channel.QueueDeclare(queue, durable: true, exclusive: false, autoDelete: false, arguments: null);
-        _channel.QueueBind(queue, exchange, routingKey: "");
+        const string statusExchange = RabbitMqNames.SpaBuildStatusExchange;
+        const string statusQueue = "api." + statusExchange;
+
+        _channel.ExchangeDeclare(statusExchange, ExchangeType.Fanout, durable: true);
+        _channel.QueueDeclare(statusQueue, durable: true, exclusive: false, autoDelete: false, arguments: null);
+        _channel.QueueBind(statusQueue, statusExchange, routingKey: "");
         
         var consumer = new EventingBasicConsumer(_channel);
         
@@ -59,7 +59,7 @@ public class AppBuildStatusConsumer(
             }
         };
         
-        _channel.BasicConsume(queue, autoAck: false, consumer: consumer);
+        _channel.BasicConsume(statusQueue, autoAck: false, consumer: consumer);
         
         return Task.CompletedTask;
     }

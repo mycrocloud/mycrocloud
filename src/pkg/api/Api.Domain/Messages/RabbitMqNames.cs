@@ -2,7 +2,7 @@ namespace Api.Domain.Messages;
 
 public static class RabbitMqNames
 {
-    public const string BuildQueue = "build_queue";
-    public const string BuildEventsExchange = "app.build.events";
-    public const string BuildLogsExchange = "app.build.logs";
+    public const string SpaBuildJobQueue = "webapp.spa.build.jobs";
+    public const string SpaBuildStatusExchange = "webapp.spa.build.status";
+    public const string SpaBuildLogsExchange = "webapp.spa.build.logs";
 }

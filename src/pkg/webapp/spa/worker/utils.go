@@ -18,7 +18,7 @@ func publishJobStatusChangedEventMessage(ch *amqp.Channel, message BuildStatusCh
 	}
 
 	err = ch.Publish(
-		mqnames.BuildEventsExchange,
+		mqnames.SpaBuildStatusExchange,
 		"",
 		false,
 		false,
