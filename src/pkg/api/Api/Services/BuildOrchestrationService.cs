@@ -117,11 +117,11 @@ public class BuildOrchestrationService(
             Limits = planLimits
         };
 
-        buildQueuePublisher.PublishMessage(JsonSerializer.Serialize(message));
-            
-        publisher.Publish(app.Id, build.Status);
-
         await appDbContext.SaveChangesAsync();
+
+        await buildQueuePublisher.PublishAsync(build.Id, JsonSerializer.Serialize(message));
+
+        publisher.Publish(app.Id, build.Status);
 
         logger.LogInformation("Created and queued build {BuildId} for app {AppId}", build.Id, app.Id);
         

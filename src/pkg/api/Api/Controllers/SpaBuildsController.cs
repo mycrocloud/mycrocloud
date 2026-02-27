@@ -1,4 +1,3 @@
-using System.Text;
 using System.Text.Json;
 using Api.Filters;
 using Api.Models.Builds;
@@ -8,8 +7,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
 using Api.Domain.Entities;
 using Api.Domain.Messages;
 using Api.Infrastructure;
@@ -25,7 +22,7 @@ public class SpaBuildsController(
     BuildOrchestrationService buildOrchestrationService,
     GitHubAppService gitHubAppService,
     IStorageProvider storageProvider,
-    RabbitMqConnectionFactory rabbitMqConnectionFactory,
+    PubSubDataSource pubSubDataSource,
     ILogger<SpaBuildsController> logger): BaseController
 {
     [HttpGet]
@@ -35,7 +32,7 @@ public class SpaBuildsController(
             .Where(b => b.AppId == appId)
             .OrderByDescending(b => b.CreatedAt)
             .ToListAsync();
-        
+
         return Ok(builds.Select(b => new
         {
             b.Id,
@@ -44,7 +41,7 @@ public class SpaBuildsController(
             b.UpdatedAt,
         }));
     }
-    
+
     [HttpPost("build")]
     public async Task<IActionResult> Build(int appId, BuildRequest request)
     {
@@ -67,7 +64,7 @@ public class SpaBuildsController(
 
         // Use template path - service will replace {buildId} with actual value
         var artifactsUploadPath = $"/apps/{appId}/spa/builds/{{buildId}}/artifacts";
-        
+
         await buildOrchestrationService.CreateAndQueueBuildAsync(
             app,
             cloneUrl,
@@ -75,17 +72,17 @@ public class SpaBuildsController(
             artifactsUploadPath,
             deploymentName: request.Name
         );
-        
+
         return NoContent();
     }
-    
+
     [HttpGet("stream")]
     public async Task<IActionResult> StreamBuilds(int appId)
     {
         Response.Headers.Append("Content-Type", "text/event-stream");
         Response.Headers.Append("Cache-Control", "no-cache");
         Response.Headers.Append("Connection", "keep-alive");
-        
+
         Response.Headers.Append("X-Accel-Buffering", "no");   // disable Nginx buffering
 
         var cancellationToken = HttpContext.RequestAborted;
@@ -116,7 +113,7 @@ public class SpaBuildsController(
         };
 
         await appDbContext.SaveChangesAsync();
-        
+
         return NoContent();
     }
 
@@ -152,75 +149,238 @@ public class SpaBuildsController(
 
         return Ok(logs);
     }
-    
+
     [HttpGet("{buildId:guid}/logs/stream")]
     public async Task<IActionResult> StreamBuildLogs(int appId, Guid buildId)
     {
         var build = await appDbContext.AppBuildJobs.SingleAsync(b => b.AppId == appId && b.Id == buildId);
-        
+
         Response.Headers.Append("Content-Type", "text/event-stream");
         Response.Headers.Append("Cache-Control", "no-cache");
         Response.Headers.Append("Connection", "keep-alive");
-        
+
         Response.Headers.Append("X-Accel-Buffering", "no");   // disable Nginx buffering
-        
+
         var cancellationToken = HttpContext.RequestAborted;
-       
-        var channel = rabbitMqConnectionFactory.CreateChannel();
-        const string logsExchange = RabbitMqNames.SpaBuildLogsExchange;
 
-        channel.ExchangeDeclare(exchange: logsExchange, type: "topic", durable: false); //TODO: confirm durable setting
+        // Use a dedicated connection (not from pool) for long-lived LISTEN
+        await using var conn = await pubSubDataSource.DataSource.OpenConnectionAsync(cancellationToken);
 
-        var requestId = HttpContext.TraceIdentifier;
-        var logsQueue = logsExchange + $".{build.Id}_{requestId}"; // unique queue name per request
-
-        channel.QueueDeclare(
-            queue: logsQueue,
-            durable: false,
-            exclusive: true,
-            autoDelete: true
-        );
-
-        var routingKey = logsExchange + $".{build.Id.ToString()}";
-        channel.QueueBind(
-            queue: logsQueue,
-            exchange: logsExchange,
-            routingKey: routingKey
-        );
-
-        var consumer = new EventingBasicConsumer(channel);
-        consumer.Received += async (_, ea) =>
+        var channel = $"build_log_{build.Id:N}";
+        await using (var listenCmd = conn.CreateCommand())
         {
-            var body = ea.Body.ToArray();
-            var json = Encoding.UTF8.GetString(body);
-            await Response.WriteAsync($"data: {json}\n\n", cancellationToken: cancellationToken);
-            await Response.Body.FlushAsync(cancellationToken);
-        };
+            listenCmd.CommandText = $"LISTEN \"{channel}\"";
+            await listenCmd.ExecuteNonQueryAsync(cancellationToken);
+        }
 
-        logger.LogInformation("Listening for build logs. exchange: {Exchange}, queue: {Queue}, routingKey: {RoutingKey}", logsExchange, logsQueue, routingKey);
+        logger.LogInformation("Listening for build logs on channel {Channel}", channel);
 
-        channel.BasicConsume(
-            queue: logsQueue,
-            autoAck: true,
-            consumer: consumer
-        );
-        
         var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        await using (cancellationToken.Register(() => tcs.TrySetResult()))
+        await using var registration = cancellationToken.Register(() => tcs.TrySetResult());
+
+        conn.Notification += async (_, e) =>
         {
             try
             {
-                await tcs.Task;
+                await Response.WriteAsync($"data: {e.Payload}\n\n", cancellationToken);
+                await Response.Body.FlushAsync(cancellationToken);
             }
-            finally
+            catch (OperationCanceledException)
             {
-                channel.BasicCancel(consumer.ConsumerTags[0]);
-                channel.Close();
-                channel.Dispose();
+                tcs.TrySetResult();
+            }
+        };
+
+        // Wait for notifications until client disconnects
+        // conn.Wait() blocks until a notification arrives; we loop until cancelled
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                await conn.WaitAsync(cancellationToken);
             }
         }
+        catch (OperationCanceledException) { }
 
         return new EmptyResult();
+    }
+
+    /// <summary>
+    /// Worker reports build status changes via this endpoint (replaces RabbitMQ status consumer).
+    /// </summary>
+    [HttpPost("{buildId:guid}/status")]
+    [DisableAppOwnerActionFilter]
+    [Authorize(Policy = "M2M", AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    public async Task<IActionResult> UpdateBuildStatus(
+        int appId,
+        Guid buildId,
+        [FromBody] BuildStatusChangedMessage statusMessage,
+        [FromServices] IArtifactExtractionService extractionService,
+        [FromServices] IAppSpecificationPublisher specPublisher,
+        [FromServices] SlackAppService slackAppService)
+    {
+        var build = await appDbContext.AppBuildJobs.FindAsync(buildId);
+        if (build == null || build.AppId != appId)
+            return NotFound();
+
+        var app = await appDbContext.Apps.FindAsync(build.AppId);
+        if (app == null)
+            return NotFound();
+
+        switch (statusMessage.Status)
+        {
+            case BuildStatus.Started:
+                build.Status = "started";
+                build.UpdatedAt = DateTime.UtcNow;
+                build.FinishedAt = null;
+                await appDbContext.SaveChangesAsync();
+                break;
+
+            case BuildStatus.Done:
+                build.Status = "done";
+                build.UpdatedAt = DateTime.UtcNow;
+                build.FinishedAt = DateTime.UtcNow;
+
+                if (!statusMessage.ArtifactId.HasValue)
+                {
+                    logger.LogWarning("No artifact uploaded for build {BuildId}", buildId);
+                    await appDbContext.SaveChangesAsync();
+                    break;
+                }
+
+                var artifact = await appDbContext.Artifacts.FindAsync(statusMessage.ArtifactId.Value);
+                if (artifact == null)
+                {
+                    logger.LogError("Artifact {ArtifactId} not found for build {BuildId}", statusMessage.ArtifactId, buildId);
+                    build.Status = "failed";
+                    await appDbContext.SaveChangesAsync();
+                    break;
+                }
+
+                logger.LogInformation("Processing artifact {ArtifactId} ({SizeBytes} bytes) for build {BuildId}",
+                    artifact.Id, artifact.BundleSize, build.Id);
+
+                var deployment = await appDbContext.SpaDeployments
+                    .FirstOrDefaultAsync(d => d.BuildId == build.Id);
+
+                if (deployment == null)
+                {
+                    logger.LogWarning("No deployment found for build {BuildId}, creating new one", build.Id);
+                    deployment = new SpaDeployment
+                    {
+                        Id = Guid.NewGuid(),
+                        AppId = build.AppId,
+                        BuildId = build.Id,
+                        ArtifactId = artifact.Id,
+                        Status = DeploymentStatus.Pending
+                    };
+                    appDbContext.SpaDeployments.Add(deployment);
+                }
+                else
+                {
+                    deployment.ArtifactId = artifact.Id;
+                    deployment.Status = DeploymentStatus.Pending;
+                    deployment.UpdatedAt = DateTime.UtcNow;
+                }
+
+                await appDbContext.SaveChangesAsync();
+
+                try
+                {
+                    await extractionService.ExtractAsync(artifact.Id, deployment.Id, build.AppId);
+                    deployment.Status = DeploymentStatus.Ready;
+                    logger.LogInformation("Extracted artifact {ArtifactId} for deployment {DeploymentId}",
+                        artifact.Id, deployment.Id);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Failed to extract artifact {ArtifactId}", artifact.Id);
+                    deployment.Status = DeploymentStatus.Failed;
+                    build.Status = "failed";
+                    await appDbContext.SaveChangesAsync();
+                    break;
+                }
+
+                app.ActiveSpaDeploymentId = deployment.Id;
+                await appDbContext.SaveChangesAsync();
+
+                logger.LogInformation("Activated SPA deployment {DeploymentId} for app {AppId}",
+                    deployment.Id, build.AppId);
+
+                await specPublisher.PublishAsync(app.Slug);
+                break;
+
+            case BuildStatus.Failed:
+                build.Status = "failed";
+                build.UpdatedAt = DateTime.UtcNow;
+                build.FinishedAt = DateTime.UtcNow;
+
+                var failedDeployment = await appDbContext.SpaDeployments
+                    .FirstOrDefaultAsync(d => d.BuildId == buildId);
+                if (failedDeployment != null)
+                {
+                    failedDeployment.Status = DeploymentStatus.Failed;
+                    failedDeployment.UpdatedAt = DateTime.UtcNow;
+                }
+
+                await appDbContext.SaveChangesAsync();
+                break;
+
+            default:
+                return BadRequest("Unknown status");
+        }
+
+        // Publish real-time update to UI subscribers
+        publisher.Publish(app.Id, build.Status);
+
+        // Mark queue item as completed
+        await using var conn = await pubSubDataSource.DataSource.OpenConnectionAsync();
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = "UPDATE build_queue SET status = 'completed' WHERE id = @id";
+        cmd.Parameters.AddWithValue("id", buildId);
+        await cmd.ExecuteNonQueryAsync();
+
+        // Send Slack notifications
+        try
+        {
+            var subscriptions = await appDbContext.SlackAppSubscriptions
+                .Where(s => s.AppId == build.AppId)
+                .ToListAsync();
+
+            if (subscriptions.Count > 0)
+            {
+                var emoji = statusMessage.Status switch
+                {
+                    BuildStatus.Started => "\ud83d\udfe1",
+                    BuildStatus.Done => "\u2705",
+                    BuildStatus.Failed => "\u274c",
+                    _ => "\u2139\ufe0f"
+                };
+
+                var webOrigin = configuration.GetValue<string>("WebOrigin")!.TrimEnd('/');
+                var detailsUrl = $"{webOrigin}/apps/{build.AppId}/integrations/builds/{build.Id}";
+
+                var text = statusMessage.Status switch
+                {
+                    BuildStatus.Started => $"{emoji} *Build started* for *{app.Slug}* (Build #{build.Id})",
+                    BuildStatus.Done => $"{emoji} *Build completed successfully!* \ud83c\udf89\nApp: *{app.Slug}*  \nBuild Id: `{build.Id}`",
+                    BuildStatus.Failed => $"{emoji} *Build failed!* \ud83d\udca5\nApp: *{app.Slug}*  \nBuild Id: `{build.Id}`",
+                    _ => $"{emoji} Build status changed for *{app.Slug}*"
+                };
+                text += $"\n<{detailsUrl}|View build details>";
+
+                foreach (var subscription in subscriptions)
+                {
+                    await slackAppService.SendSlackMessage(subscription.TeamId, subscription.ChannelId, text);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to send Slack notification for build {BuildId}", buildId);
+        }
+
+        return Ok();
     }
 
     [HttpPut("{buildId:guid}/logs")]
@@ -298,22 +458,19 @@ public class SpaBuildsController(
         // 1. Save ZIP to storage
         var artifactId = Guid.NewGuid();
         var storageKey = $"artifacts/{appId}/{artifactId}.zip";
-        
+
         await using (var stream = file.OpenReadStream())
         {
             await storageProvider.SaveAsync(storageKey, stream);
         }
 
         // 2. Verify hash (optional but good for integrity)
-        // In a production environment, we might compute hash while streaming to storage
-        // For now, we'll reopen to verify if needed, or trust the worker if we move hash computation there.
-        // Let's reopening to compute hash to be sure.
         using (var verifyStream = await storageProvider.OpenReadAsync(storageKey))
         {
             var computedHash = Convert.ToHexString(await System.Security.Cryptography.SHA256.HashDataAsync(verifyStream));
             if (!computedHash.Equals(contentHash, StringComparison.OrdinalIgnoreCase))
             {
-                logger.LogWarning("Hash mismatch for build {BuildId}. Expected: {Expected}, Got: {Got}", 
+                logger.LogWarning("Hash mismatch for build {BuildId}. Expected: {Expected}, Got: {Got}",
                     buildId, contentHash, computedHash);
                 await storageProvider.DeleteAsync(storageKey);
                 return BadRequest("Content hash mismatch");
@@ -347,11 +504,11 @@ public class SpaBuildsController(
 
         await appDbContext.SaveChangesAsync();
 
-        logger.LogInformation("Uploaded artifact {ArtifactId} ({SizeBytes} bytes) for build {BuildId}", 
+        logger.LogInformation("Uploaded artifact {ArtifactId} ({SizeBytes} bytes) for build {BuildId}",
             artifact.Id, artifact.BundleSize, build.Id);
 
-        return Ok(new 
-        { 
+        return Ok(new
+        {
             artifactId = artifact.Id,
             sizeBytes = artifact.BundleSize,
             contentHash = artifact.BundleHash

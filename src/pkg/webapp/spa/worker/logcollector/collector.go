@@ -2,14 +2,13 @@ package logcollector
 
 import (
 	"crypto/rand"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
-	"mycrocloud/worker/mqnames"
+	"strings"
 	"sync"
 	"time"
-
-	"github.com/streadway/amqp"
 )
 
 // LogEntry matches the frontend ILogEntry interface shape.
@@ -21,24 +20,28 @@ type LogEntry struct {
 	UUID   string `json:"uuid"`
 }
 
-// Collector buffers log lines in memory and publishes each line to RabbitMQ for live SSE.
+// Collector buffers log lines in memory and publishes each line via PostgreSQL NOTIFY for live SSE.
 type Collector struct {
 	buildID string
-	ch      *amqp.Channel
+	db      *sql.DB
+	channel string
 	mu      sync.Mutex
 	entries []LogEntry
 }
 
 // New creates a new Collector for the given build.
-func New(buildID string, ch *amqp.Channel) *Collector {
+func New(buildID string, db *sql.DB) *Collector {
+	// Channel name uses hex build ID (no hyphens) to be a valid PostgreSQL identifier
+	channel := "build_log_" + strings.ReplaceAll(buildID, "-", "")
 	return &Collector{
 		buildID: buildID,
-		ch:      ch,
+		db:      db,
+		channel: channel,
 		entries: make([]LogEntry, 0, 1024),
 	}
 }
 
-// Append adds a log line, publishes it to RabbitMQ for live SSE, and buffers it.
+// Append adds a log line, publishes it via PostgreSQL NOTIFY for live SSE, and buffers it.
 func (c *Collector) Append(line string, source string, tag string, containerID string) {
 	entry := LogEntry{
 		Log:    line,
@@ -52,24 +55,18 @@ func (c *Collector) Append(line string, source string, tag string, containerID s
 	c.entries = append(c.entries, entry)
 	c.mu.Unlock()
 
-	// Publish to RabbitMQ for live SSE (best-effort)
+	// Publish to PostgreSQL NOTIFY for live SSE (best-effort)
 	data, err := json.Marshal(entry)
 	if err != nil {
 		return
 	}
 
-	routingKey := fmt.Sprintf("%s.%s", mqnames.SpaBuildLogsExchange, c.buildID)
-	if err := c.ch.Publish(
-		mqnames.SpaBuildLogsExchange,
-		routingKey,
-		false,
-		false,
-		amqp.Publishing{
-			ContentType: "application/json",
-			Body:        data,
-		},
-	); err != nil {
-		log.Printf("Failed to publish log to RabbitMQ: %v", err)
+	// Escape single quotes in payload for SQL
+	payload := strings.ReplaceAll(string(data), "'", "''")
+
+	_, err = c.db.Exec(fmt.Sprintf("NOTIFY \"%s\", '%s'", c.channel, payload))
+	if err != nil {
+		log.Printf("Failed to publish log via NOTIFY: %v", err)
 	}
 }
 

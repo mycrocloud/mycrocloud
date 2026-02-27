@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"database/sql"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
@@ -10,7 +11,6 @@ import (
 	"log"
 	"mycrocloud/worker/api_client"
 	"mycrocloud/worker/logcollector"
-	"mycrocloud/worker/mqnames"
 	"mycrocloud/worker/uploader"
 	"os"
 	"os/signal"
@@ -24,9 +24,8 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	"github.com/joho/godotenv"
-	"github.com/streadway/amqp"
+	"github.com/lib/pq"
 )
-
 
 // Global limits loaded from environment
 var limits Limits
@@ -117,15 +116,34 @@ func uploadBuildLogs(buildMsg BuildMessage, collector *logcollector.Collector) {
 	}
 }
 
+// claimJob attempts to claim a pending job from the build_queue table.
+// Returns the job payload JSON or empty string if no jobs available.
+func claimJob(ctx context.Context, db *sql.DB, workerID string) (string, error) {
+	var payload string
+	err := db.QueryRowContext(ctx, `
+		UPDATE build_queue SET status = 'claimed', claimed_by = $1, claimed_at = now()
+		WHERE id = (SELECT id FROM build_queue WHERE status = 'pending' ORDER BY created_at LIMIT 1 FOR UPDATE SKIP LOCKED)
+		RETURNING payload::text
+	`, workerID).Scan(&payload)
+
+	if err == sql.ErrNoRows {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	return payload, nil
+}
+
 // ProcessJob processes a build job and returns an error if it fails
-func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel) error {
+func ProcessJob(ctx context.Context, jsonString string, db *sql.DB) error {
 	var buildMsg BuildMessage
 	if err := json.Unmarshal([]byte(jsonString), &buildMsg); err != nil {
 		return err
 	}
 
-	// Create log collector for this build
-	collector := logcollector.New(buildMsg.BuildId, ch)
+	// Create log collector for this build (uses PostgreSQL NOTIFY)
+	collector := logcollector.New(buildMsg.BuildId, db)
 
 	// Get job-specific limits from plan (capped by system max)
 	jobLimits := limits.GetJobLimits(buildMsg.Limits)
@@ -197,7 +215,7 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel) error 
 							log.Printf("Successfully uploaded existing artifact: %s", artifactId)
 							collector.Append("Finished processing (existing artifact)", "stdout", "app.worker", "")
 							uploadBuildLogs(buildMsg, collector)
-							publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
+							publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 								BuildId:    buildMsg.BuildId,
 								Status:     Done,
 								ArtifactId: artifactId,
@@ -267,7 +285,7 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel) error 
 		return err
 	}
 
-	publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
+	publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 		BuildId:     buildMsg.BuildId,
 		Status:      Started,
 		ContainerId: resp.ID,
@@ -302,7 +320,7 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel) error 
 			// Wait for log streaming to finish
 			<-logsDone
 			uploadBuildLogs(buildMsg, collector)
-			publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
+			publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 				BuildId: buildMsg.BuildId,
 				Status:  Failed,
 			})
@@ -322,7 +340,7 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel) error 
 	if containerFailed {
 		collector.Append("Build failed (non-zero exit code)", "stderr", "app.worker", "")
 		uploadBuildLogs(buildMsg, collector)
-		publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
+		publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 			BuildId: buildMsg.BuildId,
 			Status:  Failed,
 		})
@@ -348,7 +366,7 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel) error 
 			log.Printf("Artifact size exceeds hard limit: %s", sizeCheck.Message)
 			collector.Append("Artifact size exceeds limit: "+sizeCheck.Message, "stderr", "app.worker", "")
 			uploadBuildLogs(buildMsg, collector)
-			publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
+			publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 				BuildId: buildMsg.BuildId,
 				Status:  Failed,
 			})
@@ -368,7 +386,7 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel) error 
 		if err != nil {
 			collector.Append("Failed to get access token: "+err.Error(), "stderr", "app.worker", "")
 			uploadBuildLogs(buildMsg, collector)
-			publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
+			publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 				BuildId: buildMsg.BuildId,
 				Status:  Failed,
 			})
@@ -380,7 +398,7 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel) error 
 			log.Printf("API_BASE_URL not set, cannot upload artifact")
 			collector.Append("API_BASE_URL not configured", "stderr", "app.worker", "")
 			uploadBuildLogs(buildMsg, collector)
-			publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
+			publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 				BuildId: buildMsg.BuildId,
 				Status:  Failed,
 			})
@@ -393,7 +411,7 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel) error 
 		if err != nil {
 			collector.Append("Artifact upload failed: "+err.Error(), "stderr", "app.worker", "")
 			uploadBuildLogs(buildMsg, collector)
-			publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
+			publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 				BuildId: buildMsg.BuildId,
 				Status:  Failed,
 			})
@@ -411,7 +429,7 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel) error 
 		uploadBuildLogs(buildMsg, collector)
 
 		// Publish completion message with artifactId
-		publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
+		publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 			BuildId:    buildMsg.BuildId,
 			Status:     Done,
 			ArtifactId: artifactId,
@@ -421,7 +439,7 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel) error 
 		uploadBuildLogs(buildMsg, collector)
 
 		// Publish completion message without artifactId if upload is disabled
-		publishJobStatusChangedEventMessage(ch, BuildStatusChangedEventMessage{
+		publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 			BuildId: buildMsg.BuildId,
 			Status:  Done,
 		})
@@ -471,150 +489,128 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	rabbitMQURL := os.Getenv("RABBITMQ_URL")
-	conn, err := amqp.Dial(rabbitMQURL)
+	// Connect to PostgreSQL
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		log.Fatal("DATABASE_URL must be set")
+	}
+
+	db, err := sql.Open("postgres", databaseURL)
 	if err != nil {
-		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
+		log.Fatalf("Failed to connect to PostgreSQL: %v", err)
 	}
-	defer conn.Close()
+	defer db.Close()
 
-	chConsumer, err := conn.Channel()
-	if err != nil {
-		log.Fatalf("Failed to open consumer channel: %v", err)
+	if err := db.Ping(); err != nil {
+		log.Fatalf("Failed to ping PostgreSQL: %v", err)
 	}
-	defer chConsumer.Close()
+	log.Printf("Connected to PostgreSQL")
 
-	qBuildJob, err := chConsumer.QueueDeclare(
-		mqnames.SpaBuildJobQueue,
-		true,  // durable
-		false, // delete when unused
-		false, // exclusive
-		false, // no-wait
-		nil,
-	)
-	if err != nil {
-		log.Fatalf("Failed to declare queue: %v", err)
+	// Setup LISTEN for job notifications
+	listener := pq.NewListener(databaseURL, 10*time.Second, time.Minute, func(ev pq.ListenerEventType, err error) {
+		if err != nil {
+			log.Printf("Listener event error: %v", err)
+		}
+	})
+	if err := listener.Listen("build_job_available"); err != nil {
+		log.Fatalf("Failed to LISTEN: %v", err)
 	}
-
-	chPublisher, err := conn.Channel()
-	if err != nil {
-		log.Fatalf("Failed to open publisher channel: %v", err)
-	}
-	defer chPublisher.Close()
-
-	if err := chPublisher.ExchangeDeclare(
-		mqnames.SpaBuildStatusExchange,
-		"fanout",
-		true,
-		false,
-		false,
-		false,
-		nil,
-	); err != nil {
-		log.Fatalf("Failed to declare events exchange: %v", err)
-	}
-
-	// Declare the log exchange (replaces fluentd → RabbitMQ)
-	if err := chPublisher.ExchangeDeclare(
-		mqnames.SpaBuildLogsExchange,
-		"topic",
-		false, // non-durable (matches existing setting)
-		false,
-		false,
-		false,
-		nil,
-	); err != nil {
-		log.Fatalf("Failed to declare logs exchange: %v", err)
-	}
-
-	// Set prefetch to limit concurrent processing
-	if err := chConsumer.Qos(limits.MaxConcurrentJobs, 0, false); err != nil {
-		log.Fatalf("Failed to set QoS: %v", err)
-	}
-
-	// Manual ack mode
-	msgs, err := chConsumer.Consume(
-		qBuildJob.Name,
-		"",
-		false, // auto-ack = false (manual ack)
-		false,
-		false,
-		false,
-		nil,
-	)
-	if err != nil {
-		log.Fatalf("Failed to register consumer: %v", err)
-	}
+	defer listener.Close()
 
 	var wg sync.WaitGroup
 	jobLimit := make(chan struct{}, limits.MaxConcurrentJobs)
-	msgsDone := make(chan struct{})
+	workerID, _ := os.Hostname()
+	if workerID == "" {
+		workerID = fmt.Sprintf("worker-%d", os.Getpid())
+	}
 
-	// Message processing goroutine
-	go func() {
-		defer close(msgsDone)
+	// Try to claim any pending jobs on startup
+	claimAndProcess := func() {
 		for {
 			select {
 			case <-ctx.Done():
-				log.Printf("Context cancelled, stopping message consumption")
 				return
-			case d, ok := <-msgs:
-				if !ok {
-					log.Printf("Message channel closed unexpectedly, will shut down")
-					return
+			default:
+			}
+
+			// Try to get a job slot
+			select {
+			case jobLimit <- struct{}{}:
+			default:
+				// All slots full, stop claiming
+				return
+			}
+
+			payload, err := claimJob(ctx, db, workerID)
+			if err != nil {
+				log.Printf("Failed to claim job: %v", err)
+				<-jobLimit
+				return
+			}
+			if payload == "" {
+				// No more pending jobs
+				<-jobLimit
+				return
+			}
+
+			wg.Add(1)
+			go func(p string) {
+				defer func() {
+					<-jobLimit
+					wg.Done()
+				}()
+
+				if err := ProcessJob(ctx, p, db); err != nil {
+					log.Printf("Job failed: %v", err)
 				}
+			}(payload)
+		}
+	}
 
-				jobLimit <- struct{}{}
-				wg.Add(1)
+	// Claim any jobs that were pending before we started
+	claimAndProcess()
 
-				go func(delivery amqp.Delivery) {
-					defer func() {
-						<-jobLimit
-						wg.Done()
-					}()
+	log.Printf(" [*] Waiting for jobs. Press Ctrl+C to exit")
 
-					job := string(delivery.Body)
-					if err := ProcessJob(ctx, job, chPublisher); err != nil {
-						log.Printf("Job failed: %v", err)
-						// Nack without requeue to avoid infinite loop
-						if nackErr := delivery.Nack(false, false); nackErr != nil {
-							log.Printf("Failed to nack message: %v", nackErr)
-						}
-						return
-					}
-
-					// Ack on success
-					if err := delivery.Ack(false); err != nil {
-						log.Printf("Failed to ack message: %v", err)
-					}
-				}(d)
+	// Main loop: wait for NOTIFY or shutdown
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-listener.Notify:
+				// Got a notification, try to claim jobs
+				claimAndProcess()
+			case <-time.After(30 * time.Second):
+				// Periodic poll as fallback (in case NOTIFY was missed)
+				claimAndProcess()
 			}
 		}
 	}()
 
-	log.Printf(" [*] Waiting for messages. Press Ctrl+C to exit")
-
-	// Wait for shutdown signal or unexpected channel closure
+	// Wait for shutdown signal
 	select {
 	case sig := <-sigChan:
 		log.Printf("Received signal %v, initiating graceful shutdown...", sig)
-	case <-msgsDone:
-		log.Printf("Message loop exited, initiating shutdown...")
+	case <-done:
+		log.Printf("Main loop exited, initiating shutdown...")
 	}
 
 	// Cancel context to stop accepting new jobs
 	cancel()
 
 	// Wait for in-flight jobs with timeout
-	done := make(chan struct{})
+	waitDone := make(chan struct{})
 	go func() {
 		wg.Wait()
-		close(done)
+		close(waitDone)
 	}()
 
 	shutdownTimeout := 60 * time.Second
 	select {
-	case <-done:
+	case <-waitDone:
 		log.Printf("All jobs completed, shutting down")
 	case <-time.After(shutdownTimeout):
 		log.Printf("Shutdown timeout after %v, forcing exit", shutdownTimeout)
