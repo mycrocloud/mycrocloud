@@ -14,6 +14,7 @@ terraform {
       source  = "auth0/auth0"
       version = "~> 1.40"
     }
+
   }
 
   backend "s3" {
