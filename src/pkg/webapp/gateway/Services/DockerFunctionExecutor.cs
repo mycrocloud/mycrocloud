@@ -10,7 +10,8 @@ namespace MycroCloud.WebApp.Gateway.Services;
 public class DockerFunctionExecutor(
     [FromKeyedServices("DockerFunctionExecution")] ConcurrentJobQueue jobQueue,
     DockerClient dockerClient,
-    IConfiguration configuration) : IFunctionExecutor
+    IConfiguration configuration,
+    ILogger<DockerFunctionExecutor> logger) : IFunctionExecutor
 {
     public FunctionRuntime Runtime => FunctionRuntime.JintInDocker;
 
@@ -63,7 +64,6 @@ public class DockerFunctionExecutor(
                     Image = configuration["DockerFunctionExecution:Image"],
                     HostConfig = new HostConfig
                     {
-                        AutoRemove = true,
                         Binds = [$"{hostDir}:{containerDataPath}"],
                         Memory = 64 * 1024 * 1024, // 64 MB
                         NanoCPUs = 250_000_000, // 0.25 CPU (NanoCPUs = 10^9 = 1 CPU)
@@ -72,26 +72,59 @@ public class DockerFunctionExecutor(
                     Env = env
                 }, token);
 
-                await dockerClient.Containers.StartContainerAsync(container.ID, new ContainerStartParameters
+                try
                 {
+                    await dockerClient.Containers.StartContainerAsync(container.ID, new ContainerStartParameters(), token);
 
-                }, token);
+                    var waitResponse = await dockerClient.Containers.WaitContainerAsync(container.ID, token);
 
-                await dockerClient.Containers.WaitContainerAsync(container.ID, token);
+                    // Capture container logs for diagnostics
+                    string containerLogs = "";
+                    try
+                    {
+                        var logStream = await dockerClient.Containers.GetContainerLogsAsync(container.ID,
+                            false, new ContainerLogsParameters { ShowStdout = true, ShowStderr = true }, token);
+                        var (stdout, stderr) = await logStream.ReadOutputToEndAsync(token);
+                        containerLogs = stdout + stderr;
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, "Failed to retrieve container logs for app {AppId}", app.Id);
+                    }
 
-                var resultText = await File.ReadAllTextAsync(Path.Combine(hostDir, "result.json"), token);
+                    if (waitResponse.StatusCode != 0)
+                    {
+                        logger.LogError("Container exited with code {ExitCode} for app {AppId}. Logs:\n{ContainerLogs}",
+                            waitResponse.StatusCode, app.Id, containerLogs);
+                    }
 
-                var innerResult = JsonSerializer.Deserialize<FunctionResult>(resultText)!;
+                    var resultPath = Path.Combine(hostDir, "result.json");
+                    if (!File.Exists(resultPath))
+                    {
+                        var files = string.Join(", ", Directory.GetFiles(hostDir).Select(Path.GetFileName));
+                        logger.LogError("result.json missing after container exited with code {ExitCode} for app {AppId}. " +
+                            "Files in hostDir: [{Files}]. Container logs:\n{ContainerLogs}",
+                            waitResponse.StatusCode, app.Id, files, containerLogs);
+                        return new FunctionResult { StatusCode = 500, Body = "Function produced no result." };
+                    }
 
-                var logFilePath = Path.Combine(hostDir, "log.json");
+                    var resultText = await File.ReadAllTextAsync(resultPath, token);
+                    var innerResult = JsonSerializer.Deserialize<FunctionResult>(resultText)!;
 
-                if (File.Exists(logFilePath))
-                {
-                    var logJson = await File.ReadAllTextAsync(logFilePath, token);
-                    innerResult.Logs = JsonSerializer.Deserialize<List<FunctionLogEntry>>(logJson)!;
+                    var logFilePath = Path.Combine(hostDir, "log.json");
+                    if (File.Exists(logFilePath))
+                    {
+                        var logJson = await File.ReadAllTextAsync(logFilePath, token);
+                        innerResult.Logs = JsonSerializer.Deserialize<List<FunctionLogEntry>>(logJson)!;
+                    }
+
+                    return innerResult;
                 }
-
-                return innerResult;
+                finally
+                {
+                    try { await dockerClient.Containers.RemoveContainerAsync(container.ID, new ContainerRemoveParameters { Force = true }, CancellationToken.None); }
+                    catch { /* best-effort removal */ }
+                }
             }, TimeSpan.FromSeconds(app.Settings.FunctionExecutionTimeoutSeconds ?? 10));
         }
         catch (TaskCanceledException)
