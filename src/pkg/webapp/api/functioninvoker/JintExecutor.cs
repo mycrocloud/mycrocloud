@@ -13,12 +13,6 @@ public class JintExecutor : IDisposable
     private FetchProxy? _fetchProxy;
     public Console Console { get; set; }
 
-    private readonly List<string> _scripts =
-    [
-        "scripts/handlebars.min.js",
-        "scripts/init.js"
-    ];
-    
     public void Initialize()
     {
         InstallApis();
@@ -32,14 +26,6 @@ public class JintExecutor : IDisposable
             _engine.Execute($"{env}=JSON.parse({env})");
         }
 
-        // Scripts
-        foreach (var script in _scripts)
-        {
-            System.Console.WriteLine($"Loading script: {script}");
-            var code = File.ReadAllText(script);
-            _engine.Execute(code);
-        }
-        
         // String Values
         if (File.Exists("data/values.json"))
         {
