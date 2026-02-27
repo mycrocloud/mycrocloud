@@ -11,7 +11,7 @@ public class JintExecutor : IDisposable
 {
     private readonly Engine _engine = new();
     private FetchProxy? _fetchProxy;
-    public Console Console { get; set; }
+    public Console Console { get; private set; }
 
     public void Initialize()
     {
@@ -93,7 +93,7 @@ public class JintExecutor : IDisposable
     private void InstallApis()
     {
         // Log
-        Console = new Console("data/log.json");
+        Console = new Console();
         _engine.SetValue("console", new
         {
             log = new Action<object?>(Console.Info),
@@ -184,7 +184,6 @@ public class JintExecutor : IDisposable
 
     public void Dispose()
     {
-        Console?.Dispose();
         _fetchProxy?.Dispose();
     }
 }

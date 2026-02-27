@@ -2,14 +2,16 @@ using System.Diagnostics;
 using System.Text.Json;
 using WebApp.FunctionInvoker;
 using WebApp.FunctionInvoker.Apis.Fetch;
+using FunctionConsole = WebApp.FunctionInvoker.Apis.Console.Console;
 
 var result = new Result();
+FunctionConsole? console = null;
 var startingTimestamp = Stopwatch.GetTimestamp();
 try
 {
     using var executor = new JintExecutor();
     executor.Initialize();
-    var console = executor.Console;
+    console = executor.Console;
 
     var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
     try
@@ -50,3 +52,9 @@ finally
 
 var resultJson = JsonSerializer.Serialize(result);
 await File.WriteAllTextAsync("data/result.json", resultJson);
+
+if (console?.Logs.Count > 0)
+{
+    var logJson = JsonSerializer.Serialize(console.Logs);
+    await File.WriteAllTextAsync("data/log.json", logJson);
+}
