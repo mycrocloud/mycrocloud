@@ -45,6 +45,13 @@ public class DockerFunctionExecutor(
         }
         env.Add($"MYCROCLOUD_FUNCTION_DEPTH={currentDepth}");
 
+        // Forward proxy for outbound fetch (hides server IP)
+        var fetchProxy = configuration["DockerFunctionExecution:FetchProxy"];
+        if (!string.IsNullOrEmpty(fetchProxy))
+        {
+            env.Add($"MYCROCLOUD_FETCH_PROXY={fetchProxy}");
+        }
+
         try
         {
             result = await jobQueue.EnqueueAsync(async token =>

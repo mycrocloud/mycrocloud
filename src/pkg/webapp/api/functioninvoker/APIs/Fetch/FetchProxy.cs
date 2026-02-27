@@ -24,6 +24,14 @@ public class FetchProxy : IDisposable
             PooledConnectionLifetime = TimeSpan.FromMinutes(1)
         };
 
+        // Route through forward proxy if configured (hides server IP from external targets)
+        var proxyUrl = Environment.GetEnvironmentVariable(FetchOptions.ProxyEnvVarName);
+        if (!string.IsNullOrEmpty(proxyUrl))
+        {
+            handler.Proxy = new WebProxy(proxyUrl);
+            handler.UseProxy = true;
+        }
+
         _httpClient = new HttpClient(handler)
         {
             Timeout = TimeSpan.FromSeconds(options.TimeoutPerRequestSeconds),

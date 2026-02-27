@@ -13,4 +13,5 @@ public class FetchOptions
 
     public const string DepthHeaderName = "X-MycroCloud-Depth";
     public const string DepthEnvVarName = "MYCROCLOUD_FUNCTION_DEPTH";
+    public const string ProxyEnvVarName = "MYCROCLOUD_FETCH_PROXY";
 }
