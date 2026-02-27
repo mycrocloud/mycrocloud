@@ -99,13 +99,10 @@ builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 builder.Services.AddScoped<IRouteRepository, RouteRepository>();
 builder.Services.AddScoped<IRouteService, RouteService>();
 builder.Services.AddScoped<ILogRepository, LogRepository>();
-builder.Services.AddSingleton<RabbitMqConnectionFactory>();
 builder.Services.AddSingleton<BuildQueuePublisher>();
 builder.Services.AddHttpClient();
-builder.Services.AddHostedService<AppBuildStatusConsumer>();
 builder.Services.AddSingleton<IAppBuildPublisher, InMemoryAppBuildPublisher>();
 builder.Services.AddScoped<SlackAppService>();
-builder.Services.AddHostedService<SubscribeService>();
 
 // Distributed cache backed by PostgreSQL UNLOGGED table
 builder.Services.AddSingleton<IDistributedCache>(sp => new PostgresCacheService(sp.GetRequiredService<Npgsql.NpgsqlDataSource>()));

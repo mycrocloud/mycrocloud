@@ -1,75 +1,22 @@
-using RabbitMQ.Client;
-using System.Text;
-using Api.Domain.Messages;
+using Npgsql;
 
-namespace Api.Services
+namespace Api.Services;
+
+public class BuildQueuePublisher(NpgsqlDataSource dataSource, ILogger<BuildQueuePublisher> logger)
 {
-    public class RabbitMqConnectionFactory : IDisposable
+    public async Task PublishAsync(Guid buildId, string payloadJson)
     {
-        private readonly Lazy<IConnection> _connection;
+        await using var conn = await dataSource.OpenConnectionAsync();
+        await using var cmd = conn.CreateCommand();
 
-        public RabbitMqConnectionFactory(IConfiguration configuration)
-        {
-            _connection = new Lazy<IConnection>(() =>
-            {
-                var factory = new ConnectionFactory
-                {
-                    Uri = new Uri(configuration.GetConnectionString("RabbitMq")!),
-                };
-                return factory.CreateConnection();
-            });
-        }
+        cmd.CommandText = """
+            INSERT INTO build_queue (id, payload) VALUES (@id, @payload::jsonb);
+            NOTIFY build_job_available;
+            """;
+        cmd.Parameters.AddWithValue("id", buildId);
+        cmd.Parameters.AddWithValue("payload", payloadJson);
+        await cmd.ExecuteNonQueryAsync();
 
-        public IModel CreateChannel() => _connection.Value.CreateModel();
-
-        public void Dispose()
-        {
-            if (_connection.IsValueCreated)
-            {
-                _connection.Value.Close();
-                _connection.Value.Dispose();
-            }
-        }
-    }
-
-    public class BuildQueuePublisher : IDisposable
-    {
-        private readonly Lazy<IModel> _channel;
-        private readonly ILogger<BuildQueuePublisher> _logger;
-
-        public BuildQueuePublisher(RabbitMqConnectionFactory connectionFactory, ILogger<BuildQueuePublisher> logger)
-        {
-            _logger = logger;
-            _channel = new Lazy<IModel>(connectionFactory.CreateChannel);
-        }
-
-        public void PublishMessage(string message)
-        {
-            var channel = _channel.Value;
-
-            channel.QueueDeclare(queue: RabbitMqNames.SpaBuildJobQueue,
-                durable: true,
-                exclusive: false,
-                autoDelete: false,
-                arguments: null);
-
-            var body = Encoding.UTF8.GetBytes(message);
-
-            channel.BasicPublish(exchange: "",
-                routingKey: RabbitMqNames.SpaBuildJobQueue,
-                basicProperties: null,
-                body: body);
-
-            _logger.LogDebug("Sent message to {Queue}: {Message}", RabbitMqNames.SpaBuildJobQueue, message);
-        }
-
-        public void Dispose()
-        {
-            if (_channel.IsValueCreated)
-            {
-                _channel.Value.Close();
-                _channel.Value.Dispose();
-            }
-        }
+        logger.LogDebug("Queued build job {BuildId}", buildId);
     }
 }
