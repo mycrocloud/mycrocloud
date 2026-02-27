@@ -99,6 +99,7 @@ builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 builder.Services.AddScoped<IRouteRepository, RouteRepository>();
 builder.Services.AddScoped<IRouteService, RouteService>();
 builder.Services.AddScoped<ILogRepository, LogRepository>();
+builder.Services.AddSingleton<PubSubDataSource>();
 builder.Services.AddSingleton<BuildQueuePublisher>();
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<IAppBuildPublisher, InMemoryAppBuildPublisher>();

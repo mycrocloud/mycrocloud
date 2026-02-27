@@ -10,7 +10,6 @@ using Microsoft.EntityFrameworkCore;
 using Api.Domain.Entities;
 using Api.Domain.Messages;
 using Api.Infrastructure;
-using Npgsql;
 
 namespace Api.Controllers;
 
@@ -23,7 +22,7 @@ public class SpaBuildsController(
     BuildOrchestrationService buildOrchestrationService,
     GitHubAppService gitHubAppService,
     IStorageProvider storageProvider,
-    NpgsqlDataSource npgsqlDataSource,
+    PubSubDataSource pubSubDataSource,
     ILogger<SpaBuildsController> logger): BaseController
 {
     [HttpGet]
@@ -165,7 +164,7 @@ public class SpaBuildsController(
         var cancellationToken = HttpContext.RequestAborted;
 
         // Use a dedicated connection (not from pool) for long-lived LISTEN
-        await using var conn = await npgsqlDataSource.OpenConnectionAsync(cancellationToken);
+        await using var conn = await pubSubDataSource.DataSource.OpenConnectionAsync(cancellationToken);
 
         var channel = $"build_log_{build.Id:N}";
         await using (var listenCmd = conn.CreateCommand())
@@ -335,7 +334,7 @@ public class SpaBuildsController(
         publisher.Publish(app.Id, build.Status);
 
         // Mark queue item as completed
-        await using var conn = await npgsqlDataSource.OpenConnectionAsync();
+        await using var conn = await pubSubDataSource.DataSource.OpenConnectionAsync();
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = "UPDATE build_queue SET status = 'completed' WHERE id = @id";
         cmd.Parameters.AddWithValue("id", buildId);
