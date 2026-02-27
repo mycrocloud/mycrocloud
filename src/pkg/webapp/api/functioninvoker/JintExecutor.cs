@@ -2,29 +2,26 @@ using System.Globalization;
 using System.Text.Json;
 using Jint;
 using Jint.Native;
+using WebApp.FunctionInvoker.Apis.Fetch;
+using Console = WebApp.FunctionInvoker.Apis.Console.Console;
 
 namespace WebApp.FunctionInvoker;
 
-public class JintExecutor(SafeLogger logger)
+public class JintExecutor : IDisposable
 {
     private readonly Engine _engine = new();
+    private FetchProxy? _fetchProxy;
+    public Console Console { get; set; }
 
     private readonly List<string> _scripts =
     [
         "scripts/handlebars.min.js",
-        "scripts/config.js"
+        "scripts/init.js"
     ];
     
     public void Initialize()
     {
-        // Log
-        _engine.SetValue("console", new
-        {
-            log = new Action<object?>(logger.Info),
-            info = new Action<object?>(logger.Info),
-            warn = new Action<object?>(logger.Warn),
-            error = new Action<object?>(logger.Error)
-        });
+        InstallApis();
 
         // Env
         if (File.Exists("data/env.json"))
@@ -38,7 +35,7 @@ public class JintExecutor(SafeLogger logger)
         // Scripts
         foreach (var script in _scripts)
         {
-            Console.WriteLine($"Loading script: {script}");
+            System.Console.WriteLine($"Loading script: {script}");
             var code = File.ReadAllText(script);
             _engine.Execute(code);
         }
@@ -107,6 +104,31 @@ public class JintExecutor(SafeLogger logger)
         _engine.Execute(handler);
     }
 
+    private void InstallApis()
+    {
+        // Log
+        Console = new Console("data/log.json");
+        _engine.SetValue("console", new
+        {
+            log = new Action<object?>(Console.Info),
+            info = new Action<object?>(Console.Info),
+            warn = new Action<object?>(Console.Warn),
+            error = new Action<object?>(Console.Error)
+        });
+        
+        // Fetch
+        var currentDepth = int.TryParse(
+            Environment.GetEnvironmentVariable(FetchOptions.DepthEnvVarName), out var d) ? d : 0;
+        var fetchOptions = new FetchOptions { CurrentDepth = currentDepth };
+        _fetchProxy = new FetchProxy(fetchOptions);
+        _engine.SetValue("fetch", new Func<JsValue, JsValue?, JsValue>((input, init) =>
+        {
+            var request = Mapper.MapRequest(input, init);
+            var result = _fetchProxy.Fetch(request).GetAwaiter().GetResult();
+            return Mapper.MapResponse(result, _engine);
+        }));
+    }
+
     public Result Execute()
     {
         var jsResult = _engine.Evaluate("(() => { return handler(request); })();");
@@ -172,5 +194,10 @@ public class JintExecutor(SafeLogger logger)
         }
 
         return result;
+    }
+
+    public void Dispose()
+    {
+        _fetchProxy?.Dispose();
     }
 }

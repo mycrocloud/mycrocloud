@@ -1,14 +1,15 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Text.Json;
 using WebApp.FunctionInvoker;
+using WebApp.FunctionInvoker.Apis.Fetch;
 
 var result = new Result();
-using var logger = new SafeLogger("data/log.json");
 var startingTimestamp = Stopwatch.GetTimestamp();
 try
 {
-    var executor = new JintExecutor(logger);
+    using var executor = new JintExecutor();
     executor.Initialize();
+    var console = executor.Console;
 
     var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
     try
@@ -19,11 +20,27 @@ try
     }
     catch (OperationCanceledException)
     {
-        logger.Error("Execution timed out.");
+        console.Error("Execution timed out.");
+    }
+    catch (CountLimitException)
+    {
+        console.Error("Fetch request limit exceeded (max 50 requests per execution).");
+    }
+    catch (FetchSecurityException ex)
+    {
+        console.Error("Fetch security error: " + ex.Message);
+    }
+    catch (FetchSizeLimitException ex)
+    {
+        console.Error("Fetch size limit error: " + ex.Message);
+    }
+    catch (FetchTimeoutException ex)
+    {
+        console.Error("Fetch timeout: " + ex.Message);
     }
     catch (Exception ex)
     {
-        logger.Error("Execution error: " + ex.Message);
+        console.Error("Execution error: " + ex.Message);
     }
 }
 finally
