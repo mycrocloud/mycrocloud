@@ -1,14 +1,4 @@
 services:
-  seq:
-    image: datalust/seq:2025.2
-    volumes:
-      - seq-data:/data
-    environment:
-      - ACCEPT_EULA=Y
-    env_file:
-      - ./seq/.env
-    restart: unless-stopped
-
   prometheus:
     image: prom/prometheus:v3.5.1
     container_name: prometheus
@@ -34,5 +24,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  seq-data:
   prometheus_data:

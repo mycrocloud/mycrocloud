@@ -13,10 +13,6 @@ using Npgsql;
 
 DotNetEnv.Env.Load();
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddLogging(options =>
-{
-    options.AddSeq(builder.Configuration["Logging:Seq:ServerUrl"]!, builder.Configuration["Logging:Seq:ApiKey"]);
-});
 builder.Services.AddHttpLogging(_ => { });
 
 var npgsqlDataSource = new NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("DefaultConnection")).Build();

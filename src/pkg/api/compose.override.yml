@@ -13,18 +13,5 @@ services:
     depends_on:
       - db
 
-  seq:
-    image: datalust/seq
-    ports:
-      - "8000:80"
-      - "5341:5341"
-    environment:
-      - ACCEPT_EULA=Y
-      # 7Wy6ttuopDvTau
-      - SEQ_FIRSTRUN_ADMINPASSWORDHASH=QDFtcJLYGKj1Ir6xyrydGr+u6tYcTn33xd4WCe629b6cPQgPXs3UaCYyWkzJaJAyTqNgG89fdTfjF9LQYDkqvdiMsudVmoPJc1Ho3WT0j98w
-    volumes:
-      - seq_data:/data
-
 volumes:
   db_data:
-  seq_data:

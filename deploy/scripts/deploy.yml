@@ -17,7 +17,6 @@
         - gateway
         - spa_worker
       monitoring:
-        - seq
         - prometheus
         - node_exporter
         - nginx_exporter
@@ -28,7 +27,6 @@
       - db_migrator
       - gateway
       - spa_worker
-      - seq
       - prometheus
       - node_exporter
       - nginx_exporter
@@ -52,8 +50,6 @@
         - "webapp/gateway/.env.j2"
       spa_worker:
         - "webapp/spa/worker/.env.j2"
-      seq:
-        - "monitoring/seq/.env.j2"
       prometheus:
         - "monitoring/prometheus/prometheus.yml.j2"
       node_exporter: []
@@ -68,7 +64,6 @@
       db_migrator: []
       gateway: []
       spa_worker: []
-      seq: []
       prometheus: []
       node_exporter: []
       nginx_exporter: []
@@ -123,7 +118,6 @@
         - gateway
         - spa_worker
       monitoring:
-        - seq
         - prometheus
         - node_exporter
         - nginx_exporter

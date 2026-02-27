@@ -28,10 +28,6 @@ builder.Services.AddProblemDetails();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddLogging(options =>
-{
-    options.AddSeq(builder.Configuration["Logging:Seq:ServerUrl"], builder.Configuration["Logging:Seq:ApiKey"]);
-});
 builder.Services.AddHttpLogging(_ => { });
 builder.Services.AddHealthChecks();
 builder.Services.AddCors(options =>
