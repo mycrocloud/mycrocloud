@@ -35,7 +35,7 @@ resource "aws_iam_role" "github_actions" {
 }
 
 resource "aws_iam_policy" "secrets_read" {
-  name   = "${local.project_name}-secrets-read"
+  name = "${local.project_name}-secrets-read"
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [

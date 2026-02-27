@@ -54,3 +54,46 @@ variable "auth0_google_oauth_app_client_secret" {
   type      = string
   sensitive = true
 }
+
+variable "grafana_cloud_enabled" {
+  type        = bool
+  description = "Enable Grafana Cloud Terraform resources and Alloy secret provisioning."
+  default     = false
+}
+
+variable "grafana_cloud_stack_slug" {
+  type        = string
+  description = "Grafana Cloud stack slug (for example: my-stack)."
+  default     = ""
+}
+
+variable "grafana_cloud_access_policy_token" {
+  type        = string
+  description = "Grafana Cloud access policy token with permission to manage stack access policies/tokens."
+  sensitive   = true
+  default     = ""
+}
+
+variable "grafana_cloud_loki_url" {
+  type        = string
+  description = "Grafana Cloud Loki push URL (for example: https://logs-prod-xxx.grafana.net/loki/api/v1/push)."
+  default     = ""
+}
+
+variable "grafana_cloud_loki_username" {
+  type        = string
+  description = "Grafana Cloud Loki username (stack numeric user ID for logs)."
+  default     = ""
+}
+
+variable "grafana_cloud_cluster" {
+  type        = string
+  description = "Cluster label attached to logs sent by Alloy."
+  default     = "mycrocloud-prod"
+}
+
+variable "grafana_cloud_environment" {
+  type        = string
+  description = "Environment label attached to logs sent by Alloy."
+  default     = "production"
+}

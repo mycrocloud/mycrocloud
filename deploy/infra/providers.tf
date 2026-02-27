@@ -15,6 +15,11 @@ terraform {
       version = "~> 1.40"
     }
 
+    grafana = {
+      source  = "grafana/grafana"
+      version = "~> 4.0"
+    }
+
   }
 
   backend "s3" {
@@ -39,4 +44,10 @@ provider "auth0" {
   domain        = var.auth0_domain
   client_id     = var.auth0_client_id
   client_secret = var.auth0_client_secret
+}
+
+provider "grafana" {
+  alias = "cloud"
+
+  cloud_access_policy_token = var.grafana_cloud_access_policy_token
 }

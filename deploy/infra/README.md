@@ -20,3 +20,15 @@ This folder contains Terraform configurations to create the necessary infrastruc
    terraform init -backend-config=backend.config && \
    terraform apply
    ``` 
+
+## Grafana Cloud (Optional)
+
+Set `grafana_cloud_enabled = true` in `variables.auto.tfvars` to let Terraform:
+- create a Grafana Cloud access policy and token for log writes (`logs:write`)
+- write `prod/mycrocloud/monitoring/alloy/.env` in AWS Secrets Manager
+
+Required variables when enabled:
+- `grafana_cloud_stack_slug`
+- `grafana_cloud_access_policy_token`
+- `grafana_cloud_loki_url`
+- `grafana_cloud_loki_username`
