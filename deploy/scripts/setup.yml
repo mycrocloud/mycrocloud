@@ -1,5 +1,5 @@
 ---
-- name: Setup server (Docker, build-outputs)
+- name: Setup server (Docker)
   hosts: server
   become: yes
 
@@ -53,9 +53,3 @@
         name: docker
         enabled: true
         state: started
-
-    - name: Create /tmp/build-outputs
-      file:
-        path: /tmp/build-outputs
-        state: directory
-        mode: "0777"

@@ -26,6 +26,8 @@ import (
 	"github.com/streadway/amqp"
 )
 
+const buildQueueName = "build_queue"
+
 // Global limits loaded from environment
 var limits Limits
 
@@ -157,7 +159,7 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel) error 
 	_ = os.Chmod(jobOut, 0777)
 
 	log.Printf("Starting build job: %s", jobID)
-	log.Printf("HOST_OUT_DIR: %s", baseOut)
+	log.Printf("BUILD_OUTPUT_DIR: %s", baseOut)
 	log.Printf("Job output dir: %s", jobOut)
 
 	// Check if artifact file already exists
@@ -430,9 +432,9 @@ func ProcessJob(ctx context.Context, jsonString string, ch *amqp.Channel) error 
 }
 
 func getOutputBaseDir() string {
-	dir := os.Getenv("HOST_OUT_DIR")
+	dir := os.Getenv("BUILD_OUTPUT_DIR")
 	if dir == "" {
-		log.Fatal("HOST_OUT_DIR must be set")
+		log.Fatal("BUILD_OUTPUT_DIR must be set")
 	}
 	return dir
 }
@@ -483,7 +485,7 @@ func main() {
 	defer chConsumer.Close()
 
 	qBuildJob, err := chConsumer.QueueDeclare(
-		"job_queue",
+		buildQueueName,
 		true,  // durable
 		false, // delete when unused
 		false, // exclusive
@@ -546,9 +548,11 @@ func main() {
 
 	var wg sync.WaitGroup
 	jobLimit := make(chan struct{}, limits.MaxConcurrentJobs)
+	msgsDone := make(chan struct{})
 
 	// Message processing goroutine
 	go func() {
+		defer close(msgsDone)
 		for {
 			select {
 			case <-ctx.Done():
@@ -556,7 +560,7 @@ func main() {
 				return
 			case d, ok := <-msgs:
 				if !ok {
-					log.Printf("Message channel closed")
+					log.Printf("Message channel closed unexpectedly, will shut down")
 					return
 				}
 
@@ -590,9 +594,13 @@ func main() {
 
 	log.Printf(" [*] Waiting for messages. Press Ctrl+C to exit")
 
-	// Wait for shutdown signal
-	sig := <-sigChan
-	log.Printf("Received signal %v, initiating graceful shutdown...", sig)
+	// Wait for shutdown signal or unexpected channel closure
+	select {
+	case sig := <-sigChan:
+		log.Printf("Received signal %v, initiating graceful shutdown...", sig)
+	case <-msgsDone:
+		log.Printf("Message loop exited, initiating shutdown...")
+	}
 
 	// Cancel context to stop accepting new jobs
 	cancel()

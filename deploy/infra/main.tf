@@ -62,19 +62,6 @@ locals {
   data_plane_domain    = "mycrocloud.site"
 }
 
-data "aws_ami" "ubuntu" {
-  most_recent = true
-  owners      = ["099720109477"] // Canonical
-  filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*"]
-  }
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-}
-
 resource "aws_key_pair" "ssh_key" {
   key_name   = "${local.project_name}-key"
   public_key = var.public_key
@@ -180,7 +167,7 @@ resource "aws_security_group" "sg" {
 }
 
 resource "aws_instance" "server" {
-  ami           = data.aws_ami.ubuntu.id
+  ami           = "ami-025ece6a3a0e7558f"
   instance_type = "t3.small"
   root_block_device {
     volume_size = 20
@@ -321,5 +308,5 @@ module "database" {
   source       = "./modules/database"
   neon_api_key = var.neon_api_key
   project_name = local.project_name
-  count        = 0 # Temporarily disable database creation.
+  count = 0
 }

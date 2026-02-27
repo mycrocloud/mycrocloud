@@ -8,7 +8,8 @@ using MycroCloud.WebApp.Gateway.Middlewares.Spa;
 using MycroCloud.WebApp.Gateway.Models;
 using MycroCloud.WebApp.Gateway.Services;
 using MycroCloud.WebApp.Gateway.Utils;
-using StackExchange.Redis;
+using Microsoft.Extensions.Caching.Distributed;
+using Npgsql;
 
 DotNetEnv.Env.Load();
 var builder = WebApplication.CreateBuilder(args);
@@ -18,9 +19,12 @@ builder.Services.AddLogging(options =>
 });
 builder.Services.AddHttpLogging(_ => { });
 
+var npgsqlDataSource = new NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("DefaultConnection")).Build();
+builder.Services.AddSingleton(npgsqlDataSource);
+
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.UseNpgsql(npgsqlDataSource);
 
     if (builder.Environment.IsDevelopment())
     {
@@ -33,43 +37,9 @@ builder.Services.AddSingleton<AccessLogChannel>();
 builder.Services.AddHostedService<AccessLogBackgroundService>();
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient("HttpDocumentRetriever");
-builder.Services.AddStackExchangeRedisCache(options =>
-{
-    var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
-
-    if (string.IsNullOrWhiteSpace(redisConnectionString))
-    {
-        throw new InvalidOperationException("ConnectionStrings:Redis is required.");
-    }
-
-    if (redisConnectionString.StartsWith("redis://", StringComparison.OrdinalIgnoreCase) ||
-        redisConnectionString.StartsWith("rediss://", StringComparison.OrdinalIgnoreCase))
-    {
-        var redisUri = new Uri(redisConnectionString);
-        var redisOptions = new ConfigurationOptions
-        {
-            EndPoints = { { redisUri.Host, redisUri.Port > 0 ? redisUri.Port : 6379 } },
-            Ssl = redisUri.Scheme.Equals("rediss", StringComparison.OrdinalIgnoreCase),
-            AbortOnConnectFail = false
-        };
-
-        if (!string.IsNullOrWhiteSpace(redisUri.UserInfo))
-        {
-            var userInfoParts = redisUri.UserInfo.Split(':', 2);
-            redisOptions.User = Uri.UnescapeDataString(userInfoParts[0]);
-            if (userInfoParts.Length == 2)
-            {
-                redisOptions.Password = Uri.UnescapeDataString(userInfoParts[1]);
-            }
-        }
-
-        options.ConfigurationOptions = redisOptions;
-    }
-    else
-    {
-        options.Configuration = redisConnectionString;
-    }
-});
+// Distributed cache backed by PostgreSQL UNLOGGED table
+builder.Services.AddSingleton<IDistributedCache>(sp => new PostgresCacheService(sp.GetRequiredService<NpgsqlDataSource>()));
+builder.Services.AddHostedService<CacheCleanupService>();
 builder.Services.AddSingleton<ICachedOpenIdConnectionSigningKeys, CachedOpenIdConnectionSigningKeys>();
 builder.Services.AddScoped<IAppSpecificationService, AppSpecificationService>();
 
@@ -91,7 +61,8 @@ if (storageType.Equals("S3", StringComparison.OrdinalIgnoreCase))
     builder.Services.AddSingleton<IStorageProvider>(new S3StorageProvider(s3Client, builder.Configuration["Storage:S3:BucketName"]!));
 }
 
-builder.Services.AddKeyedSingleton("DockerFunctionExecution", new ConcurrentJobQueue(maxConcurrency: 100));
+builder.Services.AddKeyedSingleton("DockerFunctionExecution", (sp, _) =>
+    new ConcurrentJobQueue(maxConcurrency: 100, sp.GetRequiredService<ILogger<ConcurrentJobQueue>>()));
 builder.Services.AddSingleton(_ =>
 {
     var client = new DockerClientConfiguration(
@@ -133,6 +104,7 @@ if (!app.Environment.IsDevelopment())
     app.UseForwardedHeaders(options);
 }
 app.UseHttpLogging();
+app.UseExceptionHandlingMiddleware();
 app.UseWhen(context => context.Request.Host.Host == builder.Configuration["Host"], config =>
 {
     config.UseHealthChecks("/healthz");
