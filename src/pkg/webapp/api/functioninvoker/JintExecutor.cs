@@ -184,6 +184,7 @@ public class JintExecutor : IDisposable
 
     public void Dispose()
     {
+        Console?.Dispose();
         _fetchProxy?.Dispose();
     }
 }
