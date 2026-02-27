@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 
 namespace MycroCloud.WebApp.Gateway.Services;
 
@@ -8,9 +9,11 @@ public class ConcurrentJobQueue : IDisposable
     private readonly ConcurrentQueue<Func<CancellationToken, Task>> _jobQueue = new();
     private readonly CancellationTokenSource _shutdownCts = new();
     private readonly Task _processingTask;
+    private readonly ILogger<ConcurrentJobQueue>? _logger;
 
-    public ConcurrentJobQueue(int maxConcurrency)
+    public ConcurrentJobQueue(int maxConcurrency, ILogger<ConcurrentJobQueue>? logger = null)
     {
+        _logger = logger;
         _semaphore = new SemaphoreSlim(maxConcurrency);
         _processingTask = Task.Run(ProcessQueueAsync);
     }
@@ -31,12 +34,12 @@ public class ConcurrentJobQueue : IDisposable
             catch (OperationCanceledException)
             {
                 tcs.TrySetCanceled();
-                Console.WriteLine("Job timed out or was canceled.");
+                _logger?.LogWarning("Job timed out or was canceled");
             }
             catch (Exception ex)
             {
                 tcs.TrySetException(ex);
-                Console.WriteLine($"Job failed with exception: {ex.Message}");
+                _logger?.LogError(ex, "Job failed with exception");
             }
         });
 

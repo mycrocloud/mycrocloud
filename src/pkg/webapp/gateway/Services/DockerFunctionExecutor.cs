@@ -91,8 +91,6 @@ public class DockerFunctionExecutor(
                     innerResult.Logs = JsonSerializer.Deserialize<List<FunctionLogEntry>>(logJson)!;
                 }
 
-                Directory.Delete(hostDir, true);
-
                 return innerResult;
             }, TimeSpan.FromSeconds(app.Settings.FunctionExecutionTimeoutSeconds ?? 10));
         }
@@ -103,6 +101,15 @@ public class DockerFunctionExecutor(
                 StatusCode = 500,
                 Body = "Timeout",
             };
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException(
+                $"Function execution failed for app {app.Id}", ex);
+        }
+        finally
+        {
+            try { Directory.Delete(hostDir, true); } catch { /* best-effort cleanup */ }
         }
 
         return result;

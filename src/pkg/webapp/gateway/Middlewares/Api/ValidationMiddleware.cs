@@ -5,7 +5,7 @@ using Newtonsoft.Json.Schema;
 
 namespace MycroCloud.WebApp.Gateway.Middlewares.Api;
 
-public class ValidationMiddleware(RequestDelegate next)
+public class ValidationMiddleware(RequestDelegate next, ILogger<ValidationMiddleware> logger)
 {
     public async Task InvokeAsync(HttpContext context)
     {
@@ -22,39 +22,49 @@ public class ValidationMiddleware(RequestDelegate next)
 
         List<ValidationError> errors = [];
         bool isValidContentType = true;
-        if (!string.IsNullOrEmpty(metadata.RequestQuerySchema))
-        {
-            var schema = JSchema.Parse(metadata.RequestQuerySchema);
-            var query = JObject.FromObject(context.Request.Query.ToDictionary(kv => kv.Key, kv => kv.Value.ToString()));
-            query.IsValid(schema, out IList<ValidationError>? validationErrors);
-            errors.AddRange(validationErrors);
-        }
 
-        if (!string.IsNullOrEmpty(metadata.RequestHeaderSchema))
+        try
         {
-            var schema = JSchema.Parse(metadata.RequestHeaderSchema);
-            var query = JObject.FromObject(context.Request.Headers.ToDictionary());
-            query.IsValid(schema, out IList<ValidationError>? validationErrors);
-            errors.AddRange(validationErrors);
-        }
-
-        if (!string.IsNullOrEmpty(metadata.RequestBodySchema))
-        {
-            //TODO: Support other content-type
-            if (context.Request.HasJsonContentType())
+            if (!string.IsNullOrEmpty(metadata.RequestQuerySchema))
             {
-                var schema = JSchema.Parse(metadata.RequestBodySchema);
-                context.Request.EnableBuffering();
-                var bodyString = await new StreamReader(context.Request.Body).ReadToEndAsync();
-                context.Request.Body.Position = 0;
-                var body = JObject.Parse(bodyString);
-                body.IsValid(schema, out IList<ValidationError>? validationErrors);
+                var schema = JSchema.Parse(metadata.RequestQuerySchema);
+                var query = JObject.FromObject(context.Request.Query.ToDictionary(kv => kv.Key, kv => kv.Value.ToString()));
+                query.IsValid(schema, out IList<ValidationError>? validationErrors);
                 errors.AddRange(validationErrors);
             }
-            else
+
+            if (!string.IsNullOrEmpty(metadata.RequestHeaderSchema))
             {
-                isValidContentType = false;
+                var schema = JSchema.Parse(metadata.RequestHeaderSchema);
+                var query = JObject.FromObject(context.Request.Headers.ToDictionary());
+                query.IsValid(schema, out IList<ValidationError>? validationErrors);
+                errors.AddRange(validationErrors);
             }
+
+            if (!string.IsNullOrEmpty(metadata.RequestBodySchema))
+            {
+                //TODO: Support other content-type
+                if (context.Request.HasJsonContentType())
+                {
+                    var schema = JSchema.Parse(metadata.RequestBodySchema);
+                    context.Request.EnableBuffering();
+                    var bodyString = await new StreamReader(context.Request.Body).ReadToEndAsync();
+                    context.Request.Body.Position = 0;
+                    var body = JObject.Parse(bodyString);
+                    body.IsValid(schema, out IList<ValidationError>? validationErrors);
+                    errors.AddRange(validationErrors);
+                }
+                else
+                {
+                    isValidContentType = false;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Schema validation failed for route {RouteId}, skipping validation", route.Id);
+            await next(context);
+            return;
         }
 
         if (errors.Count == 0 && isValidContentType)

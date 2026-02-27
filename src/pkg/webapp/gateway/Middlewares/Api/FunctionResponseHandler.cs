@@ -58,15 +58,27 @@ public class FunctionResponseHandler(
             return;
         }
 
-        logger.LogDebug("Executing function for route {RouteId} with runtime {Runtime}", 
+        logger.LogDebug("Executing function for route {RouteId} with runtime {Runtime}",
             route.Id, runtime);
 
-        var result = await executor.ExecuteAsync(context, app, functionCode, null);
+        FunctionResult result;
+        try
+        {
+            result = await executor.ExecuteAsync(context, app, functionCode, null);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Function execution failed for route {RouteId} in app {AppId}",
+                route.Id, app.Id);
+            context.Response.StatusCode = 500;
+            await context.Response.WriteAsync("Function execution failed.");
+            return;
+        }
 
         await context.Response.WriteFromFunctionResult(result);
 
         context.Items["_FunctionExecutionResult"] = result;
-        
+
         logger.LogDebug("Function execution completed for route {RouteId}: StatusCode={StatusCode}",
             route.Id, result.StatusCode);
     }

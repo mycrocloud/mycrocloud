@@ -61,7 +61,8 @@ if (storageType.Equals("S3", StringComparison.OrdinalIgnoreCase))
     builder.Services.AddSingleton<IStorageProvider>(new S3StorageProvider(s3Client, builder.Configuration["Storage:S3:BucketName"]!));
 }
 
-builder.Services.AddKeyedSingleton("DockerFunctionExecution", new ConcurrentJobQueue(maxConcurrency: 100));
+builder.Services.AddKeyedSingleton("DockerFunctionExecution", (sp, _) =>
+    new ConcurrentJobQueue(maxConcurrency: 100, sp.GetRequiredService<ILogger<ConcurrentJobQueue>>()));
 builder.Services.AddSingleton(_ =>
 {
     var client = new DockerClientConfiguration(
@@ -103,6 +104,7 @@ if (!app.Environment.IsDevelopment())
     app.UseForwardedHeaders(options);
 }
 app.UseHttpLogging();
+app.UseExceptionHandlingMiddleware();
 app.UseWhen(context => context.Request.Host.Host == builder.Configuration["Host"], config =>
 {
     config.UseHealthChecks("/healthz");
