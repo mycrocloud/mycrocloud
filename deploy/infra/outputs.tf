@@ -12,10 +12,6 @@ output "instance_user" {
 }
 
 # DNS
-output "host" {
-  value = data.cloudflare_zone.control_plane_zone.name
-}
-
 output "control_plane_host" {
   value = data.cloudflare_zone.control_plane_zone.name
 }
@@ -41,7 +37,6 @@ output "auth0_build_worker_client_id" {
   value = module.auth0.build_worker_client_id
 }
 
-#
 output "aws_iam_role_github_actions_arn" {
   value = aws_iam_role.github_actions.arn
 }

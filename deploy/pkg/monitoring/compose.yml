@@ -28,14 +28,6 @@ services:
     network_mode: "host"
     restart: unless-stopped
 
-  nginx_exporter:
-    image: nginx/nginx-prometheus-exporter:1.5.1
-    container_name: nginx_exporter
-    command:
-      - '--nginx.scrape-uri=http://lb:8080/stub_status'
-    ports:
-      - "9113:9113"
-    restart: unless-stopped
 
 volumes:
   alloy-data:

@@ -20,7 +20,6 @@
         - alloy
         - prometheus
         - node_exporter
-        - nginx_exporter
     all_services:
       - lb
       - api
@@ -31,7 +30,6 @@
       - alloy
       - prometheus
       - node_exporter
-      - nginx_exporter
     services_input: "{{ (services | from_yaml) if (services is string and services | trim | length > 0) else (services | default([])) }}"
     selected_services: "{{ [services_input] if services_input is string else (services_input | default([])) }}"
     resolved_services: "{{ selected_services if selected_services | length > 0 else (service_groups[service_group] | default([])) }}"
@@ -57,7 +55,6 @@
       prometheus:
         - "monitoring/prometheus/prometheus.yml.j2"
       node_exporter: []
-      nginx_exporter: []
     service_plaintext_secret_files:
       lb:
         - "lb/certs/mycrocloud.online.key"
@@ -71,7 +68,6 @@
       alloy: []
       prometheus: []
       node_exporter: []
-      nginx_exporter: []
   tasks:
     - name: Resolve required secret files for target services
       when: not (pull_only | bool)
@@ -126,7 +122,6 @@
         - alloy
         - prometheus
         - node_exporter
-        - nginx_exporter
     # Most rendered secrets stay private (0600). Prometheus config must be
     # world-readable so the prometheus process inside the container can read it.
     template_file_modes:

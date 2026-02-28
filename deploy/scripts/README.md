@@ -109,7 +109,6 @@ Default group is `all` when `service_group` and `services` are not set.
 Service names use `underscore` style:
 - `db_migrator`
 - `spa_worker`
-- `nginx_exporter`
 
 ## Verification
 
