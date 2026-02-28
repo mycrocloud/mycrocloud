@@ -1,0 +1,250 @@
+{
+  "title": "Logs",
+  "uid": "api-logs",
+  "tags": ["mycrocloud", "logs"],
+  "timezone": "browser",
+  "refresh": "10s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "type": "query",
+        "datasource": { "uid": "${DS_LOKI}" },
+        "query": { "type": 1, "label": "service", "stream": "" },
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": { "selected": false, "text": "All", "value": "$__all" },
+        "sort": 1
+      },
+      {
+        "name": "component",
+        "type": "query",
+        "datasource": { "uid": "${DS_LOKI}" },
+        "query": { "type": 1, "label": "component", "stream": "{service=~\"$service\"}" },
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": { "selected": false, "text": "All", "value": "$__all" },
+        "sort": 1
+      },
+      {
+        "name": "level",
+        "type": "query",
+        "datasource": { "uid": "${DS_LOKI}" },
+        "query": { "type": 1, "label": "level", "stream": "{service=~\"$service\"}" },
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": { "selected": false, "text": "All", "value": "$__all" },
+        "sort": 1
+      },
+      {
+        "name": "search",
+        "type": "textbox",
+        "current": { "selected": false, "text": "", "value": "" },
+        "label": "Search"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Log Volume",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "uid": "${DS_LOKI}" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "uid": "${DS_LOKI}" },
+          "expr": "sum by (service, level) (count_over_time({service=~\"$service\", component=~\"$component\"} |= `$search` [$__auto]))",
+          "queryType": "range"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "stacking": { "mode": "normal" },
+            "fillOpacity": 50,
+            "pointSize": 5,
+            "lineWidth": 0
+          },
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byRegexp", "options": "error|critical" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byRegexp", "options": "warn" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byRegexp", "options": "info" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byRegexp", "options": "debug" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": { "mode": "multi" },
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["sum"] }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Error Count",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 6 },
+      "datasource": { "uid": "${DS_LOKI}" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "uid": "${DS_LOKI}" },
+          "expr": "sum(count_over_time({service=~\"$service\", component=~\"$component\", level=~\"error|critical\"} [$__range]))",
+          "queryType": "instant"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 10 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "textMode": "value",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 3,
+      "title": "Warn Count",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 6 },
+      "datasource": { "uid": "${DS_LOKI}" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "uid": "${DS_LOKI}" },
+          "expr": "sum(count_over_time({service=~\"$service\", component=~\"$component\", level=\"warn\"} [$__range]))",
+          "queryType": "instant"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 10 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "textMode": "value",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 4,
+      "title": "Total Logs",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 6 },
+      "datasource": { "uid": "${DS_LOKI}" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "uid": "${DS_LOKI}" },
+          "expr": "sum(count_over_time({service=~\"$service\", component=~\"$component\"} [$__range]))",
+          "queryType": "instant"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "blue", "value": null }]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "textMode": "value",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 5,
+      "title": "Services",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 6 },
+      "datasource": { "uid": "${DS_LOKI}" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "uid": "${DS_LOKI}" },
+          "expr": "count(count by (service) (count_over_time({service=~\"$service\", component=~\"$component\"} [$__range])))",
+          "queryType": "instant"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "purple", "value": null }]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "textMode": "value",
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 6,
+      "title": "Logs",
+      "type": "logs",
+      "gridPos": { "h": 18, "w": 24, "x": 0, "y": 10 },
+      "datasource": { "uid": "${DS_LOKI}" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "uid": "${DS_LOKI}" },
+          "expr": "{service=~\"$service\", component=~\"$component\"} |= `$search`",
+          "queryType": "range"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none"
+      }
+    }
+  ],
+  "schemaVersion": 39
+}
