@@ -99,10 +99,10 @@ if (!app.Environment.IsDevelopment())
             ForwardedHeaders.XForwardedProto
     };
     
-    options.KnownNetworks.Clear();
+    options.KnownIPNetworks.Clear();
     options.KnownProxies.Clear();
     
-    options.KnownNetworks.Add(app.Configuration["Proxy:Subnet"]!.ParseCidr());
+    options.KnownIPNetworks.Add(app.Configuration["Proxy:Subnet"]!.ParseCidr());
     
     options.ForwardLimit = null;    //TODO: what is this?
     options.RequireHeaderSymmetry = false; //TODO: what is this?

@@ -31,9 +31,7 @@ if (!builder.Environment.IsDevelopment())
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddOpenApi();
 builder.Services.AddHttpLogging(options =>
 {
     options.CombineLogs = true;
@@ -155,8 +153,7 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapOpenApi();
     app.MapGet("_config", () => builder.Configuration.GetDebugView()).RequireAuthorization();
 }
 
@@ -164,7 +161,7 @@ var forwardedHeadersOptions = new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost
 };
-forwardedHeadersOptions.KnownNetworks.Clear();
+forwardedHeadersOptions.KnownIPNetworks.Clear();
 forwardedHeadersOptions.KnownProxies.Clear();
 app.UseForwardedHeaders(forwardedHeadersOptions);
 

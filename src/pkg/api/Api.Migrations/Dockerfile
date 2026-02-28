@@ -1,8 +1,8 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0.202 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /source
 
 # Install EF tools
-RUN dotnet tool install --global dotnet-ef --version 8.0.22 \
+RUN dotnet tool install --global dotnet-ef --version 10.0.0 \
     && echo 'export PATH="$PATH:/root/.dotnet/tools"' >> ~/.bashrc
 ENV PATH="/root/.dotnet/tools:${PATH}"
 
@@ -21,7 +21,7 @@ RUN dotnet ef migrations bundle \
     -o /out/efbundle \
     -v
 
-FROM mcr.microsoft.com/dotnet/runtime:8.0.3
+FROM mcr.microsoft.com/dotnet/runtime:10.0
 WORKDIR /db-migrator
 COPY --from=build /out/efbundle .
 COPY Api.Migrations/appsettings.json .

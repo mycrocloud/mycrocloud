@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build & Development Commands
 
-### Backend (.NET 8, C# preview)
+### Backend (.NET 10, C# 14)
 ```bash
 # Build API solution (control plane)
 dotnet build src/pkg/api/Api.sln
