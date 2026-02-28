@@ -29,6 +29,46 @@ discovery.relabel "containers" {
 loki.source.docker "containers" {
   host       = "unix:///var/run/docker.sock"
   targets    = discovery.relabel.containers.output
+  forward_to = [loki.process.logs.receiver]
+}
+
+loki.process "logs" {
+  // Only process ASP.NET services that output JSON logs
+  stage.match {
+    selector = "{service=~\"api|db-migrator|gateway\"}"
+
+    // Parse JSON fields
+    stage.json {
+      expressions = {
+        level    = "LogLevel",
+        category = "Category",
+        message  = "Message",
+      }
+    }
+
+    // Map ASP.NET LogLevel to Loki level values
+    stage.template {
+      source   = "level"
+      template = "{{ if eq .Value \"Trace\" }}debug{{ else if eq .Value \"Debug\" }}debug{{ else if eq .Value \"Information\" }}info{{ else if eq .Value \"Warning\" }}warn{{ else if eq .Value \"Error\" }}error{{ else if eq .Value \"Critical\" }}critical{{ else }}{{ .Value }}{{ end }}"
+    }
+
+    stage.labels {
+      values = {
+        level = "",
+      }
+    }
+
+    // Rewrite log line to readable format
+    stage.template {
+      source   = "output"
+      template = "{{ if .message }}{{ .level }} [{{ .category }}] {{ .message }}{{ end }}"
+    }
+
+    stage.output {
+      source = "output"
+    }
+  }
+
   forward_to = [loki.write.grafana_cloud.receiver]
 }
 
