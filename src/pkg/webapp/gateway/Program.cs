@@ -13,7 +13,17 @@ using Npgsql;
 
 DotNetEnv.Env.Load();
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddHttpLogging(_ => { });
+
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Logging.ClearProviders();
+    builder.Logging.AddJsonConsole();
+}
+
+builder.Services.AddHttpLogging(options =>
+{
+    options.CombineLogs = true;
+});
 
 var npgsqlDataSource = new NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("DefaultConnection")).Build();
 builder.Services.AddSingleton(npgsqlDataSource);

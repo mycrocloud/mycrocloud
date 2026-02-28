@@ -20,6 +20,12 @@ using Microsoft.Extensions.Caching.Distributed;
 DotNetEnv.Env.Load();
 var builder = WebApplication.CreateBuilder(args);
 
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Logging.ClearProviders();
+    builder.Logging.AddJsonConsole();
+}
+
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -28,7 +34,10 @@ builder.Services.AddProblemDetails();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddHttpLogging(_ => { });
+builder.Services.AddHttpLogging(options =>
+{
+    options.CombineLogs = true;
+});
 builder.Services.AddHealthChecks();
 builder.Services.AddCors(options =>
 {
