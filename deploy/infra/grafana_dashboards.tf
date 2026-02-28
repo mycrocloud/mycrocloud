@@ -2,12 +2,9 @@ data "http" "dashboard_node_exporter" {
   url = "https://grafana.com/api/dashboards/1860/revisions/latest/download"
 }
 
-data "http" "dashboard_nginx" {
-  url = "https://grafana.com/api/dashboards/9614/revisions/latest/download"
-}
-
-data "http" "dashboard_docker" {
-  url = "https://grafana.com/api/dashboards/193/revisions/latest/download"
+data "grafana_data_source" "prometheus" {
+  provider = grafana.stack
+  name     = "grafanacloud-${var.grafana_cloud_stack_slug}-prom"
 }
 
 resource "grafana_folder" "mycrocloud" {
@@ -16,19 +13,15 @@ resource "grafana_folder" "mycrocloud" {
 }
 
 resource "grafana_dashboard" "node_exporter" {
-  provider    = grafana.stack
-  folder      = grafana_folder.mycrocloud.uid
-  config_json = data.http.dashboard_node_exporter.response_body
-}
-
-resource "grafana_dashboard" "nginx" {
-  provider    = grafana.stack
-  folder      = grafana_folder.mycrocloud.uid
-  config_json = data.http.dashboard_nginx.response_body
-}
-
-resource "grafana_dashboard" "docker" {
-  provider    = grafana.stack
-  folder      = grafana_folder.mycrocloud.uid
-  config_json = data.http.dashboard_docker.response_body
+  provider = grafana.stack
+  folder   = grafana_folder.mycrocloud.uid
+  config_json = replace(
+    replace(
+      data.http.dashboard_node_exporter.response_body,
+      "$${DS_PROMETHEUS}",
+      data.grafana_data_source.prometheus.uid
+    ),
+    "$${ds_prometheus}",
+    data.grafana_data_source.prometheus.uid
+  )
 }
