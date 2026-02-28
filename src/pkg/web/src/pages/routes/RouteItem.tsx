@@ -16,6 +16,7 @@ const METHOD_COLORS: Record<string, string> = {
   PUT: "text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-950",
   DELETE: "text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-950",
   PATCH: "text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-950",
+  ANY: "text-purple-600 bg-purple-100 dark:text-purple-400 dark:bg-purple-950",
 };
 
 interface RouteItemProps {
