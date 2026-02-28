@@ -20,6 +20,11 @@ terraform {
       version = "~> 4.0"
     }
 
+    http = {
+      source  = "hashicorp/http"
+      version = "~> 3.4"
+    }
+
   }
 
   backend "s3" {
@@ -50,4 +55,10 @@ provider "grafana" {
   alias = "cloud"
 
   cloud_access_policy_token = var.grafana_cloud_access_policy_token
+}
+
+provider "grafana" {
+  alias = "stack"
+  url   = grafana_cloud_stack.this.url
+  auth  = grafana_cloud_stack_service_account_token.terraform.key
 }

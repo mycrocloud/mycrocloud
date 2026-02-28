@@ -13,6 +13,21 @@ data "grafana_cloud_stack" "this" {
   depends_on = [grafana_cloud_stack.this]
 }
 
+resource "grafana_cloud_stack_service_account" "terraform" {
+  provider    = grafana.cloud
+  stack_slug  = grafana_cloud_stack.this.slug
+  name        = "terraform"
+  role        = "Admin"
+  is_disabled = false
+}
+
+resource "grafana_cloud_stack_service_account_token" "terraform" {
+  provider           = grafana.cloud
+  stack_slug         = grafana_cloud_stack.this.slug
+  name               = "terraform"
+  service_account_id = grafana_cloud_stack_service_account.terraform.id
+}
+
 resource "grafana_cloud_access_policy" "alloy_logs_write" {
   provider = grafana.cloud
   name     = "${local.project_name}-alloy-logs-write"
