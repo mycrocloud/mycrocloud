@@ -80,7 +80,7 @@ resource "aws_secretsmanager_secret_version" "alloy_env" {
 resource "aws_secretsmanager_secret_version" "prometheus_yml" {
   secret_id = aws_secretsmanager_secret.monitoring_prometheus_prometheus_yml.id
   secret_string = jsonencode({
-    PROMETHEUS_URL      = data.grafana_cloud_stack.this.prometheus_url
+    PROMETHEUS_URL      = "${data.grafana_cloud_stack.this.prometheus_url}/api/prom/push"
     PROMETHEUS_USERNAME = tostring(data.grafana_cloud_stack.this.prometheus_user_id)
     GRAFANA_API_KEY     = grafana_cloud_access_policy_token.prometheus_metrics_write.token
   })
