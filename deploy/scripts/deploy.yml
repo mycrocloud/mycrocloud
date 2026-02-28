@@ -196,6 +196,7 @@
         services: "{{ resolved_services if resolved_services | length > 0 else omit }}"
         state: present
         pull: always
+        remove_orphans: true
       register: deploy_result
 
     - name: Wait for services to be healthy
