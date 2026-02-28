@@ -19,6 +19,9 @@ services:
       - web
       - api
       - gateway
+    labels:
+      logging.service: lb
+      logging.component: infrastructure
     restart: unless-stopped
   api:
     image: ghcr.io/mycrocloud/mycrocloud-api:main
@@ -27,6 +30,9 @@ services:
       - "./api/gha-mycrocloud.private-key.pem:/app/gha-mycrocloud.private-key.pem:ro"
     env_file:
       - ./api/.env
+    labels:
+      logging.service: api
+      logging.component: control-plane
     restart: unless-stopped
   db_migrator:
     image: ghcr.io/mycrocloud/mycrocloud-db-migrator:main
@@ -34,9 +40,15 @@ services:
       - "./dbmigrator/appsettings.json:/db-migrator/appsettings.json:ro"
     env_file:
       - ./dbmigrator/.env
+    labels:
+      logging.service: db-migrator
+      logging.component: control-plane
     restart: "no"
   web:
     image: ghcr.io/mycrocloud/mycrocloud-web:main
     volumes:
       - ./web/dotenv:/usr/share/nginx/html/.env:ro
+    labels:
+      logging.service: web
+      logging.component: control-plane
     restart: unless-stopped

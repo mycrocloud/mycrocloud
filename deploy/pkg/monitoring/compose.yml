@@ -11,6 +11,9 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
       - alloy-data:/var/lib/alloy/data
+    labels:
+      logging.service: alloy
+      logging.component: monitoring
     restart: unless-stopped
 
   prometheus:
@@ -20,12 +23,18 @@ services:
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
+    labels:
+      logging.service: prometheus
+      logging.component: monitoring
     restart: unless-stopped
 
   node_exporter:
     image: prom/node-exporter:v1.10.2
     container_name: node_exporter
     network_mode: "host"
+    labels:
+      logging.service: node-exporter
+      logging.component: monitoring
     restart: unless-stopped
 
 

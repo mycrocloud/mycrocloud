@@ -2,10 +2,30 @@ discovery.docker "containers" {
   host = "unix:///var/run/docker.sock"
 }
 
+discovery.relabel "containers" {
+  targets = discovery.docker.containers.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_label_logging_service"]
+    target_label  = "service"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_label_logging_component"]
+    target_label  = "component"
+  }
+
+  // Drop containers without logging.service label
+  rule {
+    source_labels = ["service"]
+    regex         = "^$"
+    action        = "drop"
+  }
+}
+
 loki.source.docker "containers" {
   host       = "unix:///var/run/docker.sock"
-  targets    = discovery.docker.containers.targets
-  labels     = {job = "docker"}
+  targets    = discovery.relabel.containers.output
   forward_to = [loki.write.grafana_cloud.receiver]
 }
 

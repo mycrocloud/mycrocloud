@@ -7,6 +7,9 @@ services:
       - ./gateway/appsettings.json:/app/appsettings.json:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - /srv/function-data:/srv/function-data
+    labels:
+      logging.service: gateway
+      logging.component: data-plane
     restart: unless-stopped
 
   spa_worker:
@@ -17,4 +20,7 @@ services:
       - ./spa/worker/.conf:/app/.conf:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/build-outputs:/tmp/build-outputs
+    labels:
+      logging.service: spa-worker
+      logging.component: data-plane
     restart: unless-stopped
