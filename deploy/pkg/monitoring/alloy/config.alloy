@@ -5,21 +5,24 @@ discovery.docker "containers" {
 discovery.relabel "containers" {
   targets = discovery.docker.containers.targets
 
+  // Default service label to container name
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/?(.*)"
+    target_label  = "service"
+  }
+
+  // Override with logging.service label if set
   rule {
     source_labels = ["__meta_docker_container_label_logging_service"]
+    regex         = "(.+)"
     target_label  = "service"
   }
 
   rule {
     source_labels = ["__meta_docker_container_label_logging_component"]
+    regex         = "(.+)"
     target_label  = "component"
-  }
-
-  // Drop containers without logging.service label
-  rule {
-    source_labels = ["service"]
-    regex         = "^$"
-    action        = "drop"
   }
 }
 
@@ -38,5 +41,4 @@ loki.write "grafana_cloud" {
       password = sys.env("GRAFANA_CLOUD_API_KEY")
     }
   }
-
 }
