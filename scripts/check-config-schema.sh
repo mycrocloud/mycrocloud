@@ -7,9 +7,19 @@ cd "$ROOT_DIR"
 
 failures=0
 
+# Read staged version of a file if available, otherwise fall back to working tree.
+read_file() {
+  local file="$1"
+  if git rev-parse --is-inside-work-tree &>/dev/null && git diff --cached --name-only | grep -qx "$file"; then
+    git show ":$file"
+  else
+    cat "$file"
+  fi
+}
+
 extract_env_keys() {
   local file="$1"
-  awk '
+  read_file "$file" | awk '
     {
       line=$0
       sub(/^[[:space:]]+/, "", line)
@@ -24,14 +34,14 @@ extract_env_keys() {
         print key
       }
     }
-  ' "$file" | sort -u
+  ' | sort -u
 }
 
 extract_json_paths() {
   local file="$1"
-  jq -r '
+  read_file "$file" | jq -r '
     paths(scalars) | map(tostring) | join(".")
-  ' "$file" | sort -u
+  ' | sort -u
 }
 
 compare_schema() {

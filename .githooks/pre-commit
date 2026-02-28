@@ -2,4 +2,13 @@
 
 set -euo pipefail
 
-scripts/check-config-schema.sh
+if ! scripts/check-config-schema.sh; then
+  echo
+  echo "Proceed with commit anyway? [y/N]"
+  exec < /dev/tty
+  read -r answer
+  if [[ "$answer" != "y" && "$answer" != "Y" ]]; then
+    echo "Commit aborted."
+    exit 1
+  fi
+fi
