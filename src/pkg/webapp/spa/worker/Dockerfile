@@ -1,4 +1,4 @@
-FROM golang:1.23.2-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 ENV CGO_ENABLED=0 \
     GOOS=linux \
@@ -13,7 +13,7 @@ COPY . .
 
 RUN go build -o worker .
 
-FROM alpine:3.21
+FROM alpine:3.23
 
 WORKDIR /app
 
