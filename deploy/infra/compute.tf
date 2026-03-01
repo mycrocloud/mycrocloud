@@ -21,6 +21,10 @@ resource "aws_instance" "server" {
   subnet_id                   = aws_subnet.subnet.id
   vpc_security_group_ids      = [aws_security_group.sg.id]
 
+  metadata_options {
+    http_put_response_hop_limit = 1
+  }
+
   lifecycle {
     ignore_changes = [ami]
   }
