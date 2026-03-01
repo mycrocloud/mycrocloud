@@ -3,6 +3,10 @@
 ![api](https://github.com/mycrocloud/mycrocloud/actions/workflows/api.yml/badge.svg)
 ![gateway](https://github.com/mycrocloud/mycrocloud/actions/workflows/gateway.yml/badge.svg)
 ![web](https://github.com/mycrocloud/mycrocloud/actions/workflows/web.yml/badge.svg)
+![function-invoker](https://github.com/mycrocloud/mycrocloud/actions/workflows/function-invoker.yml/badge.svg)
+![db-migrator](https://github.com/mycrocloud/mycrocloud/actions/workflows/db-migrator.yml/badge.svg)
+![deployment-worker](https://github.com/mycrocloud/mycrocloud/actions/workflows/deployment-worker.yml/badge.svg)
+![deployment-builder](https://github.com/mycrocloud/mycrocloud/actions/workflows/deployment-builder.yml/badge.svg)
 
 A cloud platform for building and deploying managed web applications.
 

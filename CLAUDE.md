@@ -23,6 +23,9 @@ dotnet test src/pkg/api/Api.MigrationTest
 
 # Add EF Core migration
 dotnet ef migrations add <MigrationName> --project src/pkg/api/Api.Migrations
+
+# Run db-migrator (applies pending migrations)
+dotnet run --project src/pkg/api/Api.Migrations
 ```
 
 ### Frontend (React 19 + Vite + TypeScript)
@@ -40,9 +43,12 @@ cd src/pkg/webapp/spa/worker && go build ./...
 ### Docker Compose (dev)
 ```bash
 # Frontend only
-docker compose -f src/compose.yml up
+docker compose -f src/pkg/compose.yml up
 
-# Backend services (run from webapp dir so compose.override.yml is picked up)
+# API + db-migrator (run from api dir so compose.override.yml is picked up)
+cd src/pkg/api && docker compose build && docker compose up -d
+
+# Gateway + function-invoker (run from webapp dir)
 cd src/pkg/webapp && docker compose build && docker compose up -d
 
 # Deployment subsystem (worker + builder)
@@ -65,7 +71,8 @@ Nginx LB ─┬─ web (React SPA)
 Deployment subsystem (separate compose):
   worker (Go) ── listens RabbitMQ "job_queue" ── spawns builder containers
   builder (Node.js) ── git clone + npm build + zip artifacts
-  fluentd ── aggregates logs → Elasticsearch
+
+Monitoring (Prometheus + Alloy, config in deploy/pkg/monitoring/)
 ```
 
 ### Project Dependencies
@@ -76,8 +83,8 @@ src/pkg/api/
   Api.MigrationTest
 
 src/pkg/webapp/
-  WebApp.Gateway           (self-contained data plane service)
-  WebApp.FunctionInvoker   (standalone console app for JS execution)
+  WebApp.Gateway                              (self-contained data plane service)
+  api/functioninvoker/WebApp.FunctionInvoker  (standalone console app for JS execution)
 
 Api.Domain         — entities, enums, repository interfaces, domain services
 Api.Infrastructure — AppDbContext (EF Core), repositories, storage providers
@@ -96,7 +103,7 @@ Gateway spawns a `WebApp.FunctionInvoker` Docker container per request. Uses Jin
 Multi-scheme auth: Auth0 JWT (UI users), custom API tokens (`X-Api-Key` header), Slack auth. Scheme selected by `MultiAuthSchemes` policy based on request host prefix.
 
 ### Database
-PostgreSQL with EF Core 8 (Npgsql). Uses JSONB columns, owned JSON entities for settings, TPH discriminator for `Deployment` → `SpaDeployment`/`ApiDeployment`. `AppDbContext` auto-stamps `CreatedAt`/`UpdatedAt`/`Version` in `SaveChangesAsync`.
+PostgreSQL with EF Core 10 (Npgsql). Uses JSONB columns, owned JSON entities for settings, TPH discriminator for `Deployment` → `SpaDeployment`/`ApiDeployment`. `AppDbContext` auto-stamps `CreatedAt`/`UpdatedAt`/`Version` in `SaveChangesAsync`.
 
 Migrations live in a separate `Api.Migrations` project. Design-time factory in `AppDbContextFactory`.
 
@@ -104,7 +111,9 @@ Migrations live in a separate `Api.Migrations` project. Design-time factory in `
 `window.CONFIG` injected at runtime via Nginx (allows single Docker image across environments). Falls back to `VITE_*` env vars for local dev. See `src/pkg/web/src/config.ts`.
 
 ### CI/CD
-GitHub Actions per-service (path-filtered pushes to `main`). Reusable `_build-deploy.yml` workflow: build Docker image → push to `ghcr.io` → SSH + Ansible playbook → `docker compose up`. Secrets from AWS Secrets Manager.
+GitHub Actions per-service (path-filtered pushes to `main`). Reusable workflows: `_build-image.yml`, `_deploy-image.yml`, `_build-deploy.yml`: build Docker image → push to `ghcr.io` → SSH + Ansible playbook → `docker compose up`. Secrets from AWS Secrets Manager.
+
+Per-service workflows: `api.yml`, `gateway.yml`, `web.yml`, `function-invoker.yml`, `db-migrator.yml`, `deployment-worker.yml`, `deployment-builder.yml`. `deploy-all.yml` orchestrates a full stack redeploy.
 
 ### Deployment Config Files
 Production config files (`appsettings.json`, `.env.j2` templates) live in `deploy/pkg/`, mirroring `src/pkg/` paths. When changing config schema (e.g., adding/renaming settings in `appsettings.json`), update the corresponding files in `deploy/pkg/` as well. When adding or removing a service's `.env` or secret file, also update `deploy/scripts/deploy.yml` secret lists and `deploy/infra/aws_secrets.tf`.
