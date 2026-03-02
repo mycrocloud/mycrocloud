@@ -1,6 +1,6 @@
 services:
-  spa-worker:
-    image: mycrocloud-deployment-worker:main
+  spa-build-worker:
+    image: mycrocloud-spa-build-worker:main
     build:
       context: ./worker
       dockerfile: Dockerfile
@@ -13,8 +13,8 @@ services:
 
   # The builder is usually run dynamically by the worker,
   # but kept here for image build/test purposes.
-  builder:
-    image: mycrocloud-deployment-builder:main
+  spa-builder:
+    image: mycrocloud-spa-builder:main
     build:
       context: ./builder
       dockerfile: Dockerfile

@@ -1,0 +1,25 @@
+name: CI/CD SPA/Build Worker
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/pkg/webapp/spa/worker/**"
+
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    uses: ./.github/workflows/_build-deploy.yml
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      image-name: ${{ github.repository }}-spa-build-worker
+      work-dir: src/pkg/webapp/spa/worker
+      dockerfile: Dockerfile
+      service: spa-build-worker
+    secrets:
+      CR_PAT: ${{ secrets.CR_PAT }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}

@@ -61,7 +61,7 @@ func publishBuildStatus(buildMsg BuildMessage, message BuildStatusChangedEventMe
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "deployment-worker")
+	req.Header.Set("User-Agent", "spa-build-worker")
 
 	resp, err := httpClient.Do(req)
 	if err != nil {

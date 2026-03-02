@@ -12,8 +12,8 @@ services:
       logging.component: data-plane
     restart: unless-stopped
 
-  spa_worker:
-    image: ghcr.io/mycrocloud/mycrocloud-deployment-worker:main
+  spa-build-worker:
+    image: ghcr.io/mycrocloud/mycrocloud-spa-build-worker:main
     env_file:
       - ./spa/worker/.env
     volumes:
@@ -21,6 +21,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/build-outputs:/tmp/build-outputs
     labels:
-      logging.service: spa-worker
+      logging.service: spa-build-worker
       logging.component: data-plane
     restart: unless-stopped

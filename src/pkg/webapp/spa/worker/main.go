@@ -109,7 +109,7 @@ func uploadBuildLogs(buildMsg BuildMessage, collector *logcollector.Collector) {
 	}
 
 	logsURL := strings.TrimSuffix(apiBaseURL, "/") + buildMsg.LogsUploadPath
-	if err := uploader.UploadLogs(logsURL, logsData, token, "deployment-worker"); err != nil {
+	if err := uploader.UploadLogs(logsURL, logsData, token, "spa-build-worker"); err != nil {
 		log.Printf("Failed to upload logs: %v", err)
 	} else {
 		log.Printf("Uploaded %d log entries", collector.Count())
@@ -207,7 +207,7 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB) error {
 						log.Printf("API_BASE_URL not set, cannot upload artifact")
 					} else {
 						uploadURL := strings.TrimSuffix(apiBaseURL, "/") + buildMsg.ArtifactsUploadPath
-						artifactId, err := uploader.UploadArtifacts(uploadURL, jobOut, buildMsg.OutDir, token, "deployment-worker")
+						artifactId, err := uploader.UploadArtifacts(uploadURL, jobOut, buildMsg.OutDir, token, "spa-build-worker")
 						if err != nil {
 							log.Printf("Failed to upload existing artifact: %v", err)
 							// Continue with rebuild
@@ -407,7 +407,7 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB) error {
 
 		collector.Append("Uploading artifact...", "stdout", "app.worker", "")
 		uploadURL := strings.TrimSuffix(apiBaseURL, "/") + buildMsg.ArtifactsUploadPath
-		artifactId, err := uploader.UploadArtifacts(uploadURL, jobOut, buildMsg.OutDir, token, "deployment-worker")
+		artifactId, err := uploader.UploadArtifacts(uploadURL, jobOut, buildMsg.OutDir, token, "spa-build-worker")
 		if err != nil {
 			collector.Append("Artifact upload failed: "+err.Error(), "stderr", "app.worker", "")
 			uploadBuildLogs(buildMsg, collector)

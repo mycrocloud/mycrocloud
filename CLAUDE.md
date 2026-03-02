@@ -113,7 +113,7 @@ Migrations live in a separate `Api.Migrations` project. Design-time factory in `
 ### CI/CD
 GitHub Actions per-service (path-filtered pushes to `main`). Reusable workflows: `_build-image.yml`, `_deploy-image.yml`, `_build-deploy.yml`: build Docker image → push to `ghcr.io` → SSH + Ansible playbook → `docker compose up`. Secrets from AWS Secrets Manager.
 
-Per-service workflows: `api.yml`, `gateway.yml`, `web.yml`, `function-invoker.yml`, `db-migrator.yml`, `deployment-worker.yml`, `deployment-builder.yml`. `deploy-all.yml` orchestrates a full stack redeploy.
+Per-service workflows: `api.yml`, `gateway.yml`, `web.yml`, `function-invoker.yml`, `db-migrator.yml`, `spa-build-worker.yml`, `spa-builder.yml`. `deploy-all.yml` orchestrates a full stack redeploy.
 
 ### Deployment Config Files
 Production config files (`appsettings.json`, `.env.j2` templates) live in `deploy/pkg/`, mirroring `src/pkg/` paths. When changing config schema (e.g., adding/renaming settings in `appsettings.json`), update the corresponding files in `deploy/pkg/` as well. When adding or removing a service's `.env` or secret file, also update `deploy/scripts/deploy.yml` secret lists and `deploy/infra/aws_secrets.tf`.
