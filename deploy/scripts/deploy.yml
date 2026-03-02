@@ -15,7 +15,7 @@
         - db_migrator
       webapp:
         - gateway
-        - spa_worker
+        - spa-build-worker
       monitoring:
         - alloy
         - prometheus
@@ -26,7 +26,7 @@
       - web
       - db_migrator
       - gateway
-      - spa_worker
+      - spa-build-worker
       - alloy
       - prometheus
       - node_exporter
@@ -48,7 +48,7 @@
         - "dbmigrator/.env.j2"
       gateway:
         - "webapp/gateway/.env.j2"
-      spa_worker:
+      spa-build-worker:
         - "webapp/spa/worker/.env.j2"
       alloy:
         - "monitoring/alloy/.env.j2"
@@ -64,7 +64,7 @@
       web: []
       db_migrator: []
       gateway: []
-      spa_worker: []
+      spa-build-worker: []
       alloy: []
       prometheus: []
       node_exporter: []
@@ -117,7 +117,7 @@
         - db_migrator
       webapp:
         - gateway
-        - spa_worker
+        - spa-build-worker
       monitoring:
         - alloy
         - prometheus
