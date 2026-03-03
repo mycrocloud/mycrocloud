@@ -109,6 +109,7 @@
     image: ""
     service_group: ""
     services: []
+    server_user: "{{ ansible_user }}"
     service_groups:
       core:
         - lb
@@ -141,8 +142,8 @@
         path: "{{ deploy_path }}"
         state: directory
         mode: "0755"
-        owner: "{{ ansible_user }}"
-        group: "{{ ansible_user }}"
+        owner: "{{ server_user }}"
+        group: "{{ server_user }}"
       become: yes
 
     - name: Sync application files to server
@@ -160,8 +161,8 @@
         dest: "{{ deploy_path }}/web/.env"
         remote_src: yes
         mode: "0644"
-        owner: "{{ ansible_user }}"
-        group: "{{ ansible_user }}"
+        owner: "{{ server_user }}"
+        group: "{{ server_user }}"
 
     # Renders J2 templates using secrets from AWS
     - name: Render J2 template files
@@ -170,8 +171,8 @@
         src: "{{ src }}/{{ item }}"
         dest: "{{ deploy_path }}/{{ item | regex_replace('\\.j2$', '') }}"
         mode: "{{ template_file_modes[item] | default('0600') }}"
-        owner: "{{ ansible_user }}"
-        group: "{{ ansible_user }}"
+        owner: "{{ server_user }}"
+        group: "{{ server_user }}"
       loop: "{{ hostvars['localhost']['j2_template_files'] }}"
       vars:
         secrets: "{{ hostvars['localhost']['j2_template_secrets'][item] | from_json }}"
@@ -184,8 +185,8 @@
         content: "{{ hostvars['localhost']['plaintext_secret_values'][item] }}"
         dest: "{{ deploy_path }}/{{ item }}"
         mode: "0600"
-        owner: "{{ ansible_user }}"
-        group: "{{ ansible_user }}"
+        owner: "{{ server_user }}"
+        group: "{{ server_user }}"
       loop: "{{ hostvars['localhost']['plaintext_secret_files'] }}"
       no_log: true
 
