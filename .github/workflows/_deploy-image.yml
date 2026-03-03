@@ -45,6 +45,7 @@ jobs:
         uses: ./.github/actions/deploy-action
         with:
           server-host: ${{ vars.SERVER_HOST }}
+          server-user: ${{ vars.SERVER_USERNAME }}
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
           image: ${{ inputs.image }}
           service: ${{ inputs.service }}
