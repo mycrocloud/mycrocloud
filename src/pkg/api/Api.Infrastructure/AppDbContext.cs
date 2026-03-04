@@ -60,9 +60,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .IsRequired(false);
 
         modelBuilder.Entity<AppLink>()
-            .HasKey(ai => ai.AppId);
-        
-        modelBuilder.Entity<AppLink>()
             .HasOne(ai => ai.GitHubInstallation)
             .WithMany(g => g.AppLinks)
             .HasForeignKey(ai => ai.InstallationId)
@@ -124,10 +121,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<App>()
             .HasIndex(x => x.Slug)
             .IsUnique();
-
-        modelBuilder.Entity<App>()
-            .Property(x => x.Slug)
-            .HasMaxLength(50);
 
         modelBuilder.Entity<AppBuildArtifact>()
             .HasKey(a => new { a.BuildJobId, a.ArtifactId });
