@@ -18,7 +18,7 @@
       <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.3" />
       <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="10.0.0" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.3" />
-      <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.3" />
     </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Api.Infrastructure\Api.Infrastructure.csproj" />
