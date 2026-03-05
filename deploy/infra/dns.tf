@@ -13,7 +13,7 @@ resource "cloudflare_dns_record" "apex" {
   name    = "@"
   type    = "A"
   ttl     = 1
-  content = var.server_ip
+  content = local.server_ip
   proxied = true
 }
 
@@ -52,7 +52,7 @@ resource "cloudflare_dns_record" "data_plane_apex" {
   type    = "A"
   ttl     = 1
   proxied = true
-  content = var.server_ip
+  content = local.server_ip
 }
 
 resource "cloudflare_dns_record" "data_plane_wildcard" {

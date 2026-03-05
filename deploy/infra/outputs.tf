@@ -1,6 +1,6 @@
 # Server
 output "instance_ip" {
-  value = var.server_ip
+  value = local.server_ip
 }
 
 # DNS

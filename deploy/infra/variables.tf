@@ -1,8 +1,3 @@
-variable "server_ip" {
-  type        = string
-  description = "Public IP address of the VPS server"
-}
-
 variable "cloudflare_control_plane_zone_id" {
   type        = string
   description = "Cloudflare zone ID for the control plane domain (e.g. mycrocloud.online)"
@@ -76,4 +71,9 @@ variable "grafana_cloud_access_policy_token" {
   type        = string
   description = "Grafana Cloud access policy token with permission to manage stack access policies/tokens."
   sensitive   = true
+}
+
+variable "conohavps_password" {
+  type      = string
+  sensitive = true
 }

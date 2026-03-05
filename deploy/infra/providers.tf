@@ -1,5 +1,9 @@
 terraform {
   required_providers {
+    conohavps = {
+      source = "gmo-internet/conohavps"
+    }
+
     aws = {
       source  = "hashicorp/aws"
       version = "~> 6.16.0"
@@ -39,6 +43,11 @@ provider "aws" {
       environment = "prod"
     }
   }
+}
+provider "conohavps" {
+  password  = var.conohavps_password
+  tenant_id = "fc13fd9d02d9410cb8230bc190acd48f"
+  user_id   = "f2293c5c0f684dfca401fa56d35e9017"
 }
 
 provider "cloudflare" {
