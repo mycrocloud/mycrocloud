@@ -5,9 +5,9 @@ on:
     branches:
       - main
     paths:
-      - "src/services/api/Api.Domain/**"
-      - "src/services/api/Api.Infrastructure/**"
-      - "src/services/api/Api.Migrations/**"
+      - "services/api/Api.Domain/**"
+      - "services/api/Api.Infrastructure/**"
+      - "services/api/Api.Migrations/**"
 
   workflow_dispatch:
 
@@ -38,7 +38,7 @@ jobs:
       - name: Run test
         env:
           ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=mycrocloud;Username=postgres;Password=postgres"
-        run: dotnet test src/services/api/Api.MigrationTest
+        run: dotnet test services/api/Api.MigrationTest
 
   build-and-deploy:
     needs: test-migrations
@@ -48,7 +48,7 @@ jobs:
       contents: read
     with:
       image-name: ${{ github.repository }}-db-migrator
-      work-dir: src/services/api
+      work-dir: services/api
       dockerfile: Api.Migrations/Dockerfile
       service: db_migrator
     secrets:

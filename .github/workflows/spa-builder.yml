@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "src/services/webapp/spa/builder/**"
+      - "services/webapp/spa/builder/**"
 
   workflow_dispatch:
 
@@ -21,7 +21,7 @@ jobs:
     with:
       image-name: ${{ github.repository }}-spa-builder
       image-tag: node${{ matrix.node-version }}
-      work-dir: src/services/webapp/spa/builder
+      work-dir: services/webapp/spa/builder
       dockerfile: Dockerfile
       pull-only: true
       build-args: NODE_VERSION=${{ matrix.node-version }}

@@ -7,52 +7,52 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Backend (.NET 10, C# 14)
 ```bash
 # Build API solution (control plane)
-dotnet build src/services/api/Api.sln
+dotnet build services/api/Api.sln
 
 # Build WebApp solution (data plane + shared libs)
-dotnet build src/services/webapp/WebApp.sln
+dotnet build services/webapp/WebApp.sln
 
 # Run the API (control plane)
-dotnet run --project src/services/api/Api
+dotnet run --project services/api/Api
 
 # Run the Gateway (data plane)
-dotnet run --project src/services/webapp/gateway
+dotnet run --project services/webapp/gateway
 
 # Run migration tests (requires live PostgreSQL)
-dotnet test src/services/api/Api.MigrationTest
+dotnet test services/api/Api.MigrationTest
 
 # Add EF Core migration
-dotnet ef migrations add <MigrationName> --project src/services/api/Api.Migrations
+dotnet ef migrations add <MigrationName> --project services/api/Api.Migrations
 
 # Run db-migrator (applies pending migrations)
-dotnet run --project src/services/api/Api.Migrations
+dotnet run --project services/api/Api.Migrations
 ```
 
 ### Frontend (React 19 + Vite + TypeScript)
 ```bash
-npm run dev --prefix src/services/web        # Dev server
-npm run build --prefix src/services/web      # Production build (tsc + vite)
-npm run lint --prefix src/services/web       # ESLint
+npm run dev --prefix services/web        # Dev server
+npm run build --prefix services/web      # Production build (tsc + vite)
+npm run lint --prefix services/web       # ESLint
 ```
 
 ### Go Deployment Worker
 ```bash
-cd src/services/webapp/spa/worker && go build ./...
+cd services/webapp/spa/worker && go build ./...
 ```
 
 ### Docker Compose (dev)
 ```bash
 # Frontend only
-docker compose -f src/services/compose.yml up
+docker compose -f services/compose.yml up
 
 # API + db-migrator (run from api dir so compose.override.yml is picked up)
-cd src/services/api && docker compose build && docker compose up -d
+cd services/api && docker compose build && docker compose up -d
 
 # Gateway + function-invoker (run from webapp dir)
-cd src/services/webapp && docker compose build && docker compose up -d
+cd services/webapp && docker compose build && docker compose up -d
 
 # Deployment subsystem (worker + builder)
-cd src/services/webapp/spa && docker compose up -d
+cd services/webapp/spa && docker compose up -d
 ```
 
 ## Architecture Overview
@@ -77,12 +77,12 @@ Monitoring (Prometheus + Alloy, config in deploy/pkg/monitoring/)
 
 ### Project Dependencies
 ```
-src/services/api/
+services/api/
   Api              → Api.Domain, Api.Infrastructure
   Api.Migrations   → Api.Infrastructure
   Api.MigrationTest
 
-src/services/webapp/
+services/webapp/
   WebApp.Gateway                              (self-contained data plane service)
   api/functioninvoker/WebApp.FunctionInvoker  (standalone console app for JS execution)
 
@@ -108,7 +108,7 @@ PostgreSQL with EF Core 10 (Npgsql). Uses JSONB columns, owned JSON entities for
 Migrations live in a separate `Api.Migrations` project. Design-time factory in `AppDbContextFactory`.
 
 ### Frontend Config Injection
-`window.CONFIG` injected at runtime via Nginx (allows single Docker image across environments). Falls back to `VITE_*` env vars for local dev. See `src/services/web/src/config.ts`.
+`window.CONFIG` injected at runtime via Nginx (allows single Docker image across environments). Falls back to `VITE_*` env vars for local dev. See `services/web/src/config.ts`.
 
 ### CI/CD
 GitHub Actions per-service (path-filtered pushes to `main`). Reusable workflows: `_build-image.yml`, `_deploy-image.yml`, `_build-deploy.yml`: build Docker image → push to `ghcr.io` → SSH + Ansible playbook → `docker compose up`. Secrets from AWS Secrets Manager.
@@ -116,7 +116,7 @@ GitHub Actions per-service (path-filtered pushes to `main`). Reusable workflows:
 Per-service workflows: `api.yml`, `gateway.yml`, `web.yml`, `function-invoker.yml`, `db-migrator.yml`, `spa-build-worker.yml`, `spa-builder.yml`. `deploy-all.yml` orchestrates a full stack redeploy.
 
 ### Deployment Config Files
-Production config files (`appsettings.json`, `.env.j2` templates) live in `deploy/pkg/`, mirroring `src/services/` paths. When changing config schema (e.g., adding/renaming settings in `appsettings.json`), update the corresponding files in `deploy/pkg/` as well. When adding or removing a service's `.env` or secret file, also update `deploy/scripts/deploy.yml` secret lists and `deploy/infra/aws_secrets.tf`.
+Production config files (`appsettings.json`, `.env.j2` templates) live in `deploy/pkg/`, mirroring `services/` paths. When changing config schema (e.g., adding/renaming settings in `appsettings.json`), update the corresponding files in `deploy/pkg/` as well. When adding or removing a service's `.env` or secret file, also update `deploy/scripts/deploy.yml` secret lists and `deploy/infra/aws_secrets.tf`.
 
 ### Documentation project
 The documentation project lives in a separate repository:

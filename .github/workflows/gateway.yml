@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "src/services/webapp/gateway/**"
+      - "services/webapp/gateway/**"
 
   workflow_dispatch:
 
@@ -17,7 +17,7 @@ jobs:
       contents: read
     with:
       image-name: ${{ github.repository }}-gateway
-      work-dir: src/services/webapp/gateway
+      work-dir: services/webapp/gateway
       dockerfile: Dockerfile
       service: gateway
     secrets:

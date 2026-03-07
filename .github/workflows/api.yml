@@ -5,9 +5,9 @@ on:
     branches:
       - main
     paths:
-      - "src/services/api/Api.Domain/**"
-      - "src/services/api/Api.Infrastructure/**"
-      - "src/services/api/Api/**"
+      - "services/api/Api.Domain/**"
+      - "services/api/Api.Infrastructure/**"
+      - "services/api/Api/**"
 
   workflow_dispatch:
 
@@ -19,7 +19,7 @@ jobs:
       contents: read
     with:
       image-name: ${{ github.repository }}-api
-      work-dir: src/services/api
+      work-dir: services/api
       dockerfile: Api/Dockerfile
       service: api
     secrets:

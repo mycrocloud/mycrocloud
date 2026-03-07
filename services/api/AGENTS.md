@@ -1,4 +1,4 @@
-# AGENTS.md — src/services/api
+# AGENTS.md — services/api
 
 ## Solution Structure
 
@@ -68,9 +68,9 @@ Configured via `Storage:Type` in appsettings.
 ## Build & Run
 
 ```bash
-dotnet build src/services/api/Api.sln
-dotnet run --project src/services/api/Api
-dotnet test src/services/api/Api.MigrationTest  # requires live PostgreSQL
+dotnet build services/api/Api.sln
+dotnet run --project services/api/Api
+dotnet test services/api/Api.MigrationTest  # requires live PostgreSQL
 ```
 
 ## Migrations
@@ -78,7 +78,7 @@ dotnet test src/services/api/Api.MigrationTest  # requires live PostgreSQL
 Migrations live in `Api.Migrations`. The `dotnet ef` tool may fail with `System.Runtime` version mismatch on net8.0 — create migration files manually if needed.
 
 ```bash
-dotnet ef migrations add <Name> --project src/services/api/Api.Migrations
+dotnet ef migrations add <Name> --project services/api/Api.Migrations
 ```
 
 ## Configuration
