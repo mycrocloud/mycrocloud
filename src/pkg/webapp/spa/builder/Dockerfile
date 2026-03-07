@@ -17,10 +17,10 @@ COPY build.sh /usr/local/bin/build.sh
 RUN chmod +x /usr/local/bin/build.sh
 
 ENV REPO_URL="" \
-    WORK_DIR="." \
-    OUT_DIR="dist" \
-    INSTALL_CMD="npm ci" \
-    BUILD_CMD="npm run build" \
+    WORK_DIR="" \
+    OUT_DIR="" \
+    INSTALL_CMD="" \
+    BUILD_CMD="" \
     ENV_VARS=""
 
 USER builder

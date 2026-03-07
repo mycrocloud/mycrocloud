@@ -11,16 +11,16 @@ BUILD_START_TIME=$(date +%s)
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "Build Started (v20260212-1000)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "WorkDir: ${WORK_DIR:-.}"
-echo "OutDir: ${OUT_DIR:-dist}"
+echo "WorkDir: ${WORK_DIR}"
+echo "OutDir: ${OUT_DIR}"
 echo "Started: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 REPO_URL="${REPO_URL}"
-WORK_DIR="${WORK_DIR:-.}"
-OUT_DIR="${OUT_DIR:-dist}"
-INSTALL_CMD="${INSTALL_CMD:-npm ci}"
-BUILD_CMD="${BUILD_CMD:-npm run build}"
-ENV_VARS_JSON="${ENV_VARS:-}"
+WORK_DIR="${WORK_DIR}"
+OUT_DIR="${OUT_DIR}"
+INSTALL_CMD="${INSTALL_CMD}"
+BUILD_CMD="${BUILD_CMD}"
+ENV_VARS_JSON="${ENV_VARS}"
 OUTPUT_DIR="/output"
 
 # --- Export environment variables if provided ---
