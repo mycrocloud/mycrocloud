@@ -123,3 +123,25 @@ The documentation project lives in a separate repository:
 ```
 ../mycrocloud-docs
 ```
+
+### Coding Conventions
+
+**Internal service-to-service communication**
+
+Internal services (e.g. API → worker → builder) fully trust the caller. The target service must not validate input or apply default values — if required data is missing, let it fail loudly so the bug surfaces in the caller.
+
+- No required-field checks (null guards, `[Required]` attributes, etc.)
+- No fallback defaults (no `${VAR:-default}`, no property initializers with meaningful values)
+- No length or format validation
+
+Examples of what NOT to do:
+```bash
+# Bad: silently falls back to "dist" if caller forgot to set OUT_DIR
+OUT_DIR="${OUT_DIR:-dist}"
+```
+```csharp
+// Bad: hides a bug in the caller that forgot to set NodeVersion
+public string NodeVersion { get; set; } = "20";
+```
+
+Validation belongs at the public boundary (user-facing API endpoints, external webhooks), not between internal services.
