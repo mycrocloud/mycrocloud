@@ -67,21 +67,3 @@ resource "grafana_cloud_access_policy_token" "prometheus_metrics_write" {
   region           = grafana_cloud_stack.this.region_slug
   access_policy_id = grafana_cloud_access_policy.prometheus_metrics_write.policy_id
 }
-
-resource "aws_secretsmanager_secret_version" "alloy_env" {
-  secret_id = aws_secretsmanager_secret.alloy_env.id
-  secret_string = jsonencode({
-    GRAFANA_CLOUD_LOKI_URL      = "${data.grafana_cloud_stack.this.logs_url}/loki/api/v1/push"
-    GRAFANA_CLOUD_LOKI_USERNAME = tostring(data.grafana_cloud_stack.this.logs_user_id)
-    GRAFANA_CLOUD_API_KEY       = grafana_cloud_access_policy_token.alloy_logs_write.token
-  })
-}
-
-resource "aws_secretsmanager_secret_version" "prometheus_yml" {
-  secret_id = aws_secretsmanager_secret.monitoring_prometheus_prometheus_yml.id
-  secret_string = jsonencode({
-    PROMETHEUS_URL      = "${data.grafana_cloud_stack.this.prometheus_url}/api/prom/push"
-    PROMETHEUS_USERNAME = tostring(data.grafana_cloud_stack.this.prometheus_user_id)
-    GRAFANA_API_KEY     = grafana_cloud_access_policy_token.prometheus_metrics_write.token
-  })
-}

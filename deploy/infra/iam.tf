@@ -34,25 +34,3 @@ resource "aws_iam_role" "github_actions" {
   })
 }
 
-resource "aws_iam_policy" "secrets_read" {
-  name = "${local.project_name}-secrets-read"
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "secretsmanager:GetSecretValue"
-        ]
-        # TODO: Restrict to specific secret ARNs once stable
-        Resource = "*"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "attach" {
-  role       = aws_iam_role.github_actions.name
-  policy_arn = aws_iam_policy.secrets_read.arn
-}
-
