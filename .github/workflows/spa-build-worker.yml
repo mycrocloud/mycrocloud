@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "src/pkg/webapp/spa/worker/**"
+      - "src/services/webapp/spa/worker/**"
 
   workflow_dispatch:
 
@@ -17,7 +17,7 @@ jobs:
       contents: read
     with:
       image-name: ${{ github.repository }}-spa-build-worker
-      work-dir: src/pkg/webapp/spa/worker
+      work-dir: src/services/webapp/spa/worker
       dockerfile: Dockerfile
       service: spa-build-worker
     secrets:

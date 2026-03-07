@@ -2,25 +2,25 @@ version: 2
 updates:
   - package-ecosystem: "nuget"
     directories:
-      - "src/pkg/api/Api"
-      - "src/pkg/api/Api.Domain"
-      - "src/pkg/api/Api.Infrastructure"
-      - "src/pkg/api/Api.Migrations"
-      - "src/pkg/api/Api.MigrationTest"
-      - "src/pkg/webapp/gateway"
-      - "src/pkg/webapp/api/functioninvoker"
+      - "src/services/api/Api"
+      - "src/services/api/Api.Domain"
+      - "src/services/api/Api.Infrastructure"
+      - "src/services/api/Api.Migrations"
+      - "src/services/api/Api.MigrationTest"
+      - "src/services/webapp/gateway"
+      - "src/services/webapp/api/functioninvoker"
     schedule:
       interval: "daily"
 
   - package-ecosystem: "npm"
     directories:
-      - "src/pkg/web"
+      - "src/services/web"
     schedule:
       interval: "daily"
 
   - package-ecosystem: "gomod"
     directories:
-      - "src/pkg/webapp/spa/worker"
+      - "src/services/webapp/spa/worker"
     schedule:
       interval: "daily"
 
