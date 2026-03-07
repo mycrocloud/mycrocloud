@@ -4,11 +4,6 @@ terraform {
       source = "gmo-internet/conohavps"
     }
 
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 6.16.0"
-    }
-
     cloudflare = {
       source  = "cloudflare/cloudflare"
       version = "~> 5.17"
@@ -37,13 +32,6 @@ terraform {
   }
 }
 
-provider "aws" {
-  default_tags {
-    tags = {
-      environment = "prod"
-    }
-  }
-}
 provider "conohavps" {
   password  = var.conohavps_password
   tenant_id = "fc13fd9d02d9410cb8230bc190acd48f"
