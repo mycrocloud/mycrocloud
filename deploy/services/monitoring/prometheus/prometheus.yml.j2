@@ -8,7 +8,7 @@ scrape_configs:
 
 
 remote_write:
-  - url: {{ secrets.PROMETHEUS_URL }}
+  - url: {{ secrets.prometheus_url }}
     basic_auth:
-      username: {{ secrets.PROMETHEUS_USERNAME }}
-      password: {{ secrets.GRAFANA_API_KEY }}
+      username: {{ secrets.prometheus_username }}
+      password: {{ secrets.grafana_api_key }}

@@ -4,49 +4,61 @@ locals {
 
 locals {
   api_secrets = [
-    "ConnectionStrings__DefaultConnection",
-    "ConnectionStrings__PubSub",
-    "ExternalIntegrations__GitHub__WebhookSecret",
-    "ExternalIntegrations__Slack__ClientSecret",
-    "ExternalIntegrations__Slack__SigningSecret",
-    "ExternalIntegrations__Slack__LinkSecret",
-    "Storage__S3__AccessKey",
-    "Storage__S3__SecretKey",
+    "db_connection_string",
+    "db_pubsub_connection_string",
+    "github_webhook_secret",
+    "slack_client_secret",
+    "slack_signing_secret",
+    "slack_link_secret",
+    "s3_access_key",
+    "s3_secret_key",
+  ]
+
+  api_plaintext_secrets = [
     "gha-mycrocloud.private-key.pem",
   ]
 
   dbmigrator_secrets = [
-    "ConnectionStrings__DefaultConnection"
+    "db_connection_string",
   ]
 
   lb_secrets = [
     "certs/mycrocloud.online.key",
-    "certs/mycrocloud.site.key"
+    "certs/mycrocloud.site.key",
   ]
 
-  monitoring_secrets = [
-    "monitoring/alloy/GRAFANA_CLOUD_API_KEY",
-    "monitoring/alloy/GRAFANA_CLOUD_LOKI_URL",
-    "monitoring/alloy/GRAFANA_CLOUD_LOKI_USERNAME",
-    "monitoring/prometheus/GRAFANA_API_KEY",
-    "monitoring/prometheus/PROMETHEUS_URL",
-    "monitoring/prometheus/PROMETHEUS_USERNAME",
+  monitoring_alloy_secrets = [
+    "grafana_cloud_api_key",
+    "grafana_cloud_loki_url",
+    "grafana_cloud_loki_username",
+  ]
+
+  monitoring_prometheus_secrets = [
+    "grafana_api_key",
+    "prometheus_url",
+    "prometheus_username",
   ]
 
   webapp_gateway_secrets = [
-    "ConnectionStrings__DefaultConnection",
-    "Storage__S3__AccessKey",
-    "Storage__S3__SecretKey"
+    "db_connection_string",
+    "s3_access_key",
+    "s3_secret_key",
   ]
 
   webapp_spa_build_worker_secrets = [
-    "DATABASE_URL",
-    "AUTH0_SECRET"
+    "database_url",
+    "auth0_secret",
   ]
 }
 
 resource "bitwarden-secrets_secret" "api_secrets" {
   for_each   = toset(local.api_secrets)
+  key        = "api/${each.value}"
+  project_id = local.project_id
+}
+
+resource "bitwarden-secrets_secret" "api_plaintext_secrets" {
+  for_each   = toset(local.api_plaintext_secrets)
   key        = "api/${each.value}"
   project_id = local.project_id
 }
@@ -63,9 +75,15 @@ resource "bitwarden-secrets_secret" "lb_secrets" {
   project_id = local.project_id
 }
 
-resource "bitwarden-secrets_secret" "monitoring_secrets" {
-  for_each   = toset(local.monitoring_secrets)
-  key        = "monitoring/${each.value}"
+resource "bitwarden-secrets_secret" "monitoring_alloy_secrets" {
+  for_each   = toset(local.monitoring_alloy_secrets)
+  key        = "monitoring/alloy/${each.value}"
+  project_id = local.project_id
+}
+
+resource "bitwarden-secrets_secret" "monitoring_prometheus_secrets" {
+  for_each   = toset(local.monitoring_prometheus_secrets)
+  key        = "monitoring/prometheus/${each.value}"
   project_id = local.project_id
 }
 

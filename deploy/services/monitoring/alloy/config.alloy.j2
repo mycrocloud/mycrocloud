@@ -74,11 +74,11 @@ loki.process "logs" {
 
 loki.write "grafana_cloud" {
   endpoint {
-    url = "{{ secrets.GRAFANA_CLOUD_LOKI_URL }}"
+    url = "{{ secrets.grafana_cloud_loki_url }}"
 
     basic_auth {
-      username = "{{ secrets.GRAFANA_CLOUD_LOKI_USERNAME }}"
-      password = "{{ secrets.GRAFANA_CLOUD_API_KEY }}"
+      username = "{{ secrets.grafana_cloud_loki_username }}"
+      password = "{{ secrets.grafana_cloud_api_key }}"
     }
   }
 }

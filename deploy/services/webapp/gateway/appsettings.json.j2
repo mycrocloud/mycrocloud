@@ -10,7 +10,7 @@
   },
   "AllowedHosts": "*",
   "ConnectionStrings": {
-    "DefaultConnection": "{{ secrets.ConnectionStrings__DefaultConnection }}"
+    "DefaultConnection": "{{ secrets.db_connection_string }}"
   },
   "DockerFunctionExecution": {
     "Uri": "unix:///var/run/docker.sock",
@@ -27,8 +27,8 @@
     "Type": "S3",
     "S3": {
       "BucketName": "mycrocloud-deployments",
-      "AccessKey": "{{ secrets.Storage__S3__AccessKey }}",
-      "SecretKey": "{{ secrets.Storage__S3__SecretKey }}",
+      "AccessKey": "{{ secrets.s3_access_key }}",
+      "SecretKey": "{{ secrets.s3_secret_key }}",
       "ServiceURL": "https://65ae2386e91a9f75748e1730c6885c33.r2.cloudflarestorage.com"
     }
   }
