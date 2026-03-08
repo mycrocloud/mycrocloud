@@ -458,3 +458,4 @@ $RECYCLE.BIN/
 .envrc
 *.pem
 *.local
+appsettings.json

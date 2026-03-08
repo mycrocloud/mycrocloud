@@ -4,8 +4,6 @@ services:
     build:
       context: ./worker
       dockerfile: Dockerfile
-    env_file:
-      - ./worker/.env
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./worker/.conf:/app/.conf:ro

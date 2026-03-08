@@ -3,9 +3,8 @@ services:
     image: mycrocloud-gateway
     build:
       context: ./gateway
-    env_file:
-      - ./gateway/.env
     volumes:
+      - ./gateway/appsettings.json:/app/appsettings.json:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/function-data:/tmp/function-data
     ports:
@@ -15,8 +14,6 @@ services:
     image: mycrocloud-function-invoker
     build:
       context: ./api/functioninvoker
-    env_file:
-      - .env
     volumes:
       - ./api/functioninvoker/data:/app/data
     deploy:

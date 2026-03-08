@@ -4,6 +4,6 @@ AUTH0_CLIENT_ID=FBglI6Q42Dqp0eRXeE00sB9GqeLkXhIT
 AUTH0_AUDIENCE=mycrocloud-api
 BUILD_OUTPUT_DIR=/tmp/build-outputs
 DATABASE_URL=postgres://postgres:postgres@localhost:5432/mycrocloud?sslmode=disable
-AUTH0_SECRET=secret
+AUTH0_SECRET=
 BUILDER_AUTO_REMOVE=true
 API_BASE_URL=http://api:8080
