@@ -16,7 +16,7 @@ This repo does NOT contain application source code — that lives in the main `m
 ```
 infra/              Terraform (AWS EC2, VPC, Cloudflare DNS, Auth0, Secrets Manager, GitHub OIDC)
 scripts/            Ansible playbooks + inventory
-pkg/                Production compose files, service configs, nginx templates, monitoring
+services/                Production compose files, service configs, nginx templates, monitoring
   compose.yml       Root compose (includes webapp/ and monitoring/ composes)
   lb/               Nginx load balancer config + SSL certs + vhost templates
   api/              API service config (appsettings.json, .env.j2)
@@ -30,9 +30,9 @@ pkg/                Production compose files, service configs, nginx templates, 
     compose.yml     Alloy, Prometheus, node_exporter
 ```
 
-Service paths in `pkg/` mirror `src/pkg/` in the main repo, except `dbmigrator` (source is `src/pkg/api/Api.Migrations`).
+Service paths in `services/` mirror `src/services/` in the main repo, except `dbmigrator` (source is `src/services/api/Api.Migrations`).
 
-Each service may have config files such as `appsettings.json` (checked in, mounted read-only into containers) and `.env.j2` templates (rendered with secrets at deploy time). Secret file paths under `pkg/` match their AWS Secrets Manager names with the `prod/mycrocloud/` prefix — e.g., the secret `prod/mycrocloud/api/.env` is written to `pkg/api/.env` on the server. The corresponding secret resources are defined in `infra/aws_secrets.tf`. When adding or removing a service's `.env` or secret file, update all three places: `pkg/` config files, `scripts/deploy.yml` secret lists, and `infra/aws_secrets.tf`.
+Each service may have config files such as `appsettings.json` (checked in, mounted read-only into containers) and `.env.j2` templates (rendered with secrets at deploy time). Secret file paths under `services/` match their AWS Secrets Manager names with the `prod/mycrocloud/` prefix — e.g., the secret `prod/mycrocloud/api/.env` is written to `services/api/.env` on the server. The corresponding secret resources are defined in `infra/aws_secrets.tf`. When adding or removing a service's `.env` or secret file, update all three places: `services/` config files, `scripts/deploy.yml` secret lists, and `infra/aws_secrets.tf`.
 
 ## Commands
 
@@ -83,7 +83,7 @@ Inventory uses environment variables: `ANSIBLE_HOST`, `ANSIBLE_USER`, `ANSIBLE_S
 ## Deployment Flow
 
 1. `deploy.yml` fetches secrets from AWS Secrets Manager (env files, certs, keys)
-2. Syncs `pkg/` directory to server at `/opt/mycrocloud`
+2. Syncs `services/` directory to server at `/opt/mycrocloud`
 3. Writes secrets to `.env` files on server
 4. Renders Jinja2 templates (`.j2` files → final config)
 5. Runs `docker compose up` with image pull
@@ -99,8 +99,8 @@ Secrets are stored in AWS Secrets Manager under the `prod/mycrocloud/` prefix. T
 
 ## Docker Compose Topology
 
-The root `pkg/compose.yml` includes `webapp/compose.yml` and `monitoring/compose.yml`. All services pull pre-built images from `ghcr.io/mycrocloud/`. The gateway container mounts the Docker socket (for spawning function invoker containers) and `/srv/function-data`.
+The root `services/compose.yml` includes `webapp/compose.yml` and `monitoring/compose.yml`. All services pull pre-built images from `ghcr.io/mycrocloud/`. The gateway container mounts the Docker socket (for spawning function invoker containers) and `/srv/function-data`.
 
 ## Nginx Load Balancer
 
-Nginx uses envsubst templates in `pkg/lb/templates/conf.d/` — domain names are injected via `CONTROL_PLANE_DOMAIN` and `DATA_PLANE_DOMAIN` environment variables. Includes Cloudflare IP allowlists and shared SSL configuration.
+Nginx uses envsubst templates in `services/lb/templates/conf.d/` — domain names are injected via `CONTROL_PLANE_DOMAIN` and `DATA_PLANE_DOMAIN` environment variables. Includes Cloudflare IP allowlists and shared SSL configuration.

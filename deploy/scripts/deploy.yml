@@ -35,9 +35,9 @@
     resolved_services: "{{ selected_services if selected_services | length > 0 else (service_groups[service_group] | default([])) }}"
     secret_target_services: "{{ resolved_services if resolved_services | length > 0 else all_services }}"
     # Secret-to-File Mapping Rules:
-    # 1. J2 Templates: secret "prod/mycrocloud/path/file.ext" maps to "pkg/path/file.ext.j2"
+    # 1. J2 Templates: secret "prod/mycrocloud/path/file.ext" maps to "services/path/file.ext.j2"
     #    The .j2 extension is stripped to determine the secret name and destination path.
-    # 2. Plaintext Secrets: secret "prod/mycrocloud/path/file" maps to "pkg/path/file"
+    # 2. Plaintext Secrets: secret "prod/mycrocloud/path/file" maps to "services/path/file"
     #    The content is copied as-is to the destination path.
     service_j2_template_files:
       lb: []
@@ -103,7 +103,7 @@
   hosts: all
   become: no
   vars:
-    src: ../pkg
+    src: ../services
     deploy_path: /opt/mycrocloud
     pull_only: false
     image: ""
