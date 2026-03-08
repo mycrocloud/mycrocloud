@@ -65,13 +65,13 @@ resource "bitwarden-secrets_secret" "lb_secrets" {
 
 resource "bitwarden-secrets_secret" "monitoring_alloy_secrets" {
   for_each   = toset(local.monitoring_alloy_secrets)
-  key        = "monitoring-alloy/${each.value}"
+  key        = "alloy/${each.value}"
   project_id = local.project_id
 }
 
 resource "bitwarden-secrets_secret" "monitoring_prometheus_secrets" {
   for_each   = toset(local.monitoring_prometheus_secrets)
-  key        = "monitoring-prometheus/${each.value}"
+  key        = "prometheus/${each.value}"
   project_id = local.project_id
 }
 

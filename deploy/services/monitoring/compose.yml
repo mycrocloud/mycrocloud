@@ -1,5 +1,5 @@
 services:
-  monitoring-alloy:
+  alloy:
     image: grafana/alloy:latest
     command:
       - run
@@ -10,28 +10,28 @@ services:
       - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
       - alloy-data:/var/lib/alloy/data
     labels:
-      logging.service: monitoring-alloy
+      logging.service: alloy
       logging.component: monitoring
     restart: unless-stopped
 
-  monitoring-prometheus:
+  prometheus:
     image: prom/prometheus:v3.5.1
-    container_name: monitoring-prometheus
+    container_name: prometheus
     network_mode: "host"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     labels:
-      logging.service: monitoring-prometheus
+      logging.service: prometheus
       logging.component: monitoring
     restart: unless-stopped
 
-  monitoring-node-exporter:
+  node-exporter:
     image: prom/node-exporter:v1.10.2
-    container_name: monitoring-node-exporter
+    container_name: node-exporter
     network_mode: "host"
     labels:
-      logging.service: monitoring-node-exporter
+      logging.service: node-exporter
       logging.component: monitoring
     restart: unless-stopped
 
