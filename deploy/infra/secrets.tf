@@ -32,6 +32,12 @@ locals {
     "monitoring/prometheus/PROMETHEUS_URL",
     "monitoring/prometheus/PROMETHEUS_USERNAME",
   ]
+
+  webapp_gateway_secrets = [
+    "ConnectionStrings__DefaultConnection",
+    "Storage__S3__AccessKey",
+    "Storage__S3__SecretKey"
+  ]
 }
 
 resource "bitwarden-secrets_secret" "api_secrets" {
@@ -39,7 +45,6 @@ resource "bitwarden-secrets_secret" "api_secrets" {
   key        = "api/${each.value}"
   project_id = local.project_id
 }
-
 
 resource "bitwarden-secrets_secret" "dbmigrator_secrets" {
   for_each   = toset(local.dbmigrator_secrets)
@@ -56,5 +61,11 @@ resource "bitwarden-secrets_secret" "lb_secrets" {
 resource "bitwarden-secrets_secret" "monitoring_secrets" {
   for_each   = toset(local.monitoring_secrets)
   key        = "monitoring/${each.value}"
+  project_id = local.project_id
+}
+
+resource "bitwarden-secrets_secret" "webapp_gateway_secrets" {
+  for_each   = toset(local.webapp_gateway_secrets)
+  key        = "webapp/gateway/${each.value}"
   project_id = local.project_id
 }
