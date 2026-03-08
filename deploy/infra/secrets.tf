@@ -17,3 +17,15 @@ resource "bitwarden-secrets_secret" "api_secrets" {
   key        = "api/${each.value}"
   project_id = "9dd69c49-ce80-477e-a92c-b4060039719a"
 }
+
+locals {
+  dbmigrator_secrets = [
+    "ConnectionStrings__DefaultConnection"
+  ]
+}
+
+resource "bitwarden-secrets_secret" "dbmigrator_secrets" {
+  for_each   = toset(local.dbmigrator_secrets)
+  key        = "dbmigrator/${each.value}"
+  project_id = "9dd69c49-ce80-477e-a92c-b4060039719a"
+}
