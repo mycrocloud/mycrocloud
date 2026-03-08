@@ -5,8 +5,6 @@ services:
       - run
       - --storage.path=/var/lib/alloy/data
       - /etc/alloy/config.alloy
-    env_file:
-      - ./alloy/.env
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./alloy/config.alloy:/etc/alloy/config.alloy:ro

@@ -51,7 +51,7 @@
       spa-build-worker:
         - "webapp/spa/worker/.conf.j2"
       alloy:
-        - "monitoring/alloy/.env.j2"
+        - "monitoring/alloy/config.alloy.j2"
       prometheus:
         - "monitoring/prometheus/prometheus.yml.j2"
       node_exporter: []
