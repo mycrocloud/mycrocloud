@@ -12,24 +12,24 @@
         - lb
         - api
         - web
-        - db_migrator
+        - db-migrator
       webapp:
-        - gateway
-        - spa-build-worker
+        - webapp-gateway
+        - webapp-spa-build-worker
       monitoring:
         - alloy
         - prometheus
-        - node_exporter
+        - node-exporter
     all_services:
       - lb
       - api
       - web
-      - db_migrator
-      - gateway
-      - spa-build-worker
+      - db-migrator
+      - webapp-gateway
+      - webapp-spa-build-worker
       - alloy
       - prometheus
-      - node_exporter
+      - node-exporter
     services_input: "{{ (services | from_yaml) if (services is string and services | trim | length > 0) else (services | default([])) }}"
     selected_services: "{{ [services_input] if services_input is string else (services_input | default([])) }}"
     resolved_services: "{{ selected_services if selected_services | length > 0 else (service_groups[service_group] | default([])) }}"
@@ -45,8 +45,8 @@
           - "lb/certs/mycrocloud.online.key.j2"
           - "lb/certs/mycrocloud.site.key.j2"
         secrets:
-          - "lb/certs/mycrocloud_online_key"
-          - "lb/certs/mycrocloud_site_key"
+          - "lb/mycrocloud_online_key"
+          - "lb/mycrocloud_site_key"
       api:
         templates:
           - "api/appsettings.json.j2"
@@ -64,35 +64,35 @@
       web:
         templates: []
         secrets: []
-      db_migrator:
+      db-migrator:
         templates:
           - "dbmigrator/appsettings.json.j2"
         secrets:
-          - "dbmigrator/db_connection_string"
-      gateway:
+          - "db-migrator/db_connection_string"
+      webapp-gateway:
         templates:
           - "webapp/gateway/appsettings.json.j2"
         secrets:
-          - "webapp/gateway/db_connection_string"
-          - "webapp/gateway/s3_access_key"
-          - "webapp/gateway/s3_secret_key"
-      spa-build-worker:
+          - "webapp-gateway/db_connection_string"
+          - "webapp-gateway/s3_access_key"
+          - "webapp-gateway/s3_secret_key"
+      webapp-spa-build-worker:
         templates:
           - "webapp/spa/build-worker/.conf.j2"
         secrets:
-          - "webapp/spa/build-worker/database_url"
-          - "webapp/spa/build-worker/auth0_secret"
+          - "webapp-spa-build-worker/database_url"
+          - "webapp-spa-build-worker/auth0_secret"
       alloy:
         templates:
           - "monitoring/alloy/config.alloy.j2"
         secrets:
-          - "monitoring/alloy/grafana_cloud_api_key"
+          - "alloy/grafana_cloud_api_key"
       prometheus:
         templates:
           - "monitoring/prometheus/prometheus.yml.j2"
         secrets:
-          - "monitoring/prometheus/grafana_api_key"
-      node_exporter:
+          - "prometheus/grafana_api_key"
+      node-exporter:
         templates: []
         secrets: []
 
@@ -146,14 +146,14 @@
         - lb
         - api
         - web
-        - db_migrator
+        - db-migrator
       webapp:
-        - gateway
-        - spa-build-worker
+        - webapp-gateway
+        - webapp-spa-build-worker
       monitoring:
         - alloy
         - prometheus
-        - node_exporter
+        - node-exporter
     # Most rendered configs stay private (0600). Prometheus config must be
     # world-readable so the prometheus process inside the container can read it.
     template_file_modes:
@@ -244,5 +244,5 @@
         chdir: "{{ deploy_path }}"
       when:
         - not (pull_only | bool)
-        - (resolved_services | length == 0 or resolved_services | intersect(['api', 'gateway', 'web']) | length > 0)
+        - (resolved_services | length == 0 or resolved_services | intersect(['api', 'webapp-gateway', 'web']) | length > 0)
         - deploy_result.changed | default(false)

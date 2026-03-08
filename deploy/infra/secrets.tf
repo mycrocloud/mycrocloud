@@ -20,8 +20,8 @@ locals {
   ]
 
   lb_secrets = [
-    "certs/mycrocloud_online_key",
-    "certs/mycrocloud_site_key",
+    "mycrocloud_online_key",
+    "mycrocloud_site_key",
   ]
 
   monitoring_alloy_secrets = [
@@ -53,7 +53,7 @@ resource "bitwarden-secrets_secret" "api_secrets" {
 
 resource "bitwarden-secrets_secret" "dbmigrator_secrets" {
   for_each   = toset(local.dbmigrator_secrets)
-  key        = "dbmigrator/${each.value}"
+  key        = "db-migrator/${each.value}"
   project_id = local.project_id
 }
 
@@ -65,24 +65,24 @@ resource "bitwarden-secrets_secret" "lb_secrets" {
 
 resource "bitwarden-secrets_secret" "monitoring_alloy_secrets" {
   for_each   = toset(local.monitoring_alloy_secrets)
-  key        = "monitoring/alloy/${each.value}"
+  key        = "alloy/${each.value}"
   project_id = local.project_id
 }
 
 resource "bitwarden-secrets_secret" "monitoring_prometheus_secrets" {
   for_each   = toset(local.monitoring_prometheus_secrets)
-  key        = "monitoring/prometheus/${each.value}"
+  key        = "prometheus/${each.value}"
   project_id = local.project_id
 }
 
 resource "bitwarden-secrets_secret" "webapp_gateway_secrets" {
   for_each   = toset(local.webapp_gateway_secrets)
-  key        = "webapp/gateway/${each.value}"
+  key        = "webapp-gateway/${each.value}"
   project_id = local.project_id
 }
 
 resource "bitwarden-secrets_secret" "webapp_spa_build_worker_secrets" {
   for_each   = toset(local.webapp_spa_build_worker_secrets)
-  key        = "webapp/spa/build-worker/${each.value}"
+  key        = "webapp-spa-build-worker/${each.value}"
   project_id = local.project_id
 }

@@ -19,7 +19,7 @@ jobs:
       image-name: ${{ github.repository }}-spa-build-worker
       work-dir: services/webapp/spa/build-worker
       dockerfile: Dockerfile
-      service: spa-build-worker
+      service: webapp-spa-build-worker
     secrets:
       CR_PAT: ${{ secrets.CR_PAT }}
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}

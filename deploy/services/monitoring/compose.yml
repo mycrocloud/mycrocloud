@@ -26,9 +26,9 @@ services:
       logging.component: monitoring
     restart: unless-stopped
 
-  node_exporter:
+  node-exporter:
     image: prom/node-exporter:v1.10.2
-    container_name: node_exporter
+    container_name: node-exporter
     network_mode: "host"
     labels:
       logging.service: node-exporter

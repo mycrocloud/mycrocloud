@@ -32,7 +32,7 @@ services:
       logging.service: api
       logging.component: control-plane
     restart: unless-stopped
-  db_migrator:
+  db-migrator:
     image: ghcr.io/mycrocloud/mycrocloud-db-migrator:main
     volumes:
       - "./dbmigrator/appsettings.json:/db-migrator/appsettings.json:ro"

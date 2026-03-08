@@ -1,22 +1,22 @@
 services:
-  gateway:
+  webapp-gateway:
     image: ghcr.io/mycrocloud/mycrocloud-gateway:main
     volumes:
       - ./gateway/appsettings.json:/app/appsettings.json:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - /srv/function-data:/srv/function-data
     labels:
-      logging.service: gateway
+      logging.service: webapp-gateway
       logging.component: data-plane
     restart: unless-stopped
 
-  spa-build-worker:
+  webapp-spa-build-worker:
     image: ghcr.io/mycrocloud/mycrocloud-spa-build-worker:main
     volumes:
       - ./spa/build-worker/.conf:/app/.conf:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/build-outputs:/tmp/build-outputs
     labels:
-      logging.service: spa-build-worker
+      logging.service: webapp-spa-build-worker
       logging.component: data-plane
     restart: unless-stopped
