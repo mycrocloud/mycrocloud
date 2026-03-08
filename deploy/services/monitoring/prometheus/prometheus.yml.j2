@@ -8,7 +8,7 @@ scrape_configs:
 
 
 remote_write:
-  - url: {{ secrets.prometheus_url }}
+  - url: https://prometheus-us-central1.grafana.net/api/prom/push
     basic_auth:
-      username: {{ secrets.prometheus_username }}
+      username: "3006102"
       password: {{ secrets.grafana_api_key }}

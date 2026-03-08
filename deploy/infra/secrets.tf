@@ -29,14 +29,10 @@ locals {
 
   monitoring_alloy_secrets = [
     "grafana_cloud_api_key",
-    "grafana_cloud_loki_url",
-    "grafana_cloud_loki_username",
   ]
 
   monitoring_prometheus_secrets = [
     "grafana_api_key",
-    "prometheus_url",
-    "prometheus_username",
   ]
 
   webapp_gateway_secrets = [
