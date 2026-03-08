@@ -20,7 +20,7 @@ updates:
 
   - package-ecosystem: "gomod"
     directories:
-      - "services/webapp/spa/worker"
+      - "services/webapp/spa/build-worker"
     schedule:
       interval: "daily"
 

@@ -23,7 +23,7 @@
 - **Frontend Dev**: `npm run dev --prefix services/web`
 - **Frontend Build**: `npm run build --prefix services/web`
 - **Lint**: `npm run lint --prefix services/web`
-- **Go Worker**: `cd services/webapp/spa/worker && go build ./...`
+- **Go Worker**: `cd services/webapp/spa/build-worker && go build ./...`
 - **Migrations**: `dotnet ef migrations add <Name> --project services/api/Api.Migrations`
 - **Integration Tests**: `dotnet test services/api/Api.MigrationTest`
 

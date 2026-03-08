@@ -25,7 +25,7 @@ services/                Production compose files, service configs, nginx templa
   webapp/
     compose.yml     Gateway + spa_worker services
     gateway/        Gateway service config
-    spa/worker/     SPA deployment worker config
+    spa/build-worker/     SPA deployment worker config
   monitoring/
     compose.yml     Alloy, Prometheus, node_exporter
 ```

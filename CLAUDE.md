@@ -37,7 +37,7 @@ npm run lint --prefix services/web       # ESLint
 
 ### Go Deployment Worker
 ```bash
-cd services/webapp/spa/worker && go build ./...
+cd services/webapp/spa/build-worker && go build ./...
 ```
 
 ### Docker Compose (dev)

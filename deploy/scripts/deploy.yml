@@ -49,7 +49,7 @@
       gateway:
         - "webapp/gateway/appsettings.json.j2"
       spa-build-worker:
-        - "webapp/spa/worker/.conf.j2"
+        - "webapp/spa/build-worker/.conf.j2"
       alloy:
         - "monitoring/alloy/config.alloy.j2"
       prometheus:
