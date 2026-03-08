@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## What This Repository Is
 
 This is the **deployment and infrastructure** repository for MycroCloud. It contains:
-- **Terraform** configurations for provisioning AWS + Cloudflare infrastructure
+- **Terraform** configurations for provisioning ConoHa VPS + Cloudflare infrastructure
 - **Ansible** playbooks for deploying services to servers
 - **Docker Compose** definitions and config files for production services
 
@@ -14,25 +14,26 @@ This repo does NOT contain application source code — that lives in the main `m
 ## Repository Structure
 
 ```
-infra/              Terraform (AWS EC2, VPC, Cloudflare DNS, Auth0, Secrets Manager, GitHub OIDC)
+infra/              Terraform (ConoHa VPS, Cloudflare DNS, Auth0, Bitwarden Secrets, GitHub OIDC)
 scripts/            Ansible playbooks + inventory
-services/                Production compose files, service configs, nginx templates, monitoring
+services/           Production compose files, service configs, nginx templates, monitoring
   compose.yml       Root compose (includes webapp/ and monitoring/ composes)
   lb/               Nginx load balancer config + SSL certs + vhost templates
-  api/              API service config (appsettings.json, .env.j2)
-  web/              Web frontend config (.env.j2)
-  dbmigrator/       DB migration runner config
+  api/              appsettings.json.j2
+  dbmigrator/       appsettings.json.j2
   webapp/
-    compose.yml     Gateway + spa_worker services
-    gateway/        Gateway service config
-    spa/build-worker/     SPA deployment worker config
+    compose.yml     Gateway + spa_build_worker services
+    gateway/        appsettings.json.j2
+    spa/build-worker/  .conf.j2
   monitoring/
     compose.yml     Alloy, Prometheus, node_exporter
+    alloy/          config.alloy.j2
+    prometheus/     prometheus.yml.j2
 ```
 
-Service paths in `services/` mirror `src/services/` in the main repo, except `dbmigrator` (source is `src/services/api/Api.Migrations`).
+Service paths in `services/` mirror `services/` in the main repo, except `dbmigrator` (source is `services/api/Api.Migrations`).
 
-Each service may have config files such as `appsettings.json` (checked in, mounted read-only into containers) and `.env.j2` templates (rendered with secrets at deploy time). Secret file paths under `services/` match their AWS Secrets Manager names with the `prod/mycrocloud/` prefix — e.g., the secret `prod/mycrocloud/api/.env` is written to `services/api/.env` on the server. The corresponding secret resources are defined in `infra/aws_secrets.tf`. When adding or removing a service's `.env` or secret file, update all three places: `services/` config files, `scripts/deploy.yml` secret lists, and `infra/aws_secrets.tf`.
+Each service has a single Jinja2 config template (`.j2` extension) that contains both non-secret config values (hardcoded) and secret values (injected via `{{ secrets.<key> }}`). There are no separate `.env.j2` files — everything is in one file per service.
 
 ## Commands
 
@@ -75,31 +76,57 @@ Inventory uses environment variables: `ANSIBLE_HOST`, `ANSIBLE_USER`, `ANSIBLE_S
 
 ### Service Groups
 
-- **all**: lb, api, web, db_migrator, gateway, spa_worker, alloy, prometheus, node_exporter
+- **all**: lb, api, web, db_migrator, gateway, spa_build_worker, alloy, prometheus, node_exporter
 - **core**: lb, api, web, db_migrator
-- **webapp**: gateway, spa_worker
+- **webapp**: gateway, spa_build_worker
 - **monitoring**: alloy, prometheus, node_exporter
 
 ## Deployment Flow
 
-1. `deploy.yml` fetches secrets from AWS Secrets Manager (env files, certs, keys)
+1. `deploy.yml` fetches secrets from Bitwarden Secrets Manager
 2. Syncs `services/` directory to server at `/opt/mycrocloud`
-3. Writes secrets to `.env` files on server
-4. Renders Jinja2 templates (`.j2` files → final config)
+3. Renders Jinja2 templates (`.j2` files → final config files) with injected secrets
+4. Copies plaintext secret files (SSL certs, PEM keys) to server
 5. Runs `docker compose up` with image pull
 6. Waits for health checks
 7. Reloads nginx if api/gateway/web services were updated
 
 ## Secrets Management
 
-Secrets are stored in AWS Secrets Manager under the `prod/mycrocloud/` prefix. The deploy playbook fetches them automatically. Secret categories:
-- **env_files**: `.env` files for each service (rendered from Secrets Manager values)
-- **secret_files**: SSL certs, GitHub App PEM keys
-- **template_secrets**: Values injected into `.j2` templates (e.g., Prometheus config with Grafana Cloud credentials)
+Secrets are stored in **Bitwarden Secrets Manager** and provisioned via Terraform (`infra/secrets.tf`). The deploy playbook fetches them automatically at deploy time.
+
+### Secret Key Naming
+
+Secret keys use `snake_case` and are namespaced by service path, e.g.:
+- `api/db_connection_string`
+- `monitoring/alloy/grafana_cloud_api_key`
+- `monitoring/prometheus/grafana_api_key`
+- `lb/certs/mycrocloud.online.key`
+
+### What IS a secret
+
+Only values that are genuinely sensitive: passwords, API keys, connection strings, private keys.
+
+### What is NOT a secret
+
+Public URLs, usernames, service addresses, and other non-sensitive values are hardcoded directly in the `.j2` config templates. Do not store these in Bitwarden.
+
+Examples of hardcoded (non-secret) values in templates:
+- Grafana Loki URL and username in `monitoring/alloy/config.alloy.j2`
+- Prometheus remote-write URL and username in `monitoring/prometheus/prometheus.yml.j2`
+
+### Adding/Removing a Secret
+
+When adding or removing a secret, update **all three** places:
+1. `infra/secrets.tf` — add/remove from the appropriate `locals` list
+2. `scripts/deploy.yml` — add/remove from `service_j2_template_files` mappings
+3. The service's `.j2` config template — add/remove the `{{ secrets.<key> }}` reference
 
 ## Docker Compose Topology
 
 The root `services/compose.yml` includes `webapp/compose.yml` and `monitoring/compose.yml`. All services pull pre-built images from `ghcr.io/mycrocloud/`. The gateway container mounts the Docker socket (for spawning function invoker containers) and `/srv/function-data`.
+
+Config files are volume-mounted into containers (read-only) — services do not use `env_file`.
 
 ## Nginx Load Balancer
 
