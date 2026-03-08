@@ -20,19 +20,19 @@
   "ExternalIntegrations": {
     "Slack": {
       "ClientId": "8036520278803.9793652228354",
-      "ClientSecret": "",
-      "SigningSecret": "",
-      "LinkSecret": ""
+      "ClientSecret": "{{ secrets.ExternalIntegrations__Slack__ClientSecret }}",
+      "SigningSecret": "{{ secrets.ExternalIntegrations__Slack__SigningSecret }}",
+      "LinkSecret": "{{ secrets.ExternalIntegrations__Slack__LinkSecret }}"
     },
     "GitHub": {
       "AppId": "2285366",
       "PrivateKeyPath": "gha-mycrocloud.private-key.pem",
-      "WebhookSecret": ""
+      "WebhookSecret": "{{ secrets.ExternalIntegrations__GitHub__WebhookSecret }}"
     }
   },
   "ConnectionStrings": {
-    "DefaultConnection": "Host=db;Port=5432;Username=postgres;Password=postgres;Database=dev-mycrocloud",
-    "PubSub": "Host=db;Port=5432;Username=postgres;Password=postgres;Database=dev-mycrocloud"
+    "DefaultConnection": "{{ secrets.ConnectionStrings__DefaultConnection }}",
+    "PubSub": "{{ secrets.ConnectionStrings__PubSub }}"
   },
   "Build": {
     "BuilderImageTemplate": "ghcr.io/mycrocloud/mycrocloud-spa-builder:node{version}"
@@ -44,8 +44,8 @@
     "Type": "S3",
     "S3": {
       "BucketName": "mycrocloud-deployments",
-      "AccessKey": "REPLACE_ME",
-      "SecretKey": "REPLACE_ME",
+      "AccessKey": "{{ secrets.Storage__S3__AccessKey }}",
+      "SecretKey": "{{ secrets.Storage__S3__SecretKey }}",
       "ServiceURL": "https://65ae2386e91a9f75748e1730c6885c33.r2.cloudflarestorage.com"
     }
   },

@@ -1,8 +1,6 @@
 services:
   gateway:
     image: ghcr.io/mycrocloud/mycrocloud-gateway:main
-    env_file:
-      - ./gateway/.env
     volumes:
       - ./gateway/appsettings.json:/app/appsettings.json:ro
       - /var/run/docker.sock:/var/run/docker.sock
@@ -14,8 +12,6 @@ services:
 
   spa-build-worker:
     image: ghcr.io/mycrocloud/mycrocloud-spa-build-worker:main
-    env_file:
-      - ./spa/worker/.env
     volumes:
       - ./spa/worker/.conf:/app/.conf:ro
       - /var/run/docker.sock:/var/run/docker.sock

@@ -42,14 +42,14 @@
     service_j2_template_files:
       lb: []
       api:
-        - "api/.env.j2"
+        - "api/appsettings.json.j2"
       web: []
       db_migrator:
-        - "dbmigrator/.env.j2"
+        - "dbmigrator/appsettings.json.j2"
       gateway:
-        - "webapp/gateway/.env.j2"
+        - "webapp/gateway/appsettings.json.j2"
       spa-build-worker:
-        - "webapp/spa/worker/.env.j2"
+        - "webapp/spa/worker/.conf.j2"
       alloy:
         - "monitoring/alloy/.env.j2"
       prometheus:
