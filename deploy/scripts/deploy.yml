@@ -1,5 +1,5 @@
 ---
-- name: Fetch AWS secrets
+- name: Fetch secrets
   hosts: localhost
   gather_facts: no
   vars:
@@ -34,69 +34,100 @@
     selected_services: "{{ [services_input] if services_input is string else (services_input | default([])) }}"
     resolved_services: "{{ selected_services if selected_services | length > 0 else (service_groups[service_group] | default([])) }}"
     secret_target_services: "{{ resolved_services if resolved_services | length > 0 else all_services }}"
-    # Secret-to-File Mapping Rules:
-    # 1. J2 Templates: secret "prod/mycrocloud/path/file.ext" maps to "services/path/file.ext.j2"
-    #    The .j2 extension is stripped to determine the secret name and destination path.
-    # 2. Plaintext Secrets: secret "prod/mycrocloud/path/file" maps to "services/path/file"
-    #    The content is copied as-is to the destination path.
-    service_j2_template_files:
-      lb: []
-      api:
-        - "api/appsettings.json.j2"
-      web: []
-      db_migrator:
-        - "dbmigrator/appsettings.json.j2"
-      gateway:
-        - "webapp/gateway/appsettings.json.j2"
-      spa-build-worker:
-        - "webapp/spa/build-worker/.conf.j2"
-      alloy:
-        - "monitoring/alloy/config.alloy.j2"
-      prometheus:
-        - "monitoring/prometheus/prometheus.yml.j2"
-      node_exporter: []
-    service_plaintext_secret_files:
+
+    # Per-service config: templates to render + secrets they need.
+    # Secret key = last path segment: {{ secrets.db_connection_string }}
+    # Secret key path matches secrets.tf naming: <service>/<secret_name>
+    # All service secrets are available to all of that service's templates.
+    services_config:
       lb:
-        - "lb/certs/mycrocloud.online.key"
-        - "lb/certs/mycrocloud.site.key"
+        templates:
+          - "lb/certs/mycrocloud.online.key.j2"
+          - "lb/certs/mycrocloud.site.key.j2"
+        secrets:
+          - "lb/certs/mycrocloud_online_key"
+          - "lb/certs/mycrocloud_site_key"
       api:
-        - "api/gha-mycrocloud.private-key.pem"
-      web: []
-      db_migrator: []
-      gateway: []
-      spa-build-worker: []
-      alloy: []
-      prometheus: []
-      node_exporter: []
+        templates:
+          - "api/appsettings.json.j2"
+          - "api/gha-mycrocloud.private-key.pem.j2"
+        secrets:
+          - "api/db_connection_string"
+          - "api/db_pubsub_connection_string"
+          - "api/github_webhook_secret"
+          - "api/slack_client_secret"
+          - "api/slack_signing_secret"
+          - "api/slack_link_secret"
+          - "api/s3_access_key"
+          - "api/s3_secret_key"
+          - "api/gha_mycrocloud_private_key"
+      web:
+        templates: []
+        secrets: []
+      db_migrator:
+        templates:
+          - "dbmigrator/appsettings.json.j2"
+        secrets:
+          - "dbmigrator/db_connection_string"
+      gateway:
+        templates:
+          - "webapp/gateway/appsettings.json.j2"
+        secrets:
+          - "webapp/gateway/db_connection_string"
+          - "webapp/gateway/s3_access_key"
+          - "webapp/gateway/s3_secret_key"
+      spa-build-worker:
+        templates:
+          - "webapp/spa/build-worker/.conf.j2"
+        secrets:
+          - "webapp/spa/build-worker/database_url"
+          - "webapp/spa/build-worker/auth0_secret"
+      alloy:
+        templates:
+          - "monitoring/alloy/config.alloy.j2"
+        secrets:
+          - "monitoring/alloy/grafana_cloud_api_key"
+      prometheus:
+        templates:
+          - "monitoring/prometheus/prometheus.yml.j2"
+        secrets:
+          - "monitoring/prometheus/grafana_api_key"
+      node_exporter:
+        templates: []
+        secrets: []
+
   tasks:
-    - name: Resolve required secret files for target services
+    - name: Resolve template files for target services
       when: not (pull_only | bool)
       set_fact:
-        j2_template_files: "{{ secret_target_services | map('extract', service_j2_template_files) | list | flatten | unique }}"
-        plaintext_secret_files: "{{ secret_target_services | map('extract', service_plaintext_secret_files) | list | flatten | unique }}"
+        j2_template_files: >-
+          {{ secret_target_services | map('extract', services_config) | map(attribute='templates') | flatten | unique }}
 
-    - name: Fetch env files from AWS Secrets Manager
+    - name: Fetch secrets from AWS Secrets Manager
       when: not (pull_only | bool)
       vars:
-        secret_key: "{{ secret_name_prefix }}/{{ item | regex_replace('\\.j2$', '') }}"
-        secret_value: "{{ lookup('amazon.aws.aws_secret', secret_key) }}"
+        secret_value: "{{ lookup('amazon.aws.aws_secret', secret_name_prefix + '/' + item) }}"
       set_fact:
-        j2_template_secrets: "{{ j2_template_secrets | default({}) | combine({item: secret_value}) }}"
-      loop: "{{ j2_template_files }}"
+        fetched_secrets: "{{ fetched_secrets | default({}) | combine({item: secret_value}) }}"
+      loop: "{{ secret_target_services | map('extract', services_config) | map(attribute='secrets') | flatten | unique }}"
       loop_control:
         label: "{{ item }}"
       no_log: true
 
-    - name: Fetch secret files from AWS Secrets Manager
+    - name: Build per-template secrets dicts
       when: not (pull_only | bool)
       vars:
-        secret_key: "{{ secret_name_prefix }}/{{ item }}"
-        secret_value: "{{ lookup('amazon.aws.aws_secret', secret_key) }}"
+        service_secrets: >-
+          {{ dict(
+            services_config[item].secrets | map('split', '/') | map('last')
+            | zip(services_config[item].secrets | map('extract', fetched_secrets))
+          ) }}
       set_fact:
-        plaintext_secret_values: "{{ plaintext_secret_values | default({}) | combine({item: secret_value}) }}"
-      loop: "{{ plaintext_secret_files }}"
-      loop_control:
-        label: "{{ item }}"
+        j2_template_secrets: >-
+          {{ j2_template_secrets | default({}) | combine(
+            dict(services_config[item].templates | product([service_secrets]) | list)
+          ) }}
+      loop: "{{ secret_target_services }}"
       no_log: true
 
 - name: Deploy
@@ -123,7 +154,7 @@
         - alloy
         - prometheus
         - node_exporter
-    # Most rendered secrets stay private (0600). Prometheus config must be
+    # Most rendered configs stay private (0600). Prometheus config must be
     # world-readable so the prometheus process inside the container can read it.
     template_file_modes:
       monitoring/prometheus/prometheus.yml.j2: "0644"
@@ -164,8 +195,7 @@
         owner: "{{ server_user }}"
         group: "{{ server_user }}"
 
-    # Renders J2 templates using secrets from AWS
-    - name: Render J2 template files
+    - name: Render J2 config templates
       when: not (pull_only | bool)
       ansible.builtin.template:
         src: "{{ src }}/{{ item }}"
@@ -175,19 +205,7 @@
         group: "{{ server_user }}"
       loop: "{{ hostvars['localhost']['j2_template_files'] }}"
       vars:
-        secrets: "{{ hostvars['localhost']['j2_template_secrets'][item] | from_json }}"
-      no_log: true
-
-    # Writes raw secret files (certs, keys) directly to the server
-    - name: Write plaintext secret files
-      when: not (pull_only | bool)
-      ansible.builtin.copy:
-        content: "{{ hostvars['localhost']['plaintext_secret_values'][item] }}"
-        dest: "{{ deploy_path }}/{{ item }}"
-        mode: "0600"
-        owner: "{{ server_user }}"
-        group: "{{ server_user }}"
-      loop: "{{ hostvars['localhost']['plaintext_secret_files'] }}"
+        secrets: "{{ hostvars['localhost']['j2_template_secrets'][item] }}"
       no_log: true
 
     - name: Pull and deploy services

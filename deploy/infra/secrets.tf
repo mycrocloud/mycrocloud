@@ -12,10 +12,7 @@ locals {
     "slack_link_secret",
     "s3_access_key",
     "s3_secret_key",
-  ]
-
-  api_plaintext_secrets = [
-    "gha-mycrocloud.private-key.pem",
+    "gha_mycrocloud_private_key",
   ]
 
   dbmigrator_secrets = [
@@ -23,8 +20,8 @@ locals {
   ]
 
   lb_secrets = [
-    "certs/mycrocloud.online.key",
-    "certs/mycrocloud.site.key",
+    "certs/mycrocloud_online_key",
+    "certs/mycrocloud_site_key",
   ]
 
   monitoring_alloy_secrets = [
@@ -53,11 +50,6 @@ resource "bitwarden-secrets_secret" "api_secrets" {
   project_id = local.project_id
 }
 
-resource "bitwarden-secrets_secret" "api_plaintext_secrets" {
-  for_each   = toset(local.api_plaintext_secrets)
-  key        = "api/${each.value}"
-  project_id = local.project_id
-}
 
 resource "bitwarden-secrets_secret" "dbmigrator_secrets" {
   for_each   = toset(local.dbmigrator_secrets)
