@@ -35,7 +35,7 @@ services:
   db-migrator:
     image: ghcr.io/mycrocloud/mycrocloud-db-migrator:main
     volumes:
-      - "./dbmigrator/appsettings.json:/db-migrator/appsettings.json:ro"
+      - "./db-migrator/appsettings.json:/db-migrator/appsettings.json:ro"
     labels:
       logging.service: db-migrator
       logging.component: control-plane

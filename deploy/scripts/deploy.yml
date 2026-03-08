@@ -17,9 +17,9 @@
         - webapp-gateway
         - webapp-spa-build-worker
       monitoring:
-        - alloy
-        - prometheus
-        - node-exporter
+        - monitoring-alloy
+        - monitoring-prometheus
+        - monitoring-node-exporter
     all_services:
       - lb
       - api
@@ -27,9 +27,9 @@
       - db-migrator
       - webapp-gateway
       - webapp-spa-build-worker
-      - alloy
-      - prometheus
-      - node-exporter
+      - monitoring-alloy
+      - monitoring-prometheus
+      - monitoring-node-exporter
     services_input: "{{ (services | from_yaml) if (services is string and services | trim | length > 0) else (services | default([])) }}"
     selected_services: "{{ [services_input] if services_input is string else (services_input | default([])) }}"
     resolved_services: "{{ selected_services if selected_services | length > 0 else (service_groups[service_group] | default([])) }}"
@@ -66,7 +66,7 @@
         secrets: []
       db-migrator:
         templates:
-          - "dbmigrator/appsettings.json.j2"
+          - "db-migrator/appsettings.json.j2"
         secrets:
           - "db-migrator/db_connection_string"
       webapp-gateway:
@@ -82,17 +82,17 @@
         secrets:
           - "webapp-spa-build-worker/database_url"
           - "webapp-spa-build-worker/auth0_secret"
-      alloy:
+      monitoring-alloy:
         templates:
           - "monitoring/alloy/config.alloy.j2"
         secrets:
-          - "alloy/grafana_cloud_api_key"
-      prometheus:
+          - "monitoring-alloy/grafana_cloud_api_key"
+      monitoring-prometheus:
         templates:
           - "monitoring/prometheus/prometheus.yml.j2"
         secrets:
-          - "prometheus/grafana_api_key"
-      node-exporter:
+          - "monitoring-prometheus/grafana_api_key"
+      monitoring-node-exporter:
         templates: []
         secrets: []
 
@@ -151,9 +151,9 @@
         - webapp-gateway
         - webapp-spa-build-worker
       monitoring:
-        - alloy
-        - prometheus
-        - node-exporter
+        - monitoring-alloy
+        - monitoring-prometheus
+        - monitoring-node-exporter
     # Most rendered configs stay private (0600). Prometheus config must be
     # world-readable so the prometheus process inside the container can read it.
     template_file_modes:
