@@ -38,6 +38,11 @@ locals {
     "Storage__S3__AccessKey",
     "Storage__S3__SecretKey"
   ]
+
+  webapp_spa_build_worker_secrets = [
+    "DATABASE_URL",
+    "AUTH0_SECRET"
+  ]
 }
 
 resource "bitwarden-secrets_secret" "api_secrets" {
@@ -67,5 +72,11 @@ resource "bitwarden-secrets_secret" "monitoring_secrets" {
 resource "bitwarden-secrets_secret" "webapp_gateway_secrets" {
   for_each   = toset(local.webapp_gateway_secrets)
   key        = "webapp/gateway/${each.value}"
+  project_id = local.project_id
+}
+
+resource "bitwarden-secrets_secret" "webapp_spa_build_worker_secrets" {
+  for_each   = toset(local.webapp_spa_build_worker_secrets)
+  key        = "webapp/spa/build-worker/${each.value}"
   project_id = local.project_id
 }
