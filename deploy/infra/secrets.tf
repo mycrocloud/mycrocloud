@@ -23,6 +23,15 @@ locals {
     "certs/mycrocloud.online.key",
     "certs/mycrocloud.site.key"
   ]
+
+  monitoring_secrets = [
+    "monitoring/alloy/GRAFANA_CLOUD_API_KEY",
+    "monitoring/alloy/GRAFANA_CLOUD_LOKI_URL",
+    "monitoring/alloy/GRAFANA_CLOUD_LOKI_USERNAME",
+    "monitoring/prometheus/GRAFANA_API_KEY",
+    "monitoring/prometheus/PROMETHEUS_URL",
+    "monitoring/prometheus/PROMETHEUS_USERNAME",
+  ]
 }
 
 resource "bitwarden-secrets_secret" "api_secrets" {
@@ -41,5 +50,11 @@ resource "bitwarden-secrets_secret" "dbmigrator_secrets" {
 resource "bitwarden-secrets_secret" "lb_secrets" {
   for_each   = toset(local.lb_secrets)
   key        = "lb/${each.value}"
+  project_id = local.project_id
+}
+
+resource "bitwarden-secrets_secret" "monitoring_secrets" {
+  for_each   = toset(local.monitoring_secrets)
+  key        = "monitoring/${each.value}"
   project_id = local.project_id
 }
