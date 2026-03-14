@@ -77,8 +77,3 @@ variable "conohavps_password" {
   type      = string
   sensitive = true
 }
-
-variable "bitwarden_access_token" {
-  type      = string
-  sensitive = true
-}

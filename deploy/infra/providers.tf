@@ -24,10 +24,6 @@ terraform {
       version = "~> 3.4"
     }
 
-    bitwarden-secrets = {
-      source  = "bitwarden/bitwarden-secrets"
-      version = "0.5.4-pre"
-    }
   }
 
   backend "s3" {
@@ -64,9 +60,3 @@ provider "grafana" {
   auth  = grafana_cloud_stack_service_account_token.terraform.key
 }
 
-provider "bitwarden-secrets" {
-  api_url         = "https://vault.bitwarden.com/api"
-  identity_url    = "https://vault.bitwarden.com/identity"
-  access_token    = var.bitwarden_access_token
-  organization_id = "79435755-a84c-4883-b360-b4060036e07a"
-}
