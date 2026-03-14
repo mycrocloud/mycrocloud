@@ -49,7 +49,7 @@ loki.process "logs" {
     // Map ASP.NET LogLevel to Loki level values
     stage.template {
       source   = "level"
-      template = "{{ if eq .Value \"Trace\" }}debug{{ else if eq .Value \"Debug\" }}debug{{ else if eq .Value \"Information\" }}info{{ else if eq .Value \"Warning\" }}warn{{ else if eq .Value \"Error\" }}error{{ else if eq .Value \"Critical\" }}critical{{ else }}{{ .Value }}{{ end }}"
+      template = "{% raw %}{{ if eq .Value \"Trace\" }}debug{{ else if eq .Value \"Debug\" }}debug{{ else if eq .Value \"Information\" }}info{{ else if eq .Value \"Warning\" }}warn{{ else if eq .Value \"Error\" }}error{{ else if eq .Value \"Critical\" }}critical{{ else }}{{ .Value }}{{ end }}{% endraw %}"
     }
 
     stage.labels {
@@ -61,7 +61,7 @@ loki.process "logs" {
     // Rewrite log line to readable format
     stage.template {
       source   = "output"
-      template = "{{ if .message }}{{ .level }} [{{ .category }}] {{ .message }}{{ end }}"
+      template = "{% raw %}{{ if .message }}{{ .level }} [{{ .category }}] {{ .message }}{{ end }}{% endraw %}"
     }
 
     stage.output {
