@@ -6,7 +6,7 @@
     pull_only: false
     service_group: ""
     services: []
-    secret_name_prefix: "prod/mycrocloud"
+    ssm_prefix: "/mycrocloud"
     service_groups:
       core:
         - lb
@@ -73,25 +73,25 @@
         templates:
           - "webapp/gateway/appsettings.json.j2"
         secrets:
-          - "webapp-gateway/db_connection_string"
-          - "webapp-gateway/s3_access_key"
-          - "webapp-gateway/s3_secret_key"
+          - "webapp/gateway/db_connection_string"
+          - "webapp/gateway/s3_access_key"
+          - "webapp/gateway/s3_secret_key"
       webapp-spa-build-worker:
         templates:
           - "webapp/spa/build-worker/.conf.j2"
         secrets:
-          - "webapp-spa-build-worker/database_url"
-          - "webapp-spa-build-worker/auth0_secret"
+          - "webapp/spa/build-worker/database_url"
+          - "webapp/spa/build-worker/auth0_secret"
       alloy:
         templates:
           - "monitoring/alloy/config.alloy.j2"
         secrets:
-          - "alloy/grafana_cloud_api_key"
+          - "monitoring/alloy/grafana_cloud_api_key"
       prometheus:
         templates:
           - "monitoring/prometheus/prometheus.yml.j2"
         secrets:
-          - "prometheus/grafana_api_key"
+          - "monitoring/prometheus/grafana_api_key"
       node-exporter:
         templates: []
         secrets: []
@@ -103,10 +103,10 @@
         j2_template_files: >-
           {{ secret_target_services | map('extract', services_config) | map(attribute='templates') | flatten | unique }}
 
-    - name: Fetch secrets from AWS Secrets Manager
+    - name: Fetch secrets from AWS SSM Parameter Store
       when: not (pull_only | bool)
       vars:
-        secret_value: "{{ lookup('amazon.aws.aws_secret', secret_name_prefix + '/' + item) }}"
+        secret_value: "{{ lookup('amazon.aws.aws_ssm', ssm_prefix + '/' + item) }}"
       set_fact:
         fetched_secrets: "{{ fetched_secrets | default({}) | combine({item: secret_value}) }}"
       loop: "{{ secret_target_services | map('extract', services_config) | map(attribute='secrets') | flatten | unique }}"
