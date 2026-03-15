@@ -103,6 +103,11 @@
         j2_template_files: >-
           {{ secret_target_services | map('extract', services_config) | map(attribute='templates') | flatten | unique }}
 
+    - name: Initialize fetched_secrets
+      when: not (pull_only | bool)
+      set_fact:
+        fetched_secrets: {}
+
     - name: Fetch secrets from AWS SSM Parameter Store
       when: not (pull_only | bool)
       vars:
