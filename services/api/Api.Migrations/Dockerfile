@@ -24,5 +24,4 @@ RUN dotnet ef migrations bundle \
 FROM mcr.microsoft.com/dotnet/runtime:10.0
 WORKDIR /db-migrator
 COPY --from=build /out/efbundle .
-COPY Api.Migrations/appsettings.json .
 ENTRYPOINT [ "/db-migrator/efbundle" ]
