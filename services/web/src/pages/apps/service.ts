@@ -1,6 +1,6 @@
-import { getConfig } from "@/config";
+import config from "@/config";
 
-const { WEBAPP_APIGATEWAY_DOMAIN } = getConfig();
+const { WEBAPP_APIGATEWAY_DOMAIN } = config;
 
 function slugify(text: string): string {
   return text.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");

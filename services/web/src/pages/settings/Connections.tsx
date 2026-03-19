@@ -1,4 +1,4 @@
-import { getConfig } from "@/config";
+import config from "@/config";
 import {
   Card,
   CardContent,
@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
 
-const { SLACK_CLIENT_ID } = getConfig();
+const { SLACK_CLIENT_ID } = config;
 
 export default function Connections() {
   const connectSlack = async () => {

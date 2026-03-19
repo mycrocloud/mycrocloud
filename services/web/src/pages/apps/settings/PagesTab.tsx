@@ -38,7 +38,7 @@ import {
   Unlink,
 } from "lucide-react";
 import { useApiClient } from "@/hooks";
-import { getConfig } from "@/config";
+import config from "@/config";
 import { IAppIntegration } from "../App";
 import {
   IGitHubInstallation,
@@ -47,7 +47,7 @@ import {
   NODE_VERSIONS,
 } from "./types";
 
-const { GITHUB_APP_NAME } = getConfig();
+const { GITHUB_APP_NAME } = config;
 
 export default function PagesTab() {
   const { app } = useContext(AppContext)!;

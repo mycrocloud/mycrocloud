@@ -7,7 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Header from "./components/Header";
 import EmptyLayout from "./components/EmptyLayout";
 import ProtectedPage from "./components/ProtectedPage";
-import { getConfig } from "./config";
+import config from "./config";
 import Home from "./pages/Home";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import {
@@ -34,7 +34,7 @@ import IntegrationsGitHubInstalled from "./pages/settings/github_installed";
 import IntegrationsSlackCallback from "./pages/settings/slack_callback";
 import IntegrationsSlackLink from "./pages/settings/slack_link";
 
-const { AUTH0_DOMAIN, AUTH0_CLIENTID, AUTH0_AUDIENCE } = getConfig();
+const { AUTH0_DOMAIN, AUTH0_CLIENTID, AUTH0_AUDIENCE } = config;
 
 function App() {
   return (
