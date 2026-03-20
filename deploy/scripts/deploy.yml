@@ -20,6 +20,7 @@
         - alloy
         - prometheus
         - node-exporter
+        - cadvisor
     all_services:
       - lb
       - api
@@ -30,6 +31,7 @@
       - alloy
       - prometheus
       - node-exporter
+      - cadvisor
     services_input: "{{ (services | from_yaml) if (services is string and services | trim | length > 0) else (services | default([])) }}"
     selected_services: "{{ [services_input] if services_input is string else (services_input | default([])) }}"
     resolved_services: "{{ selected_services if selected_services | length > 0 else (service_groups[service_group] | default([])) }}"
@@ -93,6 +95,9 @@
         secrets:
           - "monitoring/prometheus/grafana_api_key"
       node-exporter:
+        templates: []
+        secrets: []
+      cadvisor:
         templates: []
         secrets: []
 
@@ -159,6 +164,7 @@
         - alloy
         - prometheus
         - node-exporter
+        - cadvisor
     # Most rendered configs stay private (0600). Prometheus config must be
     # world-readable so the prometheus process inside the container can read it.
     template_file_modes:

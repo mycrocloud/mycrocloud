@@ -35,6 +35,20 @@ services:
       logging.component: monitoring
     restart: unless-stopped
 
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.52.1
+    container_name: cadvisor
+    network_mode: "host"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    labels:
+      logging.service: cadvisor
+      logging.component: monitoring
+    restart: unless-stopped
+
 
 volumes:
   alloy-data:
