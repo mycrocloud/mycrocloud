@@ -2,6 +2,7 @@ import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import mkcert from "vite-plugin-mkcert";
+import { injectScriptTag } from "./plugins/inject-script-tag";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -10,20 +11,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       env.VITE_DEV_HOST ? mkcert() : null,
-      {
-        name: "inject-config-tag",
-        apply: "build",
-        transformIndexHtml(html) {
-          const version =
-            process.env.COMMIT_HASH?.slice(0, 7) ||
-            process.env.BUILD_ID ||
-            Date.now();
-          return html.replace(
-            "</title>",
-            `</title>\n\t\t<script src="/_config.js?v=${version}"></script>`,
-          );
-        },
-      },
+      injectScriptTag({ src: "/_config.js", versionEnvVars: ["COMMIT_HASH", "BUILD_ID"] }),
     ],
     server: {
       host: env.VITE_DEV_HOST || undefined,
