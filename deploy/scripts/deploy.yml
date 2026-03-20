@@ -257,3 +257,11 @@
         - not (pull_only | bool)
         - (resolved_services | length == 0 or resolved_services | intersect(['api', 'webapp-gateway', 'web']) | length > 0)
         - deploy_result.changed | default(false)
+
+    # Prometheus supports live config reload via SIGHUP — no restart needed.
+    - name: Reload Prometheus config if updated
+      ansible.builtin.command:
+        cmd: docker exec prometheus kill -HUP 1
+      when:
+        - not (pull_only | bool)
+        - resolved_services | length == 0 or 'prometheus' in resolved_services
