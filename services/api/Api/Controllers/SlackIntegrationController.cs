@@ -17,12 +17,12 @@ namespace Api.Controllers;
 public class SlackIntegrationController(IConfiguration configuration, SlackAppService slackAppService) : ControllerBase
 {
     public const string ControllerName = "SlackIntegration";
-    
+
     [HttpPost("link-callback")]
     public async Task<IActionResult> Link(LinkCallbackPayload payload)
     {
         var userId = User.GetUserId();
-        
+
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.UTF8.GetBytes(configuration.GetSection("ExternalIntegrations:Slack")["LinkSecret"]);
 
@@ -44,9 +44,9 @@ public class SlackIntegrationController(IConfiguration configuration, SlackAppSe
             return BadRequest("Invalid state payload");
 
         await slackAppService.LinkSlackUser(slackUserId, slackTeamId, userId);
-        
+
         await slackAppService.SendSlackEphemeralMessage(slackTeamId, channelId!, slackUserId, $"✅ You are signed in to MycroCloud as {userId}");
-        
+
         return Ok(new
         {
             redirect_url = $"https://slack.com/app_redirect?channel={channelId}&team={slackTeamId}"

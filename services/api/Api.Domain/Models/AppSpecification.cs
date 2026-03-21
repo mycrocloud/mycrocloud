@@ -13,10 +13,10 @@ public class AppSpecification
     public required string Slug { get; set; }
     public required string OwnerId { get; set; }
     public AppState State { get; set; }
-    
+
     // SPA
     public Guid? SpaDeploymentId { get; init; }
-    
+
     // API
     public Guid? ApiDeploymentId { get; init; }
 
@@ -25,7 +25,7 @@ public class AppSpecification
     public AppSettings Settings { get; set; }
 
     public List<CachedAuthenticationScheme> AuthenticationSchemes { get; set; } = [];
-    
+
     /// <summary>
     /// Runtime variables for functions.
     /// </summary>

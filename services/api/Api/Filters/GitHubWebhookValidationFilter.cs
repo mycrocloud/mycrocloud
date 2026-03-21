@@ -37,7 +37,7 @@ public class GitHubWebhookValidationFilter(IConfiguration configuration, ILogger
         using var reader = new StreamReader(context.HttpContext.Request.Body);
         var requestBody = await reader.ReadToEndAsync();
         context.HttpContext.Request.Body.Position = 0; // Reset position again for the next middleware/action
-        
+
         logger.LogDebug("GitHub Webhook Payload: {Payload}", requestBody);
 
         context.HttpContext.Items["RawBodyString"] = requestBody;

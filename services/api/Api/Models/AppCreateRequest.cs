@@ -11,10 +11,10 @@ public class AppCreateRequest
     [RegularExpression(@"^[a-z0-9]+(?:-[a-z0-9]+)*$",
         ErrorMessage = "Name must be lowercase letters, numbers, and hyphens only. Cannot start/end with hyphen or have consecutive hyphens.")]
     public string Name { get; set; }
-    
+
     [MaxLength(400)]
     public string? Description { get; set; }
-    
+
     public App ToEntity()
     {
         return new App

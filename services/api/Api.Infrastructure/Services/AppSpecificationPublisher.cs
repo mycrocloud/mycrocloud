@@ -53,11 +53,11 @@ public class AppSpecificationPublisher(
             {
                 AbsoluteExpirationRelativeToNow = CacheTtl
             });
-            logger.LogDebug("Pre-warmed route cache for deployment: {DeploymentId} ({RouteCount} routes)", 
+            logger.LogDebug("Pre-warmed route cache for deployment: {DeploymentId} ({RouteCount} routes)",
                 app.ActiveApiDeploymentId.Value, routes.Count);
         }
 
-        logger.LogInformation("Successfully published spec for app: {Slug} (SPA: {SpaId}, API: {ApiId})", 
+        logger.LogInformation("Successfully published spec for app: {Slug} (SPA: {SpaId}, API: {ApiId})",
             slug, spec.SpaDeploymentId, spec.ApiDeploymentId);
     }
 

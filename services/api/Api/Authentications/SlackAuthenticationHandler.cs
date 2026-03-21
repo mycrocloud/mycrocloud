@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 
 namespace Api.Authentications;
 
-public class SlackAuthenticationHandler: AuthenticationHandler<SlackAuthenticationOptions>
+public class SlackAuthenticationHandler : AuthenticationHandler<SlackAuthenticationOptions>
 {
     private readonly SlackAppService _slackAppService;
     private readonly ILogger<SlackAuthenticationHandler> _logger;
@@ -24,7 +24,7 @@ public class SlackAuthenticationHandler: AuthenticationHandler<SlackAuthenticati
         var body = Context.Items["Slack:Body"] as string;
 
         var query = QueryHelpers.ParseQuery(body);
-        
+
         var teamId = query["team_id"];
         var slackUserId = query["user_id"];
 
@@ -41,11 +41,11 @@ public class SlackAuthenticationHandler: AuthenticationHandler<SlackAuthenticati
             new("SlackTeamId", teamId),
             new("SlackUserId", slackUserId),
         };
-        
+
         var identity = new ClaimsIdentity(claims, Scheme.Name);
-        
+
         var claimPrincipal = new ClaimsPrincipal(identity);
-        
+
         var ticket = new AuthenticationTicket(claimPrincipal, Scheme.Name);
 
         return AuthenticateResult.Success(ticket);
@@ -54,7 +54,7 @@ public class SlackAuthenticationHandler: AuthenticationHandler<SlackAuthenticati
     protected override async Task HandleChallengeAsync(AuthenticationProperties properties)
     {
         Response.StatusCode = StatusCodes.Status200OK;
-        
+
         await Response.WriteAsJsonAsync(new
         {
             response_type = "ephemeral",

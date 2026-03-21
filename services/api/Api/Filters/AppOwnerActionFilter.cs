@@ -21,13 +21,13 @@ public class AppOwnerActionFilter(AppDbContext appDbContext,
             await next();
             return;
         }
-        
+
         if (!await DoWork(context))
         {
             // short-circuit
             return;
         }
-        
+
         await next();
     }
 
@@ -41,16 +41,16 @@ public class AppOwnerActionFilter(AppDbContext appDbContext,
             logger.LogDebug("User is not authenticated");
             return true;
         }
-        
+
         var userId = context.HttpContext.User.GetUserId();
         logger.LogDebug("UserId: {UserId}", userId);
-        
+
         if (!TryGetAppId(context, out var appId))
         {
             logger.LogDebug("AppId argument is missing");
             return true;
         }
-        
+
         logger.LogDebug("AppId: {AppId}", appId);
 
         var app = await appDbContext.Apps
@@ -63,30 +63,30 @@ public class AppOwnerActionFilter(AppDbContext appDbContext,
             context.Result = new ForbidResult();
             return false;
         }
-        
+
         logger.LogDebug("User {UserId} is the owner of the app {AppId}", userId, appId);
         context.HttpContext.Items["App"] = app!;
-        
+
         return true;
     }
 
     private bool TryGetAppId(ActionExecutingContext context, out int? appId)
     {
         appId = null;
-        
+
         // Get from RouteData, ActionArguments.
         if (context.RouteData.Values.TryGetValue(appIdArgumentName, out var routeValue))
         {
             appId = int.Parse(routeValue!.ToString() ?? throw new InvalidOperationException());
             return true;
         }
-        
+
         if (context.ActionArguments.TryGetValue(appIdArgumentName, out var actionValue))
         {
             appId = int.Parse(actionValue!.ToString() ?? throw new InvalidOperationException());
             return true;
         }
-        
+
         return false;
     }
 }

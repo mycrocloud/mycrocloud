@@ -10,7 +10,7 @@ namespace Api.Migrations.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            const string sql = 
+            const string sql =
 """
 UPDATE public."{0}" SET "Version" = gen_random_uuid();
 """;

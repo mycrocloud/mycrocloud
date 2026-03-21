@@ -111,7 +111,7 @@ public class GitHubAppService(HttpClient httpClient, IOptions<GitHubAppOptions> 
         var repoDoc = JsonDocument.Parse(repoJson);
         var fullName = repoDoc.RootElement.GetProperty("full_name").GetString()!;
         var parts = fullName.Split('/');
-        
+
         var json = await httpClient.GetStringAsync($"https://api.github.com/repos/{parts[0]}/{parts[1]}/commits/{branch}");
         var commitDoc = JsonDocument.Parse(json);
         var commit = JsonSerializer.Deserialize<GitHubCommitInfo>(json)!;

@@ -19,7 +19,7 @@ public class DiskStorageProvider : IStorageProvider
     {
         var fullPath = GetFullPath(path);
         var directory = Path.GetDirectoryName(fullPath);
-        
+
         if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
         {
             Directory.CreateDirectory(directory);

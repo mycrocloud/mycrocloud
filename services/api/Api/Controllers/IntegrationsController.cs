@@ -18,7 +18,7 @@ public class IntegrationsController(
     GitHubAppService githubService) : BaseController
 {
     #region GitHub
-    
+
     [HttpPost("github/callback")]
     public async Task<IActionResult> GitHubCallback(GitHubAppInstallation request)
     {
@@ -38,7 +38,7 @@ public class IntegrationsController(
                 UserId = User.GetUserId(),
                 CreatedAt = DateTime.UtcNow
             };
-            
+
             appDbContext.GitHubInstallations.Add(installation);
         }
         else
@@ -50,7 +50,7 @@ public class IntegrationsController(
 
         return Ok();
     }
-    
+
     [HttpGet("github/installations")]
     public async Task<IActionResult> GetInstallations()
     {
@@ -76,7 +76,7 @@ public class IntegrationsController(
             .SingleAsync(i => i.InstallationId == installationId && i.UserId == User.GetUserId());
 
         var repos = await githubService.GetAccessibleRepos(installation.InstallationId);
-        
+
         return Ok(repos.Select(repo => new
         {
             repo.Id,
@@ -87,7 +87,7 @@ public class IntegrationsController(
             repo.UpdatedAt
         }));
     }
-    
+
     #endregion
 
     #region Slack

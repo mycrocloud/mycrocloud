@@ -52,7 +52,7 @@ builder.Services.AddAuthentication()
     {
         options.Authority = builder.Configuration["Authentication:Schemes:Auth0JwtBearer:Authority"];
         options.Audience = builder.Configuration["Authentication:Schemes:Auth0JwtBearer:Audience"];
-        
+
         //for log streaming over SSE
         options.Events = new JwtBearerEvents
         {
@@ -63,7 +63,7 @@ builder.Services.AddAuthentication()
                 {
                     context.Token = accessToken;
                 }
-                
+
                 return Task.CompletedTask;
             }
         };

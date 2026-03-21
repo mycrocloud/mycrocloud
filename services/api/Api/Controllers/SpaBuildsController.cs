@@ -23,7 +23,7 @@ public class SpaBuildsController(
     GitHubAppService gitHubAppService,
     IStorageProvider storageProvider,
     PubSubDataSource pubSubDataSource,
-    ILogger<SpaBuildsController> logger): BaseController
+    ILogger<SpaBuildsController> logger) : BaseController
 {
     [HttpGet]
     public async Task<IActionResult> List(int appId)

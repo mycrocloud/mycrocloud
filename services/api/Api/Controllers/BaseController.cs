@@ -10,6 +10,6 @@ namespace Api.Controllers;
 public class BaseController : ControllerBase
 {
     protected const string ETagHeader = "ETag";
-    
+
     protected const string IfMatchHeader = "If-Match";
 }

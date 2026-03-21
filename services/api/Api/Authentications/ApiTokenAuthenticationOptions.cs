@@ -4,5 +4,5 @@ namespace Api.Authentications;
 
 public class ApiTokenAuthenticationOptions : AuthenticationSchemeOptions
 {
-    
+
 }

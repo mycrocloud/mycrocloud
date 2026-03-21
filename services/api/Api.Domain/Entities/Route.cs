@@ -27,7 +27,7 @@ public class Route : BaseEntity
     public bool Enabled { get; set; }
 
     public FunctionRuntime? FunctionRuntime { get; set; }
-    
+
     // Navigation properties
     public ICollection<AccessLog> Logs { get; set; }
 }

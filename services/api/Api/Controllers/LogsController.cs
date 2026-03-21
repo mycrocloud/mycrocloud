@@ -10,8 +10,9 @@ namespace Api.Controllers;
 public class LogsController(ILogRepository logRepository) : BaseController
 {
     [HttpGet]
-    public async Task<IActionResult> Search(int appId, [FromQuery]List<int>? routeIds, DateTime? accessDateFrom,
-     DateTime? accessDateTo, int page = 1, int pageSize = 50, string? sort = null) {
+    public async Task<IActionResult> Search(int appId, [FromQuery] List<int>? routeIds, DateTime? accessDateFrom,
+     DateTime? accessDateTo, int page = 1, int pageSize = 50, string? sort = null)
+    {
         var logs = await logRepository.Search(appId);
         if (routeIds?.Count > 0) logs = logs.Where(l => l.RouteId != null && routeIds.Contains(l.RouteId.Value));
         if (accessDateFrom is not null)
@@ -37,7 +38,8 @@ public class LogsController(ILogRepository logRepository) : BaseController
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .AsNoTracking()
-            .Select(l => new {
+            .Select(l => new
+            {
                 l.Id,
                 Timestamp = l.CreatedAt,
                 l.RemoteAddress,

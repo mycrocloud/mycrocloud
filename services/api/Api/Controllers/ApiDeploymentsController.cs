@@ -25,7 +25,7 @@ public class ApiDeploymentsController(
     {
         var app = App;
         var activeDeploymentId = app.ActiveApiDeploymentId;
-        
+
         var deployments = await appDbContext.ApiDeployments
             .Where(d => d.AppId == appId)
             .OrderByDescending(d => d.CreatedAt)
@@ -59,7 +59,7 @@ public class ApiDeploymentsController(
             .Include(d => d.App)
             .Include(d => d.Files)
             .FirstOrDefaultAsync(d => d.Id == deploymentId && d.AppId == appId);
-        
+
         if (deployment == null)
             return NotFound();
 
@@ -83,7 +83,7 @@ public class ApiDeploymentsController(
     {
         var deployment = await appDbContext.ApiDeployments
             .FirstOrDefaultAsync(d => d.Id == deploymentId && d.AppId == appId);
-        
+
         if (deployment == null)
             return NotFound();
 
@@ -127,7 +127,7 @@ public class ApiDeploymentsController(
     {
         var deployment = await appDbContext.ApiDeployments
             .FirstOrDefaultAsync(d => d.Id == deploymentId && d.AppId == appId);
-        
+
         if (deployment == null)
             return NotFound();
 
@@ -152,8 +152,8 @@ public class ApiDeploymentsController(
     {
         // 1. Create the versioned snapshot of all active/enabled routes
         var deploymentId = await apiDeploymentService.CreateDeploymentSnapshotAsync(
-            App.Id, 
-            request.Name, 
+            App.Id,
+            request.Name,
             request.Description
         );
 

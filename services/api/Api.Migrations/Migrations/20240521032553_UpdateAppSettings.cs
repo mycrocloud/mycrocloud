@@ -12,7 +12,7 @@ namespace Api.Migrations.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            const string sql = 
+            const string sql =
                 """
                 UPDATE "Apps" SET "Settings" = '{0}' WHERE "Settings" IS NULL; 
                 """;

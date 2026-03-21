@@ -23,14 +23,14 @@ public class SpaDeploymentsController(
     {
         var app = App;
         var activeDeploymentId = app.ActiveSpaDeploymentId;
-        
+
         var deployments = await appDbContext.SpaDeployments
             .Include(d => d.Build)
             .Include(d => d.Artifact)
             .Where(d => d.AppId == appId)
             .OrderByDescending(d => d.CreatedAt)
             .ToListAsync();
-        
+
         return Ok(deployments.Select(d => new
         {
             d.Id,
@@ -56,7 +56,7 @@ public class SpaDeploymentsController(
             .Include(d => d.App)
                 .ThenInclude(a => a.ActiveSpaDeployment)
             .FirstOrDefaultAsync(d => d.Id == deploymentId && d.AppId == appId);
-        
+
         if (deployment == null)
             return NotFound();
 
@@ -85,7 +85,7 @@ public class SpaDeploymentsController(
     {
         var deployment = await appDbContext.SpaDeployments
             .FirstOrDefaultAsync(d => d.Id == deploymentId && d.AppId == appId);
-        
+
         if (deployment == null)
             return NotFound();
 
@@ -124,19 +124,19 @@ public class SpaDeploymentsController(
         var deployment = await appDbContext.SpaDeployments
             .Include(d => d.Artifact)
             .FirstOrDefaultAsync(d => d.Id == deploymentId && d.AppId == appId);
-        
+
         if (deployment == null)
             return NotFound("Deployment not found");
-        
+
         if (deployment.ArtifactId == null || deployment.Artifact == null)
             return NotFound("Artifact not found for this deployment");
 
         var artifact = deployment.Artifact;
         var stream = await storageProvider.OpenReadAsync(artifact.StorageKey);
-        
+
         // Generate filename from deployment ID or build name
         var fileName = $"deployment-{deploymentId.ToString()[..8]}.zip";
-        
+
         return File(stream, "application/zip", fileName);
     }
 
@@ -145,7 +145,7 @@ public class SpaDeploymentsController(
     {
         var artifact = await appDbContext.Artifacts
             .FirstOrDefaultAsync(a => a.Id == artifactId && a.AppId == appId);
-        
+
         if (artifact == null)
             return NotFound("Artifact not found");
 
@@ -158,7 +158,7 @@ public class SpaDeploymentsController(
             ArtifactId = artifact.Id,
             Status = DeploymentStatus.Pending
         };
-        
+
         appDbContext.SpaDeployments.Add(deployment);
         await appDbContext.SaveChangesAsync();
 

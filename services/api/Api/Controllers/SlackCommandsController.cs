@@ -20,7 +20,7 @@ public class SlackCommandsController(SlackAppService slackAppService) : Controll
     {
         return new JsonResult(new { response_type = "ephemeral", text = "pong" });
     }
-    
+
     [HttpPost("signin")]
     [AllowAnonymous]
     [Consumes("application/x-www-form-urlencoded")]
@@ -32,15 +32,16 @@ public class SlackCommandsController(SlackAppService slackAppService) : Controll
                         You are already signed in to MycroCloud with {User.GetUserId()}.
                         To sign out, run `/mycrocloud login`
                         """;
-            
+
             return new JsonResult(new { response_type = "in_channel", text });
         }
-        
+
         var link = slackAppService.GenerateSignInUrl(cmd.UserId!, cmd.TeamId!, cmd.ChannelId, HttpContext);
 
         return new JsonResult(new
         {
-            response_type = "ephemeral", blocks = new object[]
+            response_type = "ephemeral",
+            blocks = new object[]
             {
                 new
                 {
@@ -64,25 +65,25 @@ public class SlackCommandsController(SlackAppService slackAppService) : Controll
             }
         });
     }
-    
+
     [HttpPost("signout")]
     [Consumes("application/x-www-form-urlencoded")]
     public new async Task<IActionResult> SignOut()
     {
         await slackAppService.LogOut(User.GetSlackTeamId(), User.GetSlackUserId());
-        
+
         return new JsonResult(new { response_type = "ephemeral", text = "Your account was successfully unlinked." });
     }
-    
+
     [HttpPost("whoami")]
     [Consumes("application/x-www-form-urlencoded")]
     public async Task<IActionResult> WhoAmI()
     {
         var userId = await slackAppService.GetUserId(User.GetSlackTeamId(), User.GetSlackUserId());
-        
+
         return new JsonResult(new { response_type = "ephemeral", text = userId });
     }
-    
+
     [HttpPost("subscribe")]
     [Consumes("application/x-www-form-urlencoded")]
     public async Task<IActionResult> Subscribe([FromForm] SlackCommandPayload cmd)

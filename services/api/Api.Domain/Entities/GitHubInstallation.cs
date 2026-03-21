@@ -8,7 +8,7 @@ public class GitHubInstallation : BaseEntity
     public GitHubAccountType AccountType { get; set; }
 
     public string UserId { get; set; }
-    
+
     // Navigation properties
     public ICollection<AppLink> AppLinks { get; set; }
 }

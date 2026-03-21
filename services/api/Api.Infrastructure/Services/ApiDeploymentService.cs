@@ -68,7 +68,7 @@ public class ApiDeploymentService(
             if (!string.IsNullOrEmpty(route.Response))
             {
                 var content = System.Text.Encoding.UTF8.GetBytes(route.Response);
-                var blob = await GetOrCreateBlobAsync(content, 
+                var blob = await GetOrCreateBlobAsync(content,
                     route.ResponseType == ResponseType.Function ? "application/javascript" : "text/plain");
 
                 dbContext.DeploymentFiles.Add(new DeploymentFile
@@ -112,7 +112,7 @@ public class ApiDeploymentService(
                 RequestBodySchema = route.RequestBodySchema,
                 RequireAuthorization = route.RequireAuthorization
             };
-            
+
             var metaContent = System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(metadata));
             var metaBlob = await GetOrCreateBlobAsync(metaContent, "application/json");
 
@@ -184,8 +184,8 @@ public class ApiDeploymentService(
             functionRuntime = r.Response.FunctionResponse?.Runtime?.ToString()
         }).ToList();
 
-        var routesJson = JsonSerializer.Serialize(routesSummary, new JsonSerializerOptions 
-        { 
+        var routesJson = JsonSerializer.Serialize(routesSummary, new JsonSerializerOptions
+        {
             WriteIndented = true,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         });

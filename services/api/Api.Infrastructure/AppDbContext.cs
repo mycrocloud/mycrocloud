@@ -27,7 +27,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<ObjectBlob> ObjectBlobs { get; set; }
 
     public DbSet<DeploymentFile> DeploymentFiles { get; set; }
-    
+
     public DbSet<Deployment> Deployments { get; set; }
     public DbSet<SpaDeployment> SpaDeployments { get; set; }
     public DbSet<ApiDeployment> ApiDeployments { get; set; }
@@ -90,7 +90,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasOne(r => r.App)
             .WithMany(a => a.AuthenticationSchemes)
             .OnDelete(DeleteBehavior.Cascade);
-        
+
         modelBuilder.Entity<AccessLog>()
             .OwnsMany(app => app.FunctionLogs, builder => { builder.ToJson(); });
 
@@ -186,15 +186,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.HasIndex(e => e.DeploymentId);
             entity.HasIndex(e => e.BlobId);
             entity.HasIndex(e => new { e.DeploymentId, e.Path }).IsUnique();
-            
+
             entity.Property(e => e.Path).HasMaxLength(500);
             entity.Property(e => e.ETag).HasMaxLength(64);
-            
+
             entity.HasOne(e => e.Deployment)
                 .WithMany(d => d.Files)
                 .HasForeignKey(e => e.DeploymentId)
                 .OnDelete(DeleteBehavior.Cascade);
-                
+
             entity.HasOne(e => e.Blob)
                 .WithMany(b => b.DeploymentFiles)
                 .HasForeignKey(e => e.BlobId)
@@ -205,7 +205,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => new { e.AppId, e.Status });
-            
+
             entity.HasDiscriminator<string>("DeploymentType")
                 .HasValue<SpaDeployment>("SPA")
                 .HasValue<ApiDeployment>("API");

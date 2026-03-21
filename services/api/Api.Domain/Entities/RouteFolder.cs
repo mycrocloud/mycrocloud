@@ -8,8 +8,8 @@ public class RouteFolder : BaseEntity
 
     public App App { get; set; }
     public RouteFolder Parent { get; set; }
-    
+
     public ICollection<RouteFolder> SubFolders { get; set; }
-    
+
     public ICollection<Route> Routes { get; set; }
 }

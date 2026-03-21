@@ -12,7 +12,7 @@ public class AppBuild : BaseEntity
 
     // Metadata stored as JSONB in PostgreSQL
     public Dictionary<string, string> Metadata { get; set; } = new();
-    
+
     // Navigation - A build can create the initial deployment,
     // but the same artifact can be deployed multiple times
     public ICollection<SpaDeployment> Deployments { get; set; } = [];

@@ -181,7 +181,7 @@ public class OpenApiGenerator : IOpenApiGenerator
             },
             _ => new Dictionary<string, object>()
         };
-        
+
         operation["responses"] = new Dictionary<string, object>
         {
             [statusCode] = new

@@ -40,7 +40,7 @@ public class AuthenticationsController(
         await specPublisher.InvalidateByIdAsync(appId);
         return Created();
     }
-    
+
     [HttpPut("schemes/{schemeId:int}")]
     public async Task<IActionResult> UpdateScheme(int appId, int schemeId, AuthenticationScheme scheme)
     {
@@ -85,7 +85,7 @@ public class AuthenticationsController(
             scheme.UpdatedAt
         });
     }
-    
+
     [HttpDelete("schemes/{schemeId:int}")]
     public async Task<IActionResult> DeleteScheme(int appId, int schemeId)
     {

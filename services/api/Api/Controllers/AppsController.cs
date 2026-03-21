@@ -27,7 +27,7 @@ public class AppsController(
     public async Task<IActionResult> Index(string? q)
     {
         var apps = await appRepository.ListByUserId(User.GetUserId(), q, "");
-        
+
         return Ok(apps.Select(app => new
         {
             app.Id,
@@ -179,7 +179,7 @@ public class AppsController(
         var app = await appRepository.GetByAppId(id);
         return Ok(app.CorsSettings);
     }
-    
+
     [HttpPost("{id:int}/link/github")]
     public async Task<IActionResult> ConnectGitHubRepo(int id, GitHubRepoIntegrationRequest request)
     {
@@ -188,20 +188,20 @@ public class AppsController(
             .SingleAsync();
 
         var repos = await githubAppService.GetAccessibleRepos(installation.InstallationId);
-        
+
         var repo = repos.Single(r => r.Id == request.RepoId);
 
         var app = await appDbContext.Apps
             .Include(a => a.Link)
             .SingleAsync(a => a.Id == id);
-        
+
         app.Link = new AppLink
         {
             InstallationId = installation.InstallationId,
             RepoId = repo.Id,
             RepoName = repo.Name
         };
-        
+
         await appDbContext.SaveChangesAsync();
 
         return NoContent();
@@ -217,7 +217,7 @@ public class AppsController(
         appDbContext.Remove(app.Link);
 
         await appDbContext.SaveChangesAsync();
-        
+
         return NoContent();
     }
 

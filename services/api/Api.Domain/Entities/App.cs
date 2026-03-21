@@ -55,9 +55,9 @@ public class AppLink : BaseEntity
 
     [Required]
     public string RepoName { get; set; }
-    
+
     // Navigation properties
-    public GitHubInstallation GitHubInstallation  { get; set; }
+    public GitHubInstallation GitHubInstallation { get; set; }
 }
 
 public class AppBuildConfigs

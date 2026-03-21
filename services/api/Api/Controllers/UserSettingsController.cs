@@ -9,7 +9,7 @@ using Api.Infrastructure;
 namespace Api.Controllers;
 
 [Route("[controller]")]
-public class UserSettingsController(AppDbContext dbContext): BaseController
+public class UserSettingsController(AppDbContext dbContext) : BaseController
 {
     [HttpPost("tokens")]
     public async Task<IActionResult> CreateToken(CreateApiTokenRequest request)
@@ -33,7 +33,7 @@ public class UserSettingsController(AppDbContext dbContext): BaseController
             apiToken.CreatedAt
         });
     }
-    
+
     [HttpGet("tokens")]
     public async Task<IActionResult> ListToken()
     {

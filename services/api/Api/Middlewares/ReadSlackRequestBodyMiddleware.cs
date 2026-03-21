@@ -11,9 +11,9 @@ public class ReadSlackRequestBodyMiddleware(RequestDelegate next, ILogger<ReadSl
         if (context.Request.IsSlackCommandRequest())
         {
             var requestBody = await context.ReadRequestBody();
-            
+
             _logger.LogDebug("Request Body:{@requestBody}", requestBody);
-            
+
             context.Items.Add("Slack:Body", requestBody);
         }
 

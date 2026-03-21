@@ -14,8 +14,8 @@ namespace Api.Controllers;
 [ApiController]
 [Route("[controller]")]
 public class WebhooksController(
-    GitHubAppService gitHubAppService, 
-    AppDbContext appDbContext, 
+    GitHubAppService gitHubAppService,
+    AppDbContext appDbContext,
     BuildOrchestrationService buildOrchestrationService,
     ILogger<WebhooksController> logger) : ControllerBase
 {

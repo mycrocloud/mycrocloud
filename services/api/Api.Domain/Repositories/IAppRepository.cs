@@ -1,4 +1,5 @@
 namespace Api.Domain.Repositories;
+
 using Entities;
 public interface IAppRepository
 {

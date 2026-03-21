@@ -18,22 +18,22 @@ public class RouteFolderRouteItem
     public DateTime CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
-    
+
     #region Route
-    
+
     public string? RouteName { get; set; }
 
     public string? RouteMethod { get; set; }
-    
+
     public string? RoutePath { get; set; }
-    
+
     public RouteStatus? RouteStatus { get; set; }
-    
+
     #endregion
 
     #region Folder
-    
+
     public string? FolderName { get; set; }
-    
+
     #endregion
 }

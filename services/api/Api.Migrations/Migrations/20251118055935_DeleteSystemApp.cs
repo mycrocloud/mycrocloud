@@ -14,7 +14,7 @@ namespace Api.Migrations.Migrations
                 """
                 DELETE FROM public."Apps" WHERE "Id" = 0;
                 """;
-            
+
             migrationBuilder.Sql(sql);
         }
 

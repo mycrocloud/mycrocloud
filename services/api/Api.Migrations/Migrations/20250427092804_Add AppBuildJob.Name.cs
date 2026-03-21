@@ -16,7 +16,7 @@ namespace Api.Migrations.Migrations
                 type: "text",
                 nullable: true,
                 defaultValue: "build");
-            
+
             const string sql = """
                                UPDATE "AppBuildJobs"
                                SET "Name" = 'build_{' || "CreatedAt"::text || '}'

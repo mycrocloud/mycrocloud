@@ -35,7 +35,7 @@ public class BuildOrchestrationService(
         // Fetch latest commit info from GitHub
         var config = app.BuildConfigs ?? AppBuildConfigs.Default;
         var branch = string.IsNullOrEmpty(config.Branch) ? AppBuildConfigs.Default.Branch : config.Branch;
-        
+
         GitHubCommitInfo? commitInfo = null;
         try
         {
@@ -58,7 +58,7 @@ public class BuildOrchestrationService(
             CreatedAt = DateTime.UtcNow,
             Metadata = new Dictionary<string, string>()
         };
-        
+
         // Populate metadata if commit info is available
         if (commitInfo != null)
         {
@@ -124,7 +124,7 @@ public class BuildOrchestrationService(
         publisher.Publish(app.Id, build.Status);
 
         logger.LogInformation("Created and queued build {BuildId} for app {AppId}", build.Id, app.Id);
-        
+
         return build;
     }
 }

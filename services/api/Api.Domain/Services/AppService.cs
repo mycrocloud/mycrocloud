@@ -3,7 +3,9 @@ using Api.Domain.Enums;
 using Api.Domain.Repositories;
 
 namespace Api.Domain.Services;
-public interface IAppService {
+
+public interface IAppService
+{
     Task Create(string userId, App app);
     Task Delete(int id);
     Task Rename(int id, string slug);

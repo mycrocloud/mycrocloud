@@ -9,7 +9,7 @@ using Api.Infrastructure;
 
 namespace Api.Authentications;
 
-public class ApiTokenAuthenticationHandler: AuthenticationHandler<ApiTokenAuthenticationOptions>
+public class ApiTokenAuthenticationHandler : AuthenticationHandler<ApiTokenAuthenticationOptions>
 {
     private readonly AppDbContext _dbContext;
 
@@ -40,11 +40,11 @@ public class ApiTokenAuthenticationHandler: AuthenticationHandler<ApiTokenAuthen
         {
             new(ClaimTypes.NameIdentifier, apiToken.UserId)
         };
-        
+
         var identity = new ClaimsIdentity(claims, Scheme.Name);
-        
+
         var claimPrincipal = new ClaimsPrincipal(identity);
-        
+
         var ticket = new AuthenticationTicket(claimPrincipal, Scheme.Name);
 
         return AuthenticateResult.Success(ticket);

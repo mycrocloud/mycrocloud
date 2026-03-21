@@ -10,7 +10,7 @@ namespace Api.Migrations.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            const string sql = 
+            const string sql =
 """
 ALTER TABLE "Routes" ALTER COLUMN "ResponseType" TYPE integer USING (
     CASE "ResponseType"
@@ -26,7 +26,7 @@ ALTER TABLE "Routes" ALTER COLUMN "ResponseType" TYPE integer USING (
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            
+
         }
     }
 }

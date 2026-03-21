@@ -14,16 +14,16 @@ namespace Api.Migrations.Migrations
                 name: "ResponseBody",
                 table: "Routes",
                 newName: "Response");
-            
+
             // Update FunctionHandler to Response if ResponseType is 3 (Function)
             const string sql = """
                                UPDATE "Routes"
                                SET "Response" = "FunctionHandler"
                                WHERE "ResponseType" = 3
                                """;
-            
+
             migrationBuilder.Sql(sql);
-            
+
             migrationBuilder.DropColumn(
                 name: "FunctionHandler",
                 table: "Routes");

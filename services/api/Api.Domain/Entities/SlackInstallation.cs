@@ -59,7 +59,7 @@ public class SlackAppSubscription
 {
     [Key]
     public int SubscriptionId { get; set; }
-    
+
     [Required]
     [MaxLength(32)]
     public string TeamId { get; set; } = null!;
@@ -67,10 +67,10 @@ public class SlackAppSubscription
     [Required]
     [MaxLength(32)]
     public string SlackUserId { get; set; } = null!;
-    
+
     [Required]
     public string ChannelId { get; set; }
-    
+
     [Required]
     public int? AppId { get; set; }
 }

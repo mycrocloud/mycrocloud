@@ -8,7 +8,7 @@ public abstract class Deployment : BaseEntity
     public string? Name { get; set; }
     public string? Description { get; set; }
     public DeploymentStatus Status { get; set; }
-    
+
     // Navigation
     public ICollection<DeploymentFile> Files { get; set; } = [];
 }

@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using Api.Domain.Enums;
 
 namespace Api.Domain.Entities;
+
 public class AuthenticationScheme : BaseEntity
 {
     public int Id { get; set; }

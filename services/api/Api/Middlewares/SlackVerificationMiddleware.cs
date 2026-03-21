@@ -3,17 +3,18 @@ using System.Text;
 using Api.Extensions;
 
 namespace Api.Middlewares;
+
 public class SlackVerificationMiddleware(RequestDelegate next)
 {
     public async Task Invoke(HttpContext context, IConfiguration configuration, IHostEnvironment environment, ILogger<SlackVerificationMiddleware> logger)
     {
         // Always check in production
-        
+
         if (environment.IsDevelopment())
         {
             var verifySlackRequest =
                 !bool.TryParse(configuration["VerifySlackRequest"], out var verify) || verify;
-            
+
             if (!verifySlackRequest)
             {
                 await next(context);
