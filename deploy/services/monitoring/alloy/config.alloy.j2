@@ -24,6 +24,13 @@ discovery.relabel "containers" {
     regex         = "(.+)"
     target_label  = "component"
   }
+
+  // Drop ephemeral containers (spa builder and function invoker)
+  rule {
+    source_labels = ["__meta_docker_container_image"]
+    regex         = "ghcr.io/mycrocloud/mycrocloud-(spa-builder|function-invoker):.*"
+    action        = "drop"
+  }
 }
 
 loki.source.docker "containers" {
