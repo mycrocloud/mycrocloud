@@ -14,9 +14,8 @@ namespace Api.Controllers;
 [ApiController]
 [Route("[controller]")]
 public class WebhooksController(
-    GitHubAppService gitHubAppService,
     AppDbContext appDbContext,
-    BuildOrchestrationService buildOrchestrationService,
+    IServiceScopeFactory scopeFactory,
     ILogger<WebhooksController> logger) : ControllerBase
 {
     // TODO: Store raw webhook events for debugging/replay
@@ -32,14 +31,14 @@ public class WebhooksController(
 
         return eventType switch
         {
-            "push" => await HandlePushEvent(payloadNode!),
+            "push" => HandlePushEvent(payloadNode!),
             "installation" => await HandleInstallationEvent(payloadNode!),
             "installation_repositories" => await HandleInstallationRepositoriesEvent(payloadNode!),
             _ => Ok()
         };
     }
 
-    private async Task<IActionResult> HandlePushEvent(JsonNode payloadNode)
+    private IActionResult HandlePushEvent(JsonNode payloadNode)
     {
         var installationId = (long)payloadNode["installation"]!["id"]!;
         var repoId = (long)payloadNode["repository"]!["id"]!;
@@ -48,36 +47,54 @@ public class WebhooksController(
 
         logger.LogInformation("Received GitHub push webhook for installation {InstallationId} and repository {RepoId}", installationId, repoId);
 
-        var installation = await appDbContext.GitHubInstallations
-            .SingleOrDefaultAsync(i => i.InstallationId == installationId);
-
-        if (installation is null)
+        _ = Task.Run(async () =>
         {
-            return BadRequest();
-        }
+            await using var scope = scopeFactory.CreateAsyncScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var ghSvc = scope.ServiceProvider.GetRequiredService<GitHubAppService>();
+            var orchSvc = scope.ServiceProvider.GetRequiredService<BuildOrchestrationService>();
+            var bgLogger = scope.ServiceProvider.GetRequiredService<ILogger<WebhooksController>>();
 
-        var token = await gitHubAppService.GetInstallationAccessToken(installation.InstallationId);
+            try
+            {
+                var installation = await db.GitHubInstallations
+                    .SingleOrDefaultAsync(i => i.InstallationId == installationId);
 
-        var apps = await appDbContext.Apps
-            .Include(a => a.Link)
-            .Where(a => a.Link != null &&
-                        a.Link.InstallationId == installationId &&
-                        a.Link.RepoId == repoId)
-            .ToListAsync();
+                if (installation is null)
+                {
+                    bgLogger.LogWarning("Installation {InstallationId} not found, skipping push event", installationId);
+                    return;
+                }
 
-        var authenticatedCloneUrl = cloneUrl.Replace("https://", "https://x-access-token:" + token + "@");
+                var token = await ghSvc.GetInstallationAccessToken(installation.InstallationId);
+                var authenticatedCloneUrl = cloneUrl.Replace("https://", "https://x-access-token:" + token + "@");
 
-        foreach (var app in apps)
-        {
-            var artifactsUploadPath = $"/apps/{app.Id}/spa/builds/{{buildId}}/artifacts";
+                var apps = await db.Apps
+                    .Include(a => a.Link)
+                    .Where(a => a.Link != null &&
+                                a.Link.InstallationId == installationId &&
+                                a.Link.RepoId == repoId)
+                    .ToListAsync();
 
-            await buildOrchestrationService.CreateAndQueueBuildAsync(
-                app,
-                authenticatedCloneUrl,
-                repoFullName,
-                artifactsUploadPath
-            );
-        }
+                foreach (var app in apps)
+                {
+                    var build = await orchSvc.CreateBuildAsync(app);
+                    try
+                    {
+                        await orchSvc.QueueBuildAsync(build.Id, app.Id, authenticatedCloneUrl, repoFullName);
+                    }
+                    catch (Exception ex)
+                    {
+                        bgLogger.LogError(ex, "Failed to queue build {BuildId}", build.Id);
+                        await orchSvc.MarkBuildFailedAsync(build.Id);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                bgLogger.LogError(ex, "Failed to process push event for installation {InstallationId}", installationId);
+            }
+        });
 
         return Ok();
     }
