@@ -20,7 +20,6 @@ public class SlackAuthenticationHandler : AuthenticationHandler<SlackAuthenticat
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        _logger.LogTrace("HandleAuthenticateAsync");
         var body = Context.Items["Slack:Body"] as string;
 
         var query = QueryHelpers.ParseQuery(body);

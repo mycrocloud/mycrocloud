@@ -20,7 +20,7 @@ public class ApiTokenAuthenticationHandler : AuthenticationHandler<ApiTokenAuthe
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        var token = Context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+        var token = Context.Request.Headers.Authorization.FirstOrDefault()?.Split(" ").Last();
 
         if (string.IsNullOrEmpty(token))
         {
