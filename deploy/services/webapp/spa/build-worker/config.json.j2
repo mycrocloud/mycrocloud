@@ -1,0 +1,17 @@
+{
+  "database_url": "{{ secrets.database_url }}",
+  "build_output_dir": "/tmp/build-outputs",
+  "auth0": {
+    "domain": "https://auth.mycrocloud.online",
+    "client_id": "slMJDNxPUcwWubiZiP9fsrxOMecoinAb",
+    "client_secret": "{{ secrets.auth0_secret }}",
+    "audience": "mycrocloud-api"
+  },
+  "api": {
+    "base_url": "http://api:8080",
+    "upload_artifacts": true
+  },
+  "builder": {
+    "auto_remove": true
+  }
+}

@@ -13,7 +13,7 @@ services:
   webapp-spa-build-worker:
     image: ghcr.io/mycrocloud/mycrocloud-spa-build-worker:main
     volumes:
-      - ./spa/build-worker/.conf:/app/.conf:ro
+      - ./spa/build-worker/config.json:/app/config.json:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/build-outputs:/tmp/build-outputs
     labels:

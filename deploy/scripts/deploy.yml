@@ -80,7 +80,7 @@
           - "webapp/gateway/s3_secret_key"
       webapp-spa-build-worker:
         templates:
-          - "webapp/spa/build-worker/.conf.j2"
+          - "webapp/spa/build-worker/config.json.j2"
         secrets:
           - "webapp/spa/build-worker/database_url"
           - "webapp/spa/build-worker/auth0_secret"
