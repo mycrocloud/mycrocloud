@@ -10,10 +10,10 @@ public class AppSpecification
     public required string Slug { get; set; }
     public required string OwnerId { get; set; }
     public AppState State { get; set; }
-    
+
     // SPA
     public Guid? SpaDeploymentId { get; init; }
-    
+
     // API
     public Guid? ApiDeploymentId { get; init; }
 
@@ -22,7 +22,7 @@ public class AppSpecification
     public required AppSettings Settings { get; set; }
 
     public List<CachedAuthenticationScheme> AuthenticationSchemes { get; set; } = [];
-    
+
     /// <summary>
     /// Runtime variables for functions.
     /// </summary>
@@ -77,7 +77,7 @@ public class AppSettings
     public bool CheckFunctionExecutionTimeout { get; set; }
     public int? FunctionExecutionTimeoutSeconds { get; set; }
     public bool FunctionUseNoSqlConnection { get; set; }
-    
+
     public static AppSettings Default => new()
     {
         CheckFunctionExecutionLimitMemory = true,

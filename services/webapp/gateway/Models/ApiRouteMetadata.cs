@@ -12,7 +12,7 @@ public class ApiRouteMetadata
     public required string Path { get; set; }
     public string? Description { get; set; }
     public ResponseType ResponseType { get; set; }
-    
+
     // Response metadata
     public ApiRouteResponseMetadata Response { get; set; } = new();
 

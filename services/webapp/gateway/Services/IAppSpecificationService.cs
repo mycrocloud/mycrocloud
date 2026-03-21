@@ -10,7 +10,7 @@ namespace MycroCloud.WebApp.Gateway.Services;
 public interface IAppSpecificationService
 {
     Task<AppSpecification?> GetBySlugAsync(string slug);
-    
+
     Task<string?> GetApiDeploymentFileContentAsync(Guid? deploymentId, string path);
 
     Task<ApiRouteMetadata?> GetRouteMetadataAsync(Guid? deploymentId, int routeId);

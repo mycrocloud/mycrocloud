@@ -98,7 +98,7 @@ public class StaticFileMiddleware(RequestDelegate next, ILogger<StaticFileMiddle
         }
 
         context.Response.ContentType = contentType;
-        
+
         using var stream = await storageProvider.OpenReadAsync(storageKey);
         await stream.CopyToAsync(context.Response.Body);
     }

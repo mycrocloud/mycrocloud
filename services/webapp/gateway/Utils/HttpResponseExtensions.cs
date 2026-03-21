@@ -9,11 +9,11 @@ public static class HttpResponseExtensions
         response.StatusCode = 404;
         return response.WriteAsync(text);
     }
-    
+
     public static Task WriteFromFunctionResult(this HttpResponse response, FunctionResult result)
     {
         response.StatusCode = result.StatusCode!.Value;
-        
+
         response.Headers.Clear();
 
         foreach (var kv in result.Headers)
@@ -23,7 +23,7 @@ public static class HttpResponseExtensions
                 response.Headers.Append(kv.Key, kv.Value);
             }
         }
-        
+
         return response.WriteAsync(result.Body!);
     }
 }

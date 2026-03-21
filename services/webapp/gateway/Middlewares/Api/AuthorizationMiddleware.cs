@@ -9,7 +9,7 @@ public class AuthorizationMiddleware(RequestDelegate next)
         var route = (ApiRouteSummary)context.Items["_ApiRouteSummary"]!;
         var metadata = context.Items["_ApiRouteMetadata"] as ApiRouteMetadata;
         var authenticatedScheme = context.Items["_AuthenticatedScheme"] as CachedAuthenticationScheme;
-        
+
         if (metadata == null || !metadata.RequireAuthorization)
         {
             await next.Invoke(context);
@@ -22,7 +22,7 @@ public class AuthorizationMiddleware(RequestDelegate next)
             await context.Response.WriteAsync("Unauthorized");
             return;
         }
-        
+
         await next.Invoke(context);
     }
 }

@@ -24,10 +24,10 @@ public class StaticResponseHandler(IAppSpecificationService appCacheService, ILo
         // Load response content from Deployment Manifest (indexed blobs)
         var app = (AppSpecification)context.Items["_AppSpecification"]!;
         var response = await appCacheService.GetApiDeploymentFileContentAsync(app.ApiDeploymentId, $"routes/{route.Id}/content");
-        
+
         logger.LogDebug("Serving static response for route {RouteId}: StatusCode={StatusCode}, ContentLength={ContentLength}",
             route.Id, context.Response.StatusCode, response?.Length ?? 0);
-        
+
         await context.Response.WriteAsync(response ?? string.Empty);
     }
 }

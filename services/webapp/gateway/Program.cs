@@ -92,20 +92,20 @@ if (!app.Environment.IsDevelopment())
 {
     var options = new ForwardedHeadersOptions
     {
-        ForwardedHeaders = 
-            ForwardedHeaders.XForwardedFor | 
+        ForwardedHeaders =
+            ForwardedHeaders.XForwardedFor |
             ForwardedHeaders.XForwardedHost |
             ForwardedHeaders.XForwardedProto
     };
-    
+
     options.KnownIPNetworks.Clear();
     options.KnownProxies.Clear();
-    
+
     options.KnownIPNetworks.Add(app.Configuration["Proxy:Subnet"]!.ParseCidr());
-    
+
     options.ForwardLimit = null;    //TODO: what is this?
     options.RequireHeaderSymmetry = false; //TODO: what is this?
-    
+
     app.UseForwardedHeaders(options);
 }
 app.UseHttpLogging();
@@ -113,7 +113,7 @@ app.UseExceptionHandlingMiddleware();
 app.UseWhen(context => context.Request.Host.Host == builder.Configuration["Host"], config =>
 {
     config.UseHealthChecks("/healthz");
-    
+
     // short-circuit the pipeline here
     config.Run(async context => { await context.Response.CompleteAsync(); });
 });
@@ -124,13 +124,13 @@ app.UseAppResolverMiddleware();
 
 app.UseRoutingMiddleware();
 
-app.UseWhen(context => 
+app.UseWhen(context =>
 {
     var route = context.Items["_RoutingConfigRoute"] as RoutingConfigRoute;
     return route?.Target.Type == RouteTargetType.Static;
 }, appBuilder => appBuilder.UseSpaMiddleware());
 
-app.UseWhen(context => 
+app.UseWhen(context =>
 {
     var route = context.Items["_RoutingConfigRoute"] as RoutingConfigRoute;
     return route?.Target.Type == RouteTargetType.Api;

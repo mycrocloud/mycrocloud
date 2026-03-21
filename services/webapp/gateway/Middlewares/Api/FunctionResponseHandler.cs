@@ -51,7 +51,7 @@ public class FunctionResponseHandler(
         var functionCode = await appCacheService.GetApiDeploymentFileContentAsync(app.ApiDeploymentId, $"routes/{route.Id}/content");
         if (string.IsNullOrEmpty(functionCode))
         {
-            logger.LogError("Function code not found for route {RouteId} in deployment {DeploymentId}", 
+            logger.LogError("Function code not found for route {RouteId} in deployment {DeploymentId}",
                 route.Id, app.ApiDeploymentId);
             context.Response.StatusCode = 500;
             await context.Response.WriteAsync("Function code not found.");

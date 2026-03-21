@@ -22,10 +22,10 @@ public class AuthenticationMiddleware(RequestDelegate next, ILogger<Authenticati
             switch (scheme.Type)
             {
                 case AuthenticationSchemeType.OpenIdConnect:
-                {
-                    await AuthenticateOpenIdConnectScheme(context, scheme);
-                    break;
-                }
+                    {
+                        await AuthenticateOpenIdConnectScheme(context, scheme);
+                        break;
+                    }
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -64,13 +64,14 @@ public class AuthenticationMiddleware(RequestDelegate next, ILogger<Authenticati
         context.Items.Add("_OpenIdConnectUser", user);
     }
 
-    private bool ValidateToken(string token, 
-        string issuer, 
-        string audience, 
+    private bool ValidateToken(string token,
+        string issuer,
+        string audience,
         IEnumerable<SecurityKey> signingKeys,
         out JwtSecurityToken? jwt)
     {
-        var validationParameters = new TokenValidationParameters {
+        var validationParameters = new TokenValidationParameters
+        {
             ValidateIssuer = true,
             ValidIssuer = issuer,
             ValidateAudience = true,
@@ -87,7 +88,7 @@ public class AuthenticationMiddleware(RequestDelegate next, ILogger<Authenticati
 
             return true;
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             logger.LogDebug(e, "Token validation failed");
             jwt = null;

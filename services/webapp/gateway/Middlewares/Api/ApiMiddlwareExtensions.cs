@@ -11,7 +11,7 @@ public static class ApiMiddlewareExtensions
         builder.UseAuthorizationMiddleware();
         builder.UseValidationMiddleware();
         builder.UseResponseDispatcherMiddleware();
-        
+
         return builder;
     }
 }

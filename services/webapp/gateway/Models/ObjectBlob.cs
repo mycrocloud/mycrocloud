@@ -13,17 +13,17 @@ public enum BlobStorageType
 public class ObjectBlob
 {
     public Guid Id { get; set; }
-    
+
     /// <summary>
     /// SHA-256 hash of file content (deduplication key)
     /// </summary>
     public string ContentHash { get; set; } = string.Empty;
-    
+
     public long SizeBytes { get; set; }
     public string ContentType { get; set; } = "application/octet-stream";
-    
+
     public BlobStorageType StorageType { get; set; }
-    
+
     /// <summary>
     /// S3 key or disk path
     /// </summary>

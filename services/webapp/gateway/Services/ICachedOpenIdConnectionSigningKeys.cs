@@ -15,9 +15,9 @@ public class CachedOpenIdConnectionSigningKeys(IDistributedCache cache, IHttpCli
     public async Task<ICollection<SecurityKey>> Get(string issuer)
     {
         var cacheKey = $"OpenIdConnectionSigningKeys:{issuer}:Keys";
-        
+
         var keys = await cache.GetStringAsync(cacheKey);
-        
+
         if (keys is null)
         {
             var address = $"{issuer}/.well-known/openid-configuration";
@@ -26,7 +26,7 @@ public class CachedOpenIdConnectionSigningKeys(IDistributedCache cache, IHttpCli
             var doc = await retriever.GetDocumentAsync(address, default);
             var openIdConnectConfiguration = OpenIdConnectConfiguration.Create(doc);
             keys = await retriever.GetDocumentAsync(openIdConnectConfiguration.JwksUri, default);
-                
+
             await cache.SetAsync(cacheKey,
                 System.Text.Encoding.UTF8.GetBytes(keys),
                 new DistributedCacheEntryOptions
