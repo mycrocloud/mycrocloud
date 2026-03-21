@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/binary"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -23,7 +24,6 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
-	"github.com/joho/godotenv"
 	"github.com/lib/pq"
 )
 
@@ -79,7 +79,7 @@ func streamContainerLogs(ctx context.Context, cli *client.Client, containerID st
 }
 
 // uploadBuildLogs uploads the collected build logs to the API.
-func uploadBuildLogs(buildMsg BuildMessage, collector *logcollector.Collector) {
+func uploadBuildLogs(buildMsg BuildMessage, collector *logcollector.Collector, cfg Config) {
 	if buildMsg.LogsUploadPath == "" || collector.Count() == 0 {
 		return
 	}
@@ -90,25 +90,18 @@ func uploadBuildLogs(buildMsg BuildMessage, collector *logcollector.Collector) {
 		return
 	}
 
-	cfg := api_client.Config{
-		Domain:       os.Getenv("AUTH0_DOMAIN"),
-		ClientID:     os.Getenv("AUTH0_CLIENT_ID"),
-		ClientSecret: os.Getenv("AUTH0_SECRET"),
-		Audience:     os.Getenv("AUTH0_AUDIENCE"),
-	}
-	token, err := api_client.GetAccessToken(cfg)
+	token, err := api_client.GetAccessToken(api_client.Config{
+		Domain:       cfg.Auth0.Domain,
+		ClientID:     cfg.Auth0.ClientID,
+		ClientSecret: cfg.Auth0.ClientSecret,
+		Audience:     cfg.Auth0.Audience,
+	})
 	if err != nil {
 		log.Printf("Failed to get token for log upload: %v", err)
 		return
 	}
 
-	apiBaseURL := os.Getenv("API_BASE_URL")
-	if apiBaseURL == "" {
-		log.Printf("API_BASE_URL not set, cannot upload logs")
-		return
-	}
-
-	logsURL := strings.TrimSuffix(apiBaseURL, "/") + buildMsg.LogsUploadPath
+	logsURL := strings.TrimSuffix(cfg.API.BaseURL, "/") + buildMsg.LogsUploadPath
 	if err := uploader.UploadLogs(logsURL, logsData, token, "spa-build-worker"); err != nil {
 		log.Printf("Failed to upload logs: %v", err)
 	} else {
@@ -136,7 +129,7 @@ func claimJob(ctx context.Context, db *sql.DB, workerID string) (string, error) 
 }
 
 // ProcessJob processes a build job and returns an error if it fails
-func ProcessJob(ctx context.Context, jsonString string, db *sql.DB) error {
+func ProcessJob(ctx context.Context, jsonString string, db *sql.DB, cfg Config) error {
 	var buildMsg BuildMessage
 	if err := json.Unmarshal([]byte(jsonString), &buildMsg); err != nil {
 		return err
@@ -167,7 +160,7 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB) error {
 	log.Printf("Using builder image: %s", buildMsg.BuilderImage)
 
 	jobID := buildMsg.BuildId
-	baseOut := getOutputBaseDir()
+	baseOut := cfg.BuildOutputDir
 	jobOut := filepath.Join(baseOut, jobID)
 
 	if err := os.MkdirAll(jobOut, 0777); err != nil {
@@ -189,39 +182,32 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB) error {
 		sizeCheck, err := CheckArtifactSize(zipPath, jobLimits)
 		if err == nil && !sizeCheck.ExceedsHard {
 			// Upload existing artifact
-			shouldUploadArtifacts := os.Getenv("UPLOAD_ARTIFACTS") != "false"
-			if shouldUploadArtifacts {
-				cfg := api_client.Config{
-					Domain:       os.Getenv("AUTH0_DOMAIN"),
-					ClientID:     os.Getenv("AUTH0_CLIENT_ID"),
-					ClientSecret: os.Getenv("AUTH0_SECRET"),
-					Audience:     os.Getenv("AUTH0_AUDIENCE"),
-				}
-				token, err := api_client.GetAccessToken(cfg)
+			if cfg.API.UploadArtifacts {
+				token, err := api_client.GetAccessToken(api_client.Config{
+					Domain:       cfg.Auth0.Domain,
+					ClientID:     cfg.Auth0.ClientID,
+					ClientSecret: cfg.Auth0.ClientSecret,
+					Audience:     cfg.Auth0.Audience,
+				})
 				if err != nil {
 					log.Printf("Failed to get access token for existing artifact: %v", err)
 					// Continue with rebuild
 				} else {
-					apiBaseURL := os.Getenv("API_BASE_URL")
-					if apiBaseURL == "" {
-						log.Printf("API_BASE_URL not set, cannot upload artifact")
+					uploadURL := strings.TrimSuffix(cfg.API.BaseURL, "/") + buildMsg.ArtifactsUploadPath
+					artifactId, err := uploader.UploadArtifacts(uploadURL, jobOut, buildMsg.OutDir, token, "spa-build-worker")
+					if err != nil {
+						log.Printf("Failed to upload existing artifact: %v", err)
+						// Continue with rebuild
 					} else {
-						uploadURL := strings.TrimSuffix(apiBaseURL, "/") + buildMsg.ArtifactsUploadPath
-						artifactId, err := uploader.UploadArtifacts(uploadURL, jobOut, buildMsg.OutDir, token, "spa-build-worker")
-						if err != nil {
-							log.Printf("Failed to upload existing artifact: %v", err)
-							// Continue with rebuild
-						} else {
-							log.Printf("Successfully uploaded existing artifact: %s", artifactId)
-							collector.Append("Finished processing (existing artifact)", "stdout", "app.worker", "")
-							uploadBuildLogs(buildMsg, collector)
-							publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
-								BuildId:    buildMsg.BuildId,
-								Status:     Done,
-								ArtifactId: artifactId,
-							})
-							return nil
-						}
+						log.Printf("Successfully uploaded existing artifact: %s", artifactId)
+						collector.Append("Finished processing (existing artifact)", "stdout", "app.worker", "")
+						uploadBuildLogs(buildMsg, collector, cfg)
+						publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
+							BuildId:    buildMsg.BuildId,
+							Status:     Done,
+							ArtifactId: artifactId,
+						})
+						return nil
 					}
 				}
 			}
@@ -237,12 +223,10 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB) error {
 		},
 	}
 
-	autoRemove := os.Getenv("BUILDER_AUTO_REMOVE") != "false"
-
 	// Get secure host config with resource limits
 	hostConfig := GetSecureHostConfig(jobLimits)
 	hostConfig.Mounts = mounts
-	hostConfig.AutoRemove = autoRemove
+	hostConfig.AutoRemove = cfg.Builder.AutoRemove
 
 	// Prepare environment variables for the container
 	envVars := []string{
@@ -319,7 +303,7 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB) error {
 			}
 			// Wait for log streaming to finish
 			<-logsDone
-			uploadBuildLogs(buildMsg, collector)
+			uploadBuildLogs(buildMsg, collector, cfg)
 			publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 				BuildId: buildMsg.BuildId,
 				Status:  Failed,
@@ -339,7 +323,7 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB) error {
 
 	if containerFailed {
 		collector.Append("Build failed (non-zero exit code)", "stderr", "app.worker", "")
-		uploadBuildLogs(buildMsg, collector)
+		uploadBuildLogs(buildMsg, collector, cfg)
 		publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 			BuildId: buildMsg.BuildId,
 			Status:  Failed,
@@ -349,9 +333,8 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB) error {
 
 	// Upload artifacts
 	log.Printf("Dist dir: %s", jobOut)
-	shouldUploadArtifacts := os.Getenv("UPLOAD_ARTIFACTS") != "false"
 
-	if shouldUploadArtifacts {
+	if cfg.API.UploadArtifacts {
 		// Check output directory for suspicious files
 		if err := CheckOutputDirectory(jobOut); err != nil {
 			log.Printf("Warning: output directory check failed: %v", err)
@@ -365,7 +348,7 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB) error {
 		} else if sizeCheck.ExceedsHard {
 			log.Printf("Artifact size exceeds hard limit: %s", sizeCheck.Message)
 			collector.Append("Artifact size exceeds limit: "+sizeCheck.Message, "stderr", "app.worker", "")
-			uploadBuildLogs(buildMsg, collector)
+			uploadBuildLogs(buildMsg, collector, cfg)
 			publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 				BuildId: buildMsg.BuildId,
 				Status:  Failed,
@@ -375,17 +358,15 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB) error {
 			log.Printf("Warning: %s", sizeCheck.Message)
 		}
 
-		cfg := api_client.Config{
-			Domain:       os.Getenv("AUTH0_DOMAIN"),
-			ClientID:     os.Getenv("AUTH0_CLIENT_ID"),
-			ClientSecret: os.Getenv("AUTH0_SECRET"),
-			Audience:     os.Getenv("AUTH0_AUDIENCE"),
-		}
-
-		token, err := api_client.GetAccessToken(cfg)
+		token, err := api_client.GetAccessToken(api_client.Config{
+			Domain:       cfg.Auth0.Domain,
+			ClientID:     cfg.Auth0.ClientID,
+			ClientSecret: cfg.Auth0.ClientSecret,
+			Audience:     cfg.Auth0.Audience,
+		})
 		if err != nil {
 			collector.Append("Failed to get access token: "+err.Error(), "stderr", "app.worker", "")
-			uploadBuildLogs(buildMsg, collector)
+			uploadBuildLogs(buildMsg, collector, cfg)
 			publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 				BuildId: buildMsg.BuildId,
 				Status:  Failed,
@@ -393,24 +374,12 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB) error {
 			return err
 		}
 
-		apiBaseURL := os.Getenv("API_BASE_URL")
-		if apiBaseURL == "" {
-			log.Printf("API_BASE_URL not set, cannot upload artifact")
-			collector.Append("API_BASE_URL not configured", "stderr", "app.worker", "")
-			uploadBuildLogs(buildMsg, collector)
-			publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
-				BuildId: buildMsg.BuildId,
-				Status:  Failed,
-			})
-			return fmt.Errorf("API_BASE_URL not configured")
-		}
-
 		collector.Append("Uploading artifact...", "stdout", "app.worker", "")
-		uploadURL := strings.TrimSuffix(apiBaseURL, "/") + buildMsg.ArtifactsUploadPath
+		uploadURL := strings.TrimSuffix(cfg.API.BaseURL, "/") + buildMsg.ArtifactsUploadPath
 		artifactId, err := uploader.UploadArtifacts(uploadURL, jobOut, buildMsg.OutDir, token, "spa-build-worker")
 		if err != nil {
 			collector.Append("Artifact upload failed: "+err.Error(), "stderr", "app.worker", "")
-			uploadBuildLogs(buildMsg, collector)
+			uploadBuildLogs(buildMsg, collector, cfg)
 			publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 				BuildId: buildMsg.BuildId,
 				Status:  Failed,
@@ -426,9 +395,8 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB) error {
 		}
 
 		collector.Append("Build completed successfully", "stdout", "app.worker", "")
-		uploadBuildLogs(buildMsg, collector)
+		uploadBuildLogs(buildMsg, collector, cfg)
 
-		// Publish completion message with artifactId
 		publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 			BuildId:    buildMsg.BuildId,
 			Status:     Done,
@@ -436,9 +404,8 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB) error {
 		})
 	} else {
 		collector.Append("Build completed (upload disabled)", "stdout", "app.worker", "")
-		uploadBuildLogs(buildMsg, collector)
+		uploadBuildLogs(buildMsg, collector, cfg)
 
-		// Publish completion message without artifactId if upload is disabled
 		publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 			BuildId: buildMsg.BuildId,
 			Status:  Done,
@@ -449,17 +416,13 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB) error {
 	return nil
 }
 
-func getOutputBaseDir() string {
-	dir := os.Getenv("BUILD_OUTPUT_DIR")
-	if dir == "" {
-		log.Fatal("BUILD_OUTPUT_DIR must be set")
-	}
-	return dir
-}
-
 func main() {
-	if err := godotenv.Load(".conf"); err == nil {
-		log.Printf("Loaded configuration from .conf")
+	configPath := flag.String("config", "config.json", "path to config file")
+	flag.Parse()
+
+	cfg, err := LoadConfig(*configPath)
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
 	}
 
 	// Load limits from environment
@@ -486,12 +449,7 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	// Connect to PostgreSQL
-	databaseURL := os.Getenv("DATABASE_URL")
-	if databaseURL == "" {
-		log.Fatal("DATABASE_URL must be set")
-	}
-
-	db, err := sql.Open("postgres", databaseURL)
+	db, err := sql.Open("postgres", cfg.DatabaseURL)
 	if err != nil {
 		log.Fatalf("Failed to connect to PostgreSQL: %v", err)
 	}
@@ -503,7 +461,7 @@ func main() {
 	log.Printf("Connected to PostgreSQL")
 
 	// Setup LISTEN for job notifications
-	listener := pq.NewListener(databaseURL, 10*time.Second, time.Minute, func(ev pq.ListenerEventType, err error) {
+	listener := pq.NewListener(cfg.DatabaseURL, 10*time.Second, time.Minute, func(ev pq.ListenerEventType, err error) {
 		if err != nil {
 			log.Printf("Listener event error: %v", err)
 		}
@@ -556,7 +514,7 @@ func main() {
 					wg.Done()
 				}()
 
-				if err := ProcessJob(ctx, p, db); err != nil {
+				if err := ProcessJob(ctx, p, db, cfg); err != nil {
 					log.Printf("Job failed: %v", err)
 				}
 			}(payload)
