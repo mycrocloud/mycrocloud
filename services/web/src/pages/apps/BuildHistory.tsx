@@ -242,7 +242,7 @@ export default function BuildHistory() {
 
   const {
     register,
-    formState: { errors, isSubmitting },
+    formState: { errors },
     handleSubmit,
     reset,
   } = useForm<BuildInputs>();
@@ -502,9 +502,9 @@ export default function BuildHistory() {
             <Button variant="outline" onClick={() => setShowBuildModal(false)}>
               Cancel
             </Button>
-            <Button type="submit" form="build-form" disabled={isSubmitting}>
+            <Button type="submit" form="build-form">
               <Play className="mr-2 h-4 w-4" />
-              {isSubmitting ? "Starting..." : "Start Build"}
+              Start Build
             </Button>
           </DialogFooter>
         </DialogContent>
