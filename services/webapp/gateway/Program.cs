@@ -11,7 +11,6 @@ using MycroCloud.WebApp.Gateway.Utils;
 using Microsoft.Extensions.Caching.Distributed;
 using Npgsql;
 
-DotNetEnv.Env.Load();
 var builder = WebApplication.CreateBuilder(args);
 
 if (!builder.Environment.IsDevelopment())

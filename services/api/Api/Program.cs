@@ -17,7 +17,6 @@ using Api.Infrastructure.Services;
 using Amazon.S3;
 using Microsoft.Extensions.Caching.Distributed;
 
-DotNetEnv.Env.Load();
 var builder = WebApplication.CreateBuilder(args);
 
 if (!builder.Environment.IsDevelopment())
