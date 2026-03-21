@@ -20,6 +20,7 @@ public class SpaBuildsController(
     IConfiguration configuration,
     IAppBuildPublisher publisher,
     BuildOrchestrationService buildOrchestrationService,
+    GitHubAppService gitHubAppService,
     IStorageProvider storageProvider,
     PubSubDataSource pubSubDataSource,
     ILogger<SpaBuildsController> logger) : BaseController
@@ -42,7 +43,7 @@ public class SpaBuildsController(
     }
 
     [HttpPost("build")]
-    public async Task<IActionResult> Build(int appId, BuildRequest request, [FromServices] IServiceScopeFactory scopeFactory)
+    public async Task<IActionResult> Build(int appId, BuildRequest request)
     {
         var app = await appDbContext.Apps
             .Include(a => a.Link)
@@ -51,42 +52,28 @@ public class SpaBuildsController(
         if (app.Link is null)
             return BadRequest();
 
-        var build = await buildOrchestrationService.CreateBuildAsync(app, request.Name);
+        var installationAccessToken = await gitHubAppService.GetInstallationAccessToken(app.Link.InstallationId);
 
-        var installationId = app.Link.InstallationId;
-        var repoId = app.Link.RepoId;
-        var buildId = build.Id;
+        var repos = await gitHubAppService.GetAccessibleRepos(app.Link.InstallationId, installationAccessToken);
 
-        _ = Task.Run(async () =>
-        {
-            await using var scope = scopeFactory.CreateAsyncScope();
-            var ghSvc = scope.ServiceProvider.GetRequiredService<GitHubAppService>();
-            var orchSvc = scope.ServiceProvider.GetRequiredService<BuildOrchestrationService>();
-            var bgLogger = scope.ServiceProvider.GetRequiredService<ILogger<SpaBuildsController>>();
+        var repo = repos.SingleOrDefault(r => r.Id == app.Link.RepoId);
+        if (repo is null)
+            return BadRequest();
 
-            try
-            {
-                var token = await ghSvc.GetInstallationAccessToken(installationId);
-                var repos = await ghSvc.GetAccessibleRepos(installationId, token);
-                var repo = repos.SingleOrDefault(r => r.Id == repoId);
-                if (repo is null)
-                {
-                    bgLogger.LogError("Repo {RepoId} not found for build {BuildId} — marking failed", repoId, buildId);
-                    await orchSvc.MarkBuildFailedAsync(buildId);
-                    return;
-                }
+        var cloneUrl = $"https://x-access-token:{installationAccessToken}@github.com/{repo.FullName}";
 
-                var cloneUrl = $"https://x-access-token:{token}@github.com/{repo.FullName}";
-                await orchSvc.QueueBuildAsync(buildId, appId, cloneUrl, repo.FullName);
-            }
-            catch (Exception ex)
-            {
-                bgLogger.LogError(ex, "Failed to queue build {BuildId}", buildId);
-                await orchSvc.MarkBuildFailedAsync(buildId);
-            }
-        });
+        // Use template path - service will replace {buildId} with actual value
+        var artifactsUploadPath = $"/apps/{appId}/spa/builds/{{buildId}}/artifacts";
 
-        return Accepted(new { buildId = build.Id });
+        await buildOrchestrationService.CreateAndQueueBuildAsync(
+            app,
+            cloneUrl,
+            repo.FullName,
+            artifactsUploadPath,
+            deploymentName: request.Name
+        );
+
+        return NoContent();
     }
 
     [HttpGet("stream")]

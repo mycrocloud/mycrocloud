@@ -235,7 +235,7 @@ export default function DeploymentsList() {
 
   const {
     register,
-    formState: { errors, isSubmitting },
+    formState: { errors },
     handleSubmit,
     reset,
   } = useForm<BuildInputs>();
@@ -613,9 +613,9 @@ export default function DeploymentsList() {
             <Button variant="outline" onClick={() => setShowBuildModal(false)}>
               Cancel
             </Button>
-            <Button type="submit" form="build-form" disabled={isSubmitting}>
+            <Button type="submit" form="build-form">
               <Play className="mr-2 h-4 w-4" />
-              {isSubmitting ? "Deploying..." : "Deploy"}
+              Deploy
             </Button>
           </DialogFooter>
         </DialogContent>
