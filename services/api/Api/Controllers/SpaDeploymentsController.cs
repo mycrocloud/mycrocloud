@@ -162,7 +162,10 @@ public class SpaDeploymentsController(
         appDbContext.SpaDeployments.Add(deployment);
         await appDbContext.SaveChangesAsync();
 
-        // Extract artifact asynchronously
+        deployment.Status = DeploymentStatus.Deploying;
+        deployment.UpdatedAt = DateTime.UtcNow;
+        await appDbContext.SaveChangesAsync();
+
         try
         {
             await extractionService.ExtractAsync(artifact.Id, deployment.Id, appId);

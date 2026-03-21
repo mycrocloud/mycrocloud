@@ -4,7 +4,7 @@ public enum DeploymentStatus
 {
     Building = 0,
     Pending = 1,
-    Extracting = 2,
+    Deploying = 2,
     Ready = 3,
     Failed = 4,
     Archived = 5

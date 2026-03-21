@@ -285,6 +285,10 @@ public class SpaBuildsController(
 
                 await appDbContext.SaveChangesAsync();
 
+                deployment.Status = DeploymentStatus.Deploying;
+                deployment.UpdatedAt = DateTime.UtcNow;
+                await appDbContext.SaveChangesAsync();
+
                 try
                 {
                     await extractionService.ExtractAsync(artifact.Id, deployment.Id, build.AppId);

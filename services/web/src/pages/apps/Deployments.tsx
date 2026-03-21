@@ -128,6 +128,14 @@ function renderNonActiveStatusBadge(status: string) {
     );
   }
 
+  if (normalized === "deploying") {
+    return (
+      <Badge className="bg-yellow-500 hover:bg-yellow-600">
+        Deploying
+      </Badge>
+    );
+  }
+
   if (normalized === "failed") {
     return (
       <Badge className="bg-red-600 hover:bg-red-700">
