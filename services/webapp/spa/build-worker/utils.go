@@ -18,21 +18,15 @@ var httpClient = &http.Client{
 
 // publishBuildStatus sends a build status update to the API via HTTP POST.
 // This replaces the previous RabbitMQ-based status publishing.
-func publishBuildStatus(buildMsg BuildMessage, message BuildStatusChangedEventMessage) {
-	apiBaseURL := os.Getenv("API_BASE_URL")
-	if apiBaseURL == "" {
-		log.Printf("API_BASE_URL not set, cannot publish status")
-		return
+func publishBuildStatus(buildMsg BuildMessage, message BuildStatusChangedEventMessage, cfg Config) {
+	apiClientCfg := api_client.Config{
+		Domain:       cfg.Auth0.Domain,
+		ClientID:     cfg.Auth0.ClientID,
+		ClientSecret: cfg.Auth0.ClientSecret,
+		Audience:     cfg.Auth0.Audience,
 	}
 
-	cfg := api_client.Config{
-		Domain:       os.Getenv("AUTH0_DOMAIN"),
-		ClientID:     os.Getenv("AUTH0_CLIENT_ID"),
-		ClientSecret: os.Getenv("AUTH0_SECRET"),
-		Audience:     os.Getenv("AUTH0_AUDIENCE"),
-	}
-
-	token, err := api_client.GetAccessToken(cfg)
+	token, err := api_client.GetAccessToken(apiClientCfg)
 	if err != nil {
 		log.Printf("Failed to get token for status update: %v", err)
 		return
@@ -46,7 +40,7 @@ func publishBuildStatus(buildMsg BuildMessage, message BuildStatusChangedEventMe
 	}
 
 	statusURL := fmt.Sprintf("%s/apps/%s/spa/builds/%s/status",
-		strings.TrimSuffix(apiBaseURL, "/"), appId, buildMsg.BuildId)
+		strings.TrimSuffix(cfg.API.BaseURL, "/"), appId, buildMsg.BuildId)
 
 	jsonBody, err := json.Marshal(message)
 	if err != nil {

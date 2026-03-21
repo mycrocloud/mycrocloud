@@ -206,7 +206,7 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB, cfg Config) 
 							BuildId:    buildMsg.BuildId,
 							Status:     Done,
 							ArtifactId: artifactId,
-						})
+						}, cfg)
 						return nil
 					}
 				}
@@ -273,7 +273,7 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB, cfg Config) 
 		BuildId:     buildMsg.BuildId,
 		Status:      Started,
 		ContainerId: resp.ID,
-	})
+	}, cfg)
 
 	// Stream container logs in background
 	logsDone := make(chan struct{})
@@ -307,7 +307,7 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB, cfg Config) 
 			publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 				BuildId: buildMsg.BuildId,
 				Status:  Failed,
-			})
+			}, cfg)
 			return err
 		}
 
@@ -327,7 +327,7 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB, cfg Config) 
 		publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 			BuildId: buildMsg.BuildId,
 			Status:  Failed,
-		})
+		}, cfg)
 		return nil // Job processed, but build failed
 	}
 
@@ -352,7 +352,7 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB, cfg Config) 
 			publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 				BuildId: buildMsg.BuildId,
 				Status:  Failed,
-			})
+			}, cfg)
 			return fmt.Errorf("artifact too large: %s", sizeCheck.Message)
 		} else if sizeCheck.ExceedsSoft {
 			log.Printf("Warning: %s", sizeCheck.Message)
@@ -370,7 +370,7 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB, cfg Config) 
 			publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 				BuildId: buildMsg.BuildId,
 				Status:  Failed,
-			})
+			}, cfg)
 			return err
 		}
 
@@ -383,7 +383,7 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB, cfg Config) 
 			publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 				BuildId: buildMsg.BuildId,
 				Status:  Failed,
-			})
+			}, cfg)
 			return err
 		}
 
@@ -401,7 +401,7 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB, cfg Config) 
 			BuildId:    buildMsg.BuildId,
 			Status:     Done,
 			ArtifactId: artifactId,
-		})
+		}, cfg)
 	} else {
 		collector.Append("Build completed (upload disabled)", "stdout", "app.worker", "")
 		uploadBuildLogs(buildMsg, collector, cfg)
@@ -409,7 +409,7 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB, cfg Config) 
 		publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 			BuildId: buildMsg.BuildId,
 			Status:  Done,
-		})
+		}, cfg)
 	}
 
 	log.Printf("Finished processing. Id: %s", buildMsg.BuildId)
