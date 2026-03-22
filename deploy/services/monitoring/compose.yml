@@ -41,7 +41,7 @@ services:
     network_mode: "host"
     volumes:
       - /:/rootfs:ro
-      - /var/run:/var/run:ro
+      - /var/run/docker.sock:/var/run/docker.sock
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
     labels:
