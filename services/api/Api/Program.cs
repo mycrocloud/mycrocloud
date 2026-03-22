@@ -110,6 +110,7 @@ builder.Services.AddScoped<SlackAppService>();
 // Distributed cache backed by PostgreSQL UNLOGGED table
 builder.Services.AddSingleton<IDistributedCache>(sp => new PostgresCacheService(sp.GetRequiredService<Npgsql.NpgsqlDataSource>()));
 builder.Services.AddHostedService<CacheCleanupService>();
+builder.Services.AddHostedService<OrphanBuildCleanupService>();
 builder.Services.AddScoped<IAppSpecificationPublisher, AppSpecificationPublisher>();
 builder.Services.AddScoped<IArtifactExtractionService, ArtifactExtractionService>();
 builder.Services.AddScoped<IApiDeploymentService, ApiDeploymentService>();

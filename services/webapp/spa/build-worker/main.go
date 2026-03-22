@@ -129,11 +129,28 @@ func claimJob(ctx context.Context, db *sql.DB, workerID string) (string, error) 
 }
 
 // ProcessJob processes a build job and returns an error if it fails
-func ProcessJob(ctx context.Context, jsonString string, db *sql.DB, cfg Config) error {
+func ProcessJob(ctx context.Context, jsonString string, db *sql.DB, cfg Config) (retErr error) {
 	var buildMsg BuildMessage
 	if err := json.Unmarshal([]byte(jsonString), &buildMsg); err != nil {
 		return err
 	}
+
+	// Ensure a final status is always published, even on panic.
+	// Early-return errors (before the container starts) don't publish a status —
+	// those builds are cleaned up by the orphan cleanup service in the API.
+	finalStatusPublished := false
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Panic in ProcessJob for build %s: %v", buildMsg.BuildId, r)
+			retErr = fmt.Errorf("panic: %v", r)
+		}
+		if !finalStatusPublished && buildMsg.BuildId != "" {
+			publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
+				BuildId: buildMsg.BuildId,
+				Status:  Failed,
+			}, cfg)
+		}
+	}()
 
 	// Create log collector for this build (uses PostgreSQL NOTIFY)
 	collector := logcollector.New(buildMsg.BuildId, db)
@@ -202,6 +219,7 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB, cfg Config) 
 						log.Printf("Successfully uploaded existing artifact: %s", artifactId)
 						collector.Append("Finished processing (existing artifact)", "stdout", "app.worker", "")
 						uploadBuildLogs(buildMsg, collector, cfg)
+						finalStatusPublished = true
 						publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 							BuildId:    buildMsg.BuildId,
 							Status:     Done,
@@ -304,6 +322,7 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB, cfg Config) 
 			// Wait for log streaming to finish
 			<-logsDone
 			uploadBuildLogs(buildMsg, collector, cfg)
+			finalStatusPublished = true
 			publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 				BuildId: buildMsg.BuildId,
 				Status:  Failed,
@@ -324,6 +343,7 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB, cfg Config) 
 	if containerFailed {
 		collector.Append("Build failed (non-zero exit code)", "stderr", "app.worker", "")
 		uploadBuildLogs(buildMsg, collector, cfg)
+		finalStatusPublished = true
 		publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 			BuildId: buildMsg.BuildId,
 			Status:  Failed,
@@ -349,6 +369,7 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB, cfg Config) 
 			log.Printf("Artifact size exceeds hard limit: %s", sizeCheck.Message)
 			collector.Append("Artifact size exceeds limit: "+sizeCheck.Message, "stderr", "app.worker", "")
 			uploadBuildLogs(buildMsg, collector, cfg)
+			finalStatusPublished = true
 			publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 				BuildId: buildMsg.BuildId,
 				Status:  Failed,
@@ -367,7 +388,8 @@ func ProcessJob(ctx context.Context, jsonString string, db *sql.DB, cfg Config) 
 		if err != nil {
 			collector.Append("Failed to get access token: "+err.Error(), "stderr", "app.worker", "")
 			uploadBuildLogs(buildMsg, collector, cfg)
-			publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
+			finalStatusPublished = true
+		publishBuildStatus(buildMsg, BuildStatusChangedEventMessage{
 				BuildId: buildMsg.BuildId,
 				Status:  Failed,
 			}, cfg)
