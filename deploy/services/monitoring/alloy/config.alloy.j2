@@ -40,6 +40,15 @@ loki.source.docker "containers" {
 }
 
 loki.process "logs" {
+  // Drop cAdvisor warnings about ephemeral containers (function-invoker, spa-builder)
+  // that get cleaned up before cAdvisor can read their layerdb entries
+  stage.match {
+    selector = "{service=\"cadvisor\"}"
+    stage.drop {
+      expression = "failed to identify the read-write layer ID"
+    }
+  }
+
   // Only process ASP.NET services that output JSON logs
   stage.match {
     selector = "{service=~\"api|db-migrator|gateway\"}"
