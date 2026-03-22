@@ -39,8 +39,6 @@ services:
     image: gcr.io/cadvisor/cadvisor:v0.52.1
     container_name: cadvisor
     network_mode: "host"
-    command:
-      - --docker_storage_driver=overlay2
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro

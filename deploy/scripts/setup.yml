@@ -53,3 +53,9 @@
         name: docker
         enabled: true
         state: started
+
+    - name: Create overlayfs symlink for cAdvisor compatibility
+      file:
+        src: /var/lib/docker/image/overlay2
+        dest: /var/lib/docker/image/overlayfs
+        state: link
