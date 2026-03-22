@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useFormContext } from "react-hook-form";
-import { RouteCreateUpdateInputs } from "./CreateUpdateFormInputs";
+import { type RouteCreateUpdateInputs } from "./CreateUpdateFormInputs";
 import CodeEditor from "@/components/CodeEditor";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import IApp from "./App";
+import type IApp from "./App";
 import { useEffect, useMemo, useState } from "react";
 import { useApiClient } from "@/hooks";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,7 @@ export default function List() {
     };
 
     getApps();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

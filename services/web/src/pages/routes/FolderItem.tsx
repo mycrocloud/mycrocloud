@@ -42,13 +42,13 @@ export default function FolderItem({
   onDelete,
   onNameSubmit,
 }: FolderItemProps) {
-  if (!folder) return null;
-
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<{ name: string }>();
+
+  if (!folder) return null;
 
   const onSubmit = (data: { name: string }) => {
     onNameSubmit(data.name);

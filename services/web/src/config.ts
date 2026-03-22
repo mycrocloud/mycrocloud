@@ -8,8 +8,8 @@ interface Config {
 }
 
 export const config: Config =
-  typeof window !== "undefined" && (window as any).CONFIG
-    ? (window as any).CONFIG
+  typeof window !== "undefined" && (window as Window & { CONFIG?: Config }).CONFIG
+    ? (window as Window & { CONFIG?: Config }).CONFIG!
     : {
         AUTH0_DOMAIN: import.meta.env.VITE_AUTH0_DOMAIN,
         AUTH0_CLIENTID: import.meta.env.VITE_AUTH0_CLIENTID,

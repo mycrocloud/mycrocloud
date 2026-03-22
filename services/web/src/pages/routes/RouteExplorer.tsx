@@ -2,8 +2,9 @@ import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } 
 import { useNavigate, useParams } from "react-router-dom";
 import { AppContext } from "../apps";
 import { useApiClient } from "@/hooks";
-import IRouteFolderRouteItem, { calculateLevel } from "./IRouteFolderRouteItem";
-import IRoute from "./Route";
+import type IRouteFolderRouteItem from "./IRouteFolderRouteItem";
+import { calculateLevel } from "./IRouteFolderRouteItem";
+import type IRoute from "./Route";
 import RouteItem from "./RouteItem";
 import FolderItem from "./FolderItem";
 import type { IExplorerItem } from "./types";

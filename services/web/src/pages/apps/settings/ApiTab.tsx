@@ -5,7 +5,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { toast } from "react-toastify";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { DndContext, DragEndEvent } from "@dnd-kit/core";
+import { DndContext, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button } from "@/components/ui/button";
@@ -59,11 +59,11 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  CorsSettings,
-  CorsFormInputs,
-  IScheme,
-  SchemeFormInputs,
-  AuthOrderInputs,
+  type CorsSettings,
+  type CorsFormInputs,
+  type IScheme,
+  type SchemeFormInputs,
+  type AuthOrderInputs,
 } from "./types";
 
 const HTTP_METHODS = [
@@ -109,6 +109,7 @@ function CorsSettingsSection() {
     },
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const watchMethods = watch("allowedMethods");
   const selectedMethods = watchMethods
     ? watchMethods.split(",").filter(Boolean)
@@ -337,6 +338,7 @@ function AuthenticationSection() {
 
   useEffect(() => {
     fetchSchemes();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleCreateClick = () => {

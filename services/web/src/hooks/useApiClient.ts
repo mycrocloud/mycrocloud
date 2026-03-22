@@ -4,7 +4,7 @@ import { NotFoundError} from "@/errors"
 
 type RequestOptions = {
   headers?: Record<string, string>;
-  body?: any;
+  body?: object | string;
   method?: string;
   //[key: string]: any;
 };
@@ -42,7 +42,7 @@ const useApiClient = () => {
 
       if (!response.ok) {
         const message =
-          (data as any)?.message || `Request failed with ${response.status}`;
+          (data as { message?: string })?.message || `Request failed with ${response.status}`;
 
           if (response.status === 404) {
             throw new NotFoundError(message)
@@ -64,21 +64,21 @@ const useApiClient = () => {
   );
 
   const post = useCallback(
-    async <T>(url: string, body?: any): Promise<T> => {
+    async <T>(url: string, body?: object | string): Promise<T> => {
       return send<T>(url, { method: "POST", body });
     },
     [send]
   );
 
   const patch = useCallback(
-    async <T>(url: string, body?: any): Promise<T> => {
+    async <T>(url: string, body?: object | string): Promise<T> => {
       return send<T>(url, { method: "PATCH", body });
     },
     [send]
   );
 
   const del = useCallback(
-    async <T>(url: string, body?: any): Promise<T> => {
+    async <T>(url: string, body?: object | string): Promise<T> => {
       return send<T>(url, { method: "DELETE", body });
     },
     [send]

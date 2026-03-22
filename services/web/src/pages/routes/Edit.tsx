@@ -5,8 +5,8 @@ import { useApiClient } from "@/hooks";
 import { AppContext } from "../apps";
 import { useRoutesContext } from "./Context";
 import RouteCreateUpdate from "./CreateUpdateForm";
-import { RouteCreateUpdateInputs } from "./CreateUpdateFormInputs";
-import IRoute from "./Route";
+import { type RouteCreateUpdateInputs } from "./CreateUpdateFormInputs";
+import type IRoute from "./Route";
 
 export default function RouteEdit() {
   const { app } = useContext(AppContext)!;

@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import IRoute from "./Route";
+import type IRoute from "./Route";
 
 export interface IRoutesState {
   routes: IRoute[];

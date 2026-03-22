@@ -58,7 +58,7 @@ export default function TokenEdit() {
         const data = await get<IToken>(`/api/usersettings/tokens/${id}`);
         setToken(data);
         reset({ name: data.name });
-      } catch (error) {
+      } catch {
         toast.error("Token not found");
         navigate("/settings/tokens");
       } finally {
@@ -66,6 +66,7 @@ export default function TokenEdit() {
       }
     };
     fetchToken();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const onSubmit = async (data: FormData) => {
@@ -74,7 +75,7 @@ export default function TokenEdit() {
       await patch(`/api/usersettings/tokens/${id}`, { name: data.name });
       toast.success("Token updated");
       navigate("/settings/tokens");
-    } catch (error) {
+    } catch {
       toast.error("Something went wrong.");
     } finally {
       setIsSaving(false);
@@ -90,7 +91,7 @@ export default function TokenEdit() {
       const result = await post<IToken>(`/api/usersettings/tokens/${id}/regenerate`);
       setRegeneratedToken(result.token || "");
       toast.success("Token regenerated");
-    } catch (error) {
+    } catch {
       toast.error("Something went wrong.");
     } finally {
       setIsRegenerating(false);

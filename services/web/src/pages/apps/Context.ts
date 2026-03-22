@@ -1,5 +1,5 @@
-import { createContext, Dispatch, SetStateAction } from "react";
-import { IApp } from ".";
+import { createContext, type Dispatch, type SetStateAction } from "react";
+import { type IApp } from ".";
 
 interface AppContext {
   app: IApp | undefined;

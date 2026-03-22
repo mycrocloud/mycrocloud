@@ -257,9 +257,9 @@ export default function DeploymentsList() {
     try {
       const data = await get<ISourceInfo>(`/api/apps/${app.id}/source-info`);
       setSourceInfo(data);
-    } catch (error: any) {
+    } catch (error) {
       setSourceInfoError(
-        error.message || "Failed to load source information"
+        (error as Error).message || "Failed to load source information"
       );
     } finally {
       setLoadingSourceInfo(false);

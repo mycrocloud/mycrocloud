@@ -181,7 +181,7 @@ export default function DeploymentDetails() {
       if (result.deploymentId) {
         navigate(`/apps/${app.id}/spa/deployments/${result.deploymentId}`);
       }
-    } catch (error) {
+    } catch {
       alert("Failed to redeploy. Please try again.");
     } finally {
       setIsRedeploying(false);

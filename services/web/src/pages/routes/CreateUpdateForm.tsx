@@ -1,11 +1,11 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import { FieldErrors, FormProvider, useForm } from "react-hook-form";
+import { type FieldErrors, FormProvider, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { AppContext } from "../apps";
-import IRoute from "./Route";
+import type IRoute from "./Route";
 import { methods } from "./constants";
 import {
-  RouteCreateUpdateInputs,
+  type RouteCreateUpdateInputs,
   routeCreateUpdateInputsSchema,
 } from "./CreateUpdateFormInputs";
 import RequestValidation from "./RequestValidation";
@@ -256,6 +256,7 @@ export default function RouteCreateUpdate({
                       setValue("response.type", "Static");
                       setValue("response.functionResponse", null);
                       setValue("response.staticResponse", {
+                        // eslint-disable-next-line react-hooks/incompatible-library
                         statusCode: watch("response.staticResponse.statusCode") || 200,
                         headers: watch("response.staticResponse.headers") || [],
                         content: watch("response.staticResponse.content") || "",

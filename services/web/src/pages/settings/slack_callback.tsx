@@ -30,10 +30,11 @@ export default function SlackCallback() {
       if (state) {
         try {
           pathName = JSON.parse(decodeURIComponent(state)).pathname;
-        } catch (error) {}
+        } catch { /* ignore parse errors */ }
       }
       navigate(pathName);
     })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading, isAuthenticated, code]);
 
   return <h1>Loading...</h1>;

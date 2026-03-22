@@ -1,8 +1,8 @@
 import { useContext, useState, useMemo } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { type SubmitHandler, useForm } from "react-hook-form";
 import { AppContext } from ".";
-import { IRouteLog } from "../routes";
+import { type IRouteLog } from "../routes";
 import { functionExecutionEnvironmentMap } from "../routes/constants";
 import {
   Search,

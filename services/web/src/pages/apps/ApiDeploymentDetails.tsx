@@ -146,7 +146,7 @@ export default function ApiDeploymentDetails() {
 
   const handleViewOpenApi = async () => {
     try {
-      const spec = await get<any>(
+      const spec = await get<object>(
         `/api/apps/${app.id}/api/deployments/${deploymentId}/openapi.json`
       );
 

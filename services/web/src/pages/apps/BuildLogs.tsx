@@ -47,6 +47,7 @@ export default function BuildLogs({
   // Reset state when buildId changes
   useEffect(() => {
     logMapRef.current.clear();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLogs([]);
     setAutoScroll(true);
   }, [buildId]);

@@ -1,7 +1,7 @@
 import { Link, Outlet, useLocation, useParams } from "react-router-dom";
 import { AppContext } from ".";
 import { useEffect, useState } from "react";
-import IApp from "./App";
+import type IApp from "./App";
 import { useApiClient } from "@/hooks";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, Loader2 } from "lucide-react";
@@ -66,6 +66,7 @@ export default function AppLayout() {
       setApp(app);
     };
     getApp();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!app) {

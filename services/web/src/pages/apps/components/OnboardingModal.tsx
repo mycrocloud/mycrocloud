@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 interface OnboardingAction {
     title: string;
     description: string;
-    icon: any;
+    icon: React.ElementType;
     path: string;
 }
 
@@ -146,7 +146,7 @@ function OnboardingCard({
 }: {
     title: string;
     description: string;
-    icon: any;
+    icon: React.ElementType;
     onClick: () => void;
     featured?: boolean;
 }) {

@@ -18,7 +18,7 @@ export default function GitHubCallback() {
     if (state) {
       try {
         return JSON.parse(atob(state)) as { from?: string; next?: string };
-      } catch { }
+      } catch { /* ignore parse errors */ }
     }
     return { from: "/" } as { from?: string; next?: string };
   }, [state]);

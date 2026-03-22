@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useFormContext } from "react-hook-form";
-import { RouteCreateUpdateInputs } from "./CreateUpdateFormInputs";
+import { type RouteCreateUpdateInputs } from "./CreateUpdateFormInputs";
 import CodeEditor from "@/components/CodeEditor";
 import { Label } from "@/components/ui/label";
 
@@ -26,6 +26,7 @@ export default function FunctionHandler() {
     if (!getValues("response.functionResponse.sourceCode")) {
       setValue("response.functionResponse.sourceCode", SAMPLE_FUNCTION);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

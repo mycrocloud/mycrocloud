@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { AppContext } from ".";
-import { IActiveDeployment } from "./App";
+import { type IActiveDeployment } from "./App";
 import { OnboardingModal } from "./components/OnboardingModal";
 import { useApiClient } from "@/hooks";
 import {
@@ -24,7 +24,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  ChartConfig,
+  type ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { type SubmitHandler, useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useNavigate } from "react-router-dom";
@@ -172,7 +172,7 @@ function AppTypeCard({
   description?: string;
   badge?: string;
   useCase?: string;
-  icon: any;
+  icon: React.ElementType;
   selected: boolean;
   onClick: () => void;
 }) {

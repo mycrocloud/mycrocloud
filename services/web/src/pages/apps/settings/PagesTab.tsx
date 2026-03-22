@@ -39,11 +39,11 @@ import {
 } from "lucide-react";
 import { useApiClient } from "@/hooks";
 import config from "@/config";
-import { IAppIntegration } from "../App";
+import { type IAppIntegration } from "../App";
 import {
-  IGitHubInstallation,
-  GitHubRepo,
-  IBuildConfig,
+  type IGitHubInstallation,
+  type GitHubRepo,
+  type IBuildConfig,
   NODE_VERSIONS,
 } from "./types";
 

@@ -32,10 +32,10 @@ import {
 } from "lucide-react";
 import { useApiClient } from "@/hooks";
 import {
-  IEnvVariable,
-  IEnvVariableCreate,
+  type IEnvVariable,
+  type IEnvVariableCreate,
   VARIABLE_TARGETS,
-  VariableTarget,
+  type VariableTarget,
 } from "./types";
 
 type FilterTarget = "all" | VariableTarget;
@@ -73,6 +73,7 @@ export default function EnvironmentTab() {
 
   useEffect(() => {
     fetchVariables();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [app.id]);
 
   useEffect(() => {

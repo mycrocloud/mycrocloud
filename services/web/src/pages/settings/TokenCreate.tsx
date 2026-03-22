@@ -49,7 +49,7 @@ export default function TokenCreate() {
       });
       setCreatedToken(token.token || "");
       setStep("created");
-    } catch (error) {
+    } catch {
       toast.error("Something went wrong.");
     } finally {
       setIsSubmitting(false);

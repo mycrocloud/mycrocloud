@@ -37,8 +37,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  RenameFormInput,
-  RoutingConfig,
+  type RenameFormInput,
+  type RoutingConfig,
 } from "./types";
 import CodeMirror from "@uiw/react-codemirror";
 import { json } from "@codemirror/lang-json";
@@ -171,7 +171,7 @@ function RoutingConfigSection() {
           };
           setJsonConfig(JSON.stringify(defaultConfig, null, 2));
         }
-      } catch (err) {
+      } catch {
         toast.error("Failed to load routing configuration");
       } finally {
         setLoading(false);
@@ -191,7 +191,7 @@ function RoutingConfigSection() {
       try {
         routingConfig = JSON.parse(jsonConfig);
         setJsonError("");
-      } catch (err) {
+      } catch {
         setJsonError("Invalid JSON format");
         setSaving(false);
         return;
