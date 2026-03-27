@@ -12,6 +12,7 @@
         - lb
         - api
         - web
+        - db
         - db-migrator
       webapp:
         - webapp-gateway
@@ -25,6 +26,7 @@
       - lb
       - api
       - web
+      - db
       - db-migrator
       - webapp-gateway
       - webapp-spa-build-worker
@@ -64,6 +66,9 @@
           - "api/s3_secret_key"
           - "api/gha_mycrocloud_private_key"
       web:
+        templates: []
+        secrets: []
+      db:
         templates: []
         secrets: []
       db-migrator:
@@ -156,6 +161,7 @@
         - lb
         - api
         - web
+        - db
         - db-migrator
       webapp:
         - webapp-gateway

@@ -3,6 +3,21 @@ include:
   - ./monitoring/compose.yml
   - ./webapp/compose.yml
 services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_PASSWORD: mycrocloud
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    labels:
+      logging.service: db
+      logging.component: infrastructure
+    restart: unless-stopped
   lb:
     image: nginx:mainline-alpine3.18-perl
     ports:
@@ -48,3 +63,6 @@ services:
       logging.service: web
       logging.component: control-plane
     restart: unless-stopped
+
+volumes:
+  db_data:
