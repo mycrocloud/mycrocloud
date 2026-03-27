@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using Api.Domain.Entities;
 using Api.Domain.Services;
 using Api.Infrastructure;
-using Api.Domain.Models;
 using System.Text.Json;
 
 namespace Api.Controllers;
