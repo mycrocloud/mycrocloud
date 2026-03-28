@@ -459,10 +459,6 @@ func main() {
 		limits.DefaultJob.CPUQuota/1000,
 		limits.DefaultJob.BuildDuration,
 		formatBytes(limits.DefaultJob.MaxArtifactSize))
-
-	inContainer := isInContainer()
-	log.Printf("Running in container: %v", inContainer)
-
 	// Setup signal handling for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

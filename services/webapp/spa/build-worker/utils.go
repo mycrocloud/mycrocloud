@@ -7,7 +7,6 @@ import (
 	"log"
 	"mycrocloud/worker/api_client"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 )
@@ -78,18 +77,6 @@ func extractAppIdFromPath(path string) string {
 		return parts[1]
 	}
 	return ""
-}
-
-func isInContainer() bool {
-	if os.Getenv("GO_RUNNING_IN_CONTAINER") == "true" {
-		return true
-	}
-
-	if _, err := os.Stat("/.dockerenv"); err == nil {
-		return true
-	}
-
-	return false
 }
 
 func stripProtocol(addr string) string {
