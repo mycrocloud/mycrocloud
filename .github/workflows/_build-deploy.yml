@@ -51,6 +51,10 @@ on:
       SSH_PRIVATE_KEY:
         required: true
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   build-and-push-image:
     uses: ./.github/workflows/_build-image.yml

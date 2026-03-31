@@ -14,6 +14,8 @@ on:
 jobs:
   test-migrations:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     services:
       db:
         image: postgres:16.2-alpine

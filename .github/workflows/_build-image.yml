@@ -41,6 +41,9 @@ on:
 env:
   REGISTRY: ghcr.io
 
+permissions:
+  contents: read
+
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
