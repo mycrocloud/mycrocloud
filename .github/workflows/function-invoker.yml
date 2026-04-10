@@ -15,11 +15,11 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      packages: write
     with:
       image-name: ${{ github.repository }}-function-invoker
       work-dir: services/webapp/api/functioninvoker
       dockerfile: Dockerfile
       pull-only: true
     secrets:
-      CR_PAT: ${{ secrets.CR_PAT }}
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}

@@ -30,9 +30,6 @@ on:
         required: false
         type: string
         default: ""
-    secrets:
-      CR_PAT:
-        required: true
     outputs:
       full_image:
         description: "Built image reference with tag"
@@ -43,6 +40,7 @@ env:
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
   build-and-push-image:
@@ -62,7 +60,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.CR_PAT }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta

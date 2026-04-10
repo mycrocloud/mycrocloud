@@ -15,11 +15,11 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      packages: write
     with:
       image-name: ${{ github.repository }}-gateway
       work-dir: services/webapp/gateway
       dockerfile: Dockerfile
       service: webapp-gateway
     secrets:
-      CR_PAT: ${{ secrets.CR_PAT }}
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}

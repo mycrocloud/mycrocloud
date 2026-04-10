@@ -15,4 +15,3 @@
 | Secret | Description |
 |---|---|
 | `SSH_PRIVATE_KEY` | SSH private key for connecting to the server |
-| `CR_PAT` | GitHub Personal Access Token for container registry (`ghcr.io`) |

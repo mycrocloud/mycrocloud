@@ -46,14 +46,13 @@ on:
         type: string
         default: ''
     secrets:
-      CR_PAT:
-        required: true
       SSH_PRIVATE_KEY:
         required: true
 
 permissions:
   id-token: write
   contents: read
+  packages: write
 
 jobs:
   build-and-push-image:
@@ -65,8 +64,6 @@ jobs:
       dockerfile: ${{ inputs.dockerfile }}
       use-buildx-cache: ${{ inputs.use-buildx-cache }}
       build-args: ${{ inputs.build-args }}
-    secrets:
-      CR_PAT: ${{ secrets.CR_PAT }}
 
   deploy:
     uses: ./.github/workflows/_deploy-image.yml

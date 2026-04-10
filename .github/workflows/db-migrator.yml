@@ -48,11 +48,11 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      packages: write
     with:
       image-name: ${{ github.repository }}-db-migrator
       work-dir: services/api
       dockerfile: Api.Migrations/Dockerfile
       service: db-migrator
     secrets:
-      CR_PAT: ${{ secrets.CR_PAT }}
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}

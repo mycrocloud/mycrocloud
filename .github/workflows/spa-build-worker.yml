@@ -15,11 +15,11 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      packages: write
     with:
       image-name: ${{ github.repository }}-spa-build-worker
       work-dir: services/webapp/spa/build-worker
       dockerfile: Dockerfile
       service: webapp-spa-build-worker
     secrets:
-      CR_PAT: ${{ secrets.CR_PAT }}
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
