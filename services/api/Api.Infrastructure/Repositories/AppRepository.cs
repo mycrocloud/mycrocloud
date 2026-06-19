@@ -68,7 +68,10 @@ public class AppRepository(AppDbContext dbContext) : IAppRepository
 
     public async Task<IEnumerable<App>> ListByUserId(string userId, string query, string sort)
     {
-        var apps = dbContext.Apps.Where(a => a.OwnerId == userId);
+        var apps = dbContext.Apps
+            .Include(a => a.Link)
+            .ThenInclude(l => l.GitHubInstallation)
+            .Where(a => a.OwnerId == userId);
         if (!string.IsNullOrEmpty(query))
         {
             apps = apps.Where(a => a.Slug.Contains(query) || a.Description.Contains(query));

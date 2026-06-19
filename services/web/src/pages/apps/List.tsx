@@ -12,6 +12,7 @@ import {
   ArrowRight,
   Loader2,
   Calendar,
+  Github,
 } from "lucide-react";
 
 export default function List() {
@@ -129,16 +130,23 @@ export default function List() {
                         {app.state}
                       </Badge>
                     </div>
-                    {app.description ? (
+                    {app.description && (
                       <p className="mt-0.5 text-sm text-muted-foreground line-clamp-1">
                         {app.description}
                       </p>
-                    ) : (
-                      <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                    )}
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                      {app.gitIntegration && (
+                        <span className="flex items-center gap-1">
+                          <Github className="h-3 w-3" />
+                          {app.gitIntegration.org}/{app.gitIntegration.repo}
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
                         Created {new Date(app.createdAt).toLocaleDateString()}
-                      </p>
-                    )}
+                      </span>
+                    </div>
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />

@@ -36,7 +36,14 @@ public class AppsController(
             app.Description,
             State = app.State.ToString(),
             app.CreatedAt,
-            app.UpdatedAt
+            app.UpdatedAt,
+            GitIntegration = app.Link != null ? new
+            {
+                Provider = "GitHub",
+                Org = app.Link.GitHubInstallation.AccountLogin,
+                app.Link.RepoId,
+                Repo = app.Link.RepoName
+            } : null
         }));
     }
 
