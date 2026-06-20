@@ -94,6 +94,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<AccessLog>()
             .OwnsMany(app => app.FunctionLogs, builder => { builder.ToJson(); });
 
+        // Keep access logs when their route is deleted (e.g. cascading from app deletion).
+        // Without this, the default behavior for the nullable RouteId FK is NO ACTION,
+        // which blocks deleting an app whose routes still have logs.
+        modelBuilder.Entity<Route>()
+            .HasMany(r => r.Logs)
+            .WithOne()
+            .HasForeignKey(l => l.RouteId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         modelBuilder.Entity<RouteFolder>()
             .HasOne(f => f.App)
             .WithMany(a => a.RouteFolders)
