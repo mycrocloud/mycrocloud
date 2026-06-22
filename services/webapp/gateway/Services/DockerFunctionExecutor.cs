@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using Docker.DotNet;
 using Docker.DotNet.Models;
@@ -34,6 +35,14 @@ public class DockerFunctionExecutor(
 
         FunctionResult result;
 
+        var timeoutSeconds = app.Settings.FunctionExecutionTimeoutSeconds ?? 10;
+
+        // Stage diagnostics: which step the job was in and how long each step took.
+        // Read in the timeout handler below to pinpoint where a slow execution stalled.
+        var jobStopwatch = new Stopwatch();
+        var stage = "queued";
+        TimeSpan createElapsed = default, startElapsed = default, waitElapsed = default;
+
         // Use cached variables
         var env = app.Variables.Select(v => $"{v.Name}={v.Value}").ToList();
 
@@ -59,6 +68,11 @@ public class DockerFunctionExecutor(
             {
                 const string containerDataPath = "/app/data";
 
+                // Job is now running (semaphore acquired); the timeout clock starts here.
+                jobStopwatch.Restart();
+                var stageStopwatch = Stopwatch.StartNew();
+
+                stage = "create";
                 var container = await dockerClient.Containers.CreateContainerAsync(new CreateContainerParameters
                 {
                     Image = configuration["DockerFunctionExecution:Image"],
@@ -71,12 +85,21 @@ public class DockerFunctionExecutor(
                     },
                     Env = env
                 }, token);
+                createElapsed = stageStopwatch.Elapsed;
 
                 try
                 {
+                    stage = "start";
+                    stageStopwatch.Restart();
                     await dockerClient.Containers.StartContainerAsync(container.ID, new ContainerStartParameters(), token);
+                    startElapsed = stageStopwatch.Elapsed;
 
+                    stage = "wait";
+                    stageStopwatch.Restart();
                     var waitResponse = await dockerClient.Containers.WaitContainerAsync(container.ID, token);
+                    waitElapsed = stageStopwatch.Elapsed;
+
+                    stage = "read-result";
 
                     // Capture container logs for diagnostics
                     string containerLogs = "";
@@ -125,10 +148,16 @@ public class DockerFunctionExecutor(
                     try { await dockerClient.Containers.RemoveContainerAsync(container.ID, new ContainerRemoveParameters { Force = true }, CancellationToken.None); }
                     catch { /* best-effort removal */ }
                 }
-            }, TimeSpan.FromSeconds(app.Settings.FunctionExecutionTimeoutSeconds ?? 10));
+            }, TimeSpan.FromSeconds(timeoutSeconds));
         }
         catch (TaskCanceledException)
         {
+            logger.LogWarning(
+                "Function execution timed out for app {AppId} (trace {TraceId}) after {ElapsedMs}ms at stage '{Stage}' " +
+                "(budget {TimeoutSeconds}s). Stage timings: create={CreateMs}ms, start={StartMs}ms, wait={WaitMs}ms.",
+                app.Id, context.TraceIdentifier, jobStopwatch.ElapsedMilliseconds, stage, timeoutSeconds,
+                createElapsed.TotalMilliseconds, startElapsed.TotalMilliseconds, waitElapsed.TotalMilliseconds);
+
             result = new FunctionResult
             {
                 StatusCode = 500,

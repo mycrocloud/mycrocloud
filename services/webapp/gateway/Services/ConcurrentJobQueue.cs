@@ -34,7 +34,16 @@ public class ConcurrentJobQueue : IDisposable
             catch (OperationCanceledException)
             {
                 tcs.TrySetCanceled();
-                _logger?.LogWarning("Job timed out or was canceled");
+                // Callers receive a canceled task and log their own actionable diagnostics
+                // (e.g. DockerFunctionExecutor records which stage timed out), so keep this at debug.
+                if (timeoutCts.IsCancellationRequested)
+                {
+                    _logger?.LogDebug("Job canceled by its {Timeout} timeout", timeout);
+                }
+                else
+                {
+                    _logger?.LogDebug("Job canceled (queue shutdown)");
+                }
             }
             catch (Exception ex)
             {
