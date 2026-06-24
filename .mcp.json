@@ -1,5 +1,16 @@
 {
   "mcpServers": {
+    "neon": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@neondatabase/mcp-server-neon",
+        "start"
+      ],
+      "env": {
+        "NEON_API_KEY": "<your-neon-api-key>"
+      }
+    },
     "grafana": {
       "command": "docker",
       "args": [
