@@ -22,6 +22,7 @@ locals {
 
   monitoring_alloy_secrets = [
     "grafana_cloud_api_key",
+    "grafana_cloud_otlp_token",
   ]
 
   monitoring_prometheus_secrets = [

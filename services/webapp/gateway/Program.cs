@@ -7,6 +7,7 @@ using MycroCloud.WebApp.Gateway.Middlewares.Api;
 using MycroCloud.WebApp.Gateway.Middlewares.Spa;
 using MycroCloud.WebApp.Gateway.Models;
 using MycroCloud.WebApp.Gateway.Services;
+using MycroCloud.WebApp.Gateway.Telemetry;
 using MycroCloud.WebApp.Gateway.Utils;
 using Microsoft.Extensions.Caching.Distributed;
 using Npgsql;
@@ -85,6 +86,7 @@ builder.Services.AddScoped<IResponseHandler, StaticResponseHandler>();
 builder.Services.AddScoped<IResponseHandler, FunctionResponseHandler>();
 
 builder.Services.AddHealthChecks();
+builder.Services.AddTelemetry(builder.Configuration);
 
 var app = builder.Build();
 

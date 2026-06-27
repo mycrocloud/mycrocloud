@@ -36,6 +36,7 @@ builder.Services.AddHttpLogging(options =>
     options.CombineLogs = true;
 });
 builder.Services.AddHealthChecks();
+builder.Services.AddTelemetry(builder.Configuration);
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>

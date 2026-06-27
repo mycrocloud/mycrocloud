@@ -40,6 +40,9 @@ services:
     restart: unless-stopped
   api:
     image: ghcr.io/mycrocloud/mycrocloud-api:main
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://alloy:4317
+      - OTEL_SERVICE_NAME=api
     volumes:
       - "./api/appsettings.json:/app/appsettings.json:ro"
       - "./api/gha-mycrocloud.private-key.pem:/app/gha-mycrocloud.private-key.pem:ro"

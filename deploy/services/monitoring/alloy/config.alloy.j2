@@ -98,3 +98,42 @@ loki.write "grafana_cloud" {
     }
   }
 }
+
+// ---------------------------------------------------------------------------
+// Application metrics (and, later, traces) via OTLP.
+// The api/gateway containers push OTLP to alloy (same compose network) which
+// forwards to the Grafana Cloud OTLP gateway. Infra metrics still go straight
+// from Prometheus via remote_write — this path is for app telemetry only.
+// ---------------------------------------------------------------------------
+
+otelcol.receiver.otlp "app" {
+  grpc {
+    endpoint = "0.0.0.0:4317"
+  }
+
+  http {
+    endpoint = "0.0.0.0:4318"
+  }
+
+  output {
+    metrics = [otelcol.processor.batch.app.input]
+  }
+}
+
+otelcol.processor.batch "app" {
+  output {
+    metrics = [otelcol.exporter.otlphttp.grafana_cloud.input]
+  }
+}
+
+otelcol.auth.basic "grafana_cloud" {
+  username = "1540937"
+  password = "{{ secrets.grafana_cloud_otlp_token }}"
+}
+
+otelcol.exporter.otlphttp "grafana_cloud" {
+  client {
+    endpoint = "https://otlp-gateway-prod-us-central-0.grafana.net/otlp"
+    auth     = otelcol.auth.basic.grafana_cloud.handler
+  }
+}

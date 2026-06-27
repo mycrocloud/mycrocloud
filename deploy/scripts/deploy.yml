@@ -94,6 +94,7 @@
           - "monitoring/alloy/config.alloy.j2"
         secrets:
           - "monitoring/alloy/grafana_cloud_api_key"
+          - "monitoring/alloy/grafana_cloud_otlp_token"
       prometheus:
         templates:
           - "monitoring/prometheus/prometheus.yml.j2"

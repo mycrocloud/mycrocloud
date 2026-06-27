@@ -3,6 +3,7 @@ using System.Text.Json;
 using Docker.DotNet;
 using Docker.DotNet.Models;
 using MycroCloud.WebApp.Gateway.Models;
+using MycroCloud.WebApp.Gateway.Telemetry;
 using MycroCloud.WebApp.Gateway.Utils;
 using File = System.IO.File;
 
@@ -34,6 +35,10 @@ public class DockerFunctionExecutor(
         }
 
         FunctionResult result;
+
+        // Total wall-clock for the whole execution (queue wait + container lifecycle),
+        // recorded as a metric tagged by outcome.
+        var overallStopwatch = Stopwatch.StartNew();
 
         var timeoutSeconds = app.Settings.FunctionExecutionTimeoutSeconds ?? 10;
 
@@ -149,9 +154,21 @@ public class DockerFunctionExecutor(
                     catch { /* best-effort removal */ }
                 }
             }, TimeSpan.FromSeconds(timeoutSeconds));
+
+            GatewayMetrics.FunctionExecutionDuration.Record(overallStopwatch.Elapsed.TotalSeconds,
+                new KeyValuePair<string, object?>("outcome", "success"));
+            GatewayMetrics.FunctionStageDuration.Record(createElapsed.TotalSeconds,
+                new KeyValuePair<string, object?>("stage", "create"));
+            GatewayMetrics.FunctionStageDuration.Record(startElapsed.TotalSeconds,
+                new KeyValuePair<string, object?>("stage", "start"));
+            GatewayMetrics.FunctionStageDuration.Record(waitElapsed.TotalSeconds,
+                new KeyValuePair<string, object?>("stage", "wait"));
         }
         catch (TaskCanceledException)
         {
+            GatewayMetrics.FunctionExecutionDuration.Record(overallStopwatch.Elapsed.TotalSeconds,
+                new KeyValuePair<string, object?>("outcome", "timeout"));
+
             logger.LogWarning(
                 "Function execution timed out for app {AppId} (trace {TraceId}) after {ElapsedMs}ms at stage '{Stage}' " +
                 "(budget {TimeoutSeconds}s). Stage timings: create={CreateMs}ms, start={StartMs}ms, wait={WaitMs}ms.",
@@ -166,6 +183,9 @@ public class DockerFunctionExecutor(
         }
         catch (Exception ex)
         {
+            GatewayMetrics.FunctionExecutionDuration.Record(overallStopwatch.Elapsed.TotalSeconds,
+                new KeyValuePair<string, object?>("outcome", "error"));
+
             throw new InvalidOperationException(
                 $"Function execution failed for app {app.Id}", ex);
         }
