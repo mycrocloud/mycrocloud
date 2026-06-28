@@ -10,6 +10,8 @@ using MycroCloud.WebApp.Gateway.Services;
 using MycroCloud.WebApp.Gateway.Telemetry;
 using MycroCloud.WebApp.Gateway.Utils;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Options;
+using MycroCloud.WebApp.Gateway.Configuration;
 using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -67,8 +69,14 @@ if (storageType.Equals("S3", StringComparison.OrdinalIgnoreCase))
     builder.Services.AddSingleton<IStorageProvider>(new S3StorageProvider(s3Client, builder.Configuration["Storage:S3:BucketName"]!));
 }
 
+builder.Services.Configure<FunctionExecutionOptions>(
+    builder.Configuration.GetSection("DockerFunctionExecution"));
+builder.Services.AddScoped<FunctionPlanResolver>();
+
 builder.Services.AddKeyedSingleton("DockerFunctionExecution", (sp, _) =>
-    new ConcurrentJobQueue(maxConcurrency: 100, sp.GetRequiredService<ILogger<ConcurrentJobQueue>>()));
+    new ConcurrentJobQueue(
+        sp.GetRequiredService<IOptions<FunctionExecutionOptions>>().Value.MaxConcurrency,
+        sp.GetRequiredService<ILogger<ConcurrentJobQueue>>()));
 builder.Services.AddSingleton(_ =>
 {
     var client = new DockerClientConfiguration(

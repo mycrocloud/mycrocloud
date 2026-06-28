@@ -16,7 +16,13 @@
     "Uri": "unix:///var/run/docker.sock",
     "Image": "ghcr.io/mycrocloud/mycrocloud-function-invoker:main",
     "HostFilePath": "/srv/function-data",
-    "FetchProxy": ""
+    "FetchProxy": "",
+    "MaxConcurrency": 2,
+    "DefaultPlan": "free",
+    "Plans": {
+      "free": { "MemoryMb": 128, "Cpu": 1.0, "TimeoutSeconds": 10 },
+      "pro": { "MemoryMb": 256, "Cpu": 2.0, "TimeoutSeconds": 30 }
+    }
   },
   "AppNameSource": "Header:X-App-Name",
   "Host": "apigw.mycrocloud.site",

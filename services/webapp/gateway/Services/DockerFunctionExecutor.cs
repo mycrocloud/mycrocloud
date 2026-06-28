@@ -12,6 +12,7 @@ namespace MycroCloud.WebApp.Gateway.Services;
 public class DockerFunctionExecutor(
     [FromKeyedServices("DockerFunctionExecution")] ConcurrentJobQueue jobQueue,
     DockerClient dockerClient,
+    FunctionPlanResolver planResolver,
     IConfiguration configuration,
     ILogger<DockerFunctionExecutor> logger) : IFunctionExecutor
 {
@@ -40,7 +41,11 @@ public class DockerFunctionExecutor(
         // recorded as a metric tagged by outcome.
         var overallStopwatch = Stopwatch.StartNew();
 
-        var timeoutSeconds = app.Settings.FunctionExecutionTimeoutSeconds ?? 10;
+        // Resource limits come from the app's plan (account-level entitlement).
+        var plan = planResolver.Resolve(app);
+
+        // The app may pin a shorter timeout; otherwise the plan's default applies.
+        var timeoutSeconds = app.Settings.FunctionExecutionTimeoutSeconds ?? plan.Limits.TimeoutSeconds;
 
         // Stage diagnostics: which step the job was in and how long each step took.
         // Read in the timeout handler below to pinpoint where a slow execution stalled.
@@ -84,8 +89,8 @@ public class DockerFunctionExecutor(
                     HostConfig = new HostConfig
                     {
                         Binds = [$"{hostDir}:{containerDataPath}"],
-                        Memory = 64 * 1024 * 1024, // 64 MB
-                        NanoCPUs = 250_000_000, // 0.25 CPU (NanoCPUs = 10^9 = 1 CPU)
+                        Memory = plan.Limits.MemoryMb * 1024L * 1024L,
+                        NanoCPUs = (long)(plan.Limits.Cpu * 1_000_000_000), // NanoCPUs = 10^9 = 1 CPU
                         PidsLimit = 100,         //  thread / process
                     },
                     Env = env
@@ -156,7 +161,8 @@ public class DockerFunctionExecutor(
             }, TimeSpan.FromSeconds(timeoutSeconds));
 
             GatewayMetrics.FunctionExecutionDuration.Record(overallStopwatch.Elapsed.TotalSeconds,
-                new KeyValuePair<string, object?>("outcome", "success"));
+                new KeyValuePair<string, object?>("outcome", "success"),
+                new KeyValuePair<string, object?>("plan", plan.Name));
             GatewayMetrics.FunctionStageDuration.Record(createElapsed.TotalSeconds,
                 new KeyValuePair<string, object?>("stage", "create"));
             GatewayMetrics.FunctionStageDuration.Record(startElapsed.TotalSeconds,
@@ -167,7 +173,8 @@ public class DockerFunctionExecutor(
         catch (TaskCanceledException)
         {
             GatewayMetrics.FunctionExecutionDuration.Record(overallStopwatch.Elapsed.TotalSeconds,
-                new KeyValuePair<string, object?>("outcome", "timeout"));
+                new KeyValuePair<string, object?>("outcome", "timeout"),
+                new KeyValuePair<string, object?>("plan", plan.Name));
 
             logger.LogWarning(
                 "Function execution timed out for app {AppId} (trace {TraceId}) after {ElapsedMs}ms at stage '{Stage}' " +
@@ -184,7 +191,8 @@ public class DockerFunctionExecutor(
         catch (Exception ex)
         {
             GatewayMetrics.FunctionExecutionDuration.Record(overallStopwatch.Elapsed.TotalSeconds,
-                new KeyValuePair<string, object?>("outcome", "error"));
+                new KeyValuePair<string, object?>("outcome", "error"),
+                new KeyValuePair<string, object?>("plan", plan.Name));
 
             throw new InvalidOperationException(
                 $"Function execution failed for app {app.Id}", ex);
