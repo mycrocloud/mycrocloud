@@ -82,3 +82,10 @@ variable "aws_region" {
   type    = string
   default = "ap-northeast-1"
 }
+
+variable "grafana_alert_slack_webhook_url" {
+  type        = string
+  description = "Slack Incoming Webhook URL that Grafana alert notifications are sent to. Leave empty to create the contact point without a working destination."
+  sensitive   = true
+  default     = ""
+}

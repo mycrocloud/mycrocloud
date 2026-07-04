@@ -8,3 +8,6 @@ auth0_google_oauth_app_client_secret = "auth0_google_oauth_app_client_secret"
 grafana_cloud_access_policy_token = "your_grafana_cloud_access_policy_token"
 # Optional override:
 # grafana_cloud_region_slug = "us"
+
+# Slack Incoming Webhook URL for Grafana alert notifications.
+grafana_alert_slack_webhook_url = "https://hooks.slack.com/services/XXX/YYY/ZZZ"
