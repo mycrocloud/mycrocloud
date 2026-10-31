@@ -305,7 +305,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         var result = await base.SaveChangesAsync(false, cancellationToken);
         foreach (var app in apps) appIds.Add(app.Id);
         foreach (var id in appIds.Where(id => id != 0).Order())
-            await Database.ExecuteSqlInterpolatedAsync($"SELECT refresh_app_specification({id})", cancellationToken);
+            await new Services.AppSpecificationStore(this).PublishAsync(id, cancellationToken);
         if (transaction != null) await transaction.CommitAsync(cancellationToken);
         if (acceptAllChangesOnSuccess) ChangeTracker.AcceptAllChanges();
         return result;

@@ -1,8 +1,7 @@
 using System.Text.Json;
-using System.Text.RegularExpressions;
-using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using Api.Domain.Entities;
 using Api.Infrastructure.Repositories;
+using Api.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -24,25 +23,38 @@ public sealed class PostgreSqlFactAttribute : FactAttribute
 public class AppSpecificationTests
 {
     [Fact]
-    public void Projection_defaults_match_domain_defaults()
+    public void CSharp_builder_produces_gateway_contract_and_filters_runtime_data()
     {
-        var sql = new Api.Migrations.Migrations.AddDurableAppSpecifications().UpOperations
-            .OfType<SqlOperation>().Single().Sql;
-        AssertDefault("Settings", AppSettings.Default);
-        AssertDefault("CorsSettings", CorsSettings.Default);
-        AssertDefault("RoutingConfig", RoutingConfig.Default);
-
-        void AssertDefault<T>(string column, T expected)
+        var app = new App
         {
-            var match = Regex.Match(sql, $$"""COALESCE\(a\."{{column}}"(?:::jsonb)?, '(.*?)'::jsonb""");
-            Assert.True(match.Success, $"Missing SQL default for {column}");
-            var actual = JsonSerializer.Deserialize<T>(match.Groups[1].Value);
-            Assert.Equal(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(actual));
-        }
+            Id = 1, Slug = "contract", OwnerId = "owner", State = Api.Domain.Enums.AppState.Disabled,
+            ActiveApiDeploymentId = Guid.NewGuid(), ActiveSpaDeploymentId = Guid.NewGuid(),
+            AuthenticationSchemes = [
+                new AuthenticationScheme { Enabled = true, Type = Api.Domain.Enums.AuthenticationSchemeType.OpenIdConnect },
+                new AuthenticationScheme { Enabled = false, Type = Api.Domain.Enums.AuthenticationSchemeType.Basic }
+            ],
+            Variables = [
+                new Variable { Id = 1, Name = "runtime", Value = "one", Target = VariableTarget.Runtime },
+                new Variable { Id = 2, Name = "build", Value = "two", Target = VariableTarget.Build },
+                new Variable { Id = 3, Name = "both", Value = "three", Target = VariableTarget.All }
+            ]
+        };
+        var json = JsonSerializer.Serialize(AppSpecificationBuilder.Build(app));
+        var spec = JsonSerializer.Deserialize<MycroCloud.WebApp.Gateway.Models.AppSpecification>(json)!;
+        Assert.Equal("contract", spec.Slug);
+        Assert.Equal("owner", spec.OwnerId);
+        Assert.Equal(MycroCloud.WebApp.Gateway.Models.AppState.Disabled, spec.State);
+        Assert.Equal(app.ActiveApiDeploymentId, spec.ApiDeploymentId);
+        Assert.Equal(app.ActiveSpaDeploymentId, spec.SpaDeploymentId);
+        Assert.Single(spec.AuthenticationSchemes);
+        Assert.Equal(new[] { "runtime", "both" }, spec.Variables.Select(v => v.Name));
+        Assert.Equal(AppSettings.Default.FunctionExecutionLimitMemoryBytes, spec.Settings.FunctionExecutionLimitMemoryBytes);
+        Assert.Equal(RoutingConfig.Default.Routes.Count, spec.RoutingConfig.Routes.Count);
+        Assert.Empty(spec.ApiCorsSettings.AllowedOrigins);
     }
 
     [PostgreSqlFact]
-    public async Task Migration_recovers_apps_without_cache_and_preserves_runtime_configuration()
+    public async Task CSharp_backfill_recovers_apps_without_cache_and_preserves_runtime_configuration()
     {
         await using var database = await TestDatabase.CreateAsync(migrate: false);
         await using var db = database.CreateContext();
@@ -60,6 +72,11 @@ public class AppSpecificationTests
             DELETE FROM cache_entries;
             """);
         await migrator.MigrateAsync();
+        Assert.Null(await database.Store.GetBySlugAsync("existing"));
+        Assert.Equal(1, await new AppSpecificationStore(db).BackfillAsync());
+        var noFunction = await db.Database.SqlQueryRaw<bool>(
+            "SELECT to_regprocedure('refresh_app_specification(integer)') IS NULL AS \"Value\"").SingleAsync();
+        Assert.True(noFunction);
         var spec = await database.Store.GetBySlugAsync("existing");
         Assert.NotNull(spec);
         Assert.Equal(MycroCloud.WebApp.Gateway.Models.AppState.Disabled, spec.State);
@@ -74,7 +91,7 @@ public class AppSpecificationTests
             .SingleAsync();
         Assert.Equal("p", persistence);
         // A rebuild is repeatable and never needs the old cache.
-        await db.Database.ExecuteSqlRawAsync("SELECT refresh_app_specification(1)");
+        Assert.Equal(1, await new AppSpecificationStore(db).BackfillAsync());
         Assert.NotNull(await database.Store.GetBySlugAsync("existing"));
     }
 

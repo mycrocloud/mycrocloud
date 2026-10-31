@@ -30,8 +30,7 @@ public class AppSpecificationPublisher(
             return;
         }
 
-        await dbContext.Database.ExecuteSqlInterpolatedAsync(
-            $"SELECT refresh_app_specification({app.Id})");
+        await new AppSpecificationStore(dbContext).PublishAsync(app.Id);
 
         // Pre-warm versioned routes cache
         if (app.ActiveApiDeploymentId.HasValue)
