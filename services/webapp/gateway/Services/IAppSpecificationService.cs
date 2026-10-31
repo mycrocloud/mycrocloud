@@ -19,6 +19,7 @@ public interface IAppSpecificationService
 }
 
 public class AppSpecificationService(
+    IAppSpecificationStore specificationStore,
     IDistributedCache cache,
     Microsoft.Extensions.Caching.Memory.IMemoryCache memoryCache,
     AppDbContext dbContext,
@@ -26,23 +27,10 @@ public class AppSpecificationService(
     ILogger<AppSpecificationService> logger) : IAppSpecificationService
 {
     private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(5);
-    private const string CacheKeyPrefix = "app:";
     private const string MetaCacheKeyPrefix = "route_meta:";
 
-    public async Task<AppSpecification?> GetBySlugAsync(string slug)
-    {
-        var cacheKey = $"{CacheKeyPrefix}{slug}";
-
-        var cached = await cache.GetStringAsync(cacheKey);
-        if (cached is not null)
-        {
-            logger.LogDebug("Cache hit for spec: {Slug}", slug);
-            return JsonSerializer.Deserialize<AppSpecification>(cached);
-        }
-
-        logger.LogWarning("Cache miss for spec: {Slug}. Spec must be published from API.", slug);
-        return null;
-    }
+    public Task<AppSpecification?> GetBySlugAsync(string slug)
+        => specificationStore.GetBySlugAsync(slug);
 
     public async Task<string?> GetApiDeploymentFileContentAsync(Guid? deploymentId, string path)
     {
@@ -132,7 +120,7 @@ public class AppSpecificationService(
             return routes;
         }
 
-        // L2: Redis Cache
+        // L2: Distributed cache
         var cached = await cache.GetStringAsync(cacheKey);
         if (cached is not null)
         {

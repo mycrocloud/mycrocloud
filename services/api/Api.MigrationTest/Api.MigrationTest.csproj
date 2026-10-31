@@ -11,6 +11,9 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <!-- Match Api.Migrations' EF Design version; its private dependencies do not flow here. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.12" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.12" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -24,6 +27,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Api.Migrations\Api.Migrations.csproj" />
+    <!-- Exercise the gateway reader without loading the gateway host and its unrelated integrations. -->
+    <Compile Include="../../webapp/gateway/Services/IAppSpecificationStore.cs" Link="Gateway/IAppSpecificationStore.cs" />
+    <Compile Include="../../webapp/gateway/Models/AppSpecification.cs" Link="Gateway/AppSpecification.cs" />
   </ItemGroup>
 
 </Project>
