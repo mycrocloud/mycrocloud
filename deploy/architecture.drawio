@@ -1,0 +1,110 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="overview" name="Deployment Overview">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" page="1" pageScale="1" pageWidth="1400" pageHeight="1000">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="MycroCloud — Deployment Overview" style="rounded=1;whiteSpace=wrap;html=0;fillColor=none;strokeColor=none;fontSize=16;spacing=12;fontSize=26;fontStyle=1;align=left;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="40" y="20" width="1300" height="50" />
+        </mxCell>
+        <mxCell id="vps" value="ConoHa VPS · Docker Compose" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#f5f5f5;strokeColor=#999999;fontSize=16;spacing=12;verticalAlign=top;align=left;fontStyle=1;dashed=1;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="360" y="190" width="650" height="540" />
+        </mxCell>
+        <mxCell id="users" value="Users" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=16;spacing=12;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="50" y="110" width="220" height="70" />
+        </mxCell>
+        <mxCell id="cf" value="Cloudflare&#10;DNS &amp; HTTPS proxy" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=16;spacing=12;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="50" y="290" width="220" height="90" />
+        </mxCell>
+        <mxCell id="nginx" value="Nginx&#10;HTTPS :443" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=16;spacing=12;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="400" y="290" width="200" height="90" />
+        </mxCell>
+        <mxCell id="web" value="Web UI" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=16;spacing=12;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="740" y="250" width="220" height="70" />
+        </mxCell>
+        <mxCell id="api" value="API" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=16;spacing=12;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="740" y="380" width="220" height="70" />
+        </mxCell>
+        <mxCell id="gateway" value="App Gateway" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=16;spacing=12;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="400" y="500" width="200" height="70" />
+        </mxCell>
+        <mxCell id="worker" value="SPA Build Worker" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=16;spacing=12;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="400" y="630" width="200" height="70" />
+        </mxCell>
+        <mxCell id="db" value="PostgreSQL" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=16;spacing=12;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="740" y="630" width="220" height="70" />
+        </mxCell>
+        <mxCell id="r2" value="Cloudflare R2&#10;App artifacts" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=16;spacing=12;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1090" y="390" width="240" height="90" />
+        </mxCell>
+        <mxCell id="auth" value="Auth0&#10;Authentication" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=16;spacing=12;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1090" y="110" width="240" height="90" />
+        </mxCell>
+        <mxCell id="deploy" value="Terraform + Ansible&#10;Provision &amp; deploy" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=16;spacing=12;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="50" y="800" width="260" height="90" />
+        </mxCell>
+        <mxCell id="ssm" value="AWS SSM&#10;Deployment secrets" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=16;spacing=12;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="400" y="800" width="240" height="90" />
+        </mxCell>
+        <mxCell id="monitor" value="Alloy + Prometheus&#10;Logs &amp; metrics" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=16;spacing=12;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="740" y="800" width="240" height="90" />
+        </mxCell>
+        <mxCell id="grafana" value="Grafana Cloud&#10;Dashboards &amp; alerts" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=16;spacing=12;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1090" y="800" width="240" height="90" />
+        </mxCell>
+        <mxCell id="e18" value="HTTPS" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=0;endArrow=block;fontSize=13;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="users" target="cf">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e19" value="HTTPS" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=0;endArrow=block;fontSize=13;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="cf" target="nginx">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e20" value="mycrocloud.online" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=0;endArrow=block;fontSize=13;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="nginx" target="web">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e21" value="/api/* or api.mycrocloud.online" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=0;endArrow=block;fontSize=13;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="nginx" target="api">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e22" value="*.mycrocloud.site" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=0;endArrow=block;fontSize=13;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="nginx" target="gateway">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e23" value="Login" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=0;endArrow=block;fontSize=13;labelBackgroundColor=#ffffff;dashed=1;" edge="1" parent="1" source="web" target="auth">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e24" value="Artifacts" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=0;endArrow=block;fontSize=13;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="api" target="r2">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e25" value="Artifacts" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=0;endArrow=block;fontSize=13;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="gateway" target="r2">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e26" value="Build results" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=0;endArrow=block;fontSize=13;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="worker" target="api">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e27" value="DB *" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=0;endArrow=block;fontSize=13;labelBackgroundColor=#ffffff;dashed=1;" edge="1" parent="1" source="api" target="db">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e28" value="DB *" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=0;endArrow=block;fontSize=13;labelBackgroundColor=#ffffff;dashed=1;" edge="1" parent="1" source="gateway" target="db">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e29" value="Jobs *" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=0;endArrow=block;fontSize=13;labelBackgroundColor=#ffffff;dashed=1;" edge="1" parent="1" source="worker" target="db">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e30" value="Read secrets" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=0;endArrow=block;fontSize=13;labelBackgroundColor=#ffffff;dashed=1;" edge="1" parent="1" source="deploy" target="ssm">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e31" value="Deploy over SSH" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=0;endArrow=block;fontSize=13;labelBackgroundColor=#ffffff;dashed=1;" edge="1" parent="1" source="deploy" target="vps">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e32" value="Telemetry" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=0;endArrow=block;fontSize=13;labelBackgroundColor=#ffffff;dashed=1;" edge="1" parent="1" source="vps" target="monitor">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e33" value="Export" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=0;endArrow=block;fontSize=13;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="monitor" target="grafana">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="note" value="Simplified from deploy/ configuration. Dashed lines show supporting dependencies.&#10;* Database endpoints are stored in secrets; connections to local PostgreSQL are assumed.&#10;Gateway runs temporary function containers; the build worker runs temporary builder containers." style="rounded=1;whiteSpace=wrap;html=0;fillColor=none;strokeColor=none;fontSize=16;spacing=12;fontSize=12;align=left;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="40" y="920" width="1290" height="65" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
