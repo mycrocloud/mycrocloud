@@ -37,7 +37,7 @@ public class AuthenticationsController(
         scheme.AppId = appId;
         await dbContext.AuthenticationSchemes.AddAsync(scheme);
         await dbContext.SaveChangesAsync();
-        await specPublisher.InvalidateByIdAsync(appId);
+        await specPublisher.PublishByIdAsync(appId);
         return Created();
     }
 
@@ -58,7 +58,7 @@ public class AuthenticationsController(
         existingScheme.OpenIdConnectAudience = scheme.OpenIdConnectAudience;
         dbContext.AuthenticationSchemes.Update(existingScheme);
         await dbContext.SaveChangesAsync();
-        await specPublisher.InvalidateByIdAsync(appId);
+        await specPublisher.PublishByIdAsync(appId);
         return NoContent();
     }
 
@@ -98,7 +98,7 @@ public class AuthenticationsController(
         }
         dbContext.AuthenticationSchemes.Remove(scheme);
         await dbContext.SaveChangesAsync();
-        await specPublisher.InvalidateByIdAsync(appId);
+        await specPublisher.PublishByIdAsync(appId);
         return NoContent();
     }
 
@@ -125,7 +125,7 @@ public class AuthenticationsController(
         }
 
         await dbContext.SaveChangesAsync();
-        await specPublisher.InvalidateByIdAsync(appId);
+        await specPublisher.PublishByIdAsync(appId);
         return NoContent();
     }
 }

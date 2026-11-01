@@ -4,7 +4,7 @@ using Api.Domain.Enums;
 namespace Api.Domain.Models;
 
 /// <summary>
-/// AppSpecification: The immutable definition of an app at a specific release.
+/// Published runtime configuration, including active deployments and current app settings.
 /// Gateway executes this specification to serve requests.
 /// </summary>
 public class AppSpecification

@@ -144,10 +144,7 @@ public class AppsController(
             return Conflict(new { Message = "App name already taken" });
         }
 
-        var oldName = app.Slug;
         await appService.Rename(id, renameRequest.Name);
-        await specPublisher.InvalidateAsync(oldName); // Invalidate old name
-        await specPublisher.InvalidateAsync(oldName); // Invalidate spec with old name
         await specPublisher.PublishAsync(renameRequest.Name); // Publish with new name
         return NoContent();
     }
@@ -164,9 +161,6 @@ public class AppsController(
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var app = await appRepository.GetByAppId(id);
-        await specPublisher.InvalidateByIdAsync(id); // Invalidate before deletion
-        await specPublisher.InvalidateAsync(app.Slug);
         await appService.Delete(id);
         return NoContent();
     }

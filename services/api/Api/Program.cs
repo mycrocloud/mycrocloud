@@ -17,7 +17,19 @@ using Api.Infrastructure.Services;
 using Amazon.S3;
 using Microsoft.Extensions.Caching.Distributed;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(args.Where(arg => arg != "--backfill-app-specifications").ToArray());
+
+// Run after schema migration, before switching gateway traffic to the durable store.
+// Exit without starting HTTP endpoints or background consumers.
+if (args.Contains("--backfill-app-specifications"))
+{
+    var options = new DbContextOptionsBuilder<AppDbContext>()
+        .UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")).Options;
+    await using var dbContext = new AppDbContext(options);
+    var count = await new AppSpecificationStore(dbContext).BackfillAsync();
+    Console.WriteLine($"Published durable specifications for {count} apps.");
+    return;
+}
 
 if (!builder.Environment.IsDevelopment())
 {

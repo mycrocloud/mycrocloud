@@ -50,6 +50,7 @@ builder.Services.AddSingleton<IDistributedCache>(sp => new PostgresCacheService(
 builder.Services.AddHostedService<CacheCleanupService>();
 builder.Services.AddSingleton<ICachedOpenIdConnectionSigningKeys, CachedOpenIdConnectionSigningKeys>();
 builder.Services.AddScoped<IAppSpecificationService, AppSpecificationService>();
+builder.Services.AddSingleton<IAppSpecificationStore, PostgresAppSpecificationStore>();
 
 // Storage Provider selection (Disk or S3/R2)
 var storageType = builder.Configuration["Storage:Type"] ?? "Disk";

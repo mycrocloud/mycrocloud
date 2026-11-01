@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Api.Domain.Entities;
 
@@ -258,10 +258,57 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .OnDelete(DeleteBehavior.SetNull);
     }
 
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+        => SaveChangesAsync(acceptAllChangesOnSuccess).GetAwaiter().GetResult();
+
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        => SaveChangesAsync(true, cancellationToken);
+
+    public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess,
+        CancellationToken cancellationToken = default)
     {
+        ChangeTracker.DetectChanges();
+        var changed = ChangeTracker.Entries()
+            .Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
+            .ToList();
+        var apps = changed.Where(e => e.Entity is App).Select(e => (App)e.Entity).ToList();
+        var appIds = apps.Where(a => a.Id != 0).Select(a => a.Id).ToHashSet();
+        foreach (var entry in changed.Where(e => e.Entity is AuthenticationScheme or Variable))
+        {
+            appIds.Add((int)entry.Property("AppId").CurrentValue!);
+            if (entry.State != EntityState.Added)
+                appIds.Add((int)entry.Property("AppId").OriginalValue!);
+        }
+        // Owned settings/CORS changes may leave the App entry unchanged.
+        foreach (var entry in changed.Where(e => e.Metadata.IsOwned()))
+        {
+            var ownerKey = entry.Metadata.FindOwnership()!;
+            if (ownerKey.PrincipalEntityType.ClrType == typeof(App))
+                appIds.Add((int)entry.Property(ownerKey.Properties.Single().Name).CurrentValue!);
+        }
+
+        if (apps.Count == 0 && appIds.Count == 0)
+        {
+            AddTimestampsAndVersion();
+            return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        }
+
+        var ownsTransaction = Database.CurrentTransaction == null;
+        await using var transaction = ownsTransaction
+            ? await Database.BeginTransactionAsync(cancellationToken) : null;
+        // Lock before writing child rows. Deterministic order prevents cross-app lock inversion.
+        foreach (var id in appIds.Where(id => id != 0).Order())
+            await Database.ExecuteSqlInterpolatedAsync(
+                $"SELECT 1 FROM \"Apps\" WHERE \"Id\" = {id} FOR UPDATE", cancellationToken);
+
         AddTimestampsAndVersion();
-        return base.SaveChangesAsync(cancellationToken);
+        var result = await base.SaveChangesAsync(false, cancellationToken);
+        foreach (var app in apps) appIds.Add(app.Id);
+        foreach (var id in appIds.Where(id => id != 0).Order())
+            await new Services.AppSpecificationStore(this).PublishAsync(id, cancellationToken);
+        if (transaction != null) await transaction.CommitAsync(cancellationToken);
+        if (acceptAllChangesOnSuccess) ChangeTracker.AcceptAllChanges();
+        return result;
     }
 
     private void AddTimestampsAndVersion()

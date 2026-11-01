@@ -15,6 +15,9 @@ public class AppRepository(AppDbContext dbContext) : IAppRepository
 
     public async Task Delete(int appId)
     {
+        var ownsTransaction = dbContext.Database.CurrentTransaction == null;
+        await using var transaction = ownsTransaction
+            ? await dbContext.Database.BeginTransactionAsync() : null;
         var app = await dbContext.Apps.FirstAsync(a => a.Id == appId);
 
         // Break references from App -> Deployment first, then remove deployments.
@@ -37,6 +40,7 @@ public class AppRepository(AppDbContext dbContext) : IAppRepository
 
         dbContext.Apps.Remove(app);
         await dbContext.SaveChangesAsync();
+        if (transaction != null) await transaction.CommitAsync();
     }
 
     public async Task<List<AuthenticationScheme>> GetAuthenticationSchemes(int appId)
